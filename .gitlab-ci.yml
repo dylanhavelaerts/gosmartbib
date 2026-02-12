@@ -1,0 +1,19 @@
+stages:
+  - deploy
+
+deploy_to_server:
+  stage: deploy
+
+  tags:
+    - shell
+
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+  script:
+    - echo "Nieuwe code is gedetecteerd en gedownload op de server."
+    
+    - docker compose up -d --build
+
+  environment:
+    name: production
