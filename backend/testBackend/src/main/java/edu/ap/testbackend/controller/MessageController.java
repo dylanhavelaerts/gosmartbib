@@ -3,22 +3,34 @@ package edu.ap.testbackend.controller;
 import edu.ap.testbackend.entities.TestMessage;
 import edu.ap.testbackend.repository.TextMessageRepository;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.weaver.ast.Test;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000") // allow frontend
+@CrossOrigin(origins = "*")
 public class MessageController {
-    private TextMessageRepository textMessageRepository;
+    private final TextMessageRepository textMessageRepository;
 
     @GetMapping("/hello")
-    public String hello(){
-        return "hello from springboot!";
+    public Map<String, Object> hello() {
+        List<TestMessage> messages = textMessageRepository.findAll();
+        if (messages.isEmpty()) {
+            return Map.of("message", "No messages in database yet.");
+        }
+        return Map.of("message", messages.get(0).getText());
     }
+
+    @GetMapping("/messages")
+    public List<TestMessage> getMessages() {
+        return textMessageRepository.findAll();
+    }
+
     @PostMapping("/save")
-    public TestMessage saveMessage(@RequestParam TestMessage message){
+    public TestMessage saveMessage(@RequestBody TestMessage message) {
         return textMessageRepository.save(message);
     }
 }
