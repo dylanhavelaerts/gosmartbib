@@ -1,0 +1,56 @@
+services:
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost/api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+    networks:
+      - proxy
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    container_name: backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/testproject
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Root
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http/routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.ports=8080"
+    networks:
+      - proxy
+
+  database:
+    image: mysql:8.0
+    container_name: database
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: Root
+      MYSQL_DATABASE: testproject
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Root
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - proxy
+    depends_on:
+      - backend
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  mysql_data:
+    driver: local
