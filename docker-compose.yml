@@ -30,6 +30,7 @@ services:
       - "traefik.http.services.backend.loadbalancer.server.port=8080"
     networks:
       - proxy
+      - backend
     depends_on:
       - database
 
@@ -43,11 +44,15 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
-      - proxy
+      - backend
 
 networks:
   proxy:
-    external: true
+    name: proxy
+    driver: bridge
+  backend:
+    name: backend
+    driver: bridge
 
 volumes:
   mysql_data:
