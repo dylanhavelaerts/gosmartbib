@@ -25,3 +25,11 @@ nav button:hover {
   background-color: #e4d9dc;
   border-bottom: solid #8e1f42 0.2rem;
 }
+#backgroundImage {
+  background-image: url("/backgroundImage.jpg");
+  background-size: cover;
+  height: 100vh;
+  filter: grayscale(100%);
+  opacity: 20%;
+  z-index: -1;
+}
