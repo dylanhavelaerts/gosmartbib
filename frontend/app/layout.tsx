@@ -27,6 +27,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <header>
+      <img src="https://helpdesk.go-antwerpen.be/logo.php" className="goLogo" />
+    </header>
         {children}
       </body>
     </html>
