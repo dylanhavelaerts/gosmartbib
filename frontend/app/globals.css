@@ -1,0 +1,27 @@
+body {
+  padding: 0;
+  margin: 0;
+}
+header {
+  height: 4rem;
+  background-image: linear-gradient(0deg, #3e0c1c, #8e2446);
+}
+.goLogo {
+  height: 70%;
+  background-color: white;
+  margin: 0.5rem 2rem;
+}
+nav {
+  background-color: #ededed;
+  height: 2rem;
+}
+nav button {
+  height: 100%;
+  margin: 0 1rem;
+  border: none;
+}
+nav button:hover {
+  color: #8e1f42;
+  background-color: #e4d9dc;
+  border-bottom: solid #8e1f42 0.2rem;
+}
