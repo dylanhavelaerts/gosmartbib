@@ -1,7 +1,7 @@
 package edu.ap.testbackend.util;
 
 import edu.ap.testbackend.entities.BookEntity;
-import edu.ap.testbackend.repository.BookRepository;
+import edu.ap.testbackend.repositories.BookRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 

@@ -1,7 +1,7 @@
-package edu.ap.testbackend.controller;
+package edu.ap.testbackend.controllers;
 
 import edu.ap.testbackend.entities.TestMessage;
-import edu.ap.testbackend.repository.TextMessageRepository;
+import edu.ap.testbackend.repositories.TextMessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
