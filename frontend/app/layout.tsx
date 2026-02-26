@@ -30,6 +30,13 @@ export default function RootLayout({
         <header>
       <img src="https://helpdesk.go-antwerpen.be/logo.php" className="goLogo" />
     </header>
+    <nav>
+      <button>Startpagina</button>
+      <button>Catalogus</button>
+      <button>Mijn uitleningen</button>
+      <button>Mijn leeslijst & favorieten</button>
+      </nav>
+      <div id="backgroundImage"></div>
         {children}
       </body>
     </html>
