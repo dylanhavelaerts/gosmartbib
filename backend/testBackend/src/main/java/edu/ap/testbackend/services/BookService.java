@@ -22,6 +22,20 @@ public class BookService {
                 .toList();
     }
 
+    public BookDTO getBookById(Long id) throws Exception {
+        return bookRepository.findById(id)
+                .map(this::toDTO)
+                .orElseThrow(() -> new Exception("Book with this id could not be found"));
+    }
+
+    public void deleteBook(Long id) throws Exception {
+        BookEntity book = bookRepository.findById(id).orElseThrow(() -> new Exception("Book with this id could not be found"));
+
+        bookRepository.delete(book);
+
+    }
+
+
     private BookDTO toDTO(BookEntity book) {
         return new BookDTO(
                 book.getId(),
