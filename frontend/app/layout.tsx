@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,15 +29,20 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <header>
-      <img src="https://helpdesk.go-antwerpen.be/logo.php" className="goLogo" />
-    </header>
-    <nav>
-      <button>Startpagina</button>
-      <button>Catalogus</button>
-      <button>Mijn uitleningen</button>
-      <button>Mijn leeslijst & favorieten</button>
-      </nav>
-      <div id="backgroundImage"></div>
+          <img
+            src="https://helpdesk.go-antwerpen.be/logo.php"
+            className="goLogo"
+          />
+        </header>
+        <nav>
+          <button>Startpagina</button>
+          <Link href="/catalog">
+            <button>Catalogus</button>
+          </Link>
+          <button>Mijn uitleningen</button>
+          <button>Mijn leeslijst & favorieten</button>
+        </nav>
+        <div id="backgroundImage"></div>
         {children}
       </body>
     </html>
