@@ -11,3 +11,17 @@ header {
   background-color: white;
   margin: 0.5rem 2rem;
 }
+nav {
+  background-color: #ededed;
+  height: 2rem;
+}
+nav button {
+  height: 100%;
+  margin: 0 1rem;
+  border: none;
+}
+nav button:hover {
+  color: #8e1f42;
+  background-color: #e4d9dc;
+  border-bottom: solid #8e1f42 0.2rem;
+}
