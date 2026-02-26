@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 export default function Home() {
   return (
     <>
-      <main>
-      </main>
-      <footer>
-      </footer></>
-  )
+      <main></main>
+      <footer></footer>
+    </>
+  );
 }
