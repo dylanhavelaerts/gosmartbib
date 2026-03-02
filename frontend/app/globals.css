@@ -10,16 +10,21 @@ header {
 .goLogo {
   height: 70%;
   background-color: white;
-  margin: 0.5rem 2rem;
+  margin: 0.5rem clamp(0.75rem, 3vw, 2rem);
 }
 nav {
   background-color: #ededed;
-  height: 2rem;
+  min-height: 2rem;
+  display: flex;
+  flex-wrap: wrap;
 }
 nav button {
-  height: 100%;
   margin: 0 1rem;
   border: none;
+  padding: 0.4rem 0;
+  background: none;
+  font-size: clamp(0.75rem, 2vw, 1rem);
+  white-space: nowrap;
 }
 nav button:hover {
   color: #8e1f42;
@@ -39,7 +44,19 @@ nav button:hover {
   inset: 0;
 }
 main {
-  padding: 2rem;
+  padding: 1rem;
+}
+
+@media (min-width: 768px) {
+  main {
+    padding: 1.5rem 2rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  main {
+    padding: 2rem 3rem;
+  }
 }
 #searchBox {
   display: grid;

@@ -1,20 +1,23 @@
-#bookCard {
-  width: 160px;
-  border-radius: 12px;
+.bookCard {
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+  border: 1.2px solid #8a1d40;
   background-color: #fff;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
-  padding: 12px;
+  padding: clamp(8px, 2vw, 12px);
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-sizing: border-box;
 }
 
-#bookCover {
+.bookCover {
   width: 100%;
-  height: 220px;
+  aspect-ratio: 2 / 3;
 }
 
-#bookCover img {
+.bookCover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -22,9 +25,15 @@
   display: block;
 }
 
-#bookTitle {
-  font-size: 14px;
+.bookTitle {
+  font-size: clamp(12px, 2.5vw, 14px);
   font-weight: 700;
   margin: 0;
   color: #1a1a1a;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2lh;
 }
