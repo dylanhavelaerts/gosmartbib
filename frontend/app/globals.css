@@ -16,15 +16,21 @@ nav {
   background-color: #ededed;
   min-height: 2rem;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.25rem clamp(0.5rem, 2vw, 1.5rem);
+  gap: clamp(0.25rem, 2vw, 1.5rem);
 }
+
 nav button {
-  margin: 0 1rem;
+  margin: 0;
   border: none;
-  padding: 0.4rem 0;
+  padding: 0.6rem 0;
   background: none;
-  font-size: clamp(0.75rem, 2vw, 1rem);
+  font-size: clamp(0.65rem, 1.5vw, 1rem);
   white-space: nowrap;
+  cursor: pointer;
 }
 nav button:hover {
   color: #8e1f42;
