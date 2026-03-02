@@ -11,9 +11,19 @@ header {
   height: 70%;
   background-color: white;
   margin: 0.5rem clamp(0.75rem, 3vw, 2rem);
+  margin: 0.5rem clamp(0.75rem, 3vw, 2rem);
 }
 nav {
   background-color: #ededed;
+  min-height: 2rem;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.25rem clamp(0.5rem, 2vw, 1.5rem);
+  gap: clamp(0.25rem, 2vw, 1.5rem);
+}
+
   min-height: 2rem;
   display: flex;
   flex-wrap: nowrap;
@@ -26,7 +36,13 @@ nav {
 
 nav button {
   margin: 0;
+  margin: 0;
   border: none;
+  padding: 0.6rem 0;
+  background: none;
+  font-size: clamp(0.65rem, 1.5vw, 1rem);
+  white-space: nowrap;
+  cursor: pointer;
   padding: 0.6rem 0;
   background: none;
   font-size: clamp(0.65rem, 1.5vw, 1rem);
@@ -51,6 +67,19 @@ nav button:hover {
   inset: 0;
 }
 main {
+  padding: 1rem;
+}
+
+@media (min-width: 768px) {
+  main {
+    padding: 1.5rem 2rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  main {
+    padding: 2rem 3rem;
+  }
   padding: 1rem;
 }
 

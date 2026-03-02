@@ -11,8 +11,8 @@ export default function Home() {
     <>
       <main>
         <div id="searchBox">
-          <div className="searchbar" >         
-            <input type="text" placeholder="Titel, auteur, genre, onderwerp"/>
+          <div className="searchbar">
+            <input type="text" placeholder="Titel, auteur, genre, onderwerp" />
             <button id="searchButton">🔎︎</button>
           </div>
           <button className="semitransparentButton">Bekijk Catalogus →</button>

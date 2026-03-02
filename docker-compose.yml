@@ -20,9 +20,9 @@ services:
     container_name: backend
     restart: on-failure
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/testproject
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: Root
+      SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/gosmartlib
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
@@ -40,7 +40,11 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: Root
-      MYSQL_DATABASE: testproject
+      MYSQL_DATABASE: gosmartlib
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    ports:
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
