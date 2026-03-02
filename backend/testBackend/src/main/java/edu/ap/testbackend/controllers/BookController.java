@@ -1,6 +1,8 @@
 package edu.ap.testbackend.controllers;
 
+import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,13 +21,16 @@ public class BookController {
     public List<BookDTO> getBooks() {
         return bookService.getAllBooks();
     }
-    @GetMapping ("get/{id}")
-        public BookDTO getBookByid(@PathVariable Long id) throws Exception {
+
+    @GetMapping("/get/{id}")
+    public BookDTO getBookById(@PathVariable Long id) throws BookNotFoundException {
         return bookService.getBookById(id);
-        }
+    }
+
     @DeleteMapping("/delete/{id}")
-    public void deleteBook(@PathVariable Long id) throws Exception {
+    public ResponseEntity<Void> deleteBook(@PathVariable Long id) throws BookNotFoundException {
         bookService.deleteBook(id);
+        return ResponseEntity.noContent().build();
 
     }
 }

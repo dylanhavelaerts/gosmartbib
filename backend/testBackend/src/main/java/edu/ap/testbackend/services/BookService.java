@@ -2,9 +2,11 @@ package edu.ap.testbackend.services;
 
 import edu.ap.testbackend.controllers.BookDTO;
 import edu.ap.testbackend.entities.BookEntity;
+import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.repositories.BookRepository;
 import org.springframework.stereotype.Service;
 
+import java.awt.print.Book;
 import java.util.List;
 
 @Service
@@ -22,14 +24,14 @@ public class BookService {
                 .toList();
     }
 
-    public BookDTO getBookById(Long id) throws Exception {
+    public BookDTO getBookById(Long id) throws BookNotFoundException {
         return bookRepository.findById(id)
                 .map(this::toDTO)
-                .orElseThrow(() -> new Exception("Book with this id could not be found"));
+                .orElseThrow(() -> new BookNotFoundException(id));
     }
 
-    public void deleteBook(Long id) throws Exception {
-        BookEntity book = bookRepository.findById(id).orElseThrow(() -> new Exception("Book with this id could not be found"));
+    public void deleteBook(Long id) throws BookNotFoundException {
+        BookEntity book = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException(id));
 
         bookRepository.delete(book);
 

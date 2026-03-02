@@ -24,7 +24,7 @@ public class DataSeeding implements CommandLineRunner {
                     "Addison-Wesley",
                     "A guide to pragmatic programming practices.",
                     352, List.of("Programming", "Software Engineering"),
-                    "https://example.com/pragmatic.jpg",
+                    "https://example.com/pragmatic.jpg", //https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNPy-JTtgmWLjvvPMW-M2B2gpYF4ask9y5eg&s
                     "en", 4.5
             );
 
