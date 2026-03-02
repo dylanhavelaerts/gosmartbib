@@ -17,7 +17,7 @@ export default function Home() {
 
   return (
     <main>
-      <h1>Catalog</h1>
+      <h1>Catalogus</h1>
       <ul>
         <li
           className={activeTab === "Catalogus" ? "active" : ""}
