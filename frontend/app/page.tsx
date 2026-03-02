@@ -13,8 +13,6 @@ export default function Home() {
           </div>
           <button className="semitransparentButton">Bekijk Catalogus →</button>
         </div>
-      </main>
-      <footer>
-      </footer></>
+      </main></>
   )
 }

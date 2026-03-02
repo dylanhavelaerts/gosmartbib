@@ -2,6 +2,7 @@ body {
   padding: 0;
   margin: 0;
   position: relative;
+  overflow-x: hidden;
 }
 header {
   height: 4rem;
@@ -18,7 +19,7 @@ nav {
 }
 nav button {
   height: 100%;
-  margin: 0 1rem;
+  margin: 0 0.5rem;
   border: none;
 }
 nav button:hover {
@@ -79,4 +80,92 @@ main {
   width: 35%;
   border-radius: 0.5rem;
   color: white;
+}
+footer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  align-items: start;
+  background-color: #ededed;
+  padding: 1rem;
+}
+footer a {
+  text-decoration: none;
+  color: black;
+}
+footer ul {
+  list-style: none;
+  padding: 0;
+}
+footer li {
+  padding-bottom: 1rem;
+}
+#contactBlock {
+  grid-column: 2/3;
+  grid-row: 1/3;
+}
+#linksBlock {
+  grid-column: 3/4;
+  grid-row: 1/3;
+}
+#socialMediaBlock {
+  display: grid;
+  grid-column: 1/2;
+  grid-row: 1/2;
+  grid-template-columns: repeat(5, 1fr);
+  width: 13rem;
+}
+.goLogoFooter {
+  width: 220px;
+  height: auto;
+  grid-column: 1/2;
+  grid-row: 2/3;
+  margin-top: -3rem;
+}
+@media (max-width: 700px) {
+  footer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  #contactBlock {
+    grid-column: 1/2;
+    grid-row: 2/3;
+  }
+  #linksBlock {
+    grid-column: 2/3;
+    grid-row: 2/3;
+  }
+  #socialMediaBlock {
+    grid-column: 1/2;
+    grid-row: 1/2;
+  }
+  .goLogoFooter {
+    grid-column: 2/3;
+    grid-row: 1/2;
+    margin-top: 2rem;
+  }
+}
+#socialMediaBlock h4 {
+  grid-column: 1/6;
+}
+.socialMediaLogo {
+  display: block;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+#instagram {
+  background: url("/Instagram-Logo.png") center / contain no-repeat;
+}
+#facebook {
+  background: url("/Facebook-Logo.png") center / contain no-repeat;
+  width: 2.3rem;
+}
+#twitter {
+  background: url("/X-Logo.png") center / contain no-repeat;
+}
+#linkedIn {
+  background: url("/LinkedIn-Logo.png") center / contain no-repeat;
+  width: 3rem;
+}
+#youtube {
+  background: url("/Youtube-Logo.png") center / contain no-repeat;
 }
