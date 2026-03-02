@@ -5,8 +5,9 @@ import { Book } from "../interfaces/Book";
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
-  //houdt bij welk boek de gebruiker wil verwijderen -> als dit op null staat is er geen boek geselecteerd en is de extra modal gesloten
-  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
+  //houdt bij welk boeken de gebruiker wil verwijderen -> als dit op null staat is er geen boek geselecteerd en is de extra modal gesloten
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showConfirm, setShowConfirm] = useState<boolean>(false);
   //houdt bij of er een delete request bezig is -> zo ja dan wordt de delete knop uitgeschakeld
   const [deleting, setDeleting] = useState<boolean>(false);
 
@@ -16,25 +17,34 @@ export default function Home() {
       .then((data: Book[]) => setBooks(data));
   }, []);
 
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
   const tryDelete = async () => {
-    if (!bookToDelete) return;
-
     //knop uitschakelen omdat er een request bezig is
     setDeleting(true);
 
     try {
-      const res = await fetch(
-        `http://localhost:8080/catalog/delete/${bookToDelete.id}`,
-        { method: "DELETE" },
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`http://localhost:8080/catalog/delete/${id}`, {
+            method: "DELETE",
+          }),
+        ),
       );
 
-      if (res.ok) {
-        //haalt boek weg zonder full page refresh
-        setBooks((prev) => prev.filter((b) => b.id !== bookToDelete.id));
-        setBookToDelete(null);
-      } else {
-        console.log("failed to delete book: " + bookToDelete.title);
-      }
+      //haalt boek weg zonder full page refresh
+      setBooks((prev) => prev.filter((b) => !selectedIds.has(b.id)));
+      setSelectedIds(new Set());
+      setShowConfirm(false);
     } catch (error) {
       console.log(error);
     } finally {
@@ -48,19 +58,28 @@ export default function Home() {
       <ul>
         {books.map((book) => (
           <li key={book.id}>
+            <input
+              type="checkbox"
+              checked={selectedIds.has(book.id)}
+              onChange={() => toggleSelect(book.id)}
+              style={{ marginRight: "0.5rem" }}
+            />
             {book.title}
-            <button
-              onClick={() => setBookToDelete(book)}
-              style={{ marginLeft: "1rem", color: "red" }}
-            >
-              Delete book
-            </button>
           </li>
         ))}
       </ul>
+      {selectedIds.size > 0 && (
+        <button
+          onClick={() => setShowConfirm(true)}
+          disabled={selectedIds.size === 0}
+          style={{ background: "red", color: "white" }}
+        >
+          wil je deze {selectedIds.size} verwijderen?
+        </button>
+      )}
 
       {/* modal wordt alleen gerenderd als bookToDelete niet null is */}
-      {bookToDelete && (
+      {showConfirm && (
         <div
           style={{
             position: "fixed",
@@ -70,19 +89,25 @@ export default function Home() {
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >
-          <p>Are you sure you want me to delete </p>
-          <strong>{bookToDelete.title}</strong>?
-          <p>This action cannot be undone</p>
+          <p>Ben je zeker dat je ze wilt verwijderen </p>
+          <strong>
+            {selectedIds.size} book{selectedIds.size > 1 ? "s" : ""}
+          </strong>
+          ?<p>Deze actie is onterugkeerbaar!</p>
           <div>
             {/* bij het klikken wordt bookToDelete terug op null gezet -> modal sluit */}
-            <button onClick={() => setBookToDelete(null)} disabled={deleting}>
-              Cancel
+            <button onClick={() => setShowConfirm(false)} disabled={deleting}>
+              Ga terug
             </button>
             {/* delete-knop  wordt uitgeschakeld tijdens de request*/}
             <button
               onClick={tryDelete}
               disabled={deleting}
-              style={{ background: "red", color: "white", borderRadius: "4px" }}
+              style={{
+                background: "grey",
+                color: "white",
+                borderRadius: "4px",
+              }}
             >
               {deleting ? "deleting..." : "Confirm Delete"}
             </button>
