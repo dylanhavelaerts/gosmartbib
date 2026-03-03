@@ -10,7 +10,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("Catalogus");
 
   useEffect(() => {
-    fetch("http://localhost:8080/catalog/all")
+    fetch("http://localhost:8080/books/all")
       .then((res) => res.json())
       .then((data: Book[]) => setBooks(data));
   }, []);
