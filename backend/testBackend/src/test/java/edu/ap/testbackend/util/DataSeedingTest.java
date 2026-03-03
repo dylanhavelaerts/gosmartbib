@@ -24,7 +24,7 @@ class DataSeedingTest {
     private DataSeeding dataSeeding;
 
     @Test
-    void run_seedsWhenEmpty() {
+    void givenEmptyDatabase_whenRun_thenSeedsTwelveBooks() {
         when(bookRepository.count()).thenReturn(0L);
 
         dataSeeding.run();
@@ -35,7 +35,7 @@ class DataSeedingTest {
     }
 
     @Test
-    void run_doesNothingWhenNotEmpty() {
+    void givenDatabaseAlreadyHasData_whenRun_thenDoesNotSeed() {
         when(bookRepository.count()).thenReturn(1L);
 
         dataSeeding.run();

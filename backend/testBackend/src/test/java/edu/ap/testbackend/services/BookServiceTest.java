@@ -43,7 +43,7 @@ class BookServiceTest {
     }
 
     @Test
-    void getAllBooks_returnsCorrectDTOMapping() {
+    void givenOneBookExists_whenGetAllBooks_thenReturnsCorrectDTOMapping() {
         when(bookRepository.findAll()).thenReturn(List.of(buildBook()));
 
         List<BookDTO> result = bookService.getAllBooks();
@@ -64,7 +64,7 @@ class BookServiceTest {
     }
 
     @Test
-    void getAllBooks_returnsEmptyList_whenNoBooksExist() {
+    void givenNoBooksExist_whenGetAllBooks_thenReturnsEmptyList() {
         when(bookRepository.findAll()).thenReturn(List.of());
 
         List<BookDTO> result = bookService.getAllBooks();
@@ -74,7 +74,7 @@ class BookServiceTest {
     }
 
     @Test
-    void getAllBooks_returnsMultipleBooks() {
+    void givenMultipleBooksExist_whenGetAllBooks_thenReturnsAllBooks() {
         when(bookRepository.findAll()).thenReturn(List.of(buildBook(), buildBook()));
 
         List<BookDTO> result = bookService.getAllBooks();
@@ -84,7 +84,7 @@ class BookServiceTest {
     }
 
     @Test
-    void getAllBooks_throwsException_whenRepositoryFails() {
+    void givenRepositoryFails_whenGetAllBooks_thenThrowsException() {
         when(bookRepository.findAll()).thenThrow(new RuntimeException("Database unavailable"));
 
         assertThrows(RuntimeException.class, () -> bookService.getAllBooks());
