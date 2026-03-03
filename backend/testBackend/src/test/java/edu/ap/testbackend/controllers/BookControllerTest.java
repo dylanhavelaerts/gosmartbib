@@ -27,7 +27,7 @@ class BookControllerTest {
     }
 
     @Test
-    void getBooks_returnsExpectedDTOs() {
+    void givenBooksExist_whenGetBooks_thenReturnsExpectedDTOs() {
         List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"));
         when(bookService.getAllBooks()).thenReturn(expected);
 
@@ -38,7 +38,7 @@ class BookControllerTest {
     }
 
     @Test
-    void getBooks_returnsEmptyList_whenNoBooks() {
+    void givenNoBooksExist_whenGetBooks_thenReturnsEmptyList() {
         when(bookService.getAllBooks()).thenReturn(List.of());
 
         List<BookDTO> result = bookController.getBooks();
@@ -49,7 +49,7 @@ class BookControllerTest {
     }
 
     @Test
-    void getBooks_returnsMultipleBooks() {
+    void givenMultipleBooksExist_whenGetBooks_thenReturnsAllBooks() {
         List<BookDTO> expected = List.of(
                 buildDTO(1L, "Clean Code"),
                 buildDTO(2L, "Effective Java"),
@@ -67,7 +67,7 @@ class BookControllerTest {
     }
 
     @Test
-    void getBooks_throwsException_whenServiceFails() {
+    void givenServiceFails_whenGetBooks_thenThrowsException() {
         when(bookService.getAllBooks()).thenThrow(new RuntimeException("Service unavailable"));
 
         assertThrows(RuntimeException.class, () -> bookController.getBooks());
@@ -75,7 +75,7 @@ class BookControllerTest {
     }
 
     @Test
-    void getBooks_delegatesOnlyToService_noDirectRepositoryAccess() {
+    void givenServiceIsCalled_whenGetBooks_thenDelegatesOnlyToService() {
         when(bookService.getAllBooks()).thenReturn(List.of());
 
         bookController.getBooks();

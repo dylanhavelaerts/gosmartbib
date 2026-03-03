@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/catalog")
-@CrossOrigin(origins = "*")
+@RequestMapping("/books")
+@CrossOrigin(origins = "*") // nog specifiekere CORS-instellingen toeveogen later
 public class BookController {
     private final BookService bookService;
 
