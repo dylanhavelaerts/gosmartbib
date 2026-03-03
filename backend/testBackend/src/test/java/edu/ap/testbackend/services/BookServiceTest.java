@@ -2,20 +2,20 @@ package edu.ap.testbackend.services;
 
 import edu.ap.testbackend.controllers.BookDTO;
 import edu.ap.testbackend.entities.BookEntity;
-import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.repositories.BookRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
-import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class BookServiceTest {
@@ -26,81 +26,67 @@ class BookServiceTest {
     @InjectMocks
     private BookService bookService;
 
-    private BookEntity sampleBook;
-
-    @BeforeEach
-    void setUp() {
-        sampleBook = new BookEntity(
+    private BookEntity buildBook() {
+        BookEntity book = new BookEntity(
                 "Clean Code",
                 List.of("Robert C. Martin"),
                 "Prentice Hall",
-                "A handbook of agile software craftsmanship",
-                431,
-                List.of("Programming"),
-                "http://thumbnail.url/cleancode.jpg",
+                "A handbook of agile software craftsmanship.",
+                464,
+                List.of("Programming", "Software Engineering"),
+                "https://covers.openlibrary.org/b/isbn/9780132350884-L.jpg",
                 "en",
-                4.5
+                4.7
         );
-        sampleBook.setId(1L);
-    }
-
-    // --- getBookById ---
-
-    @Test
-    void getBookById_existingId_returnsDTO() throws BookNotFoundException {
-        when(bookRepository.findById(1L)).thenReturn(Optional.of(sampleBook));
-
-        BookDTO result = bookService.getBookById(1L);
-
-        assertThat(result).isNotNull();
-        assertThat(result.id()).isEqualTo(1L);
-        assertThat(result.title()).isEqualTo("Clean Code");
+        book.setId(10L);
+        return book;
     }
 
     @Test
-    void getBookById_nonExistingId_throwsBookNotFoundException() {
-        when(bookRepository.findById(99L)).thenReturn(Optional.empty());
+    void getAllBooks_returnsCorrectDTOMapping() {
+        when(bookRepository.findAll()).thenReturn(List.of(buildBook()));
 
-        assertThatThrownBy(() -> bookService.getBookById(99L))
-                .isInstanceOf(BookNotFoundException.class)
-                .hasMessageContaining("99");
+        List<BookDTO> result = bookService.getAllBooks();
+
+        assertEquals(1, result.size());
+        BookDTO dto = result.get(0);
+        assertEquals(10L, dto.id());
+        assertEquals("Clean Code", dto.title());
+        assertEquals(List.of("Robert C. Martin"), dto.authors());
+        assertEquals("Prentice Hall", dto.publisher());
+        assertEquals(464, dto.pageCount());
+        assertEquals(List.of("Programming", "Software Engineering"), dto.categories());
+        assertEquals("https://covers.openlibrary.org/b/isbn/9780132350884-L.jpg", dto.thumbnail());
+        assertEquals("en", dto.language());
+        assertEquals(4.7, dto.rating());
+
+        verify(bookRepository, times(1)).findAll();
     }
 
     @Test
-    void getBookById_nonExistingId_repositoryFindByIdCalledOnce() {
-        when(bookRepository.findById(99L)).thenReturn(Optional.empty());
+    void getAllBooks_returnsEmptyList_whenNoBooksExist() {
+        when(bookRepository.findAll()).thenReturn(List.of());
 
-        assertThatThrownBy(() -> bookService.getBookById(99L));
+        List<BookDTO> result = bookService.getAllBooks();
 
-        verify(bookRepository, times(1)).findById(99L);
-    }
-
-    // --- deleteBook ---
-
-    @Test
-    void deleteBook_existingId_deletesSuccessfully() throws BookNotFoundException {
-        when(bookRepository.findById(1L)).thenReturn(Optional.of(sampleBook));
-
-        bookService.deleteBook(1L);
-
-        verify(bookRepository, times(1)).delete(sampleBook);
+        assertEquals(0, result.size());
+        verify(bookRepository, times(1)).findAll();
     }
 
     @Test
-    void deleteBook_nonExistingId_throwsBookNotFoundException() {
-        when(bookRepository.findById(99L)).thenReturn(Optional.empty());
+    void getAllBooks_returnsMultipleBooks() {
+        when(bookRepository.findAll()).thenReturn(List.of(buildBook(), buildBook()));
 
-        assertThatThrownBy(() -> bookService.deleteBook(99L))
-                .isInstanceOf(BookNotFoundException.class)
-                .hasMessageContaining("99");
+        List<BookDTO> result = bookService.getAllBooks();
+
+        assertEquals(2, result.size());
+        verify(bookRepository, times(1)).findAll();
     }
 
     @Test
-    void deleteBook_nonExistingId_repositoryDeleteNeverCalled() {
-        when(bookRepository.findById(99L)).thenReturn(Optional.empty());
+    void getAllBooks_throwsException_whenRepositoryFails() {
+        when(bookRepository.findAll()).thenThrow(new RuntimeException("Database unavailable"));
 
-        assertThatThrownBy(() -> bookService.deleteBook(99L));
-
-        verify(bookRepository, never()).delete(any(BookEntity.class));
+        assertThrows(RuntimeException.class, () -> bookService.getAllBooks());
     }
 }

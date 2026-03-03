@@ -1,0 +1,112 @@
+#bookList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  #bookList {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  #bookList {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2rem;
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  #bookList {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2rem;
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 768px) {
+  #bookList {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  #bookList {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2rem;
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  #bookList {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2rem;
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 768px) {
+  #bookList {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  #bookList {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2.5rem;
+    padding: 2.5rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  #bookList {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3rem;
+    padding: 3rem;
+  }
+}
+
+main h1 {
+  font-size: clamp(20px, 1.5vw, 16px);
+  color: #c0392b;
+  font-weight: 500;
+  padding: clamp(8px, 2vw, 16px);
+  margin: 0;
+}
+
+main ul {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0 clamp(8px, 2vw, 16px);
+  border-bottom: 1px solid #ddd;
+  gap: 0;
+}
+
+main ul li {
+  padding: clamp(6px, 1.5vw, 10px) clamp(10px, 2vw, 16px);
+  font-size: clamp(16px, 1.5vw, 14px);
+  cursor: pointer;
+  color: #333;
+  white-space: nowrap;
+}
+
+main ul li.active {
+  border-bottom: 2px solid #c0392b;
+  color: #c0392b;
+  margin-bottom: -1px;
+}
