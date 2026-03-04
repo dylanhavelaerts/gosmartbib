@@ -3,8 +3,6 @@ services:
     build: ./frontend
     container_name: frontend
     restart: unless-stopped
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost/api
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`localhost`)"
@@ -23,6 +21,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/gosmartlib
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: admin
+      SERVER_SERVLET_CONTEXT_PATH: /api
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
@@ -52,8 +51,7 @@ services:
 
 networks:
   proxy:
-    name: proxy
-    driver: bridge
+    external: true
   backend:
     name: backend
     driver: bridge

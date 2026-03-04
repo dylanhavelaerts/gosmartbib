@@ -8,18 +8,21 @@ import "./bookList.css";
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [activeTab, setActiveTab] = useState("Catalogus");
+
   //houdt bij welk boeken de gebruiker wil verwijderen -> als dit op null staat is er geen boek geselecteerd en is de extra modal gesloten
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  //toont bevestings modal wanneer true -> vanaf dat er boeken geselcteerd zijn
   const [showConfirm, setShowConfirm] = useState<boolean>(false);
   //houdt bij of er een delete request bezig is -> zo ja dan wordt de delete knop uitgeschakeld
   const [deleting, setDeleting] = useState<boolean>(false);
 
   useEffect(() => {
-    fetch("http://localhost:8080/books/all")
+    fetch(`/api/books/all`)
       .then((res) => res.json())
       .then((data: Book[]) => setBooks(data));
   }, []);
 
+  //voegt een boek toe aan de selectie die verwijderd moet worden (selectedIds) als deze er al in zit wordt het boek verwijdert uit de selectie
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -39,7 +42,7 @@ export default function Home() {
     try {
       await Promise.all(
         Array.from(selectedIds).map((id) =>
-          fetch(`http://localhost:8080/books/book/${id}`, {
+          fetch(`/api/books/book/${id}`, {
             method: "DELETE",
           }),
         ),
@@ -90,7 +93,7 @@ export default function Home() {
         ))}
       </div>
 
-      {/* modal wordt alleen gerenderd als bookToDelete niet null is */}
+      {/* modal wordt alleen gerenderd als showConfirm true is*/}
       {showConfirm && (
         <div className="modalOverlay">
           <div className="modalBox">
@@ -98,7 +101,7 @@ export default function Home() {
             <p>Deze actie is onterugkeerbaar!</p>
 
             <div>
-              {/* bij het klikken wordt bookToDelete terug op null gezet -> modal sluit */}
+              {/* bij klikken sluit de modal */}
               <button onClick={() => setShowConfirm(false)} disabled={deleting}>
                 Ga terug
               </button>
