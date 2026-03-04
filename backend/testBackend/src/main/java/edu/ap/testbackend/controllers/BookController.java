@@ -22,7 +22,7 @@ public class BookController {
         return bookService.getAllBooks();
     }
 
-    @GetMapping("/get/{id}")
+    @GetMapping("/book/{id}")
     public BookDTO getBookById(@PathVariable Long id) throws BookNotFoundException {
         return bookService.getBookById(id);
     }
