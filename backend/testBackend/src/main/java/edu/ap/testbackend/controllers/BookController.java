@@ -22,11 +22,19 @@ public class BookController {
         return bookService.getAllBooks();
     }
 
+    /**
+     * Ontvangt het id via het URL-pad en geeft dit door aan de service.
+     * Geeft de bijhorende BookDTO terug.
+     */
     @GetMapping("/book/{id}")
     public BookDTO getBookById(@PathVariable Long id) throws BookNotFoundException {
         return bookService.getBookById(id);
     }
 
+    /**
+     * Ontvangt het id via het URL-pad en vraagt de service om het boek te verwijderen.
+     * Geeft een 204 No Content response terug bij succes.
+     */
     @DeleteMapping("/book/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) throws BookNotFoundException {
         bookService.deleteBook(id);

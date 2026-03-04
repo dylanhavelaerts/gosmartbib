@@ -6,7 +6,6 @@ import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.repositories.BookRepository;
 import org.springframework.stereotype.Service;
 
-import java.awt.print.Book;
 import java.util.List;
 
 @Service
@@ -24,12 +23,21 @@ public class BookService {
                 .toList();
     }
 
+    /**
+     * Zoekt een boek op via het id in de database.
+     * Als het gevonden wordt, wordt het omgezet naar een DTO en teruggegeven.
+     * Als het niet gevonden wordt, gooit het een BookNotFoundException met het id.
+     */
     public BookDTO getBookById(Long id) throws BookNotFoundException {
         return bookRepository.findById(id)
                 .map(this::toDTO)
                 .orElseThrow(() -> new BookNotFoundException(id));
     }
-
+    /**
+     * Zoekt een boek op via het id.
+     * Als het niet gevonden wordt, gooit het een BookNotFoundException.
+     * Als het gevonden wordt, wordt het verwijderd uit de database.
+     */
     public void deleteBook(Long id) throws BookNotFoundException {
         BookEntity book = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException(id));
 
