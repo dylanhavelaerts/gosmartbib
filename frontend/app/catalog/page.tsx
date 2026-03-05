@@ -61,6 +61,15 @@ export default function Home() {
   };
   return (
     <main>
+      <div className="filterSection">
+        <div className="catalogSearchbar">
+          <input type="text" placeholder="Titel, auteur, genre, onderwerp" />
+          <button id="searchButton" aria-label="Zoeken">
+            🔎︎
+          </button>
+        </div>
+      </div>
+
       <h1>Catalogus</h1>
       <ul>
         <li
