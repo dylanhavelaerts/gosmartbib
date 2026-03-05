@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/catalog")
+@RequestMapping("/books")
 @CrossOrigin(origins = "*")
 public class BookController {
     private final BookService bookService;
@@ -22,4 +22,10 @@ public class BookController {
     public List<BookDTO> getBooks() {
         return bookService.getAllBooks();
     }
+
+    @GetMapping("/spotlight")
+    public List<BookDTO> getBooksInSpotlight() {
+        return bookService.getAllBooksInSpotlight();
+    }
+
 }

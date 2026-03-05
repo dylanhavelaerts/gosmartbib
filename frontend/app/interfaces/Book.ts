@@ -9,4 +9,5 @@ export interface Book {
   thumbnail: string;
   language: string;
   rating: number;
+  spotlight: boolean;
 }

@@ -22,6 +22,13 @@ public class BookService {
                 .toList();
     }
 
+    public List<BookDTO> getAllBooksInSpotlight() {
+        return bookRepository.findTop4BySpotlightTrueOrderByIdDesc()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
     private BookDTO toDTO(BookEntity book) {
         return new BookDTO(
                 book.getId(),
@@ -33,7 +40,6 @@ public class BookService {
                 book.getCategories(),
                 book.getThumbnail(),
                 book.getLanguage(),
-                book.getRating()
-        );
+                book.getRating());
     }
 }

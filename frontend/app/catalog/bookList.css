@@ -9,54 +9,6 @@
 
 @media (min-width: 768px) {
   #bookList {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
-    padding: 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  #bookList {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 2rem;
-    padding: 2rem;
-  }
-}
-
-@media (min-width: 1400px) {
-  #bookList {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 2rem;
-    padding: 2rem;
-  }
-}
-
-@media (min-width: 768px) {
-  #bookList {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
-    padding: 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  #bookList {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 2rem;
-    padding: 2rem;
-  }
-}
-
-@media (min-width: 1400px) {
-  #bookList {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 2rem;
-    padding: 2rem;
-  }
-}
-
-@media (min-width: 768px) {
-  #bookList {
     grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
     padding: 2rem;
