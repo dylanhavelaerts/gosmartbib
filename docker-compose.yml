@@ -1,4 +1,36 @@
 services:
+  traefik:
+    image: traefik:v3.6.7
+    container_name: traefik
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/letsencrypt:/letsencrypt
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=proxy"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=s149186@ap.be"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard.gosmartbib.tech`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.service=api@internal"
+    networks:
+      - proxy
+
   frontend:
     build: ./frontend
     container_name: frontend
@@ -24,7 +56,6 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/gosmartlib
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: admin
-      SERVER_SERVLET_CONTEXT_PATH: /api
       SERVER_SERVLET_CONTEXT_PATH: /api
     labels:
       - "traefik.enable=true"
@@ -56,7 +87,8 @@ services:
 
 networks:
   proxy:
-    external: true
+    name: proxy
+    driver: bridge
   backend:
     name: backend
     driver: bridge
