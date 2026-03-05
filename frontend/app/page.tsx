@@ -13,8 +13,13 @@ export default function Home() {
           </div>
           <button className="semitransparentButton">Bekijk Catalogus →</button>
         </div>
+<<<<<<< HEAD
       </main>
       <footer></footer>
     </>
   );
+=======
+      </main></>
+  )
+>>>>>>> origin/feature-13-dashboard_ontwerp
 }
