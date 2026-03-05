@@ -1,10 +1,9 @@
 package edu.ap.testbackend.controllers;
 
+import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,5 +20,25 @@ public class BookController {
     @GetMapping("/all")
     public List<BookDTO> getBooks() {
         return bookService.getAllBooks();
+    }
+
+    /**
+     * Ontvangt het id via het URL-pad en geeft dit door aan de service.
+     * Geeft de bijhorende BookDTO terug.
+     */
+    @GetMapping("/book/{id}")
+    public BookDTO getBookById(@PathVariable Long id) throws BookNotFoundException {
+        return bookService.getBookById(id);
+    }
+
+    /**
+     * Ontvangt het id via het URL-pad en vraagt de service om het boek te verwijderen.
+     * Geeft een 204 No Content response terug bij succes.
+     */
+    @DeleteMapping("/book/{id}")
+    public ResponseEntity<Void> deleteBook(@PathVariable Long id) throws BookNotFoundException {
+        bookService.deleteBook(id);
+        return ResponseEntity.noContent().build();
+
     }
 }

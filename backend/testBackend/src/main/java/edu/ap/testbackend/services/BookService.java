@@ -2,6 +2,7 @@ package edu.ap.testbackend.services;
 
 import edu.ap.testbackend.controllers.BookDTO;
 import edu.ap.testbackend.entities.BookEntity;
+import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.repositories.BookRepository;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +16,6 @@ public class BookService {
         this.bookRepository = bookRepository;
     }
 
-    /**
-     * Haalt alle boeken op uit de database, converteert ze naar BookDTO's en retourneert ze als een lijst
-     * @return een lijst van BookDTO's die alle boeken in de database vertegenwoordigen
-     */
     public List<BookDTO> getAllBooks() {
         return bookRepository.findAll()
                 .stream()
@@ -26,12 +23,29 @@ public class BookService {
                 .toList();
     }
 
-
     /**
-     * Converteert een BookEntity naar een BookDTO
-     * @param book de BookEntity die geconverteerd moet worden
-     * @return een BookDTO met dezelfde gegevens als de BookEntity
+     * Zoekt een boek op via het id in de database.
+     * Als het gevonden wordt, wordt het omgezet naar een DTO en teruggegeven.
+     * Als het niet gevonden wordt, gooit het een BookNotFoundException met het id.
      */
+    public BookDTO getBookById(Long id) throws BookNotFoundException {
+        return bookRepository.findById(id)
+                .map(this::toDTO)
+                .orElseThrow(() -> new BookNotFoundException(id));
+    }
+    /**
+     * Zoekt een boek op via het id.
+     * Als het niet gevonden wordt, gooit het een BookNotFoundException.
+     * Als het gevonden wordt, wordt het verwijderd uit de database.
+     */
+    public void deleteBook(Long id) throws BookNotFoundException {
+        BookEntity book = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException(id));
+
+        bookRepository.delete(book);
+
+    }
+
+
     private BookDTO toDTO(BookEntity book) {
         return new BookDTO(
                 book.getId(),

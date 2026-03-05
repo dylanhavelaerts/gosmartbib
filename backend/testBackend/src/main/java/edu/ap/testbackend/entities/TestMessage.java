@@ -10,8 +10,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
+
 public class TestMessage {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
