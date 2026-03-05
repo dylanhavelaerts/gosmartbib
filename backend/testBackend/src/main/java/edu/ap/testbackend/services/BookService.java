@@ -29,6 +29,13 @@ public class BookService {
                 .toList();
     }
 
+    public List<BookDTO> getLatestBooks() {
+        return bookRepository.findTop4ByOrderByIdDesc()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
     private BookDTO toDTO(BookEntity book) {
         return new BookDTO(
                 book.getId(),

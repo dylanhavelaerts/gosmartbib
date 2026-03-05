@@ -10,4 +10,6 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
 
     List<BookEntity> findTop4BySpotlightTrueOrderByIdDesc();
 
+    List<BookEntity> findTop4ByOrderByIdDesc();
+
 }

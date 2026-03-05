@@ -1,8 +1,7 @@
 #bookList {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  padding: 1rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
   max-width: 1400px;
   margin: 0 auto;
   height: auto;
@@ -15,7 +14,7 @@
   background-color: transparent;
 }
 #dashboard {
-  padding: 1rem 0;
+  padding: 0rem;
 }
 .selectedCategory {
   color: #8e1f42;
@@ -23,20 +22,9 @@
   border-bottom: solid #8e1f42 0.2rem;
 }
 main {
-  padding: 1rem;
+  padding: 1rem 2rem;
 }
 
-@media (min-width: 768px) {
-  main {
-    padding: 1.5rem 2rem;
-  }
-}
-
-@media (min-width: 1200px) {
-  main {
-    padding: 2rem 3rem;
-  }
-}
 #searchBox {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
@@ -54,8 +42,29 @@ main {
   background-color: #ece6f0;
   border-radius: 1rem;
   padding: 1.3rem;
-  width: 85%;
+  width: 100%;
   display: flex;
+}
+
+@media (min-width: 768px) {
+  main {
+    padding: 1.5rem 2rem;
+  }
+  #bookList {
+    gap: 1rem;
+  }
+  #dashboard {
+    padding: 1rem;
+  }
+  .searchbar {
+    width: 85%;
+  }
+}
+
+@media (min-width: 1200px) {
+  main {
+    padding: 2rem 3rem;
+  }
 }
 .searchbar input {
   background-color: transparent;
@@ -68,11 +77,14 @@ main {
   border: none;
   padding: 0.5rem;
 }
+Link {
+  width: 35%;
+}
 .semitransparentButton {
   background-color: #922648;
   opacity: 0.9;
   padding: 0.5rem;
-  width: 35%;
+  width: 100%;
   border-radius: 0.5rem;
   color: white;
 }
@@ -86,6 +98,7 @@ main {
 
 @media (min-width: 1024px) {
   #bookList {
+    grid-template-columns: repeat(4, 1fr);
     gap: 2.5rem;
     padding: 2.5rem;
   }

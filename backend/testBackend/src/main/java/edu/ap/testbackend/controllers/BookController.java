@@ -28,4 +28,9 @@ public class BookController {
         return bookService.getAllBooksInSpotlight();
     }
 
+    @GetMapping("/latest")
+    public List<BookDTO> getLatestBooks() {
+        return bookService.getLatestBooks();
+    }
+
 }

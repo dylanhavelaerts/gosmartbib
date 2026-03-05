@@ -40,16 +40,18 @@ nav button:hover {
   border-bottom: solid #8e1f42 0.2rem;
 }
 #backgroundImage {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
   background-image: url("/backgroundImage.jpg");
-  background-size: cover;
-  height: 100vh;
+  background-repeat: repeat; /* both directions */
+  background-size: 500px auto; /* keep original tile size */
+  background-position: top left;
+
   filter: grayscale(100%);
   opacity: 0.2;
-  z-index: -1;
-  position: absolute;
-  background-position: center;
   pointer-events: none;
-  inset: 0;
 }
 footer {
   display: grid;
@@ -111,6 +113,32 @@ footer li {
   }
   .goLogoFooter {
     grid-column: 2/3;
+    grid-row: 1/2;
+    margin-top: 2rem;
+  }
+}
+@media (max-width: 500px) {
+  a {
+    font-size: 15px;
+  }
+  p {
+    font-size: 15px;
+  }
+  #contactBlock {
+    grid-column: 1/2;
+    grid-row: 3/4;
+  }
+  #linksBlock {
+    grid-column: 2/3;
+    grid-row: 3/4;
+    margin-left: -1rem;
+  }
+  #socialMediaBlock {
+    grid-column: 1/3;
+    grid-row: 2/3;
+  }
+  .goLogoFooter {
+    grid-column: 1/3;
     grid-row: 1/2;
     margin-top: 2rem;
   }
