@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class BookService {
@@ -130,11 +131,21 @@ public class BookService {
      */
     public void deleteBook(Long id) throws BookNotFoundException {
         BookEntity book = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException(id));
-
         bookRepository.delete(book);
-
     }
 
+    public List<BookDTO> search(String query) {
+        if (query == null || query.isBlank()) {
+            return bookRepository.findAll()
+                    .stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
+        return bookRepository.searchByTitleOrAuthor(query.trim())
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
 
     private BookDTO toDTO(BookEntity book) {
         return new BookDTO(
