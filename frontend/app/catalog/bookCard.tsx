@@ -1,4 +1,5 @@
 import { Book } from "../interfaces/Book";
+import Link from "next/link";
 import "./bookCard.css";
 
 interface Props {
@@ -16,10 +17,12 @@ export default function BookCard({ book, isSelected, onToggle }: Props) {
         onChange={onToggle}
         className="bookCheckBox"
       />
+      <Link href={`/detailpage/${book.id}`}>
+        <div className="bookCover">
+          <img src={book.thumbnail} alt={book.title} />
+        </div>
+      </Link>
 
-      <div className="bookCover">
-        <img src={book.thumbnail} alt={book.title} />
-      </div>
       <h2 className="bookTitle">{book.title}</h2>
     </div>
   );

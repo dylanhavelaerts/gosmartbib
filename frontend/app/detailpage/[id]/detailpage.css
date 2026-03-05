@@ -1,0 +1,95 @@
+.detailPage {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.backLink {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: #8e2446;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.detailContainer {
+  display: flex;
+  gap: 3rem;
+}
+
+.detailLeft {
+  flex: 0 0 200px;
+}
+
+.detailCover {
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.detailUnder {
+  margin-top: 1rem;
+  font-size: 14px;
+  color: #555;
+  display: flex;
+  flex-direction: column;
+}
+.bookIcon{
+    height: 16px;
+    width: 16px;
+    padding-top: 5px;
+}
+
+.detailRight {
+  flex: 1;
+}
+
+.detailTitle {
+  font-size: 1.8rem;
+  color: #1a1a1a;
+  margin: 0 0 0.25rem 0;
+  padding: 0;
+}
+
+.detailAuthors {
+  color: #555;
+  margin: 0 0 1rem 0;
+}
+
+.detailBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.badge {
+  background-color: #f0e6ea;
+  color: #8e2446;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.detailPublisher {
+  font-size: 14px;
+  color: #555;
+}
+
+
+.detailDescription h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+}
+
+.detailDescription p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+}
