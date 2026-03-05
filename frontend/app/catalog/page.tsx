@@ -17,7 +17,7 @@ export default function Home() {
   const [deleting, setDeleting] = useState<boolean>(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/all`)
       .then((res) => res.json())
       .then((data: Book[]) => setBooks(data));
   }, []);
@@ -42,7 +42,7 @@ export default function Home() {
     try {
       await Promise.all(
         Array.from(selectedIds).map((id) =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`, {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}`, {
             method: "DELETE",
           }),
         ),
