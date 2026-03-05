@@ -31,32 +31,63 @@ public class BookService {
                 .toList();
     }
 
-    public BookDTO addBookByIsbn(String isbn) {
-        // Maak de API URL (indien je een API key hebt, voeg deze hier toe aan de string: + "&key=" + jeApiKey)
-        String requestUrl = googleBooksApiUrl + isbn;
+    public BookDTO searchBookByIsbn(String isbn) {
+        String url = googleBooksApiUrl + isbn;
+        GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
 
-        // Roep de Google Books API aan
+        if (response == null || response.getItems() == null || response.getItems().isEmpty()) {
+            throw new IllegalArgumentException("No book found for ISBN: " + isbn);
+        }
+
+        VolumeInfo volumeInfo = response.getItems().get(0).getVolumeInfo();
+
+        // Maak een tijdelijke BookEntity om de data netjes te structureren (maar we slaan hem NIET op)
+        BookEntity previewBook = new BookEntity();
+        previewBook.setTitle(volumeInfo.getTitle() != null ? volumeInfo.getTitle() : "Onbekende Titel");
+        previewBook.setAuthors(volumeInfo.getAuthors() != null ? volumeInfo.getAuthors() : new java.util.ArrayList<>());
+        previewBook.setPublisher(volumeInfo.getPublisher());
+        previewBook.setDescription(volumeInfo.getDescription());
+        previewBook.setPageCount(volumeInfo.getPageCount() != null ? volumeInfo.getPageCount() : 0);
+        previewBook.setCategories(volumeInfo.getCategories() != null ? volumeInfo.getCategories() : new java.util.ArrayList<>());
+        
+        if (volumeInfo.getImageLinks() != null) {
+            previewBook.setThumbnail(volumeInfo.getImageLinks().getThumbnail());
+        } else {
+            previewBook.setThumbnail("");
+        }
+        
+        previewBook.setLanguage(volumeInfo.getLanguage());
+        previewBook.setRating(volumeInfo.getAverageRating() != null ? volumeInfo.getAverageRating() : 0.0);
+
+        // Stuur de data als DTO terug naar de frontend ter controle
+        return toDTO(previewBook);
+    }
+
+    public BookDTO addBookByIsbn(String isbn) {
+        String requestUrl = googleBooksApiUrl + isbn;
         GoogleBooksResponse response = restTemplate.getForObject(requestUrl, GoogleBooksResponse.class);
 
-        // Controleer of er een boek is gevonden
         if (response != null && response.getItems() != null && !response.getItems().isEmpty()) {
             VolumeInfo volumeInfo = response.getItems().get(0).getVolumeInfo();
 
-            // Maak een nieuwe BookEntity aan op basis van de Google data
             BookEntity newBook = new BookEntity();
-            newBook.setTitle(volumeInfo.getTitle() != null ? volumeInfo.getTitle() : "Unknown Title");
-            newBook.setAuthors(volumeInfo.getAuthors());
+            newBook.setTitle(volumeInfo.getTitle() != null ? volumeInfo.getTitle() : "Onbekende Titel");
+            
+            // Veilige checks toevoegen, net als in de search functie!
+            newBook.setAuthors(volumeInfo.getAuthors() != null ? volumeInfo.getAuthors() : new java.util.ArrayList<>());
             newBook.setPublisher(volumeInfo.getPublisher());
             newBook.setDescription(volumeInfo.getDescription());
-            newBook.setPageCount(volumeInfo.getPageCount());
-            newBook.setCategories(volumeInfo.getCategories());
+            newBook.setPageCount(volumeInfo.getPageCount() != null ? volumeInfo.getPageCount() : 0);
+            newBook.setCategories(volumeInfo.getCategories() != null ? volumeInfo.getCategories() : new java.util.ArrayList<>());
             
             if (volumeInfo.getImageLinks() != null) {
                 newBook.setThumbnail(volumeInfo.getImageLinks().getThumbnail());
+            } else {
+                newBook.setThumbnail("");
             }
             
             newBook.setLanguage(volumeInfo.getLanguage());
-            newBook.setRating(volumeInfo.getAverageRating());
+            newBook.setRating(volumeInfo.getAverageRating() != null ? volumeInfo.getAverageRating() : 0.0);
 
             // Sla op in de database
             BookEntity savedBook = bookRepository.save(newBook);

@@ -35,4 +35,17 @@ public class BookController {
             return new ResponseEntity<>("An error occurred while fetching the book.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/search/{isbn}")
+    public ResponseEntity<?> searchBookByIsbn(@PathVariable String isbn) {
+        try {
+            // Zoek het boek op zonder op te slaan
+            BookDTO bookPreview = bookService.searchBookByIsbn(isbn);
+            return new ResponseEntity<>(bookPreview, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>("An error occurred while fetching the book.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

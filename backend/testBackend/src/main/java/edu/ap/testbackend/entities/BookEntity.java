@@ -19,6 +19,7 @@ public class BookEntity {
     @ElementCollection
     private List<String> authors;
     private String publisher;
+    @Column(columnDefinition = "TEXT")
     private String description;
     private Integer pageCount;
     @ElementCollection
