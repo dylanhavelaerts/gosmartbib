@@ -90,8 +90,7 @@ services:
 
 networks:
   proxy:
-    name: proxy
-    driver: bridge
+    external: true
   backend:
     name: backend
     driver: bridge

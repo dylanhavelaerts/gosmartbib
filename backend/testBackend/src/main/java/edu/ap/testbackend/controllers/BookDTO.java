@@ -12,5 +12,7 @@ public record BookDTO(
         List<String> categories,
         String thumbnail,
         String language,
-        Double rating
+        Double rating,
+        String isbn,
+        Integer publishedYear
 ) {}
