@@ -41,7 +41,6 @@ public class BookService {
 
         VolumeInfo volumeInfo = response.getItems().get(0).getVolumeInfo();
 
-        // Maak een tijdelijke BookEntity om de data netjes te structureren (maar we slaan hem NIET op)
         BookEntity previewBook = new BookEntity();
         previewBook.setTitle(volumeInfo.getTitle() != null ? volumeInfo.getTitle() : "Onbekende Titel");
         previewBook.setAuthors(volumeInfo.getAuthors() != null ? volumeInfo.getAuthors() : new java.util.ArrayList<>());
@@ -59,7 +58,9 @@ public class BookService {
         previewBook.setLanguage(volumeInfo.getLanguage());
         previewBook.setRating(volumeInfo.getAverageRating() != null ? volumeInfo.getAverageRating() : 0.0);
 
-        // Stuur de data als DTO terug naar de frontend ter controle
+        previewBook.setIsbn(isbn);
+        previewBook.setPublishedYear(extractYear(volumeInfo.getPublishedDate()));
+
         return toDTO(previewBook);
     }
 
@@ -73,7 +74,7 @@ public class BookService {
             BookEntity newBook = new BookEntity();
             newBook.setTitle(volumeInfo.getTitle() != null ? volumeInfo.getTitle() : "Onbekende Titel");
             
-            // Veilige checks toevoegen, net als in de search functie!
+            
             newBook.setAuthors(volumeInfo.getAuthors() != null ? volumeInfo.getAuthors() : new java.util.ArrayList<>());
             newBook.setPublisher(volumeInfo.getPublisher());
             newBook.setDescription(volumeInfo.getDescription());
@@ -89,14 +90,26 @@ public class BookService {
             newBook.setLanguage(volumeInfo.getLanguage());
             newBook.setRating(volumeInfo.getAverageRating() != null ? volumeInfo.getAverageRating() : 0.0);
 
-            // Sla op in de database
+            newBook.setIsbn(isbn);
+            newBook.setPublishedYear(extractYear(volumeInfo.getPublishedDate()));
+
             BookEntity savedBook = bookRepository.save(newBook);
             
-            // Return de DTO representatie
             return toDTO(savedBook);
         } else {
             throw new IllegalArgumentException("No book found for ISBN: " + isbn);
         }
+    }
+
+    private Integer extractYear(String publishedDate) {
+        if (publishedDate != null && publishedDate.length() >= 4) {
+            try {
+                return Integer.parseInt(publishedDate.substring(0, 4));
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private BookDTO toDTO(BookEntity book) {
@@ -110,7 +123,10 @@ public class BookService {
                 book.getCategories(),
                 book.getThumbnail(),
                 book.getLanguage(),
-                book.getRating()
+                book.getRating(),
+                book.getIsbn(),       
+                book.getPublishedYear()
         );
     }
+    
 }

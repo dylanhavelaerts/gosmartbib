@@ -9,4 +9,6 @@ export interface Book {
   thumbnail: string;
   language: string;
   rating: number;
+  isbn: string;
+  publishedYear: number;
 }

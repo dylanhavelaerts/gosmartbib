@@ -27,6 +27,8 @@ public class BookEntity {
     private String thumbnail;
     private String language;
     private Double rating;
+    private String isbn;
+    private Integer publishedYear;
 
 
     public BookEntity(){}

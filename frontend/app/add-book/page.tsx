@@ -113,6 +113,8 @@ export default function AddBookPage() {
               <p><strong>Titel:</strong> {previewBook.title}</p>
               <p><strong>Auteur(s):</strong> {previewBook.authors?.join(', ')}</p>
               <p><strong>Uitgeverij:</strong> {previewBook.publisher}</p>
+              <p><strong>Jaar van uitgave:</strong> {previewBook.publishedYear ? previewBook.publishedYear : 'Onbekend'}</p>
+              <p><strong>ISBN:</strong> {previewBook.isbn}</p>
               <p><strong>Pagina's:</strong> {previewBook.pageCount}</p>
             </div>
           </div>
