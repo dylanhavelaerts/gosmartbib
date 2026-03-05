@@ -17,7 +17,7 @@ export default function Home() {
   const [deleting, setDeleting] = useState<boolean>(false);
 
   useEffect(() => {
-    fetch(`http://localhost:8080/books/all`) // /api/books/all
+    fetch(`http://localhost:8080/books/all`)
       .then((res) => res.json())
       .then((data: Book[]) => setBooks(data));
   }, []);
@@ -43,7 +43,6 @@ export default function Home() {
       await Promise.all(
         Array.from(selectedIds).map((id) =>
           fetch(`http://localhost:8080/books/book/${id}`, {
-            // /api/books/book/${id}
             method: "DELETE",
           }),
         ),

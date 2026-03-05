@@ -15,7 +15,7 @@ export default function DetailPage({
 
   useEffect(() => {
     if (!id) return;
-    fetch(`http://localhost:8080/books/book/${id}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}`)
       .then((res) => res.json())
       .then((data: Book) => setBook(data));
   }, [id]);
