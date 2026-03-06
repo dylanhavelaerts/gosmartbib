@@ -22,7 +22,6 @@ export default function DetailPage({
 
   if (!book) return <p>Loading...</p>;
 
-  // replace your return with this:
   return (
     <main className="detailPage">
       <Link href="/catalog" className="backLink">
@@ -57,11 +56,23 @@ export default function DetailPage({
               </span>
             ))}
           </div>
-
-          <p className="detailPublisher">Uitgever: {book.publisher}</p>
           <div className="detailDescription">
             <h2>Waar gaat het over?</h2>
             <p>{book.description}</p>
+          </div>
+          <div className="detailInfoBoxes">
+            <div className="infoBox infoBoxUitgever">
+              <span className="infoBoxLabel">Uitgever</span>
+              <span className="infoBoxValue">{book.publisher}</span>
+            </div>
+            <div className="infoBox infoBoxJaar">
+              <span className="infoBoxLabel">Jaar</span>
+              <span className="infoBoxValue">{book.publishedYear}</span>
+            </div>
+          </div>
+          <div className="infoBox infoBoxFull">
+            <span className="infoBoxLabel">ISBN</span>
+            <span className="infoBoxValue">{book.isbn}</span>
           </div>
         </div>
       </div>
