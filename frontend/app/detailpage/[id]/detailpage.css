@@ -80,10 +80,6 @@
   font-size: 12px;
 }
 
-.detailPublisher {
-  font-size: 14px;
-  color: #555;
-}
 
 
 .detailDescription h2 {
@@ -115,7 +111,8 @@
 
 .ISBNBox {
   margin-top: 1rem;
-  width: 96%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .infoBoxLabel {
@@ -155,7 +152,5 @@
     flex: unset;
   }
 
-  .ISBNBox {
-    width: 89%;
-  }
+
 }

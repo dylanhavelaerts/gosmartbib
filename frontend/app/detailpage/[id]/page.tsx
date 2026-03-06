@@ -29,7 +29,6 @@ export default function DetailPage({
       </Link>
 
       <div className="detailContainer">
-        {/* linker kolom: cover */}
         <div className="detailLeft">
           <img src={book.thumbnail} alt={book.title} className="detailCover" />
           <div className="detailUnder">
