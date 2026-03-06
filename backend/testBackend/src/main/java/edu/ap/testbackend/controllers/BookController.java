@@ -27,7 +27,7 @@ public class BookController {
      * Ontvangt het id via het URL-pad en geeft dit door aan de service.
      * Geeft de bijhorende BookDTO terug.
      */
-    @GetMapping("/book/{id}")
+    @GetMapping("/{id}")
     public BookDTO getBookById(@PathVariable Long id) throws BookNotFoundException {
         return bookService.getBookById(id);
     }

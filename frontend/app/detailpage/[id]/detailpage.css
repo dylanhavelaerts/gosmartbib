@@ -27,6 +27,7 @@
 
 .detailCover {
   width: 100%;
+  height: auto;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
@@ -89,7 +90,8 @@
   font-size: 1rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  color: #1a1a1a;
+  color: #8e2446;
+
 }
 
 .detailDescription p {
@@ -111,10 +113,9 @@
   flex-direction: column;
 }
 
-.infoBoxFull {
+.ISBNBox {
   margin-top: 1rem;
-  width: fit-content;
-  min-width: 200px;
+  width: 96%;
 }
 
 .infoBoxLabel {
@@ -134,4 +135,27 @@
 
 .infoBoxJaar {
   flex: 0 0 100px;
+}
+@media (max-width: 750px) {
+  .detailContainer {
+    flex-direction: column;
+  }
+
+  .detailLeft {
+    flex: unset;
+    width: 150px;
+    margin: 0 auto;
+  }
+
+  .detailInfoBoxes {
+    flex-direction: column;
+  }
+
+  .infoBoxJaar {
+    flex: unset;
+  }
+
+  .ISBNBox {
+    width: 89%;
+  }
 }

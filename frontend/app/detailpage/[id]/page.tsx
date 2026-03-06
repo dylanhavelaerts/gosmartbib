@@ -15,7 +15,7 @@ export default function DetailPage({
 
   useEffect(() => {
     if (!id) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`)
       .then((res) => res.json())
       .then((data: Book) => setBook(data));
   }, [id]);
@@ -38,7 +38,7 @@ export default function DetailPage({
               {book.pageCount} pagina's
             </p>
             <p>
-              <img className="bookIcon" src={"/book-closed.png"} />{" "}
+              <img className="bookIcon" src={"/book-closed.png"} /> Taal:{" "}
               {book.language.toUpperCase()}
             </p>
           </div>
@@ -70,7 +70,7 @@ export default function DetailPage({
               <span className="infoBoxValue">{book.publishedYear}</span>
             </div>
           </div>
-          <div className="infoBox infoBoxFull">
+          <div className="infoBox ISBNBox">
             <span className="infoBoxLabel">ISBN</span>
             <span className="infoBoxValue">{book.isbn}</span>
           </div>
