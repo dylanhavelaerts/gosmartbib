@@ -39,6 +39,12 @@
   display: flex;
   flex-direction: column;
 }
+.detailUnder p{
+  color: black;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  background-color: rgba(142, 36, 70, 0.30);
+}
 .bookIcon{
     height: 16px;
     width: 16px;
