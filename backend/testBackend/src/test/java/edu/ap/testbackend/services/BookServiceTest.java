@@ -40,8 +40,10 @@ class BookServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Omdat we geen echte Spring Boot context opstarten, vullen we de @Value url handmatig in
-        ReflectionTestUtils.setField(bookService, "googleBooksApiUrl", "https://www.googleapis.com/books/v1/volumes?q=isbn:");
+        // Omdat we geen echte Spring Boot context opstarten, vullen we de @Value url
+        // handmatig in
+        ReflectionTestUtils.setField(bookService, "googleBooksApiUrl",
+                "https://www.googleapis.com/books/v1/volumes?q=isbn:");
     }
 
     // --- Google API Tests ---
@@ -51,7 +53,7 @@ class BookServiceTest {
         // 1. Arrange (Zet de fakedata klaar)
         String isbn = "9798988421504";
         GoogleBooksResponse mockResponse = createMockGoogleResponse("Test Boek", "Test Auteur");
-        
+
         // Vertel de neppe RestTemplate wat hij moet teruggeven
         when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class))).thenReturn(mockResponse);
 
@@ -61,9 +63,9 @@ class BookServiceTest {
         // 3. Assert (Controleer of het klopt)
         assertNotNull(result);
         assertEquals("Test Boek", result.title());
-        
+
         // Heel belangrijk: bij zoeken mogen we NOOIT iets opslaan in de database!
-        verify(bookRepository, never()).save(any(BookEntity.class)); 
+        verify(bookRepository, never()).save(any(BookEntity.class));
     }
 
     @Test
@@ -71,7 +73,7 @@ class BookServiceTest {
         // 1. Arrange
         String isbn = "9798988421504";
         GoogleBooksResponse mockResponse = createMockGoogleResponse("Gekocht Boek", "Auteur X");
-        
+
         BookEntity mockSavedEntity = new BookEntity();
         mockSavedEntity.setId(1L);
         mockSavedEntity.setTitle("Gekocht Boek");
@@ -86,7 +88,7 @@ class BookServiceTest {
         // 3. Assert
         assertNotNull(result);
         assertEquals(1L, result.id());
-        
+
         // Heel belangrijk: controleer of save() daadwerkelijk is aangeroepen
         verify(bookRepository, times(1)).save(any(BookEntity.class));
     }
@@ -94,7 +96,8 @@ class BookServiceTest {
     @Test
     void searchBookByIsbn_ShouldThrowException_WhenNoBookFound() {
         // 1. Arrange (Google geeft een leeg resultaat terug)
-        when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class))).thenReturn(new GoogleBooksResponse());
+        when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class)))
+                .thenReturn(new GoogleBooksResponse());
 
         // 2 & 3. Act & Assert (Controleer of de verwachte foutmelding wordt gegooid)
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -203,19 +206,19 @@ class BookServiceTest {
         GoogleBooksResponse response = new GoogleBooksResponse();
         GoogleBookItem item = new GoogleBookItem();
         VolumeInfo volumeInfo = new VolumeInfo();
-        
+
         volumeInfo.setTitle(title);
         List<String> authors = new ArrayList<>();
         authors.add(author);
         volumeInfo.setAuthors(authors);
         volumeInfo.setPageCount(300);
-        
+
         item.setVolumeInfo(volumeInfo);
-        
+
         List<GoogleBookItem> items = new ArrayList<>();
         items.add(item);
         response.setItems(items);
-        
+
         return response;
     }
 
@@ -229,9 +232,11 @@ class BookServiceTest {
                 List.of("Programming", "Software Engineering"),
                 "https://covers.openlibrary.org/b/isbn/9780132350884-L.jpg",
                 "en",
-                4.7
-        );
+                4.7,
+                "9780132350884",
+                2008);
         book.setId(10L);
+        book.setSpotlight(true); // optional, maar handig als je spotlight endpoints test
         return book;
     }
 }

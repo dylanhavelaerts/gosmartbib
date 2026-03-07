@@ -35,7 +35,8 @@ public class BookEntity {
     }
 
     public BookEntity(String title, List<String> authors, String publisher, String description, int pageCount,
-            List<String> categories, String thumbnail, String language, double rating) {
+            List<String> categories, String thumbnail, String language, double rating, String isbn,
+            Integer publishedYear) {
         this.title = title;
         this.authors = authors;
         this.publisher = publisher;
@@ -46,6 +47,8 @@ public class BookEntity {
         this.language = language;
         this.rating = rating;
         this.spotlight = false;
+        this.isbn = isbn;
+        this.publishedYear = publishedYear;
     }
 
     @Override

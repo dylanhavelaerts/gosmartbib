@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Current File",
+      "request": "launch",
+      "mainClass": "${file}"
+    },
+    {
+      "type": "java",
+      "name": "BackendApplication",
+      "request": "launch",
+      "mainClass": "edu.ap.testbackend.BackendApplication",
+      "projectName": "testBackend",
+      "env": {
+        "SPRING_DATASOURCE_URL": "jdbc:mysql://localhost:3307/gosmartlib",
+      }
+    }
+  ]
+}

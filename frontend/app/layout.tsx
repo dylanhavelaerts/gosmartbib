@@ -29,10 +29,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <header>
-          <img
+          <Link href={"/"}><img
             src="https://helpdesk.go-antwerpen.be/logo.php"
             className="goLogo"
-          />
+          /></Link>
         </header>
         <nav>
           <Link href="/">

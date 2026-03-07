@@ -10,7 +10,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
-@RequestMapping("/books")
+@RequestMapping("api/books")
 @CrossOrigin(origins = "*")
 public class BookController {
     private final BookService bookService;
