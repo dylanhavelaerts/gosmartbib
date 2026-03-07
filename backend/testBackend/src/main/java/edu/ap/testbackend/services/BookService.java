@@ -175,9 +175,8 @@ public class BookService {
                 book.getThumbnail(),
                 book.getLanguage(),
                 book.getRating(),
-                book.getIsbn(),       
-                book.getPublishedYear()
-                book.getRating());
+                book.getIsbn(),
+                book.getPublishedYear());
     }
 
 }

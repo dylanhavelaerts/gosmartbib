@@ -35,12 +35,14 @@ export default function RootLayout({
           />
         </header>
         <nav>
+          <Link href="/">
           <button>Startpagina</button>
+          </Link>
           <Link href="/catalog">
             <button>Catalogus</button>
           </Link>
-          <button>Mijn uitleningen</button>
-          <button>Mijn leeslijst & favorieten</button>
+          <Link href="/"><button>Mijn uitleningen</button></Link>
+          <Link href="/"><button>Mijn leeslijst & favorieten</button></Link>
         </nav>
         <div id="backgroundImage"></div>
         {children}
