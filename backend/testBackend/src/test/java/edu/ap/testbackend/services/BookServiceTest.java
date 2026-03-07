@@ -200,6 +200,103 @@ class BookServiceTest {
         verify(bookRepository, never()).delete(any(BookEntity.class));
     }
 
+    @Test
+    void givenSpotlightBookExists_whenGetAllBooksInSpotlight_thenReturnsMappedDTOs() {
+        BookEntity book1 = buildBook();
+        book1.setId(1L);
+        book1.setTitle("Spotlight Book 1");
+        book1.setSpotlight(true);
+
+        BookEntity book2 = buildBook();
+        book2.setId(2L);
+        book2.setTitle("Spotlight Book 2");
+        book2.setSpotlight(true);
+
+        BookEntity book3 = buildBook();
+        book3.setId(3L);
+        book3.setTitle("Not Spotlight Book");
+        book3.setSpotlight(false);
+
+        BookEntity book4 = buildBook();
+        book4.setId(4L);
+        book4.setTitle("Spotlight Book 3");
+        book4.setSpotlight(true);
+
+        BookEntity book5 = buildBook();
+        book5.setId(5L);
+        book5.setTitle("Spotlight Book 4");
+        book5.setSpotlight(true);
+
+        when(bookRepository.findTop4BySpotlightTrueOrderByIdDesc()).thenReturn(List.of(book1, book2, book4, book5));
+
+        List<BookDTO> result = bookService.getAllBooksInSpotlight();
+
+        assertNotNull(result);
+        assertEquals(4, result.size());
+        assertEquals("Spotlight Book 1", result.get(0).title());
+        assertEquals("Spotlight Book 2", result.get(1).title());
+        assertEquals("Spotlight Book 3", result.get(2).title());
+        assertEquals("Spotlight Book 4", result.get(3).title());
+        verify(bookRepository, times(1)).findTop4BySpotlightTrueOrderByIdDesc();
+    }
+
+    @Test
+    void givenNoSpotlightBooksExist_whenGetAllBooksInSpotlight_thenReturnsEmptyList() {
+        when(bookRepository.findTop4BySpotlightTrueOrderByIdDesc()).thenReturn(List.of());
+
+        List<BookDTO> result = bookService.getAllBooksInSpotlight();
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+        verify(bookRepository, times(1)).findTop4BySpotlightTrueOrderByIdDesc();
+    }
+
+    @Test
+    void givenLatestBooksExist_whenGetLatestBooks_thenReturnsMappedDTOs() {
+        BookEntity book1 = buildBook();
+        book1.setId(9L);
+        book1.setTitle("Old Book");
+
+        BookEntity book2 = buildBook();
+        book2.setId(10L);
+        book2.setTitle("Newest Book 1");
+
+        BookEntity book3 = buildBook();
+        book3.setId(11L);
+        book3.setTitle("Newest Book 2");
+
+        BookEntity book4 = buildBook();
+        book4.setId(12L);
+        book4.setTitle("Newest Book 3");
+
+        BookEntity book5 = buildBook();
+        book5.setId(13L);
+        book5.setTitle("Newest Book 4");
+
+        when(bookRepository.findTop4ByOrderByIdDesc()).thenReturn(List.of(book2, book3, book4, book5));
+
+        List<BookDTO> result = bookService.getLatestBooks();
+
+        assertNotNull(result);
+        assertEquals(4, result.size());
+        assertEquals("Newest Book 1", result.get(0).title());
+        assertEquals("Newest Book 2", result.get(1).title());
+        assertEquals("Newest Book 3", result.get(2).title());
+        assertEquals("Newest Book 4", result.get(3).title());
+        verify(bookRepository, times(1)).findTop4ByOrderByIdDesc();
+    }
+
+    @Test
+    void givenNoLatestBooksExist_whenGetLatestBooks_thenReturnsEmptyList() {
+        when(bookRepository.findTop4ByOrderByIdDesc()).thenReturn(List.of());
+
+        List<BookDTO> result = bookService.getLatestBooks();
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+        verify(bookRepository, times(1)).findTop4ByOrderByIdDesc();
+    }
+
     // --- Hulpmethoden (Helper Methods) ---
 
     private GoogleBooksResponse createMockGoogleResponse(String title, String author) {
@@ -236,7 +333,7 @@ class BookServiceTest {
                 "9780132350884",
                 2008);
         book.setId(10L);
-        book.setSpotlight(true); // optional, maar handig als je spotlight endpoints test
+        book.setSpotlight(true);
         return book;
     }
 }

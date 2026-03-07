@@ -29,7 +29,7 @@ export default function Home() {
 
     if (!search.trim()) return;
 
-    router.push(`/catalog?query=${search}`);
+    router.push(`/catalog?search=${search}`);
   };
 
   return (
