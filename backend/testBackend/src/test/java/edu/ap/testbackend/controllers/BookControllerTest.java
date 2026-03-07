@@ -1,11 +1,13 @@
 package edu.ap.testbackend.controllers;
 
+import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -23,11 +25,11 @@ class BookControllerTest {
 
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
-                100, List.of("Category"), "thumbnail", "en", 4.0);
+                100, List.of("Category"), "thumbnail", "en", 4.0,"isbn",2000);
     }
 
     @Test
-    void getBooks_returnsExpectedDTOs() {
+    void givenBooksExist_whenGetBooks_thenReturnsExpectedDTOs() {
         List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"));
         when(bookService.getAllBooks()).thenReturn(expected);
 
@@ -38,7 +40,7 @@ class BookControllerTest {
     }
 
     @Test
-    void getBooks_returnsEmptyList_whenNoBooks() {
+    void givenNoBooksExist_whenGetBooks_thenReturnsEmptyList() {
         when(bookService.getAllBooks()).thenReturn(List.of());
 
         List<BookDTO> result = bookController.getBooks();
@@ -49,7 +51,7 @@ class BookControllerTest {
     }
 
     @Test
-    void getBooks_returnsMultipleBooks() {
+    void givenMultipleBooksExist_whenGetBooks_thenReturnsAllBooks() {
         List<BookDTO> expected = List.of(
                 buildDTO(1L, "Clean Code"),
                 buildDTO(2L, "Effective Java"),
@@ -67,7 +69,7 @@ class BookControllerTest {
     }
 
     @Test
-    void getBooks_throwsException_whenServiceFails() {
+    void givenServiceFails_whenGetBooks_thenThrowsException() {
         when(bookService.getAllBooks()).thenThrow(new RuntimeException("Service unavailable"));
 
         assertThrows(RuntimeException.class, () -> bookController.getBooks());
@@ -75,12 +77,49 @@ class BookControllerTest {
     }
 
     @Test
-    void getBooks_delegatesOnlyToService_noDirectRepositoryAccess() {
+    void givenServiceIsCalled_whenGetBooks_thenDelegatesOnlyToService() {
         when(bookService.getAllBooks()).thenReturn(List.of());
 
         bookController.getBooks();
 
         verify(bookService, times(1)).getAllBooks();
         verifyNoMoreInteractions(bookService);
+    }
+
+
+    @Test
+    void givenBookExists_whenGetBookById_thenReturnsCorrectDTO() throws BookNotFoundException {
+        BookDTO expected = buildDTO(1L, "Clean Code");
+        when(bookService.getBookById(1L)).thenReturn(expected);
+
+        BookDTO result = bookController.getBookById(1L);
+
+        assertEquals(expected, result);
+        verify(bookService, times(1)).getBookById(1L);
+    }
+
+    @Test
+    void givenBookDoesNotExist_whenGetBookById_thenThrowsBookNotFoundException() throws BookNotFoundException {
+        when(bookService.getBookById(99L)).thenThrow(new BookNotFoundException(99L));
+
+        assertThrows(BookNotFoundException.class, () -> bookController.getBookById(99L));
+        verify(bookService, times(1)).getBookById(99L);
+    }
+
+
+    @Test
+    void givenBookExists_whenDeleteBook_thenReturnsNoContent() throws BookNotFoundException {
+        ResponseEntity<Void> result = bookController.deleteBook(1L);
+
+        assertEquals(204, result.getStatusCode().value());
+        verify(bookService, times(1)).deleteBook(1L);
+    }
+
+    @Test
+    void givenBookDoesNotExist_whenDeleteBook_thenThrowsBookNotFoundException() throws BookNotFoundException {
+        doThrow(new BookNotFoundException(99L)).when(bookService).deleteBook(99L);
+
+        assertThrows(BookNotFoundException.class, () -> bookController.deleteBook(99L));
+        verify(bookService, times(1)).deleteBook(99L);
     }
 }
