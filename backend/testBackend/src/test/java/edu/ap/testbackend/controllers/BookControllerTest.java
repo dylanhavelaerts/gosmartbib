@@ -25,7 +25,8 @@ class BookControllerTest {
 
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
-                100, List.of("Category"), "thumbnail", "en", 4.0);
+                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
+    2023);
     }
 
     @Test
