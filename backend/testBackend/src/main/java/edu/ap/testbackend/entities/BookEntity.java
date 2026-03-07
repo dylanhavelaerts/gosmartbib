@@ -9,7 +9,7 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@Table(name="tblBooks")
+@Table(name = "tblBooks")
 public class BookEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,11 +29,14 @@ public class BookEntity {
     private Double rating;
     private String isbn;
     private Integer publishedYear;
+    private boolean spotlight;
 
+    public BookEntity() {
+    }
 
-    public BookEntity(){}
-
-    public BookEntity(String title, List<String> authors, String publisher, String description, int pageCount, List<String> categories, String thumbnail, String language, double rating) {
+    public BookEntity(String title, List<String> authors, String publisher, String description, int pageCount,
+            List<String> categories, String thumbnail, String language, double rating, String isbn,
+            Integer publishedYear) {
         this.title = title;
         this.authors = authors;
         this.publisher = publisher;
@@ -43,6 +46,9 @@ public class BookEntity {
         this.thumbnail = thumbnail;
         this.language = language;
         this.rating = rating;
+        this.spotlight = false;
+        this.isbn = isbn;
+        this.publishedYear = publishedYear;
     }
 
     @Override
@@ -63,8 +69,10 @@ public class BookEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof BookEntity)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof BookEntity))
+            return false;
         BookEntity that = (BookEntity) o;
         return id != null && id.equals(that.id);
     }
