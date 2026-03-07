@@ -9,9 +9,15 @@ export default function ManageCatalogPage() {
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
     useEffect(() => {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/all`)
-            .then((res) => res.json())
-            .then((data: Book[]) => setBooks(data));
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+        fetch(`${apiUrl}/books/all`)
+            .then((res) => {
+                if (!res.ok) throw new Error("Netwerk response was niet ok");
+                return res.json();
+            })
+            .then((data: Book[]) => setBooks(data))
+            .catch((err) => console.error("Fout bij ophalen boeken:", err));
     }, []);
 
     return (
@@ -24,7 +30,7 @@ export default function ManageCatalogPage() {
           width: 100%;
           max-width: 1400px;
           flex: 1;
-          margin: 1rem auto 0 auto; 
+          margin: 0 auto; 
           padding-bottom: 0; 
         }
         .eiland-lijst {
@@ -49,7 +55,8 @@ export default function ManageCatalogPage() {
         }
       `}</style>
 
-            <h1>Beheer catalogus</h1>
+            {/* AANGEPAST: margin-bottom verhoogd naar 1.5rem voor iets meer ademruimte */}
+            <h1 style={{ margin: '0 0 1.5rem 0', padding: 0, lineHeight: '1' }}>Beheer catalogus</h1>
 
             <div className="manage-wrapper">
                 <div className="eiland-lijst" style={{
