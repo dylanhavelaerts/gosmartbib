@@ -18,4 +18,17 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
             "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
             "LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<BookEntity> searchByTitleOrAuthor(@Param("query") String query);
+    @Query("SELECT DISTINCT b FROM BookEntity b" +
+            "LEFT JOIN b.authors a" +
+            "LEFT JOIN b.categories c" +
+            "WHERE (:author IS NULL OR LOWER(a) LIKE LOWER(CONCAT('%',:author, '%'))) "+
+            "AND (:language IS NULL OR LOWER(b.language) = LOWER(:language))" +
+            "AND (:category IS NULL OR LOWER(c) LIKE LOWER(CONCAT('%', :category, '%')))"+
+            "AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount) " +
+            "AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)")
+            List<BookEntity> filterBooks(@Param("author") String author,
+                                         @Param("language") String language,
+                                         @Param("category") String category,
+                                         @Param("minPageCount") Integer minPageCount,
+                                         @Param("maxPageCount") Integer maxPageCount);
 }

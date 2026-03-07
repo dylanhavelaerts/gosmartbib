@@ -162,6 +162,12 @@ public class BookService {
                 .map(this::toDTO)
                 .toList();
     }
+    public List<BookDTO> filterBooks(String author, String language, String category, Integer minPageCount,  Integer maxPageCount) {
+        return bookRepository.filterBooks(author,language,category,minPageCount,maxPageCount)
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
 
     private BookDTO toDTO(BookEntity book) {
         return new BookDTO(

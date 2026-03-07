@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
@@ -80,5 +81,16 @@ public class BookController {
         } catch (Exception e) {
             return new ResponseEntity<>("An error occurred while fetching the book.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GetMapping("/filter")
+    public List<BookDTO> filterBooks(
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Integer minPageCount,
+            @RequestParam(required = false) Integer maxPageCount)
+    {
+        return bookService.filterBooks(author, language, category, minPageCount, maxPageCount);
     }
 }
