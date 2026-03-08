@@ -20,19 +20,19 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
     List<BookEntity> searchByTitleOrAuthor(@Param("query") String query);
 
 
-    @Query("SELECT DISTINCT b FROM BookEntity b " +
-            "LEFT JOIN b.authors a " +
-            "LEFT JOIN b.categories c " +
-            "WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))" +
-            "AND (:category IS NULL OR LOWER(c) LIKE LOWER(CONCAT('%', :category, '%')))" +
-            "AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount) " +
-            "AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount) " +
-            "AND (:minPubYear IS NULL OR b.publishedYear <= :minPubYear) " +
-            "AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)"
-    )
+    @Query("""
+        SELECT DISTINCT b FROM BookEntity b
+        LEFT JOIN b.categories c
+        WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
+        AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
+        AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
+        AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
+        AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
+        AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
+        """)
     List<BookEntity> filterBooks(
             @Param("language") String language,
-            @Param("category") String category,
+            @Param("categories") List<String> categories,
             @Param("minPageCount") Integer minPageCount,
             @Param("maxPageCount") Integer maxPageCount,
             @Param("minPubYear") Integer minPubYear,

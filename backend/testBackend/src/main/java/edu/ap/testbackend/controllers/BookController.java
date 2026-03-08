@@ -6,13 +6,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.awt.print.Book;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
-@RequestMapping("books")
+@RequestMapping("/books")
 @CrossOrigin(origins = "*")
 public class BookController {
     private final BookService bookService;
@@ -87,16 +86,16 @@ public class BookController {
     @GetMapping("/filter")
     public ResponseEntity<?>  filterBooks(
             @RequestParam(required = false) String language,
-            @RequestParam(required = false) String category,
+            @RequestParam(required = false) List<String> categories,
             @RequestParam(required = false) Integer minPageCount,
             @RequestParam(required = false) Integer maxPageCount,
-            @RequestParam(required = false) Integer minPubyear,
-            @RequestParam(required = false) Integer maxPubyear
+            @RequestParam(required = false) Integer minPubYear,
+            @RequestParam(required = false) Integer maxPubYear
 
     ) {
 
         try {
-            List<BookDTO> filteredBooks =  bookService.filterBooks(language, category, minPageCount, maxPageCount, minPubyear, maxPubyear);
+            List<BookDTO> filteredBooks =  bookService.filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear);
             return ResponseEntity.ok(filteredBooks);
         } catch (Exception e) {
             return new ResponseEntity<>("Fout opgetreden tijdens het filteren.", HttpStatus.INTERNAL_SERVER_ERROR);
