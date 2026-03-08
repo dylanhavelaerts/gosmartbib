@@ -1,10 +1,110 @@
+.catalogLayout {
+  display: flex;
+  align-items: flex-start;
+}
+
+.filterSidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid #ddd;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+
+.filterSidebar h2 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8e2446;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.filterGroupLabel {
+  font-size: 11px;
+  color: #888;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.catalogContent {
+  flex: 1;
+  min-width: 0;
+}
+
 #bookList {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   padding: 1rem;
-  max-width: 1400px;
-  margin: 0 auto;
+}
+.filterDropdown {
+  position: relative;
+}
+
+.filterDropdownToggle {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  color: #8e2446;
+  width: 100%;
+  text-align: left;
+}
+
+.filterSelect,
+.filterInput {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filterSelect:focus,
+.filterInput:focus,
+.filterDropdownToggle:focus {
+  border-color: #6b1a34;
+  box-shadow: 0 0 0 2px rgba(142, 36, 70, 0.15);
+}
+
+.filterDropdownPanel {
+  background: white;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.filterCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 @media (min-width: 768px) {
