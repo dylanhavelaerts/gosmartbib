@@ -52,7 +52,7 @@ export default function Home() {
 
   return (
     <main>
-      <h1>Spotlight</h1>
+      <h1>In de kijker</h1>
       <ul>
         {selectedIds.size > 0 && (
           <li onClick={() => tryDelete() }>
