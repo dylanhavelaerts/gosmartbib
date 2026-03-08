@@ -128,7 +128,7 @@ export default function Home() {
             className="filterDropdownToggle"
             onClick={() => setCategoryOpen(!categoryOpen)}
           >
-            Categorie {categories.size > 0 ? `(${categories.size})` : ""} ▼
+            Genre {categories.size > 0 ? `(${categories.size})` : ""} ▼
           </button>
           {categoryOpen && (
             <div className="filterDropdownPanel">

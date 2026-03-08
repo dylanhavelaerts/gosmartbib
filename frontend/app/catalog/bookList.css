@@ -7,6 +7,71 @@
   margin: 0 auto;
 }
 
+.filterBar{
+  margin: 0.5rem;
+}
+.filterDropdown {
+  position: relative;
+}
+
+.filterDropdownToggle {
+  padding: 0.4rem 0.8rem;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  color: #8e2446;
+}
+
+.filterSelect,
+.filterInput {
+  padding: 0.4rem 0.8rem;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+  margin-right: 0.4rem;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  outline: none;
+}
+
+.filterInput {
+  width: 9rem;
+}
+
+.filterSelect:focus,
+.filterInput:focus,
+.filterDropdownToggle:focus {
+  border-color: #6b1a34;
+  box-shadow: 0 0 0 2px rgba(142, 36, 70, 0.15);
+}
+
+.filterDropdownPanel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 200px;
+}
+
+.filterCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  cursor: pointer;
+}
+
 @media (min-width: 768px) {
   #bookList {
     grid-template-columns: repeat(3, 1fr);
