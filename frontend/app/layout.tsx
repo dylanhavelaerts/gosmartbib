@@ -41,6 +41,7 @@ export default function RootLayout({
           <Link href="/catalog">
             <button>Catalogus</button>
           </Link>
+          <Link href="/spotlight"><button>In de kijker</button></Link>
           <Link href="/"><button>Mijn uitleningen</button></Link>
           <Link href="/"><button>Mijn leeslijst & favorieten</button></Link>
         </nav>

@@ -56,7 +56,7 @@ export default function Home() {
       <ul>
         {selectedIds.size > 0 && (
           <li onClick={() => tryDelete() }>
-            Verwijder {selectedIds.size} boek(en) uit spotlight
+            Verwijder {selectedIds.size} boek(en) uit de kijker
           </li>
         )}
       </ul>
