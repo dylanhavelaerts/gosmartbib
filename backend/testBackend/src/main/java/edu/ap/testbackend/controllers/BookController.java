@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.awt.print.Book;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -84,13 +85,21 @@ public class BookController {
     }
 
     @GetMapping("/filter")
-    public List<BookDTO> filterBooks(
-            @RequestParam(required = false) String author,
+    public ResponseEntity<?>  filterBooks(
             @RequestParam(required = false) String language,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) Integer minPageCount,
-            @RequestParam(required = false) Integer maxPageCount)
-    {
-        return bookService.filterBooks(author, language, category, minPageCount, maxPageCount);
+            @RequestParam(required = false) Integer maxPageCount,
+            @RequestParam(required = false) Integer minPubyear,
+            @RequestParam(required = false) Integer maxPubyear
+
+    ) {
+
+        try {
+            List<BookDTO> filteredBooks =  bookService.filterBooks(language, category, minPageCount, maxPageCount, minPubyear, maxPubyear);
+            return ResponseEntity.ok(filteredBooks);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Fout opgetreden tijdens het filteren.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

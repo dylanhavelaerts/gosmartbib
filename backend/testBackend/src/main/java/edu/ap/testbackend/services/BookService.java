@@ -162,8 +162,8 @@ public class BookService {
                 .map(this::toDTO)
                 .toList();
     }
-    public List<BookDTO> filterBooks(String author, String language, String category, Integer minPageCount,  Integer maxPageCount) {
-        return bookRepository.filterBooks(author,language,category,minPageCount,maxPageCount)
+    public List<BookDTO> filterBooks(String language, String category, Integer minPageCount,  Integer maxPageCount, Integer minPubYear, Integer maxPubYear) {
+        return bookRepository.filterBooks(language,category,minPageCount,maxPageCount,minPubYear,maxPubYear)
                 .stream()
                 .map(this::toDTO)
                 .toList();
