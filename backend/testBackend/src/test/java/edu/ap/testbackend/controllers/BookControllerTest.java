@@ -26,7 +26,7 @@ class BookControllerTest {
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-    2023);
+                2023);
     }
 
     @Test
@@ -126,23 +126,23 @@ class BookControllerTest {
         List<BookDTO> expected = List.of(
                 buildDTO(1L, "Spotlight Book 1"),
                 buildDTO(2L, "Spotlight Book 2"));
-        when(bookService.getAllBooksInSpotlight()).thenReturn(expected);
+        when(bookService.getTop4BooksInSpotlight()).thenReturn(expected);
 
         List<BookDTO> result = bookController.getBooksInSpotlight();
 
         assertEquals(expected, result);
-        verify(bookService, times(1)).getAllBooksInSpotlight();
+        verify(bookService, times(1)).getTop4BooksInSpotlight();
     }
 
     @Test
     void givenNoSpotlightBooksExist_whenGetBooksInSpotlight_thenReturnsEmptyList() {
-        when(bookService.getAllBooksInSpotlight()).thenReturn(List.of());
+        when(bookService.getTop4BooksInSpotlight()).thenReturn(List.of());
 
         List<BookDTO> result = bookController.getBooksInSpotlight();
 
         assertNotNull(result);
         assertEquals(0, result.size());
-        verify(bookService, times(1)).getAllBooksInSpotlight();
+        verify(bookService, times(1)).getTop4BooksInSpotlight();
     }
 
     void givenLatestBooksExist_whenGetLatestBooks_thenReturnsExpectedDTOs() {
@@ -169,4 +169,45 @@ class BookControllerTest {
         verify(bookService, times(1)).getLatestBooks();
     }
 
+    @Test
+    void givenSpotlightBooksExist_whenGetAllBooksInSpotlight_thenReturnsExpectedDTOs() {
+        List<BookDTO> expected = List.of(
+                buildDTO(1L, "Spotlight Book 1"),
+                buildDTO(2L, "Spotlight Book 2"),
+                buildDTO(3L, "Spotlight Book 3"));
+
+        when(bookService.getAllBooksInSpotlight()).thenReturn(expected);
+
+        List<BookDTO> result = bookController.getAllBooksInSpotlight();
+
+        assertEquals(expected, result);
+        verify(bookService, times(1)).getAllBooksInSpotlight();
+    }
+
+    @Test
+    void givenNoSpotlightBooksExist_whenGetAllBooksInSpotlight_thenReturnsEmptyList() {
+        when(bookService.getAllBooksInSpotlight()).thenReturn(List.of());
+
+        List<BookDTO> result = bookController.getAllBooksInSpotlight();
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+        verify(bookService, times(1)).getAllBooksInSpotlight();
+    }
+
+    @Test
+    void givenBookExists_whenUpdateSpotlight_thenReturnsNoContent() throws BookNotFoundException {
+        ResponseEntity<Void> result = bookController.updateSpotlight(1L, true);
+
+        assertEquals(204, result.getStatusCode().value());
+        verify(bookService, times(1)).updateSpotlight(1L, true);
+    }
+
+    @Test
+    void givenBookDoesNotExist_whenUpdateSpotlight_thenThrowsBookNotFoundException() throws BookNotFoundException {
+        doThrow(new BookNotFoundException(99L)).when(bookService).updateSpotlight(99L, false);
+
+        assertThrows(BookNotFoundException.class, () -> bookController.updateSpotlight(99L, false));
+        verify(bookService, times(1)).updateSpotlight(99L, false);
+    }
 }
