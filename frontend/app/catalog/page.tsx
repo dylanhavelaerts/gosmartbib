@@ -59,6 +59,23 @@ export default function Home() {
       setDeleting(false);
     }
   };
+
+  const setSpotlight = async () => {
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}/spotlight?value=true`, {
+            method: "PATCH",
+          }),
+        ),
+      );
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.log(error);
+  };
+}
+
+
   return (
     <main>
       <h1>Catalogus</h1>
@@ -79,6 +96,11 @@ export default function Home() {
         {selectedIds.size > 0 && (
           <li onClick={() => setShowConfirm(true)}>
             Verwijder {selectedIds.size} boek(en)
+          </li>
+        )}
+        {selectedIds.size > 0 && (
+          <li onClick={() => setSpotlight()}>
+            {selectedIds.size} boek(en) in kijker zetten
           </li>
         )}
       </ul>

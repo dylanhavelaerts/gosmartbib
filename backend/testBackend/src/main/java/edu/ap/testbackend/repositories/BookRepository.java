@@ -12,6 +12,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
 
     List<BookEntity> findTop4BySpotlightTrueOrderByIdDesc();
 
+    List<BookEntity> findBySpotlightTrueOrderByIdDesc();
+
     List<BookEntity> findTop4ByOrderByIdDesc();
 
     @Query("SELECT DISTINCT b FROM BookEntity b JOIN b.authors a WHERE " +

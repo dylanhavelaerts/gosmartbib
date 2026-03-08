@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("api/books")
@@ -24,9 +23,14 @@ public class BookController {
         return bookService.getAllBooks();
     }
 
+    @GetMapping("/spotlight/all")
+    public List<BookDTO> getAllBooksInSpotlight() {
+        return bookService.getAllBooksInSpotlight();
+    }
+
     @GetMapping("/spotlight")
     public List<BookDTO> getBooksInSpotlight() {
-        return bookService.getAllBooksInSpotlight();
+        return bookService.getTop4BooksInSpotlight();
     }
 
     @GetMapping("/latest")
@@ -52,7 +56,14 @@ public class BookController {
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) throws BookNotFoundException {
         bookService.deleteBook(id);
         return ResponseEntity.noContent().build();
+    }
 
+    @PatchMapping("/book/{id}/spotlight")
+    public ResponseEntity<Void> updateSpotlight(
+            @PathVariable Long id,
+            @RequestParam boolean value) throws BookNotFoundException {
+        bookService.updateSpotlight(id, value);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/add/{isbn}")

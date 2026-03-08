@@ -136,6 +136,14 @@ public class BookService {
         bookRepository.delete(book);
     }
 
+    public void updateSpotlight(Long id, boolean spotlight) {
+        BookEntity book = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
+
+        book.setSpotlight(spotlight);
+        bookRepository.save(book);
+    }
+
     public List<BookDTO> search(String query) {
         if (query == null || query.isBlank()) {
             return bookRepository.findAll()
@@ -149,8 +157,15 @@ public class BookService {
                 .collect(Collectors.toList());
     }
 
-    public List<BookDTO> getAllBooksInSpotlight() {
+    public List<BookDTO> getTop4BooksInSpotlight() {
         return bookRepository.findTop4BySpotlightTrueOrderByIdDesc()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    public List<BookDTO> getAllBooksInSpotlight() {
+        return bookRepository.findBySpotlightTrueOrderByIdDesc()
                 .stream()
                 .map(this::toDTO)
                 .toList();
