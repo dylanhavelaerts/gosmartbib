@@ -210,4 +210,16 @@ class BookControllerTest {
         assertThrows(BookNotFoundException.class, () -> bookController.updateSpotlight(99L, false));
         verify(bookService, times(1)).updateSpotlight(99L, false);
     }
+
+    @Test
+    void givenQuery_whenSearchByTitleOrAuthor_thenReturnsOkWithResults() {
+        List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"));
+        when(bookService.searchByTitleOrAuthor("Clean")).thenReturn(expected);
+
+        ResponseEntity<List<BookDTO>> result = bookController.searchByTitleOrAuthor("Clean");
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals(expected, result.getBody());
+        verify(bookService, times(1)).searchByTitleOrAuthor("Clean");
+    }
 }

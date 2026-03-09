@@ -379,6 +379,65 @@ class BookServiceTest {
         verify(bookRepository, times(1)).findBySpotlightTrueOrderByIdDesc();
     }
 
+    // --- searchByTitleOrAuthor Tests ---
+
+    @Test
+    void givenNullQuery_whenSearchByTitleOrAuthor_thenReturnsAllBooks() {
+        when(bookRepository.findAll()).thenReturn(List.of(buildBook()));
+
+        List<BookDTO> result = bookService.searchByTitleOrAuthor(null);
+
+        assertEquals(1, result.size());
+        assertEquals("Clean Code", result.get(0).title());
+        verify(bookRepository, times(1)).findAll();
+        verify(bookRepository, never()).searchByTitleOrAuthor(anyString());
+    }
+
+    @Test
+    void givenBlankQuery_whenSearchByTitleOrAuthor_thenReturnsAllBooks() {
+        when(bookRepository.findAll()).thenReturn(List.of(buildBook()));
+
+        List<BookDTO> result = bookService.searchByTitleOrAuthor("   ");
+
+        assertEquals(1, result.size());
+        verify(bookRepository, times(1)).findAll();
+        verify(bookRepository, never()).searchByTitleOrAuthor(anyString());
+    }
+
+    @Test
+    void givenValidQuery_whenSearchByTitleOrAuthor_thenReturnsMatchingBooks() {
+        BookEntity book = buildBook();
+        when(bookRepository.searchByTitleOrAuthor("Clean")).thenReturn(List.of(book));
+
+        List<BookDTO> result = bookService.searchByTitleOrAuthor("Clean");
+
+        assertEquals(1, result.size());
+        assertEquals("Clean Code", result.get(0).title());
+        verify(bookRepository, times(1)).searchByTitleOrAuthor("Clean");
+        verify(bookRepository, never()).findAll();
+    }
+
+    @Test
+    void givenQueryWithWhitespace_whenSearchByTitleOrAuthor_thenTrimsAndSearches() {
+        when(bookRepository.searchByTitleOrAuthor("Clean")).thenReturn(List.of(buildBook()));
+
+        List<BookDTO> result = bookService.searchByTitleOrAuthor("  Clean  ");
+
+        assertEquals(1, result.size());
+        verify(bookRepository, times(1)).searchByTitleOrAuthor("Clean");
+    }
+
+    @Test
+    void givenNoMatchingBooks_whenSearchByTitleOrAuthor_thenReturnsEmptyList() {
+        when(bookRepository.searchByTitleOrAuthor("Nonexistent")).thenReturn(List.of());
+
+        List<BookDTO> result = bookService.searchByTitleOrAuthor("Nonexistent");
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+        verify(bookRepository, times(1)).searchByTitleOrAuthor("Nonexistent");
+    }
+
     // --- Hulpmethoden (Helper Methods) ---
 
     private GoogleBooksResponse createMockGoogleResponse(String title, String author) {

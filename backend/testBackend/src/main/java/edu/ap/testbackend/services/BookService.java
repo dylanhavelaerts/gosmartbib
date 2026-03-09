@@ -156,6 +156,7 @@ public class BookService {
                     .map(this::toDTO)
                     .collect(Collectors.toList());
         }
+
         return bookRepository.searchByTitleOrAuthor(query.trim())
                 .stream()
                 .map(this::toDTO)
