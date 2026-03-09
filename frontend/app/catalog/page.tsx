@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Book } from "../interfaces/Book";
 import BookCard from "./bookCard";
 import "./bookList.css";
+import Link from "next/link";
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -86,12 +87,14 @@ export default function Home() {
         >
           Catalogus
         </li>
+        <Link href="/add-book">
         <li
           className={activeTab === "Boek toevoegen" ? "active" : ""}
           onClick={() => setActiveTab("Boek toevoegen")}
         >
           Boek toevoegen
         </li>
+        </Link>
 
         {selectedIds.size > 0 && (
           <li onClick={() => setShowConfirm(true)}>
