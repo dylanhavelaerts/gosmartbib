@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Book } from "../interfaces/Book";
 import "./addBook.css";
+import { read, utils } from "xlsx";
 
 
 type ImportedBook = {
@@ -18,10 +19,49 @@ export default function AddBookPage() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<TabId>("Boek");
   const [previewBook, setPreviewBook] = useState<Book | null>(null);
-  const [importedBooks, setImportedBook] = useState<ImportedBook[]>([]);
+  const [importedBooks, setImportedBooks] = useState<ImportedBook[]>([]);
+  const [fetchedBooks, setFetchedBooks] = useState<Book[]>([]);
+  const [mismatchedBooks, setMismatchedBooks] = useState<ImportedBook[]>([])
   const [error, setError] = useState("");
 
   const cls = (id: TabId) => `tabBtn ${selected === id ? "selectedCategory" : ""}`;
+
+    const handleFileChange = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setError("");
+  setImportedBooks([]);
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const workbook = read(buffer, { type: "array" });
+
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+
+    const rows = utils.sheet_to_json<(string | number)[]>(worksheet, {
+      header: 1,
+      defval: "",
+    });
+
+    const dataRows = rows.slice(1);
+
+    const imported: ImportedBook[] = dataRows
+      .map((row) => ({
+        isbn: String(row[0] ?? "").trim(),
+        title: String(row[1] ?? "").trim(),
+      }))
+      .filter((book) => book.isbn !== "" && book.title !== "");
+
+    setImportedBooks(imported);
+  } catch (err) {
+    console.error(err);
+    setError("Could not read the Excel file.");
+  }
+};
 
   const handleSearchBook = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -307,88 +347,31 @@ else {
       <p style={{ color: "#555" }}>
         Voeg hieronder de aangevulde excel file toe.
       </p>
-      {/* Zoekformulier */}
-    <div>
+    <div className="fileInputBox">
       <input
+        className="fileInput"
         type="file"
         accept=".xlsx,.xls"
+        onChange={handleFileChange}
       />
 
       {error && <p>{error}</p>}
     </div>
-
-        {/* Alleen tonen als we nog NIET aan het previewen zijn */}
-        {!previewBook && (
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              padding: "0.75rem 1.5rem",
-              fontSize: "1rem",
-              cursor: loading ? "not-allowed" : "pointer",
-              backgroundColor: loading ? "#ccc" : "#0070f3",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              fontWeight: "bold",
-            }}
-          >
-            {loading ? "Bezig met zoeken..." : "Zoek Boek"}
-          </button>
-        )}
-
-      {/* De Preview Kaart! */}
-      {previewBook && (
-        <div
-          style={{
-            marginTop: "2rem",
-            padding: "1.5rem",
-            border: "2px solid #0070f3",
-            borderRadius: "8px",
-            backgroundColor: "#f9f9f9",
-            color: "black",
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Preview van het boek:</h2>
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-            {previewBook.thumbnail && (
-              <img
-                src={previewBook.thumbnail}
-                alt="Cover"
-                style={{
-                  width: "100px",
-                  height: "150px",
-                  objectFit: "cover",
-                  borderRadius: "4px",
-                }}
-              />
-            )}
-            <div>
-              <p>
-                <strong>Titel:</strong> {previewBook.title}
-              </p>
-              <p>
-                <strong>Auteur(s):</strong> {previewBook.authors?.join(", ")}
-              </p>
-              <p>
-                <strong>Uitgeverij:</strong> {previewBook.publisher}
-              </p>
-              <p>
-                <strong>Jaar van uitgave:</strong>{" "}
-                {previewBook.publishedYear
-                  ? previewBook.publishedYear
-                  : "Onbekend"}
-              </p>
-              <p>
-                <strong>ISBN:</strong> {previewBook.isbn}
-              </p>
-              <p>
-                <strong>Pagina's:</strong> {previewBook.pageCount}
-              </p>
-            </div>
-          </div>
-
+    { importedBooks.length !== 0 &&(
+      <div>
+        <p>Deze ISBN nummers komen niet overeen met hun titel:</p>
+        <ul>
+          {importedBooks.map((book, index) => (
+            <li key={book.isbn || index}>
+              {book.isbn} | {book.title}
+            </li>
+          ))}
+        </ul>
+      </div>)
+      }
+      <div>
           {/* Bevestigingsknoppen */}
+          { importedBooks.length !== 0 &&(
           <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
             <button
               onClick={handleConfirmAdd}
@@ -427,8 +410,7 @@ else {
               Annuleren
             </button>
           </div>
-        </div>
-      )}
+ )} </div>
 
       {/* Meldingen weergeven */}
       {message && (
@@ -453,7 +435,7 @@ else {
         </div>
       )}
     </div>
-  );
+    );
 }
 }
 

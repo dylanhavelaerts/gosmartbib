@@ -15,3 +15,10 @@ a {
   text-decoration: none;
   color: #8e1f42;
 }
+.fileInputBox {
+  padding: 2rem;
+  background-color: lightgray;
+  border-radius: 1rem;
+  width: auto;
+  margin-bottom: 1rem;
+}
