@@ -2,6 +2,7 @@ package edu.ap.testbackend.controllers;
 
 import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -84,7 +85,7 @@ public class BookController {
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<?>  filterBooks(
+    public ResponseEntity<?> filterBooks(
             @RequestParam(required = false) String language,
             @RequestParam(required = false) List<String> categories,
             @RequestParam(required = false) Integer minPageCount,
@@ -95,9 +96,11 @@ public class BookController {
     ) {
 
         try {
-            List<BookDTO> filteredBooks =  bookService.filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear);
+            List<BookDTO> filteredBooks = bookService.filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear);
             return ResponseEntity.ok(filteredBooks);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (DataAccessException e) {
             return new ResponseEntity<>("Fout opgetreden tijdens het filteren.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

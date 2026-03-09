@@ -149,3 +149,76 @@ main ul li.active {
   color: white;
   border-radius: 4px;
 }
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.pageLayout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.mainContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.filterSidebar {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.25s ease;
+  background: white;
+  flex-shrink: 0;
+}
+
+.filterSidebar.open {
+  width: 260px;
+  border-right: 1px solid #ddd;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  font-size: 16px;
+  font-weight: 600;
+  color: #8e2446;
+  border-bottom: 1px solid #eee;
+}
+
+.sidebarHeader button {
+  border: none;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #888;
+}
+
+
+@media (max-width: 768px) {
+  .filterSidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 0;
+    border-right: none;
+    border-top: 1px solid #ddd;
+    border-radius: 12px 12px 0 0;
+    z-index: 100;
+    transition: height 0.25s ease;
+    overflow-y: auto;
+  }
+
+  .filterSidebar.open {
+    height: 75vh;
+    width: 100%;
+  }
+
+  .sidebarOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 99;
+  }
+}

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -168,5 +169,60 @@ class BookControllerTest {
         assertEquals(0, result.size());
         verify(bookService, times(1)).getLatestBooks();
     }
+// --- filterBooks Controller Tests ---
 
+    @Test
+    void givenValidFilters_whenFilterBooks_thenReturnsOk() {
+        List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"));
+        when(bookService.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023))
+                .thenReturn(expected);
+
+        ResponseEntity<?> result = bookController.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023);
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals(expected, result.getBody());
+        verify(bookService, times(1)).filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023);
+    }
+
+    @Test
+    void givenNullFilters_whenFilterBooks_thenReturnsOk() {
+        when(bookService.filterBooks(null, null, null, null, null, null))
+                .thenReturn(List.of(buildDTO(1L, "Clean Code")));
+
+        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null);
+
+        assertEquals(200, result.getStatusCode().value());
+    }
+
+    @Test
+    void givenMinGreaterThanMax_whenFilterBooks_thenReturnsBadRequest() {
+        when(bookService.filterBooks(null, null, 500, 100, null, null))
+                .thenThrow(new IllegalArgumentException("minPageCount kan niet groter zijn dan maxPageCount"));
+
+        ResponseEntity<?> result = bookController.filterBooks(null, null, 500, 100, null, null);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("minPageCount kan niet groter zijn dan maxPageCount", result.getBody());
+    }
+
+    @Test
+    void givenDatabaseFails_whenFilterBooks_thenReturnsInternalServerError() {
+        when(bookService.filterBooks(any(), any(), any(), any(), any(), any()))
+                .thenThrow(new DataAccessException("DB down") {});
+
+        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null);
+
+        assertEquals(500, result.getStatusCode().value());
+    }
+
+    @Test
+    void givenNoResults_whenFilterBooks_thenReturnsEmptyList() {
+        when(bookService.filterBooks(any(), any(), any(), any(), any(), any()))
+                .thenReturn(List.of());
+
+        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null);
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals(List.of(), result.getBody());
+    }
 }
