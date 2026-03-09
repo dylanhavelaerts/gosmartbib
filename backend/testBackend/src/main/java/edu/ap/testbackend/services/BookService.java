@@ -144,6 +144,11 @@ public class BookService {
         bookRepository.save(book);
     }
 
+    /**
+     * Zoekt boeken op basis van een zoekterm. Er wordt gezocht in zowel de titel als de auteurs van het boek.
+     * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle boeken teruggegeven.
+     * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar DTO's.
+     */
     public List<BookDTO> searchByTitleOrAuthor(String query) {
         if (query == null || query.isBlank()) {
             return bookRepository.findAll()

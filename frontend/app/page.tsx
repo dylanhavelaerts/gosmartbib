@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Book } from "./interfaces/Book";
 import BookCard from "./catalog/bookCard";
 import "./dashboard.css";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 type TabId = "spotlight" | "new";
@@ -49,11 +48,16 @@ export default function Home() {
               🔎︎
             </button>
           </form>
-          <Link href="/catalog">
-            <button className="semitransparentButton">
-              Bekijk Catalogus →
-            </button>
-          </Link>
+          <button
+            className="semitransparentButton"
+            onClick={() =>
+              router.push(
+                search.trim() ? `/catalog?search=${search}` : "/catalog",
+              )
+            }
+          >
+            Bekijk Catalogus →
+          </button>
         </div>
         <div id="dashboard">
           <nav>

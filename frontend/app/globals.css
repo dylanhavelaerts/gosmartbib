@@ -17,12 +17,12 @@ nav {
   background-color: #ededed;
   min-height: 2rem;
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
   padding: 0.25rem clamp(0.5rem, 2vw, 1.5rem);
   gap: clamp(0.25rem, 2vw, 1.5rem);
-  height: 2rem;
+  height: auto;
 }
 
 nav button {
@@ -46,8 +46,8 @@ nav button:hover {
   z-index: -1;
 
   background-image: url("/backgroundImage.jpg");
-  background-repeat: repeat; /* both directions */
-  background-size: 500px auto; /* keep original tile size */
+  background-repeat: repeat;
+  background-size: 500px auto;
   background-position: top left;
 
   filter: grayscale(100%);
@@ -108,44 +108,6 @@ main {
 }
 #searchButton:hover {
   color: #922648;
-}
-.filterSection {
-  display: flex;
-  justify-content: center;
-  padding: 1.2rem 1rem 0.5rem;
-}
-.catalogSearchbar {
-  background-color: #ece6f0;
-  border-radius: 2rem;
-  padding: 0.55rem 0.75rem 0.55rem 1.2rem;
-  width: 55%;
-  max-width: 600px;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  transition: box-shadow 0.2s;
-}
-.catalogSearchbar:focus-within {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-.catalogSearchbar input {
-  background-color: transparent;
-  border: none;
-  outline: none;
-  width: 100%;
-  font-size: 0.9rem;
-  color: #333;
-}
-.catalogSearchbar input::placeholder {
-  color: #999;
-}
-.semitransparentButton {
-  background-color: #922648;
-  opacity: 0.9;
-  padding: 0.5rem;
-  width: 35%;
-  border-radius: 0.5rem;
-  color: white;
 }
 footer {
   display: grid;
