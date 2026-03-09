@@ -197,12 +197,12 @@ class BookControllerTest {
     @Test
     void givenMinGreaterThanMax_whenFilterBooks_thenReturnsBadRequest() {
         when(bookService.filterBooks(null, null, 500, 100, null, null))
-                .thenThrow(new IllegalArgumentException("minPageCount kan niet groter zijn dan maxPageCount"));
+                .thenThrow(new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount"));
 
         ResponseEntity<?> result = bookController.filterBooks(null, null, 500, 100, null, null);
 
         assertEquals(400, result.getStatusCode().value());
-        assertEquals("minPageCount kan niet groter zijn dan maxPageCount", result.getBody());
+        assertEquals("minPageCount cannot be bigger than maxPageCount", result.getBody());
     }
 
     @Test

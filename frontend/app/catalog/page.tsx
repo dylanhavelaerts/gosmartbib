@@ -28,9 +28,7 @@ export default function Home() {
     const params = new URLSearchParams();
     if (language) params.append("language", language);
     if (categories.size > 0) {
-      categories.forEach((categories) =>
-        params.append("categories", categories),
-      );
+      categories.forEach((cat) => params.append("categories", cat));
     }
     if (minPages) params.append("minPageCount", minPages);
     if (maxPages) params.append("maxPageCount", maxPages);
@@ -186,9 +184,7 @@ export default function Home() {
       <div className="mainContent">
         <h1>Catalogus</h1>
         <ul>
-          <li onClick={() => setSidebarOpen(true)} className="filterToggleBtn">
-            ☰
-          </li>
+          <li onClick={() => setSidebarOpen(true)}>☰</li>
           <li
             className={activeTab === "Catalogus" ? "active" : ""}
             onClick={() => setActiveTab("Catalogus")}

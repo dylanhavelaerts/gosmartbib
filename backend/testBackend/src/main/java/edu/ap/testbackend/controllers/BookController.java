@@ -98,10 +98,12 @@ public class BookController {
         try {
             List<BookDTO> filteredBooks = bookService.filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear);
             return ResponseEntity.ok(filteredBooks);
+            //400 als de error foute filter combinatie is
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            //500 als de error op Database niveau is
         } catch (DataAccessException e) {
-            return new ResponseEntity<>("Fout opgetreden tijdens het filteren.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("An error occurred during filtering.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

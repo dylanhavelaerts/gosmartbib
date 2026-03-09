@@ -164,10 +164,10 @@ public class BookService {
     }
     public List<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,  Integer maxPageCount, Integer minPubYear, Integer maxPubYear) {
         if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
-            throw new IllegalArgumentException("minPageCount kan niet groter zijn dan maxPageCount");
+            throw new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount");
         }
         if (minPubYear != null && maxPubYear != null && minPubYear > maxPubYear) {
-            throw new IllegalArgumentException("minPubYear kan niet groter zijn dan maxPubYear");
+            throw new IllegalArgumentException("minPubYear cannot be bigger than maxPubYear");
         }
 
         return bookRepository.filterBooks(language,categories,minPageCount,maxPageCount,minPubYear,maxPubYear)
