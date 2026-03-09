@@ -43,14 +43,17 @@ export default function Home() {
     if (minYear) params.append("minPubYear", minYear);
     if (maxYear) params.append("maxPubYear", maxYear);
 
-    const query = params.toString();
-    const url = query
-      ? `${process.env.NEXT_PUBLIC_API_URL}/books/filter?${query}`
+    const filterQuery = params.toString();
+    const url = filterQuery
+      ? `${process.env.NEXT_PUBLIC_API_URL}/books/filter?${filterQuery}`
       : `${process.env.NEXT_PUBLIC_API_URL}/books/all`;
 
     fetch(url)
       .then((res) => res.json())
-      .then((data: Book[]) => setBooks(data));
+      .then((data: Book[]) => {
+        setBooks(data);
+        if (!query) setResults(data);
+      });
   }, [language, categories, minPages, maxPages, minYear, maxYear]);
 
   /**
