@@ -194,7 +194,6 @@ main ul li.active {
   color: white;
 }
 
-/* ── Sidebar ─────────────────────────────────────────────── */
 .pageLayout {
   display: flex;
   min-height: 100vh;
