@@ -2,9 +2,9 @@
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Book } from "../interfaces/Book";
-import BookCard from "./bookCard";
-import "./bookList.css";
+import { Book } from "@/app/interfaces/Book";
+import BookCard from "../bookCard";
+import "../bookList.css";
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -150,6 +150,15 @@ export default function Home() {
         >
           Catalogus
         </li>
+        <li
+          className={activeTab === "Boek toevoegen" ? "active" : ""}
+          onClick={() => {
+            setActiveTab("Boek toevoegen");
+            router.push("../../add-book");
+          }}
+        >
+          Boek toevoegen
+        </li>
 
         {selectedIds.size > 0 && (
           <li onClick={() => setShowConfirm(true)}>
@@ -161,7 +170,6 @@ export default function Home() {
       <div id="bookList">
         {results.map((book) => (
           <BookCard
-            withCheckbox={false}
             key={book.id}
             book={book}
             isSelected={selectedIds.has(book.id)}
