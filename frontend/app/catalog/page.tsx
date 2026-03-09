@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Book } from "../interfaces/Book";
 import BookCard from "./bookCard";
@@ -15,15 +16,51 @@ export default function Home() {
   const [showConfirm, setShowConfirm] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  /**
+   * Fetcht alle boeken bij het laden van de pagina.
+   * Als er nog geen zoekquery is, zet deze boeken dan ook als resultaten (om de volledige catalogus te tonen).
+   */
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/all`)
       .then((res) => res.json())
       .then((data: Book[]) => {
         setBooks(data);
-        setResults(data);
+        if (!query) {
+          setResults(data);
+        }
       });
   }, []);
 
+  /**
+   * Als er een 'search' query param is,
+   * gebruik deze dan als zoekquery en sla deze op in sessionStorage (zodat deze behouden blijft bij page-refresh).
+   */
+  useEffect(() => {
+    const incoming = searchParams.get("search");
+    if (incoming) {
+      setQuery(incoming);
+      sessionStorage.setItem("catalogSearch", incoming);
+      router.replace(pathname);
+    } else {
+      /**
+       * Als er geen 'search' query param is, maar er is wel een opgeslagen zoekquery in sessionStorage,
+       * gebruik deze dan. (search blijft bij page-refresh)
+       */
+      const saved = sessionStorage.getItem("catalogSearch");
+      if (saved) {
+        setQuery(saved);
+      }
+    }
+  }, [searchParams]);
+
+  /**
+   * Wanneer de zoekquery verandert, of wanneer de boekenlijst verandert (bijvoorbeeld na het verwijderen van boeken),
+   * voer dan een nieuwe zoekopdracht uit. Als de zoekquery leeg is, toon dan alle boeken.
+   */
   useEffect(() => {
     if (!query || query.trim() === "") {
       setResults(books);
@@ -41,6 +78,9 @@ export default function Home() {
     return () => clearTimeout(delay);
   }, [query, books]);
 
+  /**
+   * Toggle of een boek geselecteerd is of niet, op basis van zijn ID. (voor het verwijderen van meerdere boeken tegelijk)
+   */
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -53,6 +93,9 @@ export default function Home() {
     });
   };
 
+  /**
+   * Probeer de geselecteerde boeken te verwijderen. Stuur voor elk geselecteerd boek een DELETE request naar de API.
+   */
   const tryDelete = async () => {
     setDeleting(true);
 
@@ -74,6 +117,7 @@ export default function Home() {
       setDeleting(false);
     }
   };
+
   return (
     <main>
       <div className="filterSection">
@@ -82,7 +126,15 @@ export default function Home() {
             type="text"
             placeholder="Titel, auteur, genre, onderwerp"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            // Saved de query in state en sessionStorage (zodat deze behouden blijft bij page-refresh)
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (e.target.value) {
+                sessionStorage.setItem("catalogSearch", e.target.value);
+              } else {
+                sessionStorage.removeItem("catalogSearch");
+              }
+            }}
           />
           <button id="searchButton" aria-label="Zoeken">
             🔎︎
@@ -110,12 +162,8 @@ export default function Home() {
             Verwijder {selectedIds.size} boek(en)
           </li>
         )}
-        {selectedIds.size > 0 && (
-          <li onClick={() => setSpotlight()}>
-            {selectedIds.size} boek(en) in kijker zetten
-          </li>
-        )}
       </ul>
+
       <div id="bookList">
         {results.map((book) => (
           <BookCard
@@ -132,7 +180,6 @@ export default function Home() {
           <div className="modalBox">
             <p>Ben je zeker dat je deze wilt verwijderen?</p>
             <p>Deze actie is onterugkeerbaar!</p>
-
             <div>
               <button onClick={() => setShowConfirm(false)} disabled={deleting}>
                 Ga terug
