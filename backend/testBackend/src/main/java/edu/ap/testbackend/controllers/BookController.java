@@ -1,10 +1,14 @@
 package edu.ap.testbackend.controllers;
 
+import edu.ap.testbackend.dto.BookDTO;
+import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
 import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -64,6 +68,19 @@ public class BookController {
             @RequestParam boolean value) throws BookNotFoundException {
         bookService.updateSpotlight(id, value);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> importBooks(@RequestParam("file") MultipartFile file) {
+        try {
+            BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>("An error occurred while importing the Excel file.",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping("/add/{isbn}")

@@ -16,10 +16,10 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
 
     List<BookEntity> findTop4ByOrderByIdDesc();
 
+    boolean existsByIsbn(String isbn);
+
     @Query("SELECT DISTINCT b FROM BookEntity b JOIN b.authors a WHERE " +
             "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
             "LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<BookEntity> searchByTitleOrAuthor(@Param("query") String query);
-
-    boolean existsByIsbn(String isbn);
 }

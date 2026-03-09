@@ -1,5 +1,6 @@
 package edu.ap.testbackend.controllers;
 
+import edu.ap.testbackend.dto.BookDTO;
 import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package edu.ap.testbackend.services;
 
-import edu.ap.testbackend.controllers.BookDTO;
+import edu.ap.testbackend.dto.BookDTO;
 import edu.ap.testbackend.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.testbackend.dto.googlebooks.VolumeInfo;
 import edu.ap.testbackend.entities.BookEntity;
@@ -9,6 +9,18 @@ import edu.ap.testbackend.repositories.BookRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
+import edu.ap.testbackend.dto.importdto.ImportMismatchDTO;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.ArrayList;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,74 +46,14 @@ public class BookService {
     }
 
     public BookDTO searchBookByIsbn(String isbn) {
-        String url = googleBooksApiUrl + isbn;
-        GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
-
-        if (response == null || response.getItems() == null || response.getItems().isEmpty()) {
-            throw new IllegalArgumentException("No book found for ISBN: " + isbn);
-        }
-
-        VolumeInfo volumeInfo = response.getItems().get(0).getVolumeInfo();
-
-        BookEntity previewBook = new BookEntity();
-        previewBook.setTitle(volumeInfo.getTitle() != null ? volumeInfo.getTitle() : "Onbekende Titel");
-        previewBook.setAuthors(volumeInfo.getAuthors() != null ? volumeInfo.getAuthors() : new java.util.ArrayList<>());
-        previewBook.setPublisher(volumeInfo.getPublisher());
-        previewBook.setDescription(volumeInfo.getDescription());
-        previewBook.setPageCount(volumeInfo.getPageCount() != null ? volumeInfo.getPageCount() : 0);
-        previewBook.setCategories(
-                volumeInfo.getCategories() != null ? volumeInfo.getCategories() : new java.util.ArrayList<>());
-
-        if (volumeInfo.getImageLinks() != null) {
-            previewBook.setThumbnail(volumeInfo.getImageLinks().getThumbnail());
-        } else {
-            previewBook.setThumbnail("");
-        }
-
-        previewBook.setLanguage(volumeInfo.getLanguage());
-        previewBook.setRating(volumeInfo.getAverageRating() != null ? volumeInfo.getAverageRating() : 0.0);
-
-        previewBook.setIsbn(isbn);
-        previewBook.setPublishedYear(extractYear(volumeInfo.getPublishedDate()));
-
+        BookEntity previewBook = buildBookEntityFromGoogle(isbn);
         return toDTO(previewBook);
     }
 
     public BookDTO addBookByIsbn(String isbn) {
-        String requestUrl = googleBooksApiUrl + isbn;
-        GoogleBooksResponse response = restTemplate.getForObject(requestUrl, GoogleBooksResponse.class);
-
-        if (response != null && response.getItems() != null && !response.getItems().isEmpty()) {
-            VolumeInfo volumeInfo = response.getItems().get(0).getVolumeInfo();
-
-            BookEntity newBook = new BookEntity();
-            newBook.setTitle(volumeInfo.getTitle() != null ? volumeInfo.getTitle() : "Onbekende Titel");
-
-            newBook.setAuthors(volumeInfo.getAuthors() != null ? volumeInfo.getAuthors() : new java.util.ArrayList<>());
-            newBook.setPublisher(volumeInfo.getPublisher());
-            newBook.setDescription(volumeInfo.getDescription());
-            newBook.setPageCount(volumeInfo.getPageCount() != null ? volumeInfo.getPageCount() : 0);
-            newBook.setCategories(
-                    volumeInfo.getCategories() != null ? volumeInfo.getCategories() : new java.util.ArrayList<>());
-
-            if (volumeInfo.getImageLinks() != null) {
-                newBook.setThumbnail(volumeInfo.getImageLinks().getThumbnail());
-            } else {
-                newBook.setThumbnail("");
-            }
-
-            newBook.setLanguage(volumeInfo.getLanguage());
-            newBook.setRating(volumeInfo.getAverageRating() != null ? volumeInfo.getAverageRating() : 0.0);
-
-            newBook.setIsbn(isbn);
-            newBook.setPublishedYear(extractYear(volumeInfo.getPublishedDate()));
-
-            BookEntity savedBook = bookRepository.save(newBook);
-
-            return toDTO(savedBook);
-        } else {
-            throw new IllegalArgumentException("No book found for ISBN: " + isbn);
-        }
+        BookEntity newBook = buildBookEntityFromGoogle(isbn);
+        BookEntity savedBook = bookRepository.save(newBook);
+        return toDTO(savedBook);
     }
 
     private Integer extractYear(String publishedDate) {
@@ -178,6 +130,99 @@ public class BookService {
                 .toList();
     }
 
+    public BulkImportResponseDTO importBooksFromExcel(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Upload een excel file die niet leeg is");
+        }
+
+        List<ImportMismatchDTO> mismatches = new ArrayList<>();
+        int totalRows = 0;
+        int savedCount = 0;
+
+        DataFormatter formatter = new DataFormatter();
+
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+                if (row == null) {
+                    continue;
+                }
+
+                String isbn = formatter.formatCellValue(row.getCell(0)).trim();
+                String excelTitle = formatter.formatCellValue(row.getCell(1)).trim();
+
+                if (isbn.isBlank() && excelTitle.isBlank()) {
+                    continue;
+                }
+
+                totalRows++;
+
+                if (isbn.isBlank() || excelTitle.isBlank()) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            isbn,
+                            excelTitle,
+                            null,
+                            "Geen ISBN nummer of titel"));
+                    continue;
+                }
+
+                if (bookRepository.existsByIsbn(isbn)) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            isbn,
+                            excelTitle,
+                            null,
+                            "Boek bestaat al in de database"));
+                    continue;
+                }
+
+                try {
+                    BookEntity fetchedBook = buildBookEntityFromGoogle(isbn);
+
+                    if (!titlesMatch(excelTitle, fetchedBook.getTitle())) {
+                        mismatches.add(new ImportMismatchDTO(
+                                rowIndex + 1,
+                                isbn,
+                                excelTitle,
+                                fetchedBook.getTitle(),
+                                "De titel komt niet overeen (" + fetchedBook.getTitle() + ")"));
+                        continue;
+                    }
+
+                    bookRepository.save(fetchedBook);
+                    savedCount++;
+
+                } catch (IllegalArgumentException e) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            isbn,
+                            excelTitle,
+                            null,
+                            "Geen boeken gevonden in Google Books"));
+                } catch (Exception e) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            isbn,
+                            excelTitle,
+                            null,
+                            "Onverwachte fout bij het ophalen en opslaan"));
+                }
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Kon de excel file niet lezen", e);
+        }
+
+        return new BulkImportResponseDTO(
+                totalRows,
+                savedCount,
+                mismatches.size(),
+                mismatches);
+    }
+
     private BookDTO toDTO(BookEntity book) {
         return new BookDTO(
                 book.getId(),
@@ -192,6 +237,56 @@ public class BookService {
                 book.getRating(),
                 book.getIsbn(),
                 book.getPublishedYear());
+    }
+
+    // Helper functions
+    private BookEntity buildBookEntityFromGoogle(String isbn) {
+        String url = googleBooksApiUrl + isbn;
+        GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
+
+        if (response == null || response.getItems() == null || response.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Geen boek voor ISBN: " + isbn);
+        }
+
+        VolumeInfo volumeInfo = response.getItems().get(0).getVolumeInfo();
+
+        BookEntity book = new BookEntity();
+        book.setTitle(volumeInfo.getTitle() != null ? volumeInfo.getTitle() : "Onbekende Titel");
+        book.setAuthors(volumeInfo.getAuthors() != null ? volumeInfo.getAuthors() : new java.util.ArrayList<>());
+        book.setPublisher(volumeInfo.getPublisher());
+        book.setDescription(volumeInfo.getDescription());
+        book.setPageCount(volumeInfo.getPageCount() != null ? volumeInfo.getPageCount() : 0);
+        book.setCategories(
+                volumeInfo.getCategories() != null ? volumeInfo.getCategories() : new java.util.ArrayList<>());
+
+        if (volumeInfo.getImageLinks() != null) {
+            book.setThumbnail(volumeInfo.getImageLinks().getThumbnail());
+        } else {
+            book.setThumbnail("");
+        }
+
+        book.setLanguage(volumeInfo.getLanguage());
+        book.setRating(volumeInfo.getAverageRating() != null ? volumeInfo.getAverageRating() : 0.0);
+        book.setIsbn(isbn);
+        book.setPublishedYear(extractYear(volumeInfo.getPublishedDate()));
+        book.setSpotlight(false);
+
+        return book;
+    }
+
+    private boolean titlesMatch(String excelTitle, String fetchedTitle) {
+        return normalizeTitle(excelTitle).equals(normalizeTitle(fetchedTitle));
+    }
+
+    private String normalizeTitle(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .trim()
+                .toLowerCase()
+                .replaceAll("\\s+", " ");
     }
 
 }

@@ -3,12 +3,26 @@
 import { useState } from "react";
 import { Book } from "../interfaces/Book";
 import "./addBook.css";
-import { read, utils } from "xlsx";
 
 
 type ImportedBook = {
   isbn: string;
   title: string;
+};
+
+type ImportMismatch = {
+  rowNumber: number;
+  isbn: string;
+  excelTitle: string;
+  fetchedTitle: string | null;
+  reason: string;
+};
+
+type ImportResult = {
+  totalRows: number;
+  savedCount: number;
+  mismatchCount: number;
+  mismatches: ImportMismatch[];
 };
 
 type TabId = "Boek" | "Boekenlijst";
@@ -19,47 +33,52 @@ export default function AddBookPage() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<TabId>("Boek");
   const [previewBook, setPreviewBook] = useState<Book | null>(null);
-  const [importedBooks, setImportedBooks] = useState<ImportedBook[]>([]);
-  const [fetchedBooks, setFetchedBooks] = useState<Book[]>([]);
   const [mismatchedBooks, setMismatchedBooks] = useState<ImportedBook[]>([])
-  const [error, setError] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   const cls = (id: TabId) => `tabBtn ${selected === id ? "selectedCategory" : ""}`;
 
-    const handleFileChange = async (
-  e: React.ChangeEvent<HTMLInputElement>
-) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setSelectedFile(file);
+    setImportResult(null);
+    setMessage("");
+  };
 
-  setError("");
-  setImportedBooks([]);
+  const handleUploadExcel = async () => {
+  if (!selectedFile) return;
+
+  setLoading(true);
+  setMessage("");
+  setImportResult(null);
 
   try {
-    const buffer = await file.arrayBuffer();
-    const workbook = read(buffer, { type: "array" });
+    const formData = new FormData();
+    formData.append("file", selectedFile);
 
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/books/import`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
-    const rows = utils.sheet_to_json<(string | number)[]>(worksheet, {
-      header: 1,
-      defval: "",
-    });
+    const data = await response.json();
 
-    const dataRows = rows.slice(1);
+    if (!response.ok) {
+      setMessage(data?.message || "Er ging iets mis bij het importeren.");
+      return;
+    }
 
-    const imported: ImportedBook[] = dataRows
-      .map((row) => ({
-        isbn: String(row[0] ?? "").trim(),
-        title: String(row[1] ?? "").trim(),
-      }))
-      .filter((book) => book.isbn !== "" && book.title !== "");
-
-    setImportedBooks(imported);
-  } catch (err) {
-    console.error(err);
-    setError("Could not read the Excel file.");
+    setImportResult(data);
+    setMessage(`Import klaar. ${data.savedCount} boeken opgeslagen.`);
+  } catch (error) {
+    console.error(error);
+    setMessage("Kan de server niet bereiken.");
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -354,88 +373,84 @@ else {
         accept=".xlsx,.xls"
         onChange={handleFileChange}
       />
-
-      {error && <p>{error}</p>}
     </div>
-    { importedBooks.length !== 0 &&(
-      <div>
-        <p>Deze ISBN nummers komen niet overeen met hun titel:</p>
-        <ul>
-          {importedBooks.map((book, index) => (
-            <li key={book.isbn || index}>
-              {book.isbn} | {book.title}
-            </li>
-          ))}
-        </ul>
-      </div>)
-      }
-      <div>
-          {/* Bevestigingsknoppen */}
-          { importedBooks.length !== 0 &&(
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
-            <button
-              onClick={handleConfirmAdd}
-              disabled={loading}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                backgroundColor: "#28a745",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              {loading ? "Bezig..." : "Ja, Voeg toe aan Catalogus"}
-            </button>
-            <button
-              onClick={() => {
-                setPreviewBook(null);
-                setMessage("");
-                setIsbn("");
-              }}
-              disabled={loading}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                backgroundColor: "#dc3545",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              Annuleren
-            </button>
-          </div>
- )} </div>
+    {selectedFile && (
+      <div style={{ marginTop: "1rem" }}>
+        <p>Geselecteerd bestand: {selectedFile.name}</p>
 
-      {/* Meldingen weergeven */}
-      {message && (
-        <div
+        <button
+          onClick={handleUploadExcel}
+          disabled={loading}
           style={{
-            marginTop: "2rem",
-            padding: "1rem",
-            backgroundColor: message.includes("succesvol")
-              ? "#d4edda"
-              : message.includes("gevonden!")
-                ? "#cce5ff"
-                : "#f8d7da",
-            color: message.includes("succesvol")
-              ? "#155724"
-              : message.includes("gevonden!")
-                ? "#004085"
-                : "#721c24",
+            padding: "0.75rem 1.5rem",
+            backgroundColor: "#28a745",
+            color: "white",
+            border: "none",
             borderRadius: "4px",
+            fontWeight: "bold",
+            cursor: loading ? "not-allowed" : "pointer",
           }}
         >
-          {message}
-        </div>
-      )}
-    </div>
-    );
+          {loading ? "Bezig met importeren..." : "Importeer Excelbestand"}
+        </button>
+      </div>
+    )}
+
+    {importResult && (
+      <div
+        style={{
+          marginTop: "2rem",
+          padding: "1rem",
+          border: "1px solid #ccc",
+          borderRadius: "8px",
+          backgroundColor: "#f9f9f9",
+          color: "black",
+        }}
+      >
+        <h2>Import resultaat</h2>
+        <p>Totaal aantal rijen: {importResult.totalRows}</p>
+        <p>Opgeslagen boeken: {importResult.savedCount}</p>
+        <p>Mismatches / fouten: {importResult.mismatchCount}</p>
+
+        {importResult.mismatches.length > 0 && (
+          <div style={{ marginTop: "1rem" }}>
+            <p>Problemen gevonden in deze rijen:</p>
+            <ul>
+              {importResult.mismatches.map((mismatch, index) => (
+                <li key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
+                  Rij {mismatch.rowNumber}: {mismatch.isbn} | Excel:{" "}
+                  {mismatch.excelTitle}
+                  {mismatch.fetchedTitle
+                    ? ` | Google: ${mismatch.fetchedTitle}`
+                    : ""}
+                  {" | "}Reden: {mismatch.reason}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    )}
+
+    {message && (
+      <div
+        style={{
+          marginTop: "2rem",
+          padding: "1rem",
+          backgroundColor: message.includes("klaar") || message.includes("opgeslagen")
+            ? "#d4edda"
+            : "#f8d7da",
+          color: message.includes("klaar") || message.includes("opgeslagen")
+            ? "#155724"
+            : "#721c24",
+          borderRadius: "4px",
+        }}
+      >
+        {message}
+      </div>
+    )}
+  </div>
+  );
 }
 }
 

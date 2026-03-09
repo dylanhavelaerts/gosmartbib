@@ -1,6 +1,6 @@
 package edu.ap.testbackend.services;
 
-import edu.ap.testbackend.controllers.BookDTO;
+import edu.ap.testbackend.dto.BookDTO;
 import edu.ap.testbackend.dto.googlebooks.GoogleBookItem;
 import edu.ap.testbackend.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.testbackend.dto.googlebooks.VolumeInfo;
