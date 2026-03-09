@@ -2,13 +2,26 @@
 
 import { useState } from "react";
 import { Book } from "../interfaces/Book";
+import "./addBook.css";
+
+
+type ImportedBook = {
+  isbn: string;
+  title: string;
+};
+
+type TabId = "Boek" | "Boekenlijst";
 
 export default function AddBookPage() {
   const [isbn, setIsbn] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [selected, setSelected] = useState<TabId>("Boek");
   const [previewBook, setPreviewBook] = useState<Book | null>(null);
+  const [importedBooks, setImportedBook] = useState<ImportedBook[]>([]);
+  const [error, setError] = useState("");
+
+  const cls = (id: TabId) => `tabBtn ${selected === id ? "selectedCategory" : ""}`;
 
   const handleSearchBook = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +84,7 @@ export default function AddBookPage() {
     }
   };
 
+  if(selected === "Boek"){
   return (
     <div
       style={{
@@ -80,6 +94,10 @@ export default function AddBookPage() {
         fontFamily: "sans-serif",
       }}
     >
+      <nav className="lowerNav">
+        <button style={{}}className={cls("Boek")} onClick={() => setSelected("Boek")}>in de kijker</button>
+        <button className={cls("Boekenlijst")} onClick={() => setSelected("Boekenlijst")}>Nieuw in bibliotheek</button>
+      </nav>
       <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
         Nieuw Boek Toevoegen
       </h1>
@@ -261,3 +279,182 @@ export default function AddBookPage() {
     </div>
   );
 }
+
+
+else {
+    return (
+    <div
+      style={{
+        padding: "2rem",
+        maxWidth: "600px",
+        margin: "0 auto",
+        fontFamily: "sans-serif",
+      }}
+    >
+      <nav className="lowerNav">
+        <button style={{}}className={cls("Boek")} onClick={() => setSelected("Boek")}>in de kijker</button>
+        <button className={cls("Boekenlijst")} onClick={() => setSelected("Boekenlijst")}>Nieuw in bibliotheek</button>
+      </nav>
+      <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
+        Excel file toevoegen
+      </h1>
+      <p style={{ color: "#555" }}>
+        Hieronder vind u een link naar een template om boeken toe te voegen.
+      </p>
+      <a href="\BoekenlijstTemplate.xlsx" download>
+        Download Excelbestand
+      </a>
+      <p style={{ color: "#555" }}>
+        Voeg hieronder de aangevulde excel file toe.
+      </p>
+      {/* Zoekformulier */}
+    <div>
+      <input
+        type="file"
+        accept=".xlsx,.xls"
+      />
+
+      {error && <p>{error}</p>}
+    </div>
+
+        {/* Alleen tonen als we nog NIET aan het previewen zijn */}
+        {!previewBook && (
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: "0.75rem 1.5rem",
+              fontSize: "1rem",
+              cursor: loading ? "not-allowed" : "pointer",
+              backgroundColor: loading ? "#ccc" : "#0070f3",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              fontWeight: "bold",
+            }}
+          >
+            {loading ? "Bezig met zoeken..." : "Zoek Boek"}
+          </button>
+        )}
+
+      {/* De Preview Kaart! */}
+      {previewBook && (
+        <div
+          style={{
+            marginTop: "2rem",
+            padding: "1.5rem",
+            border: "2px solid #0070f3",
+            borderRadius: "8px",
+            backgroundColor: "#f9f9f9",
+            color: "black",
+          }}
+        >
+          <h2 style={{ marginTop: 0 }}>Preview van het boek:</h2>
+          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+            {previewBook.thumbnail && (
+              <img
+                src={previewBook.thumbnail}
+                alt="Cover"
+                style={{
+                  width: "100px",
+                  height: "150px",
+                  objectFit: "cover",
+                  borderRadius: "4px",
+                }}
+              />
+            )}
+            <div>
+              <p>
+                <strong>Titel:</strong> {previewBook.title}
+              </p>
+              <p>
+                <strong>Auteur(s):</strong> {previewBook.authors?.join(", ")}
+              </p>
+              <p>
+                <strong>Uitgeverij:</strong> {previewBook.publisher}
+              </p>
+              <p>
+                <strong>Jaar van uitgave:</strong>{" "}
+                {previewBook.publishedYear
+                  ? previewBook.publishedYear
+                  : "Onbekend"}
+              </p>
+              <p>
+                <strong>ISBN:</strong> {previewBook.isbn}
+              </p>
+              <p>
+                <strong>Pagina's:</strong> {previewBook.pageCount}
+              </p>
+            </div>
+          </div>
+
+          {/* Bevestigingsknoppen */}
+          <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
+            <button
+              onClick={handleConfirmAdd}
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: "0.75rem",
+                backgroundColor: "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              {loading ? "Bezig..." : "Ja, Voeg toe aan Catalogus"}
+            </button>
+            <button
+              onClick={() => {
+                setPreviewBook(null);
+                setMessage("");
+                setIsbn("");
+              }}
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: "0.75rem",
+                backgroundColor: "#dc3545",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              Annuleren
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Meldingen weergeven */}
+      {message && (
+        <div
+          style={{
+            marginTop: "2rem",
+            padding: "1rem",
+            backgroundColor: message.includes("succesvol")
+              ? "#d4edda"
+              : message.includes("gevonden!")
+                ? "#cce5ff"
+                : "#f8d7da",
+            color: message.includes("succesvol")
+              ? "#155724"
+              : message.includes("gevonden!")
+                ? "#004085"
+                : "#721c24",
+            borderRadius: "4px",
+          }}
+        >
+          {message}
+        </div>
+      )}
+    </div>
+  );
+}
+}
+
+

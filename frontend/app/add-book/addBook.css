@@ -1,0 +1,17 @@
+.lowerNav {
+  background-color: transparent;
+  border-bottom: solid #8e1f42 0.1rem;
+}
+.lowerNav button {
+  background-color: transparent;
+  height: 130%;
+}
+.selectedCategory {
+  color: #8e1f42;
+  background-color: #e4d9dc;
+  border-bottom: solid #8e1f42 0.2rem;
+}
+a {
+  text-decoration: none;
+  color: #8e1f42;
+}
