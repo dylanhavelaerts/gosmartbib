@@ -136,21 +136,42 @@ public class BookService {
         bookRepository.delete(book);
     }
 
-    public List<BookDTO> search(String query) {
+    public void updateSpotlight(Long id, boolean spotlight) {
+        BookEntity book = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
+
+        book.setSpotlight(spotlight);
+        bookRepository.save(book);
+    }
+
+    /**
+     * Zoekt boeken op basis van een zoekterm. Er wordt gezocht in zowel de titel als de auteurs van het boek.
+     * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle boeken teruggegeven.
+     * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar DTO's.
+     */
+    public List<BookDTO> searchByTitleOrAuthor(String query) {
         if (query == null || query.isBlank()) {
             return bookRepository.findAll()
                     .stream()
                     .map(this::toDTO)
                     .collect(Collectors.toList());
         }
+
         return bookRepository.searchByTitleOrAuthor(query.trim())
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<BookDTO> getAllBooksInSpotlight() {
+    public List<BookDTO> getTop4BooksInSpotlight() {
         return bookRepository.findTop4BySpotlightTrueOrderByIdDesc()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    public List<BookDTO> getAllBooksInSpotlight() {
+        return bookRepository.findBySpotlightTrueOrderByIdDesc()
                 .stream()
                 .map(this::toDTO)
                 .toList();

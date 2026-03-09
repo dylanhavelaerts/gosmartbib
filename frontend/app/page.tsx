@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { Book } from "./interfaces/Book";
 import BookCard from "./catalog/bookCard";
-import "./dashboard.css"
-import Link from "next/link";
+import "./dashboard.css";
 import { useRouter } from "next/navigation";
 
 type TabId = "spotlight" | "new";
@@ -15,16 +14,18 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const router = useRouter();
 
-  const cls = (id: TabId) => `tabBtn ${selected === id ? "selectedCategory" : ""}`;
+  const cls = (id: TabId) =>
+    `tabBtn ${selected === id ? "selectedCategory" : ""}`;
 
   useEffect(() => {
-    const endpoint = selected === "spotlight" ? "/books/spotlight" : "/books/latest";
+    const endpoint =
+      selected === "spotlight" ? "/books/spotlight" : "/books/latest";
     fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`)
       .then((res) => res.json())
       .then((data: Book[]) => setBooks(data));
   }, [selected]);
 
-    const handleSearch = (e: React.SubmitEvent) => {
+  const handleSearch = (e: React.SubmitEvent) => {
     e.preventDefault();
 
     if (!search.trim()) return;
@@ -37,30 +38,52 @@ export default function Home() {
       <main>
         <div id="searchBox">
           <form className="searchbar" onSubmit={handleSearch}>
-            <input type="text" placeholder="Titel, auteur, genre, onderwerp" value={search} onChange={(text) => setSearch(text.target.value)} />
-            <button id="searchButton" type="submit">🔎︎</button>
+            <input
+              type="text"
+              placeholder="Titel, auteur, genre, onderwerp"
+              value={search}
+              onChange={(text) => setSearch(text.target.value)}
+            />
+            <button id="searchButton" type="submit">
+              🔎︎
+            </button>
           </form>
-          <Link href="/catalog">
-          <button className="semitransparentButton">Bekijk Catalogus →</button>
-          </Link>
+          <button
+            className="semitransparentButton"
+            onClick={() =>
+              router.push(
+                search.trim() ? `/catalog?search=${search}` : "/catalog",
+              )
+            }
+          >
+            Bekijk Catalogus →
+          </button>
         </div>
         <div id="dashboard">
           <nav>
-            <button className={cls("spotlight")} onClick={() => setSelected("spotlight")}>in de kijker</button>
-            <button className={cls("new")} onClick={() => setSelected("new")}>Nieuw in bibliotheek</button>
+            <button
+              className={cls("spotlight")}
+              onClick={() => setSelected("spotlight")}
+            >
+              in de kijker
+            </button>
+            <button className={cls("new")} onClick={() => setSelected("new")}>
+              Nieuw in bibliotheek
+            </button>
           </nav>
           <div id="bookListDashboard">
             {books.map((book) => (
-            <BookCard
+              <BookCard
                 key={book.id}
                 book={book}
-                isSelected= {false}
-                onToggle= {() => {}}
+                isSelected={false}
+                onToggle={() => {}}
                 withCheckbox={false}
-            />
-              ))}
+              />
+            ))}
           </div>
         </div>
-      </main></>
-  )
+      </main>
+    </>
+  );
 }

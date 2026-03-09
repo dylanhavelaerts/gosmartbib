@@ -150,6 +150,50 @@ main ul li.active {
   border-radius: 4px;
 }
 
+.filterSection {
+  display: flex;
+  justify-content: center;
+  padding: 1.2rem 1rem 0.5rem;
+}
+
+.catalogSearchbar {
+  background-color: #ece6f0;
+  border-radius: 2rem;
+  padding: 0.55rem 0.75rem 0.55rem 1.2rem;
+  width: 70%;
+  max-width: 850px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s;
+}
+
+.catalogSearchbar:focus-within {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.catalogSearchbar input {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.catalogSearchbar input::placeholder {
+  color: #999;
+}
+
+.semitransparentButton {
+  background-color: #922648;
+  opacity: 0.9;
+  padding: 0.5rem;
+  width: 35%;
+  border-radius: 0.5rem;
+  color: white;
+}
+
 /* ── Sidebar ─────────────────────────────────────────────── */
 .pageLayout {
   display: flex;

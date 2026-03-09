@@ -9,8 +9,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.GetMapping;
-
 @RestController
 @RequestMapping("/books")
 @CrossOrigin(origins = "*")
@@ -26,9 +24,14 @@ public class BookController {
         return bookService.getAllBooks();
     }
 
+    @GetMapping("/spotlight/all")
+    public List<BookDTO> getAllBooksInSpotlight() {
+        return bookService.getAllBooksInSpotlight();
+    }
+
     @GetMapping("/spotlight")
     public List<BookDTO> getBooksInSpotlight() {
-        return bookService.getAllBooksInSpotlight();
+        return bookService.getTop4BooksInSpotlight();
     }
 
     @GetMapping("/latest")
@@ -54,7 +57,26 @@ public class BookController {
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) throws BookNotFoundException {
         bookService.deleteBook(id);
         return ResponseEntity.noContent().build();
+    }
 
+    @PatchMapping("/book/{id}/spotlight")
+    public ResponseEntity<Void> updateSpotlight(
+            @PathVariable Long id,
+            @RequestParam boolean value) throws BookNotFoundException {
+        bookService.updateSpotlight(id, value);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Zoekt boeken op basis van een zoekterm.
+     * Er wordt gezocht in zowel de titel als de auteurs van het boek.
+     * Als de zoekterm leeg is, worden alle boeken teruggegeven.
+     * @param query De zoekterm om op te filteren
+     * @return Een lijst van boeken die overeenkomen met de zoekterm
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<BookDTO>> searchByTitleOrAuthor(@RequestParam String query) {
+        return ResponseEntity.ok(bookService.searchByTitleOrAuthor(query));
     }
 
     @PostMapping("/add/{isbn}")

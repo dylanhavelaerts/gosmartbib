@@ -12,8 +12,15 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
 
     List<BookEntity> findTop4BySpotlightTrueOrderByIdDesc();
 
+    List<BookEntity> findBySpotlightTrueOrderByIdDesc();
+
     List<BookEntity> findTop4ByOrderByIdDesc();
 
+    /**
+     * Zoek boeken op titel of auteur, case-insensitive en ondersteunt gedeeltelijke overeenkomsten.
+     * @param query
+     * @return
+     */
     @Query("SELECT DISTINCT b FROM BookEntity b JOIN b.authors a WHERE " +
             "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
             "LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))")
