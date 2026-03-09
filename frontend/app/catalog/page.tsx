@@ -113,115 +113,92 @@ export default function Home() {
           </li>
         )}
       </ul>
-      <div className="catalogLayout">
-        <aside className="filterSidebar">
-          <h2>Filters</h2>
+      <div className="filterBar">
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          className="filterSelect"
+        >
+          <option value="">Alle talen</option>
+          <option value="en">EN</option>
+        </select>
 
-          <div className="filterGroup">
-            <span className="filterGroupLabel">Taal</span>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="filterSelect"
-            >
-              <option value="">Alle talen</option>
-              <option value="en">EN</option>
-            </select>
-          </div>
-
-          <div className="filterGroup">
-            <span className="filterGroupLabel">Genre</span>
-            <div className="filterDropdown">
-              <button
-                className="filterDropdownToggle"
-                onClick={() => setCategoryOpen(!categoryOpen)}
-              >
-                {categories.size > 0
-                  ? `${categories.size} geselecteerd`
-                  : "Alle genres"}{" "}
-                ▼
-              </button>
-              {categoryOpen && (
-                <div className="filterDropdownPanel">
-                  {[
-                    "Programming",
-                    "Software Engineering",
-                    "Best Practices",
-                    "Architecture",
-                    "Code Quality",
-                    "Java",
-                    "Spring",
-                    "Algorithms",
-                    "Computer Science",
-                    "JavaScript",
-                    "Web Development",
-                    "Career",
-                    "Design Patterns",
-                    "Software Design",
-                  ].map((cat) => (
-                    <label key={cat} className="filterCheckboxLabel">
-                      <input
-                        type="checkbox"
-                        checked={categories.has(cat)}
-                        onChange={() => toggleCategory(cat)}
-                      />
-                      {cat}
-                    </label>
-                  ))}
-                </div>
-              )}
+        <div className="filterDropdown">
+          <button
+            className="filterDropdownToggle"
+            onClick={() => setCategoryOpen(!categoryOpen)}
+          >
+            Genre {categories.size > 0 ? `(${categories.size})` : ""} ▼
+          </button>
+          {categoryOpen && (
+            <div className="filterDropdownPanel">
+              {[
+                "Programming",
+                "Software Engineering",
+                "Best Practices",
+                "Architecture",
+                "Code Quality",
+                "Java",
+                "Spring",
+                "Algorithms",
+                "Computer Science",
+                "JavaScript",
+                "Web Development",
+                "Career",
+                "Design Patterns",
+                "Software Design",
+              ].map((cat) => (
+                <label key={cat} className="filterCheckboxLabel">
+                  <input
+                    type="checkbox"
+                    checked={categories.has(cat)}
+                    onChange={() => toggleCategory(cat)}
+                  />
+                  {cat}
+                </label>
+              ))}
             </div>
-          </div>
-
-          <div className="filterGroup">
-            <span className="filterGroupLabel">Pagina's</span>
-            <input
-              type="number"
-              placeholder="Min"
-              value={minPages}
-              onChange={(e) => setMinPages(e.target.value)}
-              className="filterInput"
-            />
-            <input
-              type="number"
-              placeholder="Max"
-              value={maxPages}
-              onChange={(e) => setMaxPages(e.target.value)}
-              className="filterInput"
-            />
-          </div>
-
-          <div className="filterGroup">
-            <span className="filterGroupLabel">Publicatiejaar</span>
-            <input
-              type="number"
-              placeholder="Min"
-              value={minYear}
-              onChange={(e) => setMinYear(e.target.value)}
-              className="filterInput"
-            />
-            <input
-              type="number"
-              placeholder="Max"
-              value={maxYear}
-              onChange={(e) => setMaxYear(e.target.value)}
-              className="filterInput"
-            />
-          </div>
-        </aside>
-
-        <div className="catalogContent">
-          <div id="bookList">
-            {books.map((book) => (
-              <BookCard
-                key={book.id}
-                book={book}
-                isSelected={selectedIds.has(book.id)}
-                onToggle={() => toggleSelect(book.id)}
-              />
-            ))}
-          </div>
+          )}
         </div>
+
+        <input
+          type="number"
+          placeholder="Min pagina's"
+          value={minPages}
+          onChange={(e) => setMinPages(e.target.value)}
+          className="filterInput"
+        />
+        <input
+          type="number"
+          placeholder="Max pagina's"
+          value={maxPages}
+          onChange={(e) => setMaxPages(e.target.value)}
+          className="filterInput"
+        />
+        <input
+          type="number"
+          placeholder="Min jaar"
+          value={minYear}
+          onChange={(e) => setMinYear(e.target.value)}
+          className="filterInput"
+        />
+        <input
+          type="number"
+          placeholder="Max jaar"
+          value={maxYear}
+          onChange={(e) => setMaxYear(e.target.value)}
+          className="filterInput"
+        />
+      </div>
+      <div id="bookList">
+        {books.map((book) => (
+          <BookCard
+            key={book.id}
+            book={book}
+            isSelected={selectedIds.has(book.id)}
+            onToggle={() => toggleSelect(book.id)}
+          />
+        ))}
       </div>
 
       {/* modal wordt alleen gerenderd als showConfirm true is*/}
