@@ -269,11 +269,15 @@ export default function Home() {
           >
             Catalogus
           </li>
+
           <li
             className={activeTab === "Boek toevoegen" ? "active" : ""}
-            onClick={() => setActiveTab("Boek toevoegen")}
+            onClick={() => {
+              setActiveTab("Boek toevoegen");
+              router.push("/catalog/admin");
+            }}
           >
-            Boek toevoegen
+            Naar admin pagina
           </li>
           {selectedIds.size > 0 && (
             <li onClick={() => setShowConfirm(true)}>
@@ -285,6 +289,7 @@ export default function Home() {
         <div id="bookList">
           {results.map((book) => (
             <BookCard
+              withCheckbox={false}
               key={book.id}
               book={book}
               isSelected={selectedIds.has(book.id)}
