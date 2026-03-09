@@ -11,4 +11,5 @@ export interface Book {
   rating: number;
   isbn: string;
   publishedYear: number;
+  spotlight: boolean;
 }

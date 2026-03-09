@@ -74,7 +74,6 @@ export default function Home() {
       setDeleting(false);
     }
   };
-
   return (
     <main>
       <div className="filterSection">
@@ -109,6 +108,11 @@ export default function Home() {
         {selectedIds.size > 0 && (
           <li onClick={() => setShowConfirm(true)}>
             Verwijder {selectedIds.size} boek(en)
+          </li>
+        )}
+        {selectedIds.size > 0 && (
+          <li onClick={() => setSpotlight()}>
+            {selectedIds.size} boek(en) in kijker zetten
           </li>
         )}
       </ul>

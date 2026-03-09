@@ -14,5 +14,5 @@ public record BookDTO(
         String language,
         Double rating,
         String isbn,
-        Integer publishedYear
-) {}
+        Integer publishedYear) {
+}

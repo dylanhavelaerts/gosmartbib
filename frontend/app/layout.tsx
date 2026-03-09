@@ -29,10 +29,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <header>
-          <img
+          <Link href={"/"}><img
             src="https://helpdesk.go-antwerpen.be/logo.php"
             className="goLogo"
-          />
+          /></Link>
         </header>
         <nav>
           <Link href="/">
@@ -41,8 +41,9 @@ export default function RootLayout({
           <Link href="/catalog">
             <button>Catalogus</button>
           </Link>
-          <button>Mijn uitleningen</button>
-          <button>Mijn leeslijst & favorieten</button>
+          <Link href="/spotlight"><button>In de kijker</button></Link>
+          <Link href="/"><button>Mijn uitleningen</button></Link>
+          <Link href="/"><button>Mijn leeslijst & favorieten</button></Link>
         </nav>
         <div id="backgroundImage"></div>
         {children}

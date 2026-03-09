@@ -49,14 +49,15 @@ public class BookService {
         previewBook.setPublisher(volumeInfo.getPublisher());
         previewBook.setDescription(volumeInfo.getDescription());
         previewBook.setPageCount(volumeInfo.getPageCount() != null ? volumeInfo.getPageCount() : 0);
-        previewBook.setCategories(volumeInfo.getCategories() != null ? volumeInfo.getCategories() : new java.util.ArrayList<>());
-        
+        previewBook.setCategories(
+                volumeInfo.getCategories() != null ? volumeInfo.getCategories() : new java.util.ArrayList<>());
+
         if (volumeInfo.getImageLinks() != null) {
             previewBook.setThumbnail(volumeInfo.getImageLinks().getThumbnail());
         } else {
             previewBook.setThumbnail("");
         }
-        
+
         previewBook.setLanguage(volumeInfo.getLanguage());
         previewBook.setRating(volumeInfo.getAverageRating() != null ? volumeInfo.getAverageRating() : 0.0);
 
@@ -75,20 +76,20 @@ public class BookService {
 
             BookEntity newBook = new BookEntity();
             newBook.setTitle(volumeInfo.getTitle() != null ? volumeInfo.getTitle() : "Onbekende Titel");
-            
-            
+
             newBook.setAuthors(volumeInfo.getAuthors() != null ? volumeInfo.getAuthors() : new java.util.ArrayList<>());
             newBook.setPublisher(volumeInfo.getPublisher());
             newBook.setDescription(volumeInfo.getDescription());
             newBook.setPageCount(volumeInfo.getPageCount() != null ? volumeInfo.getPageCount() : 0);
-            newBook.setCategories(volumeInfo.getCategories() != null ? volumeInfo.getCategories() : new java.util.ArrayList<>());
-            
+            newBook.setCategories(
+                    volumeInfo.getCategories() != null ? volumeInfo.getCategories() : new java.util.ArrayList<>());
+
             if (volumeInfo.getImageLinks() != null) {
                 newBook.setThumbnail(volumeInfo.getImageLinks().getThumbnail());
             } else {
                 newBook.setThumbnail("");
             }
-            
+
             newBook.setLanguage(volumeInfo.getLanguage());
             newBook.setRating(volumeInfo.getAverageRating() != null ? volumeInfo.getAverageRating() : 0.0);
 
@@ -96,7 +97,7 @@ public class BookService {
             newBook.setPublishedYear(extractYear(volumeInfo.getPublishedDate()));
 
             BookEntity savedBook = bookRepository.save(newBook);
-            
+
             return toDTO(savedBook);
         } else {
             throw new IllegalArgumentException("No book found for ISBN: " + isbn);
@@ -124,6 +125,7 @@ public class BookService {
                 .map(this::toDTO)
                 .orElseThrow(() -> new BookNotFoundException(id));
     }
+
     /**
      * Zoekt een boek op via het id.
      * Als het niet gevonden wordt, gooit het een BookNotFoundException.
@@ -132,6 +134,14 @@ public class BookService {
     public void deleteBook(Long id) throws BookNotFoundException {
         BookEntity book = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException(id));
         bookRepository.delete(book);
+    }
+
+    public void updateSpotlight(Long id, boolean spotlight) {
+        BookEntity book = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
+
+        book.setSpotlight(spotlight);
+        bookRepository.save(book);
     }
 
     public List<BookDTO> searchByTitleOrAuthor(String query) {
@@ -147,6 +157,27 @@ public class BookService {
                 .collect(Collectors.toList());
     }
 
+    public List<BookDTO> getTop4BooksInSpotlight() {
+        return bookRepository.findTop4BySpotlightTrueOrderByIdDesc()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    public List<BookDTO> getAllBooksInSpotlight() {
+        return bookRepository.findBySpotlightTrueOrderByIdDesc()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    public List<BookDTO> getLatestBooks() {
+        return bookRepository.findTop4ByOrderByIdDesc()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
     private BookDTO toDTO(BookEntity book) {
         return new BookDTO(
                 book.getId(),
@@ -159,9 +190,8 @@ public class BookService {
                 book.getThumbnail(),
                 book.getLanguage(),
                 book.getRating(),
-                book.getIsbn(),       
-                book.getPublishedYear()
-        );
+                book.getIsbn(),
+                book.getPublishedYear());
     }
-    
+
 }
