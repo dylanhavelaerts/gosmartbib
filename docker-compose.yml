@@ -60,6 +60,7 @@ services:
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: admin
       SERVER_SERVLET_CONTEXT_PATH: /api
+      APIKEY: ${APIKEY}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`gosmartbib.tech`) && PathPrefix(`/api`)"

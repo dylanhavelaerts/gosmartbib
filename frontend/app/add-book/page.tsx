@@ -418,11 +418,8 @@ else {
             <ul>
               {importResult.mismatches.map((mismatch, index) => (
                 <li key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
-                  Rij {mismatch.rowNumber}: {mismatch.isbn} | Excel:{" "}
+                  Rij {mismatch.rowNumber}: {mismatch.isbn} | {" "}
                   {mismatch.excelTitle}
-                  {mismatch.fetchedTitle
-                    ? ` | Google: ${mismatch.fetchedTitle}`
-                    : ""}
                   {" | "}Reden: {mismatch.reason}
                 </li>
               ))}

@@ -18,6 +18,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,6 +33,9 @@ public class BookService {
 
     @Value("${google.books.api.url}")
     private String googleBooksApiUrl;
+
+    @Value("${google.books.api.key}")
+    private String googleBooksApiKey;
 
     public BookService(BookRepository bookRepository, RestTemplate restTemplate) {
         this.bookRepository = bookRepository;
@@ -209,6 +213,7 @@ public class BookService {
                             excelTitle,
                             null,
                             "Onverwachte fout bij het ophalen en opslaan"));
+                    e.printStackTrace();
                 }
             }
 
@@ -241,7 +246,17 @@ public class BookService {
 
     // Helper functions
     private BookEntity buildBookEntityFromGoogle(String isbn) {
-        String url = googleBooksApiUrl + isbn;
+        String url = UriComponentsBuilder
+                .fromUriString(googleBooksApiUrl)
+                .queryParam("q", "isbn:" + isbn)
+                .queryParam("key", googleBooksApiKey)
+                .toUriString();
+
+        System.out.println("Using Google Books request with key suffix: " +
+                (googleBooksApiKey.length() >= 4
+                        ? googleBooksApiKey.substring(googleBooksApiKey.length() - 4)
+                        : "too-short"));
+
         GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
 
         if (response == null || response.getItems() == null || response.getItems().isEmpty()) {
