@@ -379,6 +379,65 @@ class BookServiceTest {
         verify(bookRepository, times(1)).findBySpotlightTrueOrderByIdDesc();
     }
 
+    // --- searchByTitleOrAuthor Tests ---
+
+    @Test
+    void givenNullQuery_whenSearchByTitleOrAuthor_thenReturnsAllBooks() {
+        when(bookRepository.findAll()).thenReturn(List.of(buildBook()));
+
+        List<BookDTO> result = bookService.searchByTitleOrAuthor(null);
+
+        assertEquals(1, result.size());
+        assertEquals("Clean Code", result.get(0).title());
+        verify(bookRepository, times(1)).findAll();
+        verify(bookRepository, never()).searchByTitleOrAuthor(anyString());
+    }
+
+    @Test
+    void givenBlankQuery_whenSearchByTitleOrAuthor_thenReturnsAllBooks() {
+        when(bookRepository.findAll()).thenReturn(List.of(buildBook()));
+
+        List<BookDTO> result = bookService.searchByTitleOrAuthor("   ");
+
+        assertEquals(1, result.size());
+        verify(bookRepository, times(1)).findAll();
+        verify(bookRepository, never()).searchByTitleOrAuthor(anyString());
+    }
+
+    @Test
+    void givenValidQuery_whenSearchByTitleOrAuthor_thenReturnsMatchingBooks() {
+        BookEntity book = buildBook();
+        when(bookRepository.searchByTitleOrAuthor("Clean")).thenReturn(List.of(book));
+
+        List<BookDTO> result = bookService.searchByTitleOrAuthor("Clean");
+
+        assertEquals(1, result.size());
+        assertEquals("Clean Code", result.get(0).title());
+        verify(bookRepository, times(1)).searchByTitleOrAuthor("Clean");
+        verify(bookRepository, never()).findAll();
+    }
+
+    @Test
+    void givenQueryWithWhitespace_whenSearchByTitleOrAuthor_thenTrimsAndSearches() {
+        when(bookRepository.searchByTitleOrAuthor("Clean")).thenReturn(List.of(buildBook()));
+
+        List<BookDTO> result = bookService.searchByTitleOrAuthor("  Clean  ");
+
+        assertEquals(1, result.size());
+        verify(bookRepository, times(1)).searchByTitleOrAuthor("Clean");
+    }
+
+    @Test
+    void givenNoMatchingBooks_whenSearchByTitleOrAuthor_thenReturnsEmptyList() {
+        when(bookRepository.searchByTitleOrAuthor("Nonexistent")).thenReturn(List.of());
+
+        List<BookDTO> result = bookService.searchByTitleOrAuthor("Nonexistent");
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+        verify(bookRepository, times(1)).searchByTitleOrAuthor("Nonexistent");
+    }
+
     // --- Hulpmethoden (Helper Methods) ---
 
     private GoogleBooksResponse createMockGoogleResponse(String title, String author) {
@@ -417,5 +476,65 @@ class BookServiceTest {
         book.setId(10L);
         book.setSpotlight(true);
         return book;
+    }
+    // --- filterBooks Service Tests ---
+
+    @Test
+    void givenValidFilters_whenFilterBooks_thenReturnsMappedDTOs() {
+        when(bookRepository.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023))
+                .thenReturn(List.of(buildBook()));
+
+        List<BookDTO> result = bookService.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023);
+
+        assertEquals(1, result.size());
+        assertEquals("Clean Code", result.get(0).title());
+        verify(bookRepository, times(1)).filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023);
+    }
+
+    @Test
+    void givenNullFilters_whenFilterBooks_thenReturnsAllBooks() {
+        when(bookRepository.filterBooks(null, null, null, null, null, null))
+                .thenReturn(List.of(buildBook(), buildBook()));
+
+        List<BookDTO> result = bookService.filterBooks(null, null, null, null, null, null);
+
+        assertEquals(2, result.size());
+        verify(bookRepository, times(1)).filterBooks(null, null, null, null, null, null);
+    }
+
+    @Test
+    void givenNoMatchingBooks_whenFilterBooks_thenReturnsEmptyList() {
+        when(bookRepository.filterBooks("nl", null, null, null, null, null))
+                .thenReturn(List.of());
+
+        List<BookDTO> result = bookService.filterBooks("nl", null, null, null, null, null);
+
+        assertEquals(0, result.size());
+        verify(bookRepository, times(1)).filterBooks("nl", null, null, null, null, null);
+    }
+
+    @Test
+    void givenMinPageCountGreaterThanMaxPageCount_whenFilterBooks_thenThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> bookService.filterBooks(null, null, 500, 100, null, null));
+
+        verify(bookRepository, never()).filterBooks(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void givenMinYearGreaterThanMaxYear_whenFilterBooks_thenThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> bookService.filterBooks(null, null, null, null, 2023, 2000));
+
+        verify(bookRepository, never()).filterBooks(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void givenRepositoryFails_whenFilterBooks_thenThrowsException() {
+        when(bookRepository.filterBooks(any(), any(), any(), any(), any(), any()))
+                .thenThrow(new RuntimeException("Database unavailable"));
+
+        assertThrows(RuntimeException.class,
+                () -> bookService.filterBooks(null, null, null, null, null, null));
     }
 }

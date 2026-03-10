@@ -7,6 +7,71 @@
   margin: 0 auto;
 }
 
+.filterBar{
+  margin: 0.5rem;
+}
+.filterDropdown {
+  position: relative;
+}
+
+.filterDropdownToggle {
+  padding: 0.4rem 0.8rem;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  color: #8e2446;
+}
+
+.filterSelect,
+.filterInput {
+  padding: 0.4rem 0.8rem;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+  margin-right: 0.4rem;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  outline: none;
+}
+
+.filterInput {
+  width: 9rem;
+}
+
+.filterSelect:focus,
+.filterInput:focus,
+.filterDropdownToggle:focus {
+  border-color: #6b1a34;
+  box-shadow: 0 0 0 2px rgba(142, 36, 70, 0.15);
+}
+
+.filterDropdownPanel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 200px;
+}
+
+.filterCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  cursor: pointer;
+}
+
 @media (min-width: 768px) {
   #bookList {
     grid-template-columns: repeat(3, 1fr);
@@ -83,4 +148,120 @@ main ul li.active {
   background: black;
   color: white;
   border-radius: 4px;
+}
+
+.filterSection {
+  display: flex;
+  justify-content: center;
+  padding: 1.2rem 1rem 0.5rem;
+}
+
+.catalogSearchbar {
+  background-color: #ece6f0;
+  border-radius: 2rem;
+  padding: 0.55rem 0.75rem 0.55rem 1.2rem;
+  width: 70%;
+  max-width: 850px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s;
+}
+
+.catalogSearchbar:focus-within {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.catalogSearchbar input {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.catalogSearchbar input::placeholder {
+  color: #999;
+}
+
+.semitransparentButton {
+  background-color: #922648;
+  opacity: 0.9;
+  padding: 0.5rem;
+  width: 35%;
+  border-radius: 0.5rem;
+  color: white;
+}
+
+.pageLayout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.mainContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.filterSidebar {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.25s ease;
+  background: white;
+  flex-shrink: 0;
+}
+
+.filterSidebar.open {
+  width: 260px;
+  border-right: 1px solid #ddd;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  font-size: 16px;
+  font-weight: 600;
+  color: #8e2446;
+  border-bottom: 1px solid #eee;
+}
+
+.sidebarHeader button {
+  border: none;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #888;
+}
+
+
+@media (max-width: 768px) {
+  .filterSidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 0;
+    border-right: none;
+    border-top: 1px solid #ddd;
+    border-radius: 12px 12px 0 0;
+    z-index: 100;
+    transition: height 0.25s ease;
+    overflow-y: auto;
+  }
+
+  .filterSidebar.open {
+    height: 75vh;
+    width: 100%;
+  }
+
+  .sidebarOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 99;
+  }
 }

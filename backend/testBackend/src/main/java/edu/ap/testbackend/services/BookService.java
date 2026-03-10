@@ -100,13 +100,19 @@ public class BookService {
         bookRepository.save(book);
     }
 
-    public List<BookDTO> search(String query) {
+    /**
+     * Zoekt boeken op basis van een zoekterm. Er wordt gezocht in zowel de titel als de auteurs van het boek.
+     * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle boeken teruggegeven.
+     * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar DTO's.
+     */
+    public List<BookDTO> searchByTitleOrAuthor(String query) {
         if (query == null || query.isBlank()) {
             return bookRepository.findAll()
                     .stream()
                     .map(this::toDTO)
                     .collect(Collectors.toList());
         }
+
         return bookRepository.searchByTitleOrAuthor(query.trim())
                 .stream()
                 .map(this::toDTO)
@@ -129,6 +135,19 @@ public class BookService {
 
     public List<BookDTO> getLatestBooks() {
         return bookRepository.findTop4ByOrderByIdDesc()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+    public List<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,  Integer maxPageCount, Integer minPubYear, Integer maxPubYear) {
+        if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
+            throw new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount");
+        }
+        if (minPubYear != null && maxPubYear != null && minPubYear > maxPubYear) {
+            throw new IllegalArgumentException("minPubYear cannot be bigger than maxPubYear");
+        }
+
+        return bookRepository.filterBooks(language,categories,minPageCount,maxPageCount,minPubYear,maxPubYear)
                 .stream()
                 .map(this::toDTO)
                 .toList();

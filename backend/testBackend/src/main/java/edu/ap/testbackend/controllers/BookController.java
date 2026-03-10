@@ -4,6 +4,7 @@ import edu.ap.testbackend.dto.BookDTO;
 import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
 import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -70,6 +71,19 @@ public class BookController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Zoekt boeken op basis van een zoekterm.
+     * Er wordt gezocht in zowel de titel als de auteurs van het boek.
+     * Als de zoekterm leeg is, worden alle boeken teruggegeven.
+     * 
+     * @param query De zoekterm om op te filteren
+     * @return Een lijst van boeken die overeenkomen met de zoekterm
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<BookDTO>> searchByTitleOrAuthor(@RequestParam String query) {
+        return ResponseEntity.ok(bookService.searchByTitleOrAuthor(query));
+    }
+
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importBooks(@RequestParam("file") MultipartFile file) {
         try {
@@ -107,6 +121,30 @@ public class BookController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>("An error occurred while fetching the book.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<?> filterBooks(
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) List<String> categories,
+            @RequestParam(required = false) Integer minPageCount,
+            @RequestParam(required = false) Integer maxPageCount,
+            @RequestParam(required = false) Integer minPubYear,
+            @RequestParam(required = false) Integer maxPubYear
+
+    ) {
+
+        try {
+            List<BookDTO> filteredBooks = bookService.filterBooks(language, categories, minPageCount, maxPageCount,
+                    minPubYear, maxPubYear);
+            return ResponseEntity.ok(filteredBooks);
+            // 400 als de error foute filter combinatie is
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            // 500 als de error op Database niveau is
+        } catch (DataAccessException e) {
+            return new ResponseEntity<>("An error occurred during filtering.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
