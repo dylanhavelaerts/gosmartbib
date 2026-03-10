@@ -1,6 +1,8 @@
 package edu.ap.testbackend.controllers;
 
 import edu.ap.testbackend.dto.BookDTO;
+import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
+import edu.ap.testbackend.dto.importdto.ImportMismatchDTO;
 import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
 import org.junit.jupiter.api.Test;
@@ -10,10 +12,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -147,6 +152,7 @@ class BookControllerTest {
         verify(bookService, times(1)).getTop4BooksInSpotlight();
     }
 
+    @Test
     void givenLatestBooksExist_whenGetLatestBooks_thenReturnsExpectedDTOs() {
         List<BookDTO> expected = List.of(
                 buildDTO(10L, "Latest Book 1"),
@@ -209,7 +215,8 @@ class BookControllerTest {
     @Test
     void givenDatabaseFails_whenFilterBooks_thenReturnsInternalServerError() {
         when(bookService.filterBooks(any(), any(), any(), any(), any(), any()))
-                .thenThrow(new DataAccessException("DB down") {});
+                .thenThrow(new DataAccessException("DB down") {
+                });
 
         ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null);
 
@@ -226,9 +233,9 @@ class BookControllerTest {
         assertEquals(200, result.getStatusCode().value());
         assertEquals(List.of(), result.getBody());
     }
-// --- spotlight Controller Tests ---
+    // --- spotlight Controller Tests ---
 
-     @Test
+    @Test
     void givenSpotlightBooksExist_whenGetAllBooksInSpotlight_thenReturnsExpectedDTOs() {
         List<BookDTO> expected = List.of(
                 buildDTO(1L, "Spotlight Book 1"),
@@ -282,4 +289,63 @@ class BookControllerTest {
         verify(bookService, times(1)).searchByTitleOrAuthor("Clean");
     }
 
+    @Test
+    void givenValidExcelFile_whenImportBooks_thenReturnsOkWithImportSummary() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "books.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "dummy".getBytes());
+
+        BulkImportResponseDTO expected = new BulkImportResponseDTO(
+                3,
+                2,
+                1,
+                List.of(new ImportMismatchDTO(4, "9780132350884", "Wrong Title", "Clean Code",
+                        "De titel komt niet overeen (Clean Code)")));
+
+        when(bookService.importBooksFromExcel(any(MultipartFile.class))).thenReturn(expected);
+
+        ResponseEntity<?> result = bookController.importBooks(file);
+
+        assertEquals(200, result.getStatusCode().value());
+        assertSame(expected, result.getBody());
+        verify(bookService, times(1)).importBooksFromExcel(file);
+    }
+
+    @Test
+    void givenInvalidExcelFile_whenImportBooks_thenReturnsBadRequest() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "books.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                new byte[0]);
+
+        when(bookService.importBooksFromExcel(any(MultipartFile.class)))
+                .thenThrow(new IllegalArgumentException("Upload een excel file die niet leeg is"));
+
+        ResponseEntity<?> result = bookController.importBooks(file);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("Upload een excel file die niet leeg is", result.getBody());
+        verify(bookService, times(1)).importBooksFromExcel(file);
+    }
+
+    @Test
+    void givenUnexpectedServiceError_whenImportBooks_thenReturnsInternalServerError() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "books.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "dummy".getBytes());
+
+        when(bookService.importBooksFromExcel(any(MultipartFile.class)))
+                .thenThrow(new RuntimeException("DB down"));
+
+        ResponseEntity<?> result = bookController.importBooks(file);
+
+        assertEquals(500, result.getStatusCode().value());
+        assertEquals("An error occurred while importing the Excel file.", result.getBody());
+        verify(bookService, times(1)).importBooksFromExcel(file);
+    }
 }

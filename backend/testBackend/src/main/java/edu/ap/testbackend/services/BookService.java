@@ -101,9 +101,13 @@ public class BookService {
     }
 
     /**
-     * Zoekt boeken op basis van een zoekterm. Er wordt gezocht in zowel de titel als de auteurs van het boek.
-     * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle boeken teruggegeven.
-     * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar DTO's.
+     * Zoekt boeken op basis van een zoekterm. Er wordt gezocht in zowel de titel
+     * als de auteurs van het boek.
+     * 
+     * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle
+     *              boeken teruggegeven.
+     * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar
+     *         DTO's.
      */
     public List<BookDTO> searchByTitleOrAuthor(String query) {
         if (query == null || query.isBlank()) {
@@ -139,7 +143,9 @@ public class BookService {
                 .map(this::toDTO)
                 .toList();
     }
-    public List<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,  Integer maxPageCount, Integer minPubYear, Integer maxPubYear) {
+
+    public List<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,
+            Integer maxPageCount, Integer minPubYear, Integer maxPubYear) {
         if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
             throw new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount");
         }
@@ -147,7 +153,7 @@ public class BookService {
             throw new IllegalArgumentException("minPubYear cannot be bigger than maxPubYear");
         }
 
-        return bookRepository.filterBooks(language,categories,minPageCount,maxPageCount,minPubYear,maxPubYear)
+        return bookRepository.filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear)
                 .stream()
                 .map(this::toDTO)
                 .toList();
@@ -232,7 +238,6 @@ public class BookService {
                             excelTitle,
                             null,
                             "Onverwachte fout bij het ophalen en opslaan"));
-                    e.printStackTrace();
                 }
             }
 

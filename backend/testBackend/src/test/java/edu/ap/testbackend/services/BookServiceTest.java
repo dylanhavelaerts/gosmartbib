@@ -16,6 +16,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
+import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.mockito.ArgumentCaptor;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -43,7 +56,8 @@ class BookServiceTest {
         // Omdat we geen echte Spring Boot context opstarten, vullen we de @Value url
         // handmatig in
         ReflectionTestUtils.setField(bookService, "googleBooksApiUrl",
-                "https://www.googleapis.com/books/v1/volumes?q=isbn:");
+                "https://www.googleapis.com/books/v1/volumes");
+        ReflectionTestUtils.setField(bookService, "googleBooksApiKey", "test-key");
     }
 
     // --- Google API Tests ---
@@ -104,7 +118,7 @@ class BookServiceTest {
             bookService.searchBookByIsbn("9798988421507");
         });
 
-        assertTrue(exception.getMessage().contains("No book found for ISBN"));
+        assertEquals("Geen boek voor ISBN: 9798988421507", exception.getMessage());
         verify(bookRepository, never()).save(any());
     }
 
@@ -536,5 +550,173 @@ class BookServiceTest {
 
         assertThrows(RuntimeException.class,
                 () -> bookService.filterBooks(null, null, null, null, null, null));
+    }
+
+    @Test
+    void givenEmptyExcelFile_whenImportBooksFromExcel_thenThrowsIllegalArgumentException() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "books.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                new byte[0]);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> bookService.importBooksFromExcel(file));
+
+        assertEquals("Upload een excel file die niet leeg is", ex.getMessage());
+        verifyNoInteractions(bookRepository, restTemplate);
+    }
+
+    @Test
+    void givenValidExcelRow_whenImportBooksFromExcel_thenSavesBookAndReturnsCorrectSummary() throws IOException {
+        MockMultipartFile file = createExcelFile(new String[][] {
+                { "9780132350884", "Clean Code" }
+        });
+
+        GoogleBooksResponse googleResponse = createMockGoogleResponse("Clean Code", "Robert C. Martin");
+
+        when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
+        when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class))).thenReturn(googleResponse);
+        when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> {
+            BookEntity saved = invocation.getArgument(0);
+            saved.setId(1L);
+            return saved;
+        });
+
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+
+        assertEquals(1, result.totalRows());
+        assertEquals(1, result.savedCount());
+        assertEquals(0, result.mismatchCount());
+        assertTrue(result.mismatches().isEmpty());
+
+        ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
+        verify(bookRepository, times(1)).save(captor.capture());
+
+        BookEntity savedBook = captor.getValue();
+        assertEquals("Clean Code", savedBook.getTitle());
+        assertEquals("9780132350884", savedBook.getIsbn());
+    }
+
+    @Test
+    void givenBookAlreadyExistsInDatabase_whenImportBooksFromExcel_thenAddsMismatchAndDoesNotSave() throws IOException {
+        MockMultipartFile file = createExcelFile(new String[][] {
+                { "9780132350884", "Clean Code" }
+        });
+
+        when(bookRepository.existsByIsbn("9780132350884")).thenReturn(true);
+
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+
+        assertEquals(1, result.totalRows());
+        assertEquals(0, result.savedCount());
+        assertEquals(1, result.mismatchCount());
+        assertEquals(1, result.mismatches().size());
+
+        verify(bookRepository, never()).save(any(BookEntity.class));
+        verify(restTemplate, never()).getForObject(anyString(), eq(GoogleBooksResponse.class));
+    }
+
+    @Test
+    void givenExcelTitleDoesNotMatchGoogleTitle_whenImportBooksFromExcel_thenAddsMismatchAndDoesNotSave()
+            throws IOException {
+        MockMultipartFile file = createExcelFile(new String[][] {
+                { "9780132350884", "Clean Code" }
+        });
+
+        GoogleBooksResponse googleResponse = createMockGoogleResponse("Refactoring", "Martin Fowler");
+
+        when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
+        when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class))).thenReturn(googleResponse);
+
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+
+        assertEquals(1, result.totalRows());
+        assertEquals(0, result.savedCount());
+        assertEquals(1, result.mismatchCount());
+        assertEquals(1, result.mismatches().size());
+
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
+
+    @Test
+    void givenGoogleBooksReturnsNoResults_whenImportBooksFromExcel_thenAddsMismatchAndDoesNotSave() throws IOException {
+        MockMultipartFile file = createExcelFile(new String[][] {
+                { "9780132350884", "Clean Code" }
+        });
+
+        when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
+        when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class)))
+                .thenReturn(new GoogleBooksResponse());
+
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+
+        assertEquals(1, result.totalRows());
+        assertEquals(0, result.savedCount());
+        assertEquals(1, result.mismatchCount());
+        assertEquals(1, result.mismatches().size());
+
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
+
+    @Test
+    void givenRowWithMissingIsbnOrTitle_whenImportBooksFromExcel_thenAddsMismatchAndDoesNotCallGoogle()
+            throws IOException {
+        MockMultipartFile file = createExcelFile(new String[][] {
+                { "9780132350884", "" },
+                { "", "Clean Code" }
+        });
+
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+
+        assertEquals(2, result.totalRows());
+        assertEquals(0, result.savedCount());
+        assertEquals(2, result.mismatchCount());
+        assertEquals(2, result.mismatches().size());
+
+        verify(bookRepository, never()).save(any(BookEntity.class));
+        verify(restTemplate, never()).getForObject(anyString(), eq(GoogleBooksResponse.class));
+    }
+
+    @Test
+    void givenUnreadableExcelFile_whenImportBooksFromExcel_thenThrowsRuntimeException() throws IOException {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getInputStream()).thenThrow(new IOException("boom"));
+
+        RuntimeException ex = assertThrows(
+                RuntimeException.class,
+                () -> bookService.importBooksFromExcel(file));
+
+        assertEquals("Kon de excel file niet lezen", ex.getMessage());
+    }
+
+    // Helperfunctions
+
+    private MockMultipartFile createExcelFile(String[][] rows) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook();
+                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Books");
+
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("ISBN");
+            header.createCell(1).setCellValue("Title");
+
+            for (int i = 0; i < rows.length; i++) {
+                Row row = sheet.createRow(i + 1);
+                row.createCell(0).setCellValue(rows[i][0]);
+                row.createCell(1).setCellValue(rows[i][1]);
+            }
+
+            workbook.write(out);
+
+            return new MockMultipartFile(
+                    "file",
+                    "books.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    out.toByteArray());
+        }
     }
 }
