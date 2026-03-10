@@ -154,7 +154,7 @@ export default function AddBookPage() {
     >
       <nav className="lowerNav">
         <button style={{}}className={cls("Boek")} onClick={() => setSelected("Boek")}>Boek toevoegen</button>
-        <button className={cls("Boekenlijst")} onClick={() => setSelected("Boekenlijst")}>Boekenlijs toevoegen</button>
+        <button className={cls("Boekenlijst")} onClick={() => setSelected("Boekenlijst")}>Boekenlijst toevoegen</button>
       </nav>
       <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
         Nieuw Boek Toevoegen
