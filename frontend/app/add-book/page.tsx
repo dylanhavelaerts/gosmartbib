@@ -33,7 +33,6 @@ export default function AddBookPage() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<TabId>("Boek");
   const [previewBook, setPreviewBook] = useState<Book | null>(null);
-  const [mismatchedBooks, setMismatchedBooks] = useState<ImportedBook[]>([])
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
@@ -154,8 +153,8 @@ export default function AddBookPage() {
       }}
     >
       <nav className="lowerNav">
-        <button style={{}}className={cls("Boek")} onClick={() => setSelected("Boek")}>in de kijker</button>
-        <button className={cls("Boekenlijst")} onClick={() => setSelected("Boekenlijst")}>Nieuw in bibliotheek</button>
+        <button style={{}}className={cls("Boek")} onClick={() => setSelected("Boek")}>Boek toevoegen</button>
+        <button className={cls("Boekenlijst")} onClick={() => setSelected("Boekenlijst")}>Boekenlijs toevoegen</button>
       </nav>
       <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
         Nieuw Boek Toevoegen
@@ -205,14 +204,15 @@ export default function AddBookPage() {
             type="submit"
             disabled={loading}
             style={{
-              padding: "0.75rem 1.5rem",
-              fontSize: "1rem",
               cursor: loading ? "not-allowed" : "pointer",
               backgroundColor: loading ? "#ccc" : "#0070f3",
               color: "white",
               border: "none",
               borderRadius: "4px",
               fontWeight: "bold",
+              flex: 1,
+              padding: "0.75rem",
+              maxWidth: "14rem"
             }}
           >
             {loading ? "Bezig met zoeken..." : "Zoek Boek"}
@@ -351,8 +351,8 @@ else {
       }}
     >
       <nav className="lowerNav">
-        <button style={{}}className={cls("Boek")} onClick={() => setSelected("Boek")}>in de kijker</button>
-        <button className={cls("Boekenlijst")} onClick={() => setSelected("Boekenlijst")}>Nieuw in bibliotheek</button>
+        <button style={{}}className={cls("Boek")} onClick={() => setSelected("Boek")}>Boek toevoegen</button>
+        <button className={cls("Boekenlijst")} onClick={() => setSelected("Boekenlijst")}>Boekenlijst toevoegen</button>
       </nav>
       <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
         Excel file toevoegen

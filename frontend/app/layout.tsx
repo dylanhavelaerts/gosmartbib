@@ -34,7 +34,7 @@ export default function RootLayout({
             className="goLogo"
           /></Link>
         </header>
-        <nav>
+        <nav id="headerNav">
           <Link href="/">
             <button>Startpagina</button>
           </Link>

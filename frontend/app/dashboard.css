@@ -82,8 +82,8 @@ main {
 .semitransparentButton {
   background-color: #922648;
   opacity: 0.9;
-  padding: 0.5rem;
-  width: 100%;
+  padding: 0.5rem 2rem;
+  width: auto;
   border-radius: 0.5rem;
   color: white;
 }

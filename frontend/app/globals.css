@@ -24,6 +24,9 @@ nav {
   gap: clamp(0.25rem, 2vw, 1.5rem);
   height: auto;
 }
+#headerNav button:hover {
+  padding-bottom: 0.4rem;
+}
 
 nav button {
   height: 100%;

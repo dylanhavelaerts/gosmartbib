@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Book } from "../interfaces/Book";
 import BookCard from "./bookCard";
 import "./bookList.css";
-import Link from "next/link";
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -13,9 +12,6 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Book[]>([]);
 
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [showConfirm, setShowConfirm] = useState<boolean>(false);
-  const [deleting, setDeleting] = useState<boolean>(false);
   const [language, setLanguage] = useState("");
   const [categories, setCategories] = useState<Set<string>>(new Set());
   const [minPages, setMinPages] = useState("");
@@ -100,46 +96,7 @@ export default function Home() {
     return () => clearTimeout(delay);
   }, [query, books]);
 
-  /**
-   * Toggle of een boek geselecteerd is of niet, op basis van zijn ID. (voor het verwijderen van meerdere boeken tegelijk)
-   */
-  const toggleSelect = (id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  /**
-   * Probeer de geselecteerde boeken te verwijderen. Stuur voor elk geselecteerd boek een DELETE request naar de API.
-   */
-  const tryDelete = async () => {
-    setDeleting(true);
-
-    try {
-      await Promise.all(
-        Array.from(selectedIds).map((id) =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}`, {
-            method: "DELETE",
-          }),
-        ),
-      );
-
-      setBooks((prev) => prev.filter((b) => !selectedIds.has(b.id)));
-      setSelectedIds(new Set());
-      setShowConfirm(false);
-    } catch (error) {
-      console.log(error); //later beter error handling
-    } finally {
-      setDeleting(false);
-    }
-  };
-
+  
   const toggleCategory = (cat: string) => {
     setCategories((prev) => {
       const next = new Set(prev);
@@ -280,11 +237,6 @@ export default function Home() {
           >
             Naar admin pagina
           </li>
-          {selectedIds.size > 0 && (
-            <li onClick={() => setShowConfirm(true)}>
-              Verwijder {selectedIds.size} boek(en)
-            </li>
-          )}
         </ul>
 
         <div id="bookList">
@@ -293,39 +245,11 @@ export default function Home() {
               withCheckbox={false}
               key={book.id}
               book={book}
-              isSelected={selectedIds.has(book.id)}
-              onToggle={() => toggleSelect(book.id)}
+              isSelected={false}
+              onToggle={() => {}}
             />
           ))}
         </div>
-
-        {/* modal wordt alleen gerenderd als showConfirm true is*/}
-        {showConfirm && (
-          <div className="modalOverlay">
-            <div className="modalBox">
-              <p>Ben je zeker dat je deze wilt verwijderen?</p>
-              <p>Deze actie is onterugkeerbaar!</p>
-
-              <div>
-                {/* bij klikken sluit de modal */}
-                <button
-                  onClick={() => setShowConfirm(false)}
-                  disabled={deleting}
-                >
-                  Ga terug
-                </button>
-                {/* delete-knop  wordt uitgeschakeld tijdens de request*/}
-                <button
-                  className="confirmButton"
-                  onClick={tryDelete}
-                  disabled={deleting}
-                >
-                  {deleting ? "deleting..." : "Bevestig"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </main>
   );

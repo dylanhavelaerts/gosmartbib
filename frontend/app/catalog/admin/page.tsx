@@ -118,6 +118,22 @@ export default function Home() {
     }
   };
 
+  const setSpotlight = async () => {
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}/spotlight?value=true`, {
+            method: "PATCH",
+          }),
+        ),
+      );
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.log(error);
+  };
+}
+
+
   return (
     <main>
       <div className="filterSection">
@@ -163,6 +179,11 @@ export default function Home() {
         {selectedIds.size > 0 && (
           <li onClick={() => setShowConfirm(true)}>
             Verwijder {selectedIds.size} boek(en)
+          </li>
+        )}
+        {selectedIds.size > 0 && (
+          <li onClick={() => setSpotlight()}>
+            Voeg {selectedIds.size} boek(en) toe aan kijker
           </li>
         )}
       </ul>
