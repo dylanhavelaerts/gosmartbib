@@ -4,12 +4,6 @@ import { useState } from "react";
 import { Book } from "../interfaces/Book";
 import "./addBook.css";
 
-
-type ImportedBook = {
-  isbn: string;
-  title: string;
-};
-
 type ImportMismatch = {
   rowNumber: number;
   isbn: string;
