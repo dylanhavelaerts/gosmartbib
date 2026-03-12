@@ -116,18 +116,17 @@ public class BookService {
      * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar
      *         DTO's.
      */
-    public List<BookDTO> searchByTitleOrAuthor(String query) {
+    public Page<BookDTO> searchByTitleOrAuthor(String query, int page, int size) {
+        if (page < 0 || size <= 0)
+            throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
+
+        Pageable pageable = PageRequest.of(page, size);
+
         if (query == null || query.isBlank()) {
-            return bookRepository.findAll()
-                    .stream()
-                    .map(this::toDTO)
-                    .collect(Collectors.toList());
+            return bookRepository.findAll(pageable).map(this::toDTO);
         }
 
-        return bookRepository.searchByTitleOrAuthor(query.trim())
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+        return bookRepository.searchByTitleOrAuthor(query.trim(), pageable).map(this::toDTO);
     }
 
     public List<BookDTO> getTop4BooksInSpotlight() {
@@ -151,8 +150,11 @@ public class BookService {
                 .toList();
     }
 
-    public List<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,
-            Integer maxPageCount, Integer minPubYear, Integer maxPubYear) {
+    public Page<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,
+                                     Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size) {
+        if (page < 0 || size <= 0)
+            throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
+
         if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
             throw new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount");
         }
@@ -160,10 +162,9 @@ public class BookService {
             throw new IllegalArgumentException("minPubYear cannot be bigger than maxPubYear");
         }
 
-        return bookRepository.filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear)
-                .stream()
-                .map(this::toDTO)
-                .toList();
+        Pageable pageable = PageRequest.of(page, size);
+        return bookRepository.filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear, pageable)
+                .map(this::toDTO);
     }
 
     public BulkImportResponseDTO importBooksFromExcel(MultipartFile file) {

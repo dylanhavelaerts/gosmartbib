@@ -31,23 +31,34 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
     @Query("SELECT DISTINCT b FROM BookEntity b JOIN b.authors a WHERE " +
             "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
             "LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))")
-    List<BookEntity> searchByTitleOrAuthor(@Param("query") String query);
+    Page<BookEntity> searchByTitleOrAuthor(@Param("query") String query, Pageable pageable);
 
-    @Query("""
-            SELECT DISTINCT b FROM BookEntity b
-            LEFT JOIN b.categories c
-            WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
-            AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
-            AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
-            AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
-            AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
-            AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
-            """)
-    List<BookEntity> filterBooks(
+    @Query(value = """
+        SELECT DISTINCT b FROM BookEntity b
+        LEFT JOIN b.categories c
+        WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
+        AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
+        AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
+        AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
+        AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
+        AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
+        """,
+            countQuery = """
+        SELECT COUNT(DISTINCT b) FROM BookEntity b
+        LEFT JOIN b.categories c
+        WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
+        AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
+        AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
+        AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
+        AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
+        AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
+        """)
+    Page<BookEntity> filterBooks(
             @Param("language") String language,
             @Param("categories") List<String> categories,
             @Param("minPageCount") Integer minPageCount,
             @Param("maxPageCount") Integer maxPageCount,
             @Param("minPubYear") Integer minPubYear,
-            @Param("maxPubYear") Integer maxPubYear);
+            @Param("maxPubYear") Integer maxPubYear,
+            Pageable pageable);
 }

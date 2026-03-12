@@ -49,6 +49,12 @@
   z-index: 99;
 }
 
+@media (min-width: 769px) {
+  .sidebarOverlay {
+    display: none;
+  }
+}
+
 /* ── Search bar ── */
 .filterSection {
   display: flex;
@@ -131,7 +137,7 @@ main ul li.active {
 }
 
 .resultCount {
-  font-size: 13px;
+  font-size: 14px;
   color: #888;
 }
 
@@ -142,24 +148,20 @@ main ul li.active {
 }
 
 .pageSizeLabel {
-  font-size: 13px;
+  font-size: 14px;
   color: #888;
   white-space: nowrap;
 }
 
 .pageSizeSelect {
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #c0392b;
+  padding: 0.25rem 0.3rem;
+  border: 1px solid #616161;
   border-radius: 4px;
   background: white;
-  color: #333;
+  color: #616161;
   font-size: 13px;
   outline: none;
   cursor: pointer;
-}
-
-.pageSizeSelect:focus {
-  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.15);
 }
 
 /* ── Book grid ── */
