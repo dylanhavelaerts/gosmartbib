@@ -9,7 +9,12 @@ interface Props {
   withCheckbox?: Boolean;
 }
 
-export default function BookCard({ book, isSelected, onToggle, withCheckbox = true }: Props) {
+export default function BookCard({
+  book,
+  isSelected,
+  onToggle,
+  withCheckbox = true,
+}: Props) {
   return (
     <div className={`bookCard ${isSelected ? "selected" : ""}`}>
       {withCheckbox && (

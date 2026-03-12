@@ -4,6 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Book } from "../interfaces/Book";
 import BookCard from "./bookCard";
+import Pagination from "./pagination";
 import "./bookList.css";
 
 export default function Home() {
@@ -20,15 +21,20 @@ export default function Home() {
   const [maxYear, setMaxYear] = useState("");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const PAGE_SIZE = pageSize;
+  const totalPages = Math.ceil(results.length / PAGE_SIZE);
+  const paginatedResults = results.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
 
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  /**
-   * Fetcht alle boeken bij het laden van de pagina.
-   * Als er nog geen zoekquery is, zet deze boeken dan ook als resultaten (om de volledige catalogus te tonen).
-   */
   useEffect(() => {
     const params = new URLSearchParams();
     if (language) params.append("language", language);
@@ -41,22 +47,23 @@ export default function Home() {
     if (maxYear) params.append("maxPubYear", maxYear);
 
     const filterQuery = params.toString();
-    const url = filterQuery
+    const isFiltered = filterQuery.length > 0;
+    const url = isFiltered
       ? `${process.env.NEXT_PUBLIC_API_URL}/books/filter?${filterQuery}`
-      : `${process.env.NEXT_PUBLIC_API_URL}/books/all`;
+      : `${process.env.NEXT_PUBLIC_API_URL}/books/all?page=0&size=10000`;
 
     fetch(url)
       .then((res) => res.json())
-      .then((data: Book[]) => {
-        setBooks(data);
-        if (!query) setResults(data);
+      .then((data) => {
+        const bookList: Book[] = Array.isArray(data) ? data : data.content;
+        setBooks(bookList);
+        if (!query) {
+          setResults(bookList);
+          setCurrentPage(1);
+        }
       });
   }, [language, categories, minPages, maxPages, minYear, maxYear]);
 
-  /**
-   * Als er een 'search' query param is,
-   * gebruik deze dan als zoekquery en sla deze op in sessionStorage (zodat deze behouden blijft bij page-refresh).
-   */
   useEffect(() => {
     const incoming = searchParams.get("search");
     if (incoming) {
@@ -64,39 +71,27 @@ export default function Home() {
       sessionStorage.setItem("catalogSearch", incoming);
       router.replace(pathname);
     } else {
-      /**
-       * Als er geen 'search' query param is, maar er is wel een opgeslagen zoekquery in sessionStorage,
-       * gebruik deze dan. (search blijft bij page-refresh)
-       */
       const saved = sessionStorage.getItem("catalogSearch");
-      if (saved) {
-        setQuery(saved);
-      }
+      if (saved) setQuery(saved);
     }
   }, [searchParams]);
 
-  /**
-   * Wanneer de zoekquery verandert, of wanneer de boekenlijst verandert (bijvoorbeeld na het verwijderen van boeken),
-   * voer dan een nieuwe zoekopdracht uit. Als de zoekquery leeg is, toon dan alle boeken.
-   */
   useEffect(() => {
     if (!query || query.trim() === "") {
       setResults(books);
       return;
     }
-
     const delay = setTimeout(async () => {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/books/search?query=${query}`,
       );
       const data = await response.json();
       setResults(data);
+      setCurrentPage(1);
     }, 300);
-
     return () => clearTimeout(delay);
   }, [query, books]);
 
-  
   const toggleCategory = (cat: string) => {
     setCategories((prev) => {
       const next = new Set(prev);
@@ -202,7 +197,6 @@ export default function Home() {
               type="text"
               placeholder="Titel, auteur, genre, onderwerp"
               value={query}
-              // Saved de query in state en sessionStorage (zodat deze behouden blijft bij page-refresh)
               onChange={(e) => {
                 setQuery(e.target.value);
                 if (e.target.value) {
@@ -219,6 +213,8 @@ export default function Home() {
         </div>
 
         <h1>Catalogus</h1>
+
+        {/* Tab bar — no page size selector here */}
         <ul>
           <li onClick={() => setSidebarOpen(true)}>☰</li>
           <li
@@ -227,7 +223,6 @@ export default function Home() {
           >
             Catalogus
           </li>
-
           <li
             className={activeTab === "Boek toevoegen" ? "active" : ""}
             onClick={() => {
@@ -239,8 +234,28 @@ export default function Home() {
           </li>
         </ul>
 
+        {/* Toolbar row */}
+        <div className="bookListToolbar">
+          <span className="resultCount">{results.length} boeken</span>
+          <div className="pageSizeSelector">
+            <span className="pageSizeLabel">Per pagina:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="pageSizeSelect"
+            >
+              <option value={20}>20</option>
+              <option value={30}>30</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        </div>
+
         <div id="bookList">
-          {results.map((book) => (
+          {paginatedResults.map((book) => (
             <BookCard
               withCheckbox={false}
               key={book.id}
@@ -250,6 +265,15 @@ export default function Home() {
             />
           ))}
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => {
+            setCurrentPage(page);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
       </div>
     </main>
   );
