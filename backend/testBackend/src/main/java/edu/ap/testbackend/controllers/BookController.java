@@ -5,6 +5,7 @@ import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
 import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +24,17 @@ public class BookController {
         this.bookService = bookService;
     }
 
+    /**
+     * Ontvangt de pagina en grootte als query parameters, met standaardwaarden van 0 en 20.
+     * @param page de pagina
+     * @param size aantal boeken per pagina
+     * @return
+     */
     @GetMapping("/all")
-    public List<BookDTO> getBooks() {
-        return bookService.getAllBooks();
+    public Page<BookDTO> getBooks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return bookService.getAllBooks(page, size);
     }
 
     @GetMapping("/spotlight/all")

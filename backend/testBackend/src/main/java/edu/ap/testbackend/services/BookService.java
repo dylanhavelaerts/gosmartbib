@@ -5,8 +5,12 @@ import edu.ap.testbackend.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.testbackend.dto.googlebooks.VolumeInfo;
 import edu.ap.testbackend.entities.BookEntity;
 import edu.ap.testbackend.exceptions.BookNotFoundException;
+import edu.ap.testbackend.exceptions.NegativeValueException;
 import edu.ap.testbackend.repositories.BookRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -42,11 +46,14 @@ public class BookService {
         this.restTemplate = restTemplate;
     }
 
-    public List<BookDTO> getAllBooks() {
-        return bookRepository.findAll()
-                .stream()
-                .map(this::toDTO)
-                .toList();
+    // Size = aantal items per pagina, page = welke pagina (0-based)
+    public Page<BookDTO> getAllBooks(int page, int size) {
+        if (page < 0 || size <= 0)
+            throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
+
+        Pageable pageable = PageRequest.of(page, size);
+        return bookRepository.findAll(pageable)
+                .map(this::toDTO);
     }
 
     public BookDTO searchBookByIsbn(String isbn) {
