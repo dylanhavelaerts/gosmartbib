@@ -75,7 +75,7 @@ public class BookController {
      * Zoekt boeken op basis van een zoekterm.
      * Er wordt gezocht in zowel de titel als de auteurs van het boek.
      * Als de zoekterm leeg is, worden alle boeken teruggegeven.
-     * 
+     *
      * @param query De zoekterm om op te filteren
      * @return Een lijst van boeken die overeenkomen met de zoekterm
      */
@@ -145,6 +145,18 @@ public class BookController {
             // 500 als de error op Database niveau is
         } catch (DataAccessException e) {
             return new ResponseEntity<>("An error occurred during filtering.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
+        try {
+            BookDTO updated = bookService.updateBook(id, bookDTO);
+            return ResponseEntity.ok(updated);
+        } catch (BookNotFoundException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>("An error occurred while updating the book.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

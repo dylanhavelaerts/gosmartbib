@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.time.Year;
 import java.util.ArrayList;
 
 import java.util.List;
@@ -103,11 +104,11 @@ public class BookService {
     /**
      * Zoekt boeken op basis van een zoekterm. Er wordt gezocht in zowel de titel
      * als de auteurs van het boek.
-     * 
+     *
      * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle
      *              boeken teruggegeven.
      * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar
-     *         DTO's.
+     * DTO's.
      */
     public List<BookDTO> searchByTitleOrAuthor(String query) {
         if (query == null || query.isBlank()) {
@@ -145,7 +146,7 @@ public class BookService {
     }
 
     public List<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,
-            Integer maxPageCount, Integer minPubYear, Integer maxPubYear) {
+                                     Integer maxPageCount, Integer minPubYear, Integer maxPubYear) {
         if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
             throw new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount");
         }
@@ -252,6 +253,32 @@ public class BookService {
                 mismatches);
     }
 
+    public BookDTO updateBook(Long id, BookDTO updatedBook) {
+        BookEntity book = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
+
+        if (updatedBook.title() != null) book.setTitle(updatedBook.title());
+        if (updatedBook.authors() != null) book.setAuthors(updatedBook.authors());
+        if (updatedBook.publisher() != null) book.setPublisher(updatedBook.publisher());
+        if (updatedBook.description() != null) book.setDescription(updatedBook.description());
+        if (updatedBook.pageCount() != null) book.setPageCount(updatedBook.pageCount());
+        if (updatedBook.categories() != null) book.setCategories(updatedBook.categories());
+        if (updatedBook.thumbnail() != null) book.setThumbnail(updatedBook.thumbnail());
+        if (updatedBook.language() != null) book.setLanguage(updatedBook.language());
+        if (updatedBook.isbn() != null) book.setIsbn(updatedBook.isbn());
+        if (updatedBook.publishedYear() != null) book.setPublishedYear(updatedBook.publishedYear());
+        if (updatedBook.title() != null && updatedBook.title().isBlank())
+            throw new IllegalArgumentException("Titel mag niet leeg zijn");
+
+        if (updatedBook.pageCount() != null && updatedBook.pageCount() < 0)
+            throw new IllegalArgumentException("Paginacount mag niet negatief zijn");
+
+        if (updatedBook.publishedYear() != null && updatedBook.publishedYear() > Year.now().getValue())
+            throw new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen");
+
+        return toDTO(bookRepository.save(book));
+    }
+
     private BookDTO toDTO(BookEntity book) {
         return new BookDTO(
                 book.getId(),
@@ -328,4 +355,6 @@ public class BookService {
                 .replaceAll("\\s+", " ");
     }
 
+
 }
+
