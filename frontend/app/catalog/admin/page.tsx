@@ -27,10 +27,13 @@ export default function Home() {
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/all`)
       .then((res) => res.json())
-      .then((data: Book[]) => {
-        setBooks(data);
+      .then((data) => {
+        const safeData = Array.isArray(data) ? data : [];
+
+        setBooks(safeData);
+
         if (!query) {
-          setResults(data);
+          setResults(safeData);
         }
       });
   }, []);
@@ -122,17 +125,19 @@ export default function Home() {
     try {
       await Promise.all(
         Array.from(selectedIds).map((id) =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}/spotlight?value=true`, {
-            method: "PATCH",
-          }),
+          fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}/spotlight?value=true`,
+            {
+              method: "PATCH",
+            },
+          ),
         ),
       );
       setSelectedIds(new Set());
     } catch (error) {
       console.log(error);
+    }
   };
-}
-
 
   return (
     <main>
