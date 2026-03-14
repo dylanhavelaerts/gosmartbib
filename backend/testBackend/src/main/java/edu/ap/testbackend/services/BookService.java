@@ -256,7 +256,14 @@ public class BookService {
     public BookDTO updateBook(Long id, BookDTO updatedBook) {
         BookEntity book = bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));
+        if (updatedBook.title() != null && updatedBook.title().isBlank())
+            throw new IllegalArgumentException("Titel mag niet leeg zijn");
 
+        if (updatedBook.pageCount() != null && updatedBook.pageCount() < 0)
+            throw new IllegalArgumentException("Paginacount mag niet negatief zijn");
+
+        if (updatedBook.publishedYear() != null && updatedBook.publishedYear() > Year.now().getValue())
+            throw new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen");
         if (updatedBook.title() != null) book.setTitle(updatedBook.title());
         if (updatedBook.authors() != null) book.setAuthors(updatedBook.authors());
         if (updatedBook.publisher() != null) book.setPublisher(updatedBook.publisher());
@@ -267,14 +274,7 @@ public class BookService {
         if (updatedBook.language() != null) book.setLanguage(updatedBook.language());
         if (updatedBook.isbn() != null) book.setIsbn(updatedBook.isbn());
         if (updatedBook.publishedYear() != null) book.setPublishedYear(updatedBook.publishedYear());
-        if (updatedBook.title() != null && updatedBook.title().isBlank())
-            throw new IllegalArgumentException("Titel mag niet leeg zijn");
 
-        if (updatedBook.pageCount() != null && updatedBook.pageCount() < 0)
-            throw new IllegalArgumentException("Paginacount mag niet negatief zijn");
-
-        if (updatedBook.publishedYear() != null && updatedBook.publishedYear() > Year.now().getValue())
-            throw new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen");
 
         return toDTO(bookRepository.save(book));
     }

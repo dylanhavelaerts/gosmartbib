@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -690,6 +691,138 @@ class BookServiceTest {
                 () -> bookService.importBooksFromExcel(file));
 
         assertEquals("Kon de excel file niet lezen", ex.getMessage());
+    }
+    // --- updateBook Service Tests ---
+
+    @Test
+    void givenBookExists_whenUpdateBook_thenUpdatesFieldsAndReturnsMappedDTO() {
+        BookEntity book = buildBook();
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BookDTO update = new BookDTO(null, "Refactoring", List.of("Martin Fowler"), null, null,
+                null, null, null, null, null, null, null);
+
+        BookDTO result = bookService.updateBook(10L, update);
+
+        assertEquals("Refactoring", result.title());
+        assertEquals(List.of("Martin Fowler"), result.authors());
+        assertEquals("Prentice Hall", result.publisher()); // unchanged
+        verify(bookRepository, times(1)).save(book);
+    }
+
+    @Test
+    void givenBookDoesNotExist_whenUpdateBook_thenThrowsBookNotFoundException() {
+        when(bookRepository.findById(99L)).thenReturn(Optional.empty());
+
+        BookDTO update = new BookDTO(null, "New Title", null, null, null,
+                null, null, null, null, null, null, null);
+
+        assertThrows(BookNotFoundException.class, () -> bookService.updateBook(99L, update));
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
+
+    @Test
+    void givenBlankTitle_whenUpdateBook_thenThrowsIllegalArgumentException() {
+        BookEntity book = buildBook();
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+
+        BookDTO update = new BookDTO(null, "   ", null, null, null,
+                null, null, null, null, null, null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
+
+    @Test
+    void givenEmptyTitle_whenUpdateBook_thenThrowsIllegalArgumentException() {
+        BookEntity book = buildBook();
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+
+        BookDTO update = new BookDTO(null, "", null, null, null,
+                null, null, null, null, null, null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
+
+    @Test
+    void givenNegativePageCount_whenUpdateBook_thenThrowsIllegalArgumentException() {
+        BookEntity book = buildBook();
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+
+        BookDTO update = new BookDTO(null, null, null, null, null,
+                -1, null, null, null, null, null, null);
+
+        assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
+
+    @Test
+    void givenFuturePublishedYear_whenUpdateBook_thenThrowsIllegalArgumentException() {
+        BookEntity book = buildBook();
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+
+        int futureYear = Year.now().getValue() + 1;
+        BookDTO update = new BookDTO(null, null, null, null, null,
+                null, null, null, null, null, null, futureYear);
+
+        assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
+
+    @Test
+    void givenCurrentYear_whenUpdateBook_thenSavesSuccessfully() {
+        BookEntity book = buildBook();
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        int currentYear = Year.now().getValue();
+        BookDTO update = new BookDTO(null, null, null, null, null,
+                null, null, null, null, null, null, currentYear);
+
+        assertDoesNotThrow(() -> bookService.updateBook(10L, update));
+        verify(bookRepository, times(1)).save(book);
+    }
+
+    @Test
+    void givenNullFields_whenUpdateBook_thenNoFieldsAreOverwritten() {
+        BookEntity book = buildBook();
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BookDTO update = new BookDTO(null, null, null, null, null,
+                null, null, null, null, null, null, null);
+
+        BookDTO result = bookService.updateBook(10L, update);
+
+        assertEquals("Clean Code", result.title());
+        assertEquals("Prentice Hall", result.publisher());
+        verify(bookRepository, times(1)).save(book);
+    }
+
+    @Test
+    void givenAllFieldsProvided_whenUpdateBook_thenAllFieldsAreUpdated() {
+        BookEntity book = buildBook();
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BookDTO update = new BookDTO(null, "New Title", List.of("New Author"), "New Publisher",
+                "New Description", 200, List.of("Fiction"), "new-thumbnail", "fr", 3.5, "9780000000000", 2020);
+
+        BookDTO result = bookService.updateBook(10L, update);
+
+        assertEquals("New Title", result.title());
+        assertEquals(List.of("New Author"), result.authors());
+        assertEquals("New Publisher", result.publisher());
+        assertEquals("New Description", result.description());
+        assertEquals(200, result.pageCount());
+        assertEquals(List.of("Fiction"), result.categories());
+        assertEquals("new-thumbnail", result.thumbnail());
+        assertEquals("fr", result.language());
+        assertEquals("9780000000000", result.isbn());
+        assertEquals(2020, result.publishedYear());
+        verify(bookRepository, times(1)).save(book);
     }
 
     // Helperfunctions

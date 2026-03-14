@@ -348,4 +348,92 @@ class BookControllerTest {
         assertEquals("An error occurred while importing the Excel file.", result.getBody());
         verify(bookService, times(1)).importBooksFromExcel(file);
     }
+    // --- updateBook Controller Tests ---
+
+    @Test
+    void givenBookExists_whenUpdateBook_thenReturnsOkWithUpdatedDTO() {
+        BookDTO updatedDTO = buildDTO(1L, "Updated Title");
+        when(bookService.updateBook(1L, updatedDTO)).thenReturn(updatedDTO);
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals(updatedDTO, result.getBody());
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenBookDoesNotExist_whenUpdateBook_thenReturnsNotFound() {
+        BookDTO updatedDTO = buildDTO(99L, "Some Title");
+        when(bookService.updateBook(99L, updatedDTO)).thenThrow(new BookNotFoundException(99L));
+
+        ResponseEntity<?> result = bookController.updateBook(99L, updatedDTO);
+
+        assertEquals(404, result.getStatusCode().value());
+        verify(bookService, times(1)).updateBook(99L, updatedDTO);
+    }
+
+    @Test
+    void givenBlankTitle_whenUpdateBook_thenReturnsBadRequest() {
+        BookDTO updatedDTO = buildDTO(1L, "");
+        when(bookService.updateBook(1L, updatedDTO))
+                .thenThrow(new IllegalArgumentException("Titel mag niet leeg zijn"));
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("Titel mag niet leeg zijn", result.getBody());
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenNegativePageCount_whenUpdateBook_thenReturnsBadRequest() {
+        BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
+                -1, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 2023);
+        when(bookService.updateBook(1L, updatedDTO))
+                .thenThrow(new IllegalArgumentException("Paginacount mag niet negatief zijn"));
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("Paginacount mag niet negatief zijn", result.getBody());
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenFuturePublishedYear_whenUpdateBook_thenReturnsBadRequest() {
+        BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
+                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 9999);
+        when(bookService.updateBook(1L, updatedDTO))
+                .thenThrow(new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen"));
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("Publicatiejaar mag niet in de toekomst liggen", result.getBody());
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenUnexpectedServiceError_whenUpdateBook_thenReturnsInternalServerError() {
+        BookDTO updatedDTO = buildDTO(1L, "Valid Title");
+        when(bookService.updateBook(1L, updatedDTO)).thenThrow(new RuntimeException("DB down"));
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(500, result.getStatusCode().value());
+        assertEquals("An error occurred while updating the book.", result.getBody());
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenServiceIsCalled_whenUpdateBook_thenDelegatesOnlyToService() {
+        BookDTO updatedDTO = buildDTO(1L, "Clean Code");
+        when(bookService.updateBook(1L, updatedDTO)).thenReturn(updatedDTO);
+
+        bookController.updateBook(1L, updatedDTO);
+
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+        verifyNoMoreInteractions(bookService);
+    }
 }
