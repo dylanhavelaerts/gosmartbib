@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Book } from "../interfaces/Book";
+import { Book, BOOK_CATEGORIES } from "../interfaces/Book";
 import { useSearchParams } from "next/navigation";
 import "../catalog/bookList.css";
 import "../manageCatalog/editbook.css";
@@ -14,6 +14,7 @@ export default function ManageCatalogPage() {
   const [error, setError] = useState<string | null>(null);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const searchParams = useSearchParams();
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
   useEffect(() => {
     fetch(`${apiUrl}/books/all`)
@@ -64,8 +65,8 @@ export default function ManageCatalogPage() {
       return;
     }
 
-    if (formData.pageCount !== undefined && formData.pageCount < 0) {
-      setError("Aantal pagina's mag niet negatief zijn.");
+    if (formData.pageCount !== undefined && formData.pageCount <= 0) {
+      setError("Aantal pagina's mag niet negatief of nul zijn.");
       return;
     }
 
@@ -73,7 +74,7 @@ export default function ManageCatalogPage() {
       formData.publishedYear !== undefined &&
       formData.publishedYear > new Date().getFullYear()
     ) {
-      setError("Publicatiejaar mag niet in de toekomst liggen.");
+      setError("Uitgavejaar mag niet in de toekomst liggen.");
       return;
     }
     if (
@@ -81,7 +82,7 @@ export default function ManageCatalogPage() {
       formData.publishedYear !== null
     ) {
       if (formData.publishedYear <= 0) {
-        setError("Publicatiejaar moet groter zijn dan 0.");
+        setError("Uitgavejaar moet groter zijn dan 0.");
         return;
       }
     }
@@ -573,7 +574,7 @@ export default function ManageCatalogPage() {
 
               <div className="modal-row">
                 <label className="modal-label" htmlFor="publishedYear">
-                  Jaar
+                  Uitgavejaar
                 </label>
                 <input
                   id="publishedYear"
@@ -598,24 +599,75 @@ export default function ManageCatalogPage() {
                   onChange={handleChange}
                 />
               </div>
-
               <div className="modal-row">
-                <label className="modal-label" htmlFor="categories">
-                  Categorie(ën) <span>(komma-gescheiden)</span>
-                </label>
-                <input
-                  id="categories"
-                  name="categories"
-                  className="modal-input"
-                  type="text"
-                  value={formData.categories?.join(", ") || ""}
-                  onChange={(e) => handleArrayChange(e, "categories")}
-                />
+                <label className="modal-label"> Categorie(ën)</label>
+                <div className="filterDropdown">
+                  <button
+                    type="button"
+                    className="filterDropdownToggle"
+                    onClick={() =>
+                      setCategoryDropdownOpen(!categoryDropdownOpen)
+                    }
+                  >
+                    Categorie(ën){" "}
+                    {formData.categories?.length
+                      ? `(${formData.categories.length})`
+                      : ""}{" "}
+                    ▼
+                  </button>
+                  {categoryDropdownOpen && (
+                    <div className="filterDropdownPanel">
+                      {BOOK_CATEGORIES.map((cat) => (
+                        <label key={cat} className="filterCheckboxLabel">
+                          <input
+                            type="checkbox"
+                            checked={
+                              formData.categories?.includes(cat) || false
+                            }
+                            onChange={() => {
+                              const current = formData.categories || [];
+                              const updated = current.includes(cat)
+                                ? current.filter((c) => c !== cat)
+                                : [...current, cat];
+                              setFormData((prev) => ({
+                                ...prev,
+                                categories: updated,
+                              }));
+                            }}
+                          />
+                          {cat}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {/* Filter Pills */}
+                {formData.categories && formData.categories.length > 0 && (
+                  <div className="modal-selected-categories">
+                    {formData.categories.map((cat) => (
+                      <span key={cat} className="modal-category-pill">
+                        {cat}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              categories: prev.categories?.filter(
+                                (c) => c !== cat,
+                              ),
+                            }))
+                          }
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-
               <div className="modal-row">
                 <label className="modal-label" htmlFor="thumbnail">
-                  Cover URL
+                  Voorpagina
                 </label>
                 <input
                   id="thumbnail"
