@@ -76,6 +76,15 @@ export default function ManageCatalogPage() {
       setError("Publicatiejaar mag niet in de toekomst liggen.");
       return;
     }
+    if (
+      formData.publishedYear !== undefined &&
+      formData.publishedYear !== null
+    ) {
+      if (formData.publishedYear <= 0) {
+        setError("Publicatiejaar moet groter zijn dan 0.");
+        return;
+      }
+    }
 
     try {
       const res = await fetch(`${apiUrl}/books/${selectedBook.id}`, {

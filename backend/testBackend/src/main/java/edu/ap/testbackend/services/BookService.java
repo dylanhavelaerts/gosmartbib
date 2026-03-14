@@ -261,6 +261,8 @@ public class BookService {
 
         if (updatedBook.pageCount() != null && updatedBook.pageCount() < 0)
             throw new IllegalArgumentException("Paginacount mag niet negatief zijn");
+        if (updatedBook.publishedYear() != null && updatedBook.publishedYear() <= 0)
+            throw new IllegalArgumentException("Publicatiejaar moet groter zijn dan 0");
 
         if (updatedBook.publishedYear() != null && updatedBook.publishedYear() > Year.now().getValue())
             throw new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen");

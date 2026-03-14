@@ -824,6 +824,17 @@ class BookServiceTest {
         assertEquals(2020, result.publishedYear());
         verify(bookRepository, times(1)).save(book);
     }
+    @Test
+    void givenZeroOrNegativePublishedYear_whenUpdateBook_thenThrowsIllegalArgumentException() {
+        BookEntity book = buildBook();
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+
+        BookDTO update = new BookDTO(null, null, null, null, null,
+                null, null, null, null, null, null, 0);
+
+        assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
 
     // Helperfunctions
 
