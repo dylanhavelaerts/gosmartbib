@@ -148,7 +148,7 @@ export default function AddBookWithIsbn() {
           style={{
             marginTop: "2rem",
             padding: "1.5rem",
-            border: "2px solid #0070f3",
+            border: "2px solid #8e2446",
             borderRadius: "8px",
             backgroundColor: "#f9f9f9",
             color: "black",

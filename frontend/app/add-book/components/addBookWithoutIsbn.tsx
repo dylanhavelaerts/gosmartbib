@@ -497,6 +497,8 @@ useEffect(() => {
           </label>
           <input
             type="number"
+            min="0"
+            max="5"
             step="0.1"
             value={rating}
             onChange={(e) => setRating(Number(e.target.value) || 0)}
@@ -548,7 +550,7 @@ useEffect(() => {
             disabled={loading}
             style={{
               cursor: loading ? "not-allowed" : "pointer",
-              backgroundColor: loading ? "#ccc" : "#0070f3",
+              backgroundColor: loading ? "#ccc" : "#8e2446",
               color: "white",
               border: "none",
               borderRadius: "4px",
@@ -568,7 +570,7 @@ useEffect(() => {
           style={{
             marginTop: "2rem",
             padding: "1.5rem",
-            border: "2px solid #0070f3",
+            border: "2px solid #8e2446",
             borderRadius: "8px",
             backgroundColor: "#f9f9f9",
             color: "black",
