@@ -25,7 +25,7 @@ export default function Home() {
    * Als er nog geen zoekquery is, zet deze boeken dan ook als resultaten (om de volledige catalogus te tonen).
    */
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/all`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/all/unpaged`)
       .then((res) => res.json())
       .then((data) => {
         const safeData = Array.isArray(data) ? data : [];

@@ -35,6 +35,10 @@ public class BookController {
             @RequestParam(defaultValue = "20") int size) {
         return bookService.getAllBooks(page, size);
     }
+    @GetMapping("/all/unpaged")
+    public List<BookDTO> getAllBooksUnpaged() {
+        return bookService.getAllBooksUnpaged();
+    }
 
     /**
      * Zoekt boeken op titel of auteur met server-side paginatie.
@@ -154,18 +158,7 @@ public class BookController {
     }
 
 
-    /**
-     * Zoekt boeken op basis van een zoekterm.
-     * Er wordt gezocht in zowel de titel als de auteurs van het boek.
-     * Als de zoekterm leeg is, worden alle boeken teruggegeven.
-     * 
-     * @param query De zoekterm om op te filteren
-     * @return Een lijst van boeken die overeenkomen met de zoekterm
-     */
-    @GetMapping("/search")
-    public ResponseEntity<List<BookDTO>> searchByTitleOrAuthor(@RequestParam String query) {
-        return ResponseEntity.ok(bookService.searchByTitleOrAuthor(query));
-    }
+
   /**
      * Importeert boeken vanuit een Excel-bestand.
      */
@@ -181,56 +174,10 @@ public class BookController {
         }
     }
 
-    @PostMapping("/add/{isbn}")
-    public ResponseEntity<?> addBookByIsbn(@PathVariable String isbn) {
-        try {
-            BookDTO addedBook = bookService.addBookByIsbn(isbn);
-            return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            // Dit vangt de error op als Google Books geen resultaat heeft
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            // Dit vangt onverwachte server errors (zoals netwerkproblemen met Google)
-            return new ResponseEntity<>("An error occurred while fetching the book.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
 
-    @GetMapping("/search/{isbn}")
-    public ResponseEntity<?> searchBookByIsbn(@PathVariable String isbn) {
-        try {
-            // Zoek het boek op zonder op te slaan
-            BookDTO bookPreview = bookService.searchBookByIsbn(isbn);
-            return new ResponseEntity<>(bookPreview, HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>("An error occurred while fetching the book.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
 
-    @GetMapping("/filter")
-    public ResponseEntity<?> filterBooks(
-            @RequestParam(required = false) String language,
-            @RequestParam(required = false) List<String> categories,
-            @RequestParam(required = false) Integer minPageCount,
-            @RequestParam(required = false) Integer maxPageCount,
-            @RequestParam(required = false) Integer minPubYear,
-            @RequestParam(required = false) Integer maxPubYear
 
-    ) {
 
-        try {
-            List<BookDTO> filteredBooks = bookService.filterBooks(language, categories, minPageCount, maxPageCount,
-                    minPubYear, maxPubYear);
-            return ResponseEntity.ok(filteredBooks);
-            // 400 als de error foute filter combinatie is
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-            // 500 als de error op Database niveau is
-        } catch (DataAccessException e) {
-            return new ResponseEntity<>("An error occurred during filtering.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
     
     @PutMapping("/{id}")
     public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {

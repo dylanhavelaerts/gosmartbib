@@ -56,6 +56,12 @@ public class BookService {
         return bookRepository.findAll(pageable)
                 .map(this::toDTO);
     }
+    public List<BookDTO> getAllBooksUnpaged() {
+        return bookRepository.findAll()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
 
     public BookDTO searchBookByIsbn(String isbn) {
         BookEntity previewBook = buildBookEntityFromGoogle(isbn);

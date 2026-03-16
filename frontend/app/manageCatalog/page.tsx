@@ -17,7 +17,7 @@ export default function ManageCatalogPage() {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
   useEffect(() => {
-    fetch(`${apiUrl}/books/all`)
+    fetch(`${apiUrl}/books/all/unpaged`)
       .then((res) => {
         if (!res.ok) throw new Error("Netwerk response was niet ok");
         return res.json();
@@ -195,6 +195,7 @@ export default function ManageCatalogPage() {
                   padding: 0,
                   display: "flex",
                   flexDirection: "column",
+                  alignItems: "stretch",
                   gap: "0.5rem",
                 }}
               >
