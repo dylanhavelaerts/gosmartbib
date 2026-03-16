@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Book } from "../../interfaces/Book";
 
 export default function AddBookWithoutIsbn() {
@@ -67,6 +67,25 @@ export default function AddBookWithoutIsbn() {
     setPreviewBook(book);
     setMessage("Controleer de gegevens hieronder.");
   };
+
+const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(event.target as Node)
+    ) {
+      setOpenDropdown(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
 
   const handleConfirmAdd = async () => {
     if (!previewBook) return;
@@ -161,8 +180,10 @@ export default function AddBookWithoutIsbn() {
               padding: "0.75rem",
               fontSize: "1rem",
               borderRadius: "4px",
-              border: "1px solid #ccc",
-              color: "black",
+              border: "1px solid #8e2446",
+              background: "white",
+              color: "#8e2446",
+              boxSizing: "border-box",
             }}
             disabled={previewBook !== null}
           />
@@ -191,9 +212,11 @@ export default function AddBookWithoutIsbn() {
                 padding: "0.75rem",
                 fontSize: "1rem",
                 borderRadius: "4px",
-                border: "1px solid #ccc",
-                color: "black",
-                marginBottom: "0.75rem",
+                border: "1px solid #8e2446",
+                background: "white",
+                color: "#8e2446",
+                marginBottom: "0.1rem",
+                boxSizing: "border-box",
               }}
               disabled={previewBook !== null}
             />
@@ -205,12 +228,13 @@ export default function AddBookWithoutIsbn() {
             disabled={previewBook !== null}
             style={{
               padding: "0.75rem 1rem",
-              backgroundColor: "#0070f3",
+              backgroundColor: "#8e2446",
               color: "white",
               border: "none",
               borderRadius: "4px",
               fontWeight: "bold",
               cursor: "pointer",
+              marginTop:"0.8rem"
             }}
           >
             Auteur toevoegen
@@ -222,7 +246,7 @@ export default function AddBookWithoutIsbn() {
             disabled={previewBook !== null}
             style={{
               padding: "0.75rem 1rem",
-              backgroundColor: "#0070f3",
+              backgroundColor: "#8e2446",
               color: "white",
               border: "none",
               borderRadius: "4px",
@@ -255,8 +279,10 @@ export default function AddBookWithoutIsbn() {
               padding: "0.75rem",
               fontSize: "1rem",
               borderRadius: "4px",
-              border: "1px solid #ccc",
-              color: "black",
+              border: "1px solid #8e2446",
+              background: "white",
+              color: "#8e2446",
+              boxSizing: "border-box",
             }}
             disabled={previewBook !== null}
           />
@@ -282,9 +308,11 @@ export default function AddBookWithoutIsbn() {
               padding: "0.75rem",
               fontSize: "1rem",
               borderRadius: "4px",
-              border: "1px solid #ccc",
-              color: "black",
+              border: "1px solid #8e2446",
+              background: "white",
+              color: "#8e2446",
               resize: "none",
+              boxSizing: "border-box",
             }}
             disabled={previewBook !== null}
           />
@@ -298,7 +326,7 @@ export default function AddBookWithoutIsbn() {
               fontWeight: "bold",
             }}
           >
-            Aantal pagina&apos;s
+            Aantal pagina's
           </label>
           <input
             type="number"
@@ -309,8 +337,10 @@ export default function AddBookWithoutIsbn() {
               padding: "0.75rem",
               fontSize: "1rem",
               borderRadius: "4px",
-              border: "1px solid #ccc",
-              color: "black",
+              border: "1px solid #8e2446",
+              background: "white",
+              color: "#8e2446",
+              boxSizing: "border-box",
             }}
             disabled={previewBook !== null}
           />
@@ -326,69 +356,72 @@ export default function AddBookWithoutIsbn() {
           >
             Categorieën
           </label>
-
-          <button
-            type="button"
-            onClick={() => setOpenDropdown(!openDropdown)}
-            disabled={previewBook !== null}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              color: "black",
-              minHeight: "20px",
-              backgroundColor: "white",
-              textAlign: "left",
-              cursor: "pointer",
-            }}
-          >
-            {categories.length !== 0
-              ? categories.join(", ")
-              : "Selecteer categorieën"}
-          </button>
-
-          {openDropdown && (
-            <div
+          <div ref={dropdownRef} style={{width: "100%"}}>
+            <button
+              type="button"
+              onClick={() => setOpenDropdown(!openDropdown)}
+              disabled={previewBook !== null}
               style={{
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-                display: "flex",
-                flexDirection: "column",
                 width: "100%",
-                backgroundColor: "white",
-                marginTop: "0.5rem",
+                padding: "0.75rem",
+                fontSize: "1rem",
+                borderRadius: "4px",
+                border: "1px solid #8e2446",
+                background: "white",
+                color: "#8e2446",
+                minHeight: "20px",
+                textAlign: "left",
+                cursor: "pointer",
+                boxSizing: "border-box",
               }}
             >
-              {categoryChoice.map((category) => (
-                <label
-                  key={category}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    padding: "0.5rem 0.75rem",
-                    color: "black",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={categories.includes(category)}
-                    onChange={() => {
-                      setCategories((prev) =>
-                        prev.includes(category)
-                          ? prev.filter((c) => c !== category)
-                          : [...prev, category]
-                      );
+              {categories.length !== 0
+                ? categories.join(", ")
+                : "Selecteer categorieën"}
+            </button>
+
+            {openDropdown && (
+              <div
+                style={{
+                  borderRadius: "4px",
+                  border: "1px solid #8e2446",
+                  display: "flex",
+                  flexDirection: "column",
+                  width: "100%",
+                  backgroundColor: "white",
+                  marginTop: "0.5rem",
+                  boxSizing: "border-box",
+                }}
+              >
+                {categoryChoice.map((category) => (
+                  <label
+                    key={category}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.5rem 0.75rem",
+                      color: "black",
                     }}
-                    disabled={previewBook !== null}
-                  />
-                  <span>{category}</span>
-                </label>
-              ))}
-            </div>
-          )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={categories.includes(category)}
+                      onChange={() => {
+                        setCategories((prev) =>
+                          prev.includes(category)
+                            ? prev.filter((c) => c !== category)
+                            : [...prev, category]
+                        );
+                      }}
+                      disabled={previewBook !== null}
+                    />
+                    <span>{category}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div>
@@ -411,8 +444,10 @@ export default function AddBookWithoutIsbn() {
               padding: "0.75rem",
               fontSize: "1rem",
               borderRadius: "4px",
-              border: "1px solid #ccc",
-              color: "black",
+              border: "1px solid #8e2446",
+              background: "white",
+              color: "#8e2446",
+              boxSizing: "border-box",
             }}
             disabled={previewBook !== null}
           />
@@ -428,21 +463,26 @@ export default function AddBookWithoutIsbn() {
           >
             Taal
           </label>
-          <input
-            type="text"
+          <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            placeholder="Taal van het boek"
             style={{
               width: "100%",
               padding: "0.75rem",
               fontSize: "1rem",
               borderRadius: "4px",
-              border: "1px solid #ccc",
-              color: "black",
+              border: "1px solid #8e2446",
+              background: "white",
+              color: "#8e2446",
+              boxSizing: "border-box",
             }}
             disabled={previewBook !== null}
-          />
+          >
+            <option value="">Alle talen</option>
+            <option value="en">EN</option>
+            <option value="en">NE</option>
+            <option value="en">FR</option>
+          </select>
         </div>
 
         <div>
@@ -465,8 +505,10 @@ export default function AddBookWithoutIsbn() {
               padding: "0.75rem",
               fontSize: "1rem",
               borderRadius: "4px",
-              border: "1px solid #ccc",
-              color: "black",
+              border: "1px solid #8e2446",
+              background: "white",
+              color: "#8e2446",
+              boxSizing: "border-box",
             }}
             disabled={previewBook !== null}
           />
@@ -491,8 +533,10 @@ export default function AddBookWithoutIsbn() {
               padding: "0.75rem",
               fontSize: "1rem",
               borderRadius: "4px",
-              border: "1px solid #ccc",
-              color: "black",
+              border: "1px solid #8e2446",
+              background: "white",
+              color: "#8e2446",
+              boxSizing: "border-box",
             }}
             disabled={previewBook !== null}
           />

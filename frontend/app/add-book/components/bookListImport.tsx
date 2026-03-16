@@ -103,7 +103,7 @@ export default function BookListImport() {
             disabled={loading}
             style={{
               padding: "0.75rem 1.5rem",
-              backgroundColor: "#28a745",
+              backgroundColor: loading ? "#ccc" : "#28a745",
               color: "white",
               border: "none",
               borderRadius: "4px",
@@ -121,7 +121,7 @@ export default function BookListImport() {
           style={{
             marginTop: "2rem",
             padding: "1rem",
-            border: "1px solid #ccc",
+            border: "1px solid #8e2446",
             borderRadius: "8px",
             backgroundColor: "#f9f9f9",
             color: "black",

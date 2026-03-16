@@ -109,12 +109,14 @@ export default function AddBookWithIsbn() {
             onChange={(e) => setIsbn(e.target.value)}
             placeholder="Bijv. 9781473227989"
             style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              color: "black",
+                width: "100%",
+                padding: "0.75rem",
+                fontSize: "1rem",
+                borderRadius: "4px",
+                border: "1px solid #8e2446",
+                background: "white",
+                color: "#8e2446",
+                boxSizing: "border-box"
             }}
             disabled={previewBook !== null}
           />
@@ -126,7 +128,7 @@ export default function AddBookWithIsbn() {
             disabled={loading}
             style={{
               cursor: loading ? "not-allowed" : "pointer",
-              backgroundColor: loading ? "#ccc" : "#0070f3",
+              backgroundColor: loading ? "#ccc" : "#8e2446",
               color: "white",
               border: "none",
               borderRadius: "4px",
