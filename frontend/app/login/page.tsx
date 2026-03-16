@@ -29,10 +29,14 @@ export default function LoginPage() {
       <div className="loginBackground" />
       <main className="loginPage">
         <section className="loginCard">
-  <div className="loginCardHeader">
-    <img src="https://helpdesk.go-antwerpen.be/logo.php" className="loginGoLogo " alt="GO!" />
-  </div>
-  <p className="loginSubtitle">
+          <div className="loginCardHeader">
+            <img
+              src="https://helpdesk.go-antwerpen.be/logo.php"
+              className="loginGoLogo "
+              alt="GO!"
+            />
+          </div>
+          <p className="loginSubtitle">
             Meld je aan met je Smartschool-account om verder te gaan.
           </p>
           <button
@@ -57,7 +61,8 @@ export default function LoginPage() {
 
           {hasError && (
             <p className="loginError" role="alert">
-              Er is een fout opgetreden tijdens het inloggen. Probeer het opnieuw.
+              Er is een fout opgetreden tijdens het inloggen. Probeer het
+              opnieuw.
             </p>
           )}
         </section>
