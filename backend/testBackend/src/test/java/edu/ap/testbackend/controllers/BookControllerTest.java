@@ -11,6 +11,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,58 +41,62 @@ class BookControllerTest {
 
     @Test
     void givenBooksExist_whenGetBooks_thenReturnsExpectedDTOs() {
-        List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"));
-        when(bookService.getAllBooks()).thenReturn(expected);
+        List<BookDTO> books = List.of(buildDTO(1L, "Clean Code"));
+        Page<BookDTO> expected = toPage(books);
+        when(bookService.getAllBooks(0, 20)).thenReturn(expected);
 
-        List<BookDTO> result = bookController.getBooks();
+        Page<BookDTO> result = bookController.getBooks(0, 20);
 
         assertEquals(expected, result);
-        verify(bookService, times(1)).getAllBooks();
+        verify(bookService, times(1)).getAllBooks(0, 20);
     }
 
     @Test
-    void givenNoBooksExist_whenGetBooks_thenReturnsEmptyList() {
-        when(bookService.getAllBooks()).thenReturn(List.of());
+    void givenNoBooksExist_whenGetBooks_thenReturnsEmptyPage() {
+        Page<BookDTO> expected = toPage(List.of());
+        when(bookService.getAllBooks(0, 20)).thenReturn(expected);
 
-        List<BookDTO> result = bookController.getBooks();
+        Page<BookDTO> result = bookController.getBooks(0, 20);
 
         assertNotNull(result);
-        assertEquals(0, result.size());
-        verify(bookService, times(1)).getAllBooks();
+        assertEquals(0, result.getTotalElements());
+        verify(bookService, times(1)).getAllBooks(0, 20);
     }
 
     @Test
     void givenMultipleBooksExist_whenGetBooks_thenReturnsAllBooks() {
-        List<BookDTO> expected = List.of(
+        List<BookDTO> books = List.of(
                 buildDTO(1L, "Clean Code"),
                 buildDTO(2L, "Effective Java"),
                 buildDTO(3L, "Refactoring"));
-        when(bookService.getAllBooks()).thenReturn(expected);
+        Page<BookDTO> expected = toPage(books);
+        when(bookService.getAllBooks(0, 20)).thenReturn(expected);
 
-        List<BookDTO> result = bookController.getBooks();
+        Page<BookDTO> result = bookController.getBooks(0, 20);
 
-        assertEquals(3, result.size());
-        assertEquals("Clean Code", result.get(0).title());
-        assertEquals("Effective Java", result.get(1).title());
-        assertEquals("Refactoring", result.get(2).title());
-        verify(bookService, times(1)).getAllBooks();
+        assertEquals(3, result.getContent().size());
+        assertEquals("Clean Code", result.getContent().get(0).title());
+        assertEquals("Effective Java", result.getContent().get(1).title());
+        assertEquals("Refactoring", result.getContent().get(2).title());
+        verify(bookService, times(1)).getAllBooks(0, 20);
     }
+
 
     @Test
     void givenServiceFails_whenGetBooks_thenThrowsException() {
-        when(bookService.getAllBooks()).thenThrow(new RuntimeException("Service unavailable"));
+        when(bookService.getAllBooks(0, 20)).thenThrow(new RuntimeException("Service unavailable"));
 
-        assertThrows(RuntimeException.class, () -> bookController.getBooks());
-        verify(bookService, times(1)).getAllBooks();
+        assertThrows(RuntimeException.class, () -> bookController.getBooks(0, 20));
+        verify(bookService, times(1)).getAllBooks(0, 20);
     }
 
     @Test
     void givenServiceIsCalled_whenGetBooks_thenDelegatesOnlyToService() {
-        when(bookService.getAllBooks()).thenReturn(List.of());
+        when(bookService.getAllBooks(0, 20)).thenReturn(toPage(List.of()));
 
-        bookController.getBooks();
+        bookController.getBooks(0, 20);
 
-        verify(bookService, times(1)).getAllBooks();
+        verify(bookService, times(1)).getAllBooks(0, 20);
         verifyNoMoreInteractions(bookService);
     }
 
@@ -180,33 +187,33 @@ class BookControllerTest {
 
     @Test
     void givenValidFilters_whenFilterBooks_thenReturnsOk() {
-        List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"));
-        when(bookService.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023))
+        Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
+        when(bookService.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023, 0, 20))
                 .thenReturn(expected);
 
-        ResponseEntity<?> result = bookController.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023);
+        ResponseEntity<?> result = bookController.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023, 0, 20);
 
         assertEquals(200, result.getStatusCode().value());
         assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023);
+        verify(bookService, times(1)).filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023, 0, 20);
     }
 
     @Test
     void givenNullFilters_whenFilterBooks_thenReturnsOk() {
-        when(bookService.filterBooks(null, null, null, null, null, null))
-                .thenReturn(List.of(buildDTO(1L, "Clean Code")));
+        when(bookService.filterBooks(null, null, null, null, null, null, 0, 20))
+                .thenReturn(toPage(List.of(buildDTO(1L, "Clean Code"))));
 
-        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null);
+        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null, 0, 20);
 
         assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void givenMinGreaterThanMax_whenFilterBooks_thenReturnsBadRequest() {
-        when(bookService.filterBooks(null, null, 500, 100, null, null))
+        when(bookService.filterBooks(null, null, 500, 100, null, null, 0, 20))
                 .thenThrow(new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount"));
 
-        ResponseEntity<?> result = bookController.filterBooks(null, null, 500, 100, null, null);
+        ResponseEntity<?> result = bookController.filterBooks(null, null, 500, 100, null, null, 0, 20);
 
         assertEquals(400, result.getStatusCode().value());
         assertEquals("minPageCount cannot be bigger than maxPageCount", result.getBody());
@@ -214,24 +221,26 @@ class BookControllerTest {
 
     @Test
     void givenDatabaseFails_whenFilterBooks_thenReturnsInternalServerError() {
-        when(bookService.filterBooks(any(), any(), any(), any(), any(), any()))
-                .thenThrow(new DataAccessException("DB down") {
-                });
+        when(bookService.filterBooks(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .thenThrow(new DataAccessException("DB down") {});
 
-        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null);
+        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null, 0, 20);
 
         assertEquals(500, result.getStatusCode().value());
     }
 
-    @Test
-    void givenNoResults_whenFilterBooks_thenReturnsEmptyList() {
-        when(bookService.filterBooks(any(), any(), any(), any(), any(), any()))
-                .thenReturn(List.of());
 
-        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null);
+    @Test
+    void givenNoResults_whenFilterBooks_thenReturnsEmptyPage() {
+        when(bookService.filterBooks(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(toPage(List.of()));
+
+        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null, 0, 20);
 
         assertEquals(200, result.getStatusCode().value());
-        assertEquals(List.of(), result.getBody());
+        Page<?> body = (Page<?>) result.getBody();
+        assertNotNull(body);
+        assertEquals(0, body.getTotalElements());
     }
     // --- spotlight Controller Tests ---
 
@@ -279,14 +288,14 @@ class BookControllerTest {
 
     @Test
     void givenQuery_whenSearchByTitleOrAuthor_thenReturnsOkWithResults() {
-        List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"));
-        when(bookService.searchByTitleOrAuthor("Clean")).thenReturn(expected);
+        Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
+        when(bookService.searchByTitleOrAuthor("Clean", 0, 20)).thenReturn(expected);
 
-        ResponseEntity<List<BookDTO>> result = bookController.searchByTitleOrAuthor("Clean");
+        ResponseEntity<Page<BookDTO>> result = bookController.searchByTitleOrAuthor("Clean", 0, 20);
 
         assertEquals(200, result.getStatusCode().value());
         assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).searchByTitleOrAuthor("Clean");
+        verify(bookService, times(1)).searchByTitleOrAuthor("Clean", 0, 20);
     }
 
     @Test
@@ -347,5 +356,136 @@ class BookControllerTest {
         assertEquals(500, result.getStatusCode().value());
         assertEquals("An error occurred while importing the Excel file.", result.getBody());
         verify(bookService, times(1)).importBooksFromExcel(file);
+    }
+    // --- updateBook Controller Tests ---
+
+    @Test
+    void givenBookExists_whenUpdateBook_thenReturnsOkWithUpdatedDTO() {
+        BookDTO updatedDTO = buildDTO(1L, "Updated Title");
+        when(bookService.updateBook(1L, updatedDTO)).thenReturn(updatedDTO);
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals(updatedDTO, result.getBody());
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenBookDoesNotExist_whenUpdateBook_thenReturnsNotFound() {
+        BookDTO updatedDTO = buildDTO(99L, "Some Title");
+        when(bookService.updateBook(99L, updatedDTO)).thenThrow(new BookNotFoundException(99L));
+
+        ResponseEntity<?> result = bookController.updateBook(99L, updatedDTO);
+
+        assertEquals(404, result.getStatusCode().value());
+        verify(bookService, times(1)).updateBook(99L, updatedDTO);
+    }
+
+    @Test
+    void givenBlankTitle_whenUpdateBook_thenReturnsBadRequest() {
+        BookDTO updatedDTO = buildDTO(1L, "");
+        when(bookService.updateBook(1L, updatedDTO))
+                .thenThrow(new IllegalArgumentException("Titel mag niet leeg zijn"));
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("Titel mag niet leeg zijn", result.getBody());
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenNegativePageCount_whenUpdateBook_thenReturnsBadRequest() {
+        BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
+                -1, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 2023);
+        when(bookService.updateBook(1L, updatedDTO))
+                .thenThrow(new IllegalArgumentException("Paginacount mag niet negatief zijn"));
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("Paginacount mag niet negatief zijn", result.getBody());
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenFuturePublishedYear_whenUpdateBook_thenReturnsBadRequest() {
+        BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
+                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 9999);
+        when(bookService.updateBook(1L, updatedDTO))
+                .thenThrow(new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen"));
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("Publicatiejaar mag niet in de toekomst liggen", result.getBody());
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenUnexpectedServiceError_whenUpdateBook_thenReturnsInternalServerError() {
+        BookDTO updatedDTO = buildDTO(1L, "Valid Title");
+        when(bookService.updateBook(1L, updatedDTO)).thenThrow(new RuntimeException("DB down"));
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(500, result.getStatusCode().value());
+        assertEquals("An error occurred while updating the book.", result.getBody());
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenServiceIsCalled_whenUpdateBook_thenDelegatesOnlyToService() {
+        BookDTO updatedDTO = buildDTO(1L, "Clean Code");
+        when(bookService.updateBook(1L, updatedDTO)).thenReturn(updatedDTO);
+
+        bookController.updateBook(1L, updatedDTO);
+
+        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+        verifyNoMoreInteractions(bookService);
+    }
+    @Test
+    void givenBooksExist_whenGetAllBooksUnpaged_thenReturnsAllDTOs() {
+        List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"), buildDTO(2L, "Effective Java"));
+        when(bookService.getAllBooksUnpaged()).thenReturn(expected);
+
+        List<BookDTO> result = bookController.getAllBooksUnpaged();
+
+        assertEquals(expected, result);
+        verify(bookService, times(1)).getAllBooksUnpaged();
+    }
+
+    @Test
+    void givenNoBooksExist_whenGetAllBooksUnpaged_thenReturnsEmptyList() {
+        when(bookService.getAllBooksUnpaged()).thenReturn(List.of());
+
+        List<BookDTO> result = bookController.getAllBooksUnpaged();
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+        verify(bookService, times(1)).getAllBooksUnpaged();
+    }
+
+    @Test
+    void givenServiceFails_whenGetAllBooksUnpaged_thenThrowsException() {
+        when(bookService.getAllBooksUnpaged()).thenThrow(new RuntimeException("Database unavailable"));
+
+        assertThrows(RuntimeException.class, () -> bookController.getAllBooksUnpaged());
+        verify(bookService, times(1)).getAllBooksUnpaged();
+    }
+
+    @Test
+    void givenServiceIsCalled_whenGetAllBooksUnpaged_thenDelegatesOnlyToService() {
+        when(bookService.getAllBooksUnpaged()).thenReturn(List.of());
+
+        bookController.getAllBooksUnpaged();
+
+        verify(bookService, times(1)).getAllBooksUnpaged();
+        verifyNoMoreInteractions(bookService);
+    }
+    // -- helper
+    private Page<BookDTO> toPage(List<BookDTO> list) {
+        return new PageImpl<>(list, PageRequest.of(0, 20), list.size());
     }
 }
