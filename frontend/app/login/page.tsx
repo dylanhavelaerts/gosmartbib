@@ -28,13 +28,11 @@ export default function LoginPage() {
     <>
       <div className="loginBackground" />
       <main className="loginPage">
-        <section className="loginCard" aria-labelledby="loginTitle">
-          <img
-            src="https://helpdesk.go-antwerpen.be/logo.php"
-            className="loginCompanyLogo"
-            alt="GO! Scholengroep Antwerpen"
-          />
-          <p className="loginSubtitle">
+        <section className="loginCard">
+  <div className="loginCardHeader">
+    <img src="https://helpdesk.go-antwerpen.be/logo.php" className="loginGoLogo " alt="GO!" />
+  </div>
+  <p className="loginSubtitle">
             Meld je aan met je Smartschool-account om verder te gaan.
           </p>
           <button

@@ -33,7 +33,7 @@
   text-align: center;
 }
 
-.loginCompanyLogo {
+.loginGoLogo {
   display: block;
   height: clamp(2rem, 5vw, 2.8rem);
   width: auto;
@@ -106,6 +106,7 @@
   padding: 0.65rem 0.8rem;
 }
 
+/* ── Responsive ── */
 @media (max-width: 420px) {
   .loginCard {
     border-radius: 10px;
@@ -118,6 +119,7 @@
 }
 
 @media (max-height: 500px) {
+  /* Landscape on small phones */
   .loginPage {
     align-items: flex-start;
     overflow-y: auto;
