@@ -1,6 +1,7 @@
 package edu.ap.testbackend.services;
 
 import edu.ap.testbackend.dto.BookDTO;
+import edu.ap.testbackend.dto.CreateBookRequestDTO;
 import edu.ap.testbackend.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.testbackend.dto.googlebooks.VolumeInfo;
 import edu.ap.testbackend.entities.BookEntity;
@@ -8,6 +9,7 @@ import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.repositories.BookRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class BookService {
     private final BookRepository bookRepository;
     private final RestTemplate restTemplate;
@@ -252,15 +255,52 @@ public class BookService {
                 mismatches);
     }
 
+    public BookDTO addManualBook(CreateBookRequestDTO request) {
+        if (request.title() == null || request.title().isBlank()) {
+            throw new IllegalArgumentException("Titel is verplicht");
+        }
+
+        BookEntity book = new BookEntity();
+        book.setTitle(request.title().trim());
+        book.setAuthors(cleanStringList(request.authors()));
+        book.setPublisher(safeTrim(request.publisher()));
+        book.setDescription(safeTrim(request.description()));
+        book.setPageCount(request.pageCount() != null ? request.pageCount() : 0);
+        book.setCategories(cleanStringList(request.categories()));
+        book.setThumbnail(safeTrim(request.thumbnail()));
+        book.setLanguage(safeTrim(request.language()));
+        book.setRating(request.rating() != null ? request.rating() : 0.0);
+        book.setPublishedYear(request.publishedYear());
+        book.setSpotlight(Boolean.TRUE.equals(request.spotlight()));
+        book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
+
+        BookEntity saved = bookRepository.saveAndFlush(book);
+
+        // Reload so the DB-generated ISBN is present in the response DTO
+        BookEntity reloaded = bookRepository.findById(saved.getId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Boek werd opgeslagen maar kon niet opnieuw geladen worden"));
+
+        return toDTO(reloaded);
+    }
+
     private BookDTO toDTO(BookEntity book) {
+        List<String> authors = book.getAuthors() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(book.getAuthors());
+
+        List<String> categories = book.getCategories() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(book.getCategories());
+
         return new BookDTO(
                 book.getId(),
                 book.getTitle(),
-                book.getAuthors(),
+                authors,
                 book.getPublisher(),
                 book.getDescription(),
                 book.getPageCount(),
-                book.getCategories(),
+                categories,
                 book.getThumbnail(),
                 book.getLanguage(),
                 book.getRating(),
@@ -326,6 +366,21 @@ public class BookService {
                 .trim()
                 .toLowerCase()
                 .replaceAll("\\s+", " ");
+    }
+
+    private List<String> cleanStringList(List<String> values) {
+        if (values == null) {
+            return new ArrayList<>();
+        }
+
+        return values.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
+                .toList();
+    }
+
+    private String safeTrim(String value) {
+        return value == null ? null : value.trim();
     }
 
 }

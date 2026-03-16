@@ -1,6 +1,7 @@
 package edu.ap.testbackend.controllers;
 
 import edu.ap.testbackend.dto.BookDTO;
+import edu.ap.testbackend.dto.CreateBookRequestDTO;
 import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
 import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
@@ -108,6 +109,18 @@ public class BookController {
         } catch (Exception e) {
             // Dit vangt onverwachte server errors (zoals netwerkproblemen met Google)
             return new ResponseEntity<>("An error occurred while fetching the book.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/add")
+    public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request) {
+        try {
+            BookDTO addedBook = bookService.addManualBook(request);
+            return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>("An error occurred while saving the book.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

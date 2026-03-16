@@ -75,7 +75,7 @@ export default function AddBookWithoutIsbn() {
     setMessage("");
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/books`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,7 +91,6 @@ export default function AddBookWithoutIsbn() {
           language,
           rating,
           publishedYear,
-          isbn: "",
           spotlight: false,
         }),
       });

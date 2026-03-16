@@ -6,6 +6,8 @@ import lombok.Setter;
 
 import java.util.List;
 
+import org.hibernate.annotations.ColumnDefault;
+
 @Entity
 @Getter
 @Setter
@@ -27,7 +29,7 @@ public class BookEntity {
     private String thumbnail;
     private String language;
     private Double rating;
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String isbn;
     private Integer publishedYear;
     private boolean spotlight;
