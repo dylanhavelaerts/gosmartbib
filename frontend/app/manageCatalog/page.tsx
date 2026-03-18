@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Book, BOOK_CATEGORIES } from "../interfaces/Book";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import "../catalog/bookList.css";
 import "../manageCatalog/editbook.css";
 
@@ -15,6 +15,9 @@ export default function ManageCatalogPage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const searchParams = useSearchParams();
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     fetch(`${apiUrl}/books/all/unpaged`)
@@ -57,6 +60,14 @@ export default function ManageCatalogPage() {
     const values = e.target.value.split(",").map((v) => v.trim());
     setFormData((prev) => ({ ...prev, [field]: values }));
   }
+  const filteredBooks = books.filter((book) => {
+    const q = query.toLowerCase();
+    return (
+      book.title?.toLowerCase().includes(q) ||
+      book.authors?.some((a) => a.toLowerCase().includes(q)) ||
+      book.isbn?.toLowerCase().includes(q)
+    );
+  });
   async function handleSave() {
     if (!selectedBook) return;
     setError(null);
@@ -103,6 +114,25 @@ export default function ManageCatalogPage() {
       closeModal();
     } catch {
       setError("Er is iets misgegaan tijdens het opslagen, probeer opnieuw.");
+    }
+  }
+  async function tryDelete() {
+    if (!selectedBook) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`${apiUrl}/books/${selectedBook.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      setBooks((prev) => prev.filter((b) => b.id !== selectedBook.id));
+      setSelectedBook(null);
+      setShowDeleteConfirm(false);
+    } catch {
+      setError(
+        "Er is iets misgegaan tijdens het verwijderen, probeer opnieuw.",
+      );
+    } finally {
+      setDeleting(false);
     }
   }
   return (
@@ -170,6 +200,8 @@ export default function ManageCatalogPage() {
             <input
               type="text"
               placeholder="Zoek op titel, auteur of ISBN..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               style={{
                 width: "100%",
                 padding: "0.8rem",
@@ -199,7 +231,7 @@ export default function ManageCatalogPage() {
                   gap: "0.5rem",
                 }}
               >
-                {books.map((book) => {
+                {filteredBooks.map((book) => {
                   const isSelected = selectedBook?.id === book.id;
                   return (
                     <li
@@ -366,6 +398,7 @@ export default function ManageCatalogPage() {
                     Bewerken
                   </button>
                   <button
+                    onClick={() => setShowDeleteConfirm(true)}
                     className="confirmButton"
                     type="button"
                     style={{
@@ -708,6 +741,33 @@ export default function ManageCatalogPage() {
                 onClick={handleSave}
               >
                 Opslaan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteConfirm && selectedBook && (
+        <div className="modalOverlay">
+          <div className="modalBox">
+            <p>
+              Ben je zeker dat je <strong>{selectedBook.title}</strong> wilt
+              verwijderen?
+            </p>
+            <p>Deze actie is onterugkeerbaar!</p>
+            <div>
+              <button
+                className="gobackButton"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+              >
+                Ga terug
+              </button>
+              <button
+                className="confirmButton"
+                onClick={tryDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Verwijderen..." : "Bevestig"}
               </button>
             </div>
           </div>
