@@ -1,5 +1,6 @@
 package edu.ap.testbackend.security;
 
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +20,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
         private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
@@ -49,8 +51,10 @@ public class SecurityConfig {
                                         .authorizationRequestResolver(pkceDisabledResolver)
                                         .authorizationRequestRepository(authorizationRequestRepository)
                                 )
-                                .failureHandler((request, response, exception) ->
-                                        response.sendRedirect(frontendUrl + "/login?error=true"))
+                                .failureHandler((request, response, exception) -> {
+                                        log.error("OAuth2 login callback failed", exception);
+                                        response.sendRedirect(frontendUrl + "/login?error=true");
+                                })
                                 .successHandler(oAuth2LoginSuccessHandler)
                         );
 
