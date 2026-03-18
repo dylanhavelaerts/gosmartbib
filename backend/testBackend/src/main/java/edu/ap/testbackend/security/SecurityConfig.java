@@ -38,6 +38,8 @@ public class SecurityConfig {
                                 .authorizationEndpoint(auth -> auth
                                         .authorizationRequestResolver(pkceDisabledResolver)
                                 )
+                                .failureHandler((request, response, exception) ->
+                                        response.sendRedirect(frontendUrl + "/login?error=true"))
                                 .successHandler(oAuth2LoginSuccessHandler)
                         );
 
