@@ -6,8 +6,6 @@ import lombok.Setter;
 
 import java.util.List;
 
-import org.hibernate.annotations.ColumnDefault;
-
 @Entity
 @Getter
 @Setter
