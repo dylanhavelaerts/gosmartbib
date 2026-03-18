@@ -1,7 +1,28 @@
+html,
+body {
+  font-family: Verdana, Geneva, sans-serif !important;
+}
+
+*,
+*::before,
+*::after {
+  font-family: inherit !important;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit !important;
+}
+
 body {
   padding: 0;
   margin: 0;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 header {
   height: 4rem;
@@ -60,6 +81,7 @@ nav button:hover {
 }
 main {
   padding: 1rem;
+  flex: 1; /* this pushes the footer down */
 }
 
 @media (min-width: 768px) {
