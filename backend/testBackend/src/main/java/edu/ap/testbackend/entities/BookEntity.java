@@ -52,9 +52,20 @@ public class BookEntity {
     @Column(nullable = false)
     private boolean spotlight = false;
 
+    @Column(name = "didactic_tag", nullable = false)
+    private boolean didacticTag;
+
+    @Column(name = "reading_level")
+    private String readingLevel;
+
+    @ElementCollection
+    @CollectionTable(name = "book_labels", joinColumns = @JoinColumn(name = "book_id"))
+    @Column(name = "label")
+    private List<String> labels;
+
     public BookEntity(String title, List<String> authors, String publisher, String description, int pageCount,
             List<String> categories, String thumbnail, String language, double rating, String isbn,
-            Integer publishedYear) {
+            Integer publishedYear, boolean didacticTag, List<String> labels, String readingLevel) {
         this.title = title;
         this.authors = authors;
         this.publisher = publisher;
@@ -67,5 +78,8 @@ public class BookEntity {
         this.spotlight = false;
         this.isbn = isbn;
         this.publishedYear = publishedYear;
+        this.didacticTag = didacticTag;
+        this.labels = labels;
+        this.readingLevel = readingLevel;
     }
 }

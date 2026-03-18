@@ -19,16 +19,49 @@ export default function AddBookWithoutIsbn() {
   const [publishedYear, setPublishedYear] = useState(0);
   const [rating, setRating] = useState(0);
   const [openDropdown, setOpenDropdown] = useState(false);
+  const [openLabelDropdown, setOpenLabelDropdown] = useState(false);
+  const [didacticTag, setDidacticTag] = useState(false);
+  const [labels, setLabels] = useState<String[]>([]);
+  const [readingLevel, setReadingLevel] = useState("")
 
   const categoryChoice = [
-    "Fictie",
-    "Non-fictie",
+    "Fictie algemeen",
+    "Literaire roman",
+    "Spanning / thriller",
+    "Detective / misdaad",
     "Fantasy",
-    "Young adult",
     "Science fiction",
-    "Educatie",
+    "Dystopie",
+    "Historische roman",
+    "Romantiek",
+    "Coming-of-age",
+    "Avontuur",
+    "Oorlog & conflict",
+    "Horror",
+    "Humor",
+    "Graphic Novel / strip",
     "Poëzie",
+    "Non-fictie algemeen"
   ];
+
+  const labelChoice = [
+    "Liefde & relatie",
+    "Vriendschap",
+    "Identiteit & zelfbeeld",
+    "Gender & seksualiteit",
+    "Diversiteit & inclusie",
+    "Mentale gezondheid",
+    "Rouw & verlies",
+    "Familie",
+    "School & prestatiedruk",
+    "Sociale media",
+    "Migratie & afkomst",
+    "Armoede & ongelijkheid",
+    "Macht & onrecht",
+    "Avontuur & ontdekking",
+    "Overleven",
+    "Toekomst & technologie"
+  ]
 
   const handleAuthorChange = (index: number, value: string) => {
     const updatedAuthors = [...authors];
@@ -77,6 +110,25 @@ useEffect(() => {
       !dropdownRef.current.contains(event.target as Node)
     ) {
       setOpenDropdown(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
+
+const dropdownRefLabel = useRef<HTMLDivElement | null>(null);
+
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      dropdownRefLabel.current &&
+      !dropdownRefLabel.current.contains(event.target as Node)
+    ) {
+      setOpenLabelDropdown(false);
     }
   };
 
@@ -432,6 +484,84 @@ useEffect(() => {
               fontWeight: "bold",
             }}
           >
+            Leefwereldlabels
+          </label>
+          <div ref={dropdownRefLabel} style={{width: "100%"}}>
+            <button
+              type="button"
+              onClick={() => setOpenLabelDropdown(!openLabelDropdown)}
+              disabled={previewBook !== null}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                fontSize: "1rem",
+                borderRadius: "4px",
+                border: "1px solid #8e2446",
+                background: "white",
+                color: "#8e2446",
+                minHeight: "20px",
+                textAlign: "left",
+                cursor: "pointer",
+                boxSizing: "border-box",
+              }}
+            >
+              {labels.length !== 0
+                ? labels.join(", ")
+                : "Selecteer labels"}
+            </button>
+
+            {openLabelDropdown && (
+              <div
+                style={{
+                  borderRadius: "4px",
+                  border: "1px solid #8e2446",
+                  display: "flex",
+                  flexDirection: "column",
+                  width: "100%",
+                  backgroundColor: "white",
+                  marginTop: "0.5rem",
+                  boxSizing: "border-box",
+                }}
+              >
+                {labelChoice.map((label) => (
+                  <label
+                    key={label}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.5rem 0.75rem",
+                      color: "black",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={labels.includes(label)}
+                      onChange={() => {
+                        setLabels((prev) =>
+                          prev.includes(label)
+                            ? prev.filter((c) => c !== label)
+                            : [...prev, label]
+                        );
+                      }}
+                      disabled={previewBook !== null}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "0.5rem",
+              fontWeight: "bold",
+            }}
+          >
             Foto
           </label>
           <input
@@ -480,8 +610,8 @@ useEffect(() => {
           >
             <option value="">Alle talen</option>
             <option value="en">EN</option>
-            <option value="en">NE</option>
-            <option value="en">FR</option>
+            <option value="ne">NE</option>
+            <option value="fr">FR</option>
           </select>
         </div>
 
@@ -543,6 +673,68 @@ useEffect(() => {
             disabled={previewBook !== null}
           />
         </div>
+        <div>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "0.5rem",
+              fontWeight: "bold",
+            }}
+          >
+            Leesniveau
+          </label>
+         <select
+            value={readingLevel}
+            onChange={(e) => setReadingLevel(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "0.75rem",
+              fontSize: "1rem",
+              borderRadius: "4px",
+              border: "1px solid #8e2446",
+              background: "white",
+              color: "#8e2446",
+              boxSizing: "border-box",
+            }}
+            disabled={previewBook !== null}
+          >
+            <option value="">leesniveau</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+          </select>
+        </div>
+        
+        <div>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "0.5rem",
+              fontWeight: "bold",
+            }}
+          >
+            Didactisch boek
+          </label>
+            <select
+              value={String(didacticTag)}
+              onChange={(e) => setDidacticTag(e.target.value === "true")}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                fontSize: "1rem",
+                borderRadius: "4px",
+                border: "1px solid #8e2446",
+                background: "white",
+                color: "#8e2446",
+                boxSizing: "border-box",
+              }}
+              disabled={previewBook !== null}
+            >
+              <option value="true">Ja</option>
+              <option value="false">Nee</option>
+            </select>
+          </div>
 
         {!previewBook && (
           <button
