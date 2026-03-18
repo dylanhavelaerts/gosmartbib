@@ -6,7 +6,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -21,6 +23,7 @@ public class SecurityConfig {
 
         private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
         private final OAuth2AuthorizationRequestResolver pkceDisabledResolver;
+        private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
 
         @Value("${app.frontend.base-url}")
         private String frontendUrl;
@@ -37,6 +40,7 @@ public class SecurityConfig {
                         .oauth2Login(oauth2 -> oauth2
                                 .authorizationEndpoint(auth -> auth
                                         .authorizationRequestResolver(pkceDisabledResolver)
+                                        .authorizationRequestRepository(authorizationRequestRepository)
                                 )
                                 .failureHandler((request, response, exception) ->
                                         response.sendRedirect(frontendUrl + "/login?error=true"))

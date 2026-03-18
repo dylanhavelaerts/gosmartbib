@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
-import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,13 +21,14 @@ import java.util.Map;
 public class AuthController {
 
     private final OAuth2AuthorizationRequestResolver authorizationRequestResolver;
-    private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository =
-            new HttpSessionOAuth2AuthorizationRequestRepository();
+    private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
 
     public AuthController(
-            OAuth2AuthorizationRequestResolver pkceDisabledResolver
+        OAuth2AuthorizationRequestResolver pkceDisabledResolver,
+        AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository
     ) {
         this.authorizationRequestResolver = pkceDisabledResolver;
+    this.authorizationRequestRepository = authorizationRequestRepository;
     }
 
     /**
@@ -43,6 +43,7 @@ public class AuthController {
 //    }
 
     // Bouwt de provider URL met alle OAuth query params (o.a. client_id, redirect_uri, response_type, scope en state).
+    // aan de hand van de properties
     @GetMapping("/login")
     public RedirectView login(HttpServletRequest request, HttpServletResponse response) {
         OAuth2AuthorizationRequest authorizationRequest =
