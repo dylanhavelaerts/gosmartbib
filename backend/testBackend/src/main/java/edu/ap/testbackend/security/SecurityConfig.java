@@ -23,54 +23,54 @@ import java.util.List;
 @Slf4j
 public class SecurityConfig {
 
-        private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-        private final OAuth2AuthorizationRequestResolver pkceDisabledResolver;
-        private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2AuthorizationRequestResolver pkceDisabledResolver;
+    private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
 
-        @Value("${app.frontend.base-url}")
-        private String frontendUrl;
+    @Value("${app.frontend.base-url}")
+    private String frontendUrl;
 
-        @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-                http
-                        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                        .csrf(csrf -> csrf.disable())
-                        .authorizeHttpRequests(auth -> auth
-                                .requestMatchers(
-                                        "/public/**",
-                                        "/auth/login",
-                                        "/oauth2/**",
-                                        "/login/oauth2/**",
-                                        "/login/**",
-                                        "/error"
-                                ).permitAll()
-                                .anyRequest().authenticated()
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/public/**",
+                                "/auth/login",
+                                "/oauth2/**",
+                                "/login/oauth2/**",
+                                "/login/**",
+                                "/error"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(auth -> auth
+                                .authorizationRequestResolver(pkceDisabledResolver)
+                                .authorizationRequestRepository(authorizationRequestRepository)
                         )
-                        .oauth2Login(oauth2 -> oauth2
-                                .authorizationEndpoint(auth -> auth
-                                        .authorizationRequestResolver(pkceDisabledResolver)
-                                        .authorizationRequestRepository(authorizationRequestRepository)
-                                )
-                                .failureHandler((request, response, exception) -> {
-                                        log.error("OAuth2 login callback failed", exception);
-                                        response.sendRedirect(frontendUrl + "/login?error=true");
-                                })
-                                .successHandler(oAuth2LoginSuccessHandler)
-                        );
+                        .failureHandler((request, response, exception) -> {
+                            log.error("OAuth2 login callback failed", exception);
+                            response.sendRedirect(frontendUrl + "/login?error=true");
+                        })
+                        .successHandler(oAuth2LoginSuccessHandler)
+                );
 
-                return http.build();
-        }
+        return http.build();
+    }
 
-        @Bean
-        public CorsConfigurationSource corsConfigurationSource() {
-                CorsConfiguration configuration = new CorsConfiguration();
-                configuration.setAllowedOrigins(List.of(frontendUrl)); // sta nextjs url toe
-                configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                configuration.setAllowedHeaders(List.of("*"));
-                configuration.setAllowCredentials(true); // voor cookies te laten werken
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(frontendUrl));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
-                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-                source.registerCorsConfiguration("/**", configuration);
-                return source;
-        }
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }
