@@ -426,15 +426,16 @@ class BookControllerTest {
     }
 
     @Test
-    void givenUnexpectedServiceError_whenUpdateBook_thenReturnsInternalServerError() {
-        BookDTO updatedDTO = buildDTO(1L, "Valid Title");
-        when(bookService.updateBook(1L, updatedDTO)).thenThrow(new RuntimeException("DB down"));
+    void givenBookDoesNotExist_whenUpdateBook_thenReturnsNotFoundWithMessage() {
+        BookDTO updatedDTO = buildDTO(99L, "Some Title");
+        when(bookService.updateBook(99L, updatedDTO))
+                .thenThrow(new BookNotFoundException(99L));
 
-        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+        ResponseEntity<?> result = bookController.updateBook(99L, updatedDTO);
 
-        assertEquals(500, result.getStatusCode().value());
-        assertEquals("An error occurred while updating the book.", result.getBody());
-        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+        assertEquals(404, result.getStatusCode().value());
+        assertEquals("Book with id 99 could not be found", result.getBody());
+        verify(bookService, times(1)).updateBook(99L, updatedDTO);
     }
 
     @Test
