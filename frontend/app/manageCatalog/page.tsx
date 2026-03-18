@@ -100,7 +100,7 @@ export default function ManageCatalogPage() {
 
     try {
       const res = await fetch(`${apiUrl}/books/${selectedBook.id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
@@ -633,6 +633,20 @@ export default function ManageCatalogPage() {
                   onChange={handleChange}
                 />
               </div>
+              {/* 
+              <div className="modal-row">
+                <label className="modal-label" htmlFor="availableCopies">
+                  Beschikbare kopieën
+                </label>
+                <input
+                  id="availableCopies"
+                  name="availableCopies"
+                  className="modal-input"
+                  type="number"
+                  value={formData.availableCopies || ""}
+                  onChange={handleChange}
+                />
+              </div> */}
               <div className="modal-row">
                 <label className="modal-label"> Categorie(ën)</label>
                 <div className="filterDropdown">

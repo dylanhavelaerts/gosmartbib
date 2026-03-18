@@ -179,7 +179,7 @@ public class BookController {
 
 
     
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
         try {
             BookDTO updated = bookService.updateBook(id, bookDTO);
