@@ -21,7 +21,7 @@ public class MockAuth extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // Only inject if not already authenticated
+        // Inject een mock gebruiker in de security context als er nog geen authenticatie is
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             Map<String, Object> attributes = Map.of(
                     "userID", "mock-user-local-dev",
@@ -37,13 +37,13 @@ public class MockAuth extends OncePerRequestFilter {
             OAuth2User mockUser = new DefaultOAuth2User(
                     Collections.emptyList(),
                     attributes,
-                    "userID"  // must match your user-name-attribute
+                    "userID"
             );
 
             OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
                     mockUser,
                     Collections.emptyList(),
-                    "smartschool"  // must match your registration name
+                    "smartschool"
             );
 
             SecurityContextHolder.getContext().setAuthentication(authentication);

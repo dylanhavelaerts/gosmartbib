@@ -22,6 +22,7 @@ import java.util.List;
 @EnableWebSecurity
 @RequiredArgsConstructor
 @Profile("prod") // Security config voor server in productie, met echte Smartschool OAuth2 login en CORS ingesteld voor frontend
+@Slf4j
 public class SecurityConfig {
 
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;

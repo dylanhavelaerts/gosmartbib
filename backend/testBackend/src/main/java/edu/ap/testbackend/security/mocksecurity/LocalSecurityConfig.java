@@ -15,7 +15,7 @@ public class LocalSecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()  // allow everything locally
+                        .anyRequest().permitAll()  // sta alles lokaal toe
                 )
                 .addFilterBefore(new MockAuth(), UsernamePasswordAuthenticationFilter.class);
 

@@ -20,9 +20,9 @@ public class AuthController {
     private String frontendUrl;
 
     /**
-     * Redirects the user to Smartschool's login page via Spring Security's
-     * built-in OAuth2 authorization endpoint. Scope is picked up automatically
-     * from application.properties (spring.security.oauth2.client.registration.smartschool.scope=userinfo)
+     * Redirect de gebruiker naar de Smartschool OAuth2 loginpagina. 
+     * Na succesvolle login zal de gebruiker teruggestuurd worden naar de frontend,
+     * waar de app de gebruikersinfo kan ophalen via de /auth/me endpoint.
      */
     @GetMapping("/login")
     public RedirectView login() {
@@ -31,9 +31,7 @@ public class AuthController {
 
 
     /**
-     * Returns the current authenticated user's safe, anonymized info.
-     * Uses userID (an anonymized identifier from Smartschool) — no personal
-     * data stored, safe for use with minors.
+     * Endpoint om de informatie van de ingelogde gebruiker op te halen. 
      */
     @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> me(@AuthenticationPrincipal OAuth2User user) {
