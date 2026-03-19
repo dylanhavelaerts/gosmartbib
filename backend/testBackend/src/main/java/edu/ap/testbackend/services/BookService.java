@@ -361,7 +361,9 @@ public class BookService {
                 book.getPublishedYear(),
                 book.isDidacticTag(),
                 book.getLabels(),
-                book.getReadingLevel());
+                book.getReadingLevel(),
+                book.getTotalCopies(),
+                book.getAvailableCopies());
     }
 
     // Helper functions
