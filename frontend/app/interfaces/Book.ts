@@ -11,6 +11,8 @@ export interface Book {
   rating: number;
   isbn: string;
   publishedYear: number;
+  totalCopies?: number;
+  availableCopies?: number;
   spotlight: boolean;
 }
 

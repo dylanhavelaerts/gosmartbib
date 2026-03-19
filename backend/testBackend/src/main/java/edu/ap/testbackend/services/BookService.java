@@ -308,7 +308,9 @@ public class BookService {
                 book.getLanguage(),
                 book.getRating(),
                 book.getIsbn(),
-                book.getPublishedYear());
+                book.getPublishedYear(),
+                book.getTotalCopies(),
+                book.getAvailableCopies());
     }
 
     // Helper functions

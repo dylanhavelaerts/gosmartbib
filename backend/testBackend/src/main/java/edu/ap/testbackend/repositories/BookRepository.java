@@ -23,14 +23,15 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
     boolean existsByIsbn(String isbn);
 
     /**
-     * Zoek boeken op titel of auteur, case-insensitive en ondersteunt gedeeltelijke
-     * overeenkomsten.
+     * Zoek boeken op titel, auteur of ISBN, case-insensitive en ondersteunt gedeeltelijke
+     * overeenkomsten. Negeert streepjes bij het zoeken op ISBN.
      * @param query
      * @return
      */
-    @Query("SELECT DISTINCT b FROM BookEntity b JOIN b.authors a WHERE " +
+    @Query("SELECT DISTINCT b FROM BookEntity b LEFT JOIN b.authors a WHERE " +
             "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-            "LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))")
+            "LOWER(a) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')")
     Page<BookEntity> searchByTitleOrAuthor(@Param("query") String query, Pageable pageable);
 
     @Query(value = """
