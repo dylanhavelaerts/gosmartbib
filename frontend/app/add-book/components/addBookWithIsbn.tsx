@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Book } from "../../interfaces/Book";
 
 export default function AddBookWithIsbn() {
@@ -8,6 +8,7 @@ export default function AddBookWithIsbn() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [previewBook, setPreviewBook] = useState<Book | null>(null);
+  const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
 
   const handleSearchBook = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +75,10 @@ export default function AddBookWithIsbn() {
     setMessage("");
     setIsbn("");
   };
+
+  useEffect(() => {
+    setImgSrc(previewBook?.thumbnail || "No-Image-Available-Placeholder.png");
+  }, [previewBook])
 
   return (
     <>
@@ -157,10 +162,10 @@ export default function AddBookWithIsbn() {
           <h2 style={{ marginTop: 0 }}>Preview van het boek:</h2>
 
           <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-            {previewBook.thumbnail && (
               <img
-                src={previewBook.thumbnail}
+                src={imgSrc}
                 alt="Cover"
+                onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
                 style={{
                   width: "100px",
                   height: "150px",
@@ -168,7 +173,6 @@ export default function AddBookWithIsbn() {
                   borderRadius: "4px",
                 }}
               />
-            )}
 
             <div>
               <p>

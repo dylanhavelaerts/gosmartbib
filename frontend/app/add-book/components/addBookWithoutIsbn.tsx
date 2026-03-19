@@ -23,6 +23,7 @@ export default function AddBookWithoutIsbn() {
   const [didacticTag, setDidacticTag] = useState(false);
   const [labels, setLabels] = useState<String[]>([]);
   const [readingLevel, setReadingLevel] = useState("")
+  const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png")
 
   const categoryChoice = [
     "Fictie algemeen",
@@ -197,6 +198,10 @@ useEffect(() => {
     setPreviewBook(null);
     setMessage("");
   };
+
+  useEffect(() => {
+    setImgSrc(previewBook?.thumbnail || "/No-Image-Available-Placeholder.png");
+  }, [previewBook])
 
   return (
     <>
@@ -771,10 +776,10 @@ useEffect(() => {
           <h2 style={{ marginTop: 0 }}>Preview van het boek:</h2>
 
           <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-            {previewBook.thumbnail && (
               <img
-                src={previewBook.thumbnail}
+                src={imgSrc}
                 alt="Cover"
+                onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
                 style={{
                   width: "100px",
                   height: "150px",
@@ -782,7 +787,6 @@ useEffect(() => {
                   borderRadius: "4px",
                 }}
               />
-            )}
 
             <div>
               <p>
