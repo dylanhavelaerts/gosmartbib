@@ -266,7 +266,7 @@ export default function ManageCatalogPage() {
                           marginTop: "0.2rem",
                         }}
                       >
-                        {book.thumbnail ? (
+                        {book.thumbnail && book.thumbnail.trim() !== "" ? (
                           <img
                             src={book.thumbnail}
                             alt={book.title}
@@ -377,7 +377,7 @@ export default function ManageCatalogPage() {
                     {selectedBook.title}
                   </h1>
                   <p style={{ margin: 0, fontSize: "1.1rem", color: "#666" }}>
-                    Door {selectedBook.authors?.join(", ") || "Onbekend"}
+                    door {selectedBook.authors?.join(", ") || "Onbekend"}
                   </p>
                 </div>
 
@@ -487,7 +487,7 @@ export default function ManageCatalogPage() {
                         </tr>
                         <tr style={{ borderBottom: "1px solid #ddd" }}>
                           <th style={{ padding: "1rem 0", color: "#8e2446" }}>
-                            Jaar
+                            Uitgavejaar
                           </th>
                           <td style={{ padding: "1rem 0", color: "#333" }}>
                             {selectedBook.publishedYear || "-"}
@@ -633,20 +633,6 @@ export default function ManageCatalogPage() {
                   onChange={handleChange}
                 />
               </div>
-              {/* 
-              <div className="modal-row">
-                <label className="modal-label" htmlFor="availableCopies">
-                  Beschikbare kopieën
-                </label>
-                <input
-                  id="availableCopies"
-                  name="availableCopies"
-                  className="modal-input"
-                  type="number"
-                  value={formData.availableCopies || ""}
-                  onChange={handleChange}
-                />
-              </div> */}
               <div className="modal-row">
                 <label className="modal-label"> Categorie(ën)</label>
                 <div className="filterDropdown">
