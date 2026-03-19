@@ -346,6 +346,10 @@ public class BookService {
                 ? new ArrayList<>()
                 : new ArrayList<>(book.getCategories());
 
+        List<String> labels = book.getLabels() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(book.getLabels());
+
         return new BookDTO(
                 book.getId(),
                 book.getTitle(),
@@ -360,7 +364,7 @@ public class BookService {
                 book.getIsbn(),
                 book.getPublishedYear(),
                 book.isDidacticTag(),
-                book.getLabels(),
+                labels,
                 book.getReadingLevel(),
                 book.getTotalCopies(),
                 book.getAvailableCopies());

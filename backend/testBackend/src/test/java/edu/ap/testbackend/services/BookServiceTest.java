@@ -509,7 +509,7 @@ class BookServiceTest {
                 "en",
                 4.7,
                 "9780132350884",
-                2008, true, List.of("Toekomst & technologie"), "A");
+                2008, true, List.of("Toekomst & technologie"), "A", 1, 1);
         book.setId(10L);
         book.setSpotlight(true);
         return book;
@@ -732,7 +732,7 @@ class BookServiceTest {
         when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         BookDTO update = new BookDTO(null, "Refactoring", List.of("Martin Fowler"), null, null,
-                null, null, null, null, null, null, null, false, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null);
 
         BookDTO result = bookService.updateBook(10L, update);
 
@@ -747,7 +747,7 @@ class BookServiceTest {
         when(bookRepository.findById(99L)).thenReturn(Optional.empty());
 
         BookDTO update = new BookDTO(null, "New Title", null, null, null,
-                null, null, null, null, null, null, null, false, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null);
 
         assertThrows(BookNotFoundException.class, () -> bookService.updateBook(99L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -759,7 +759,7 @@ class BookServiceTest {
         when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, "   ", null, null, null,
-                null, null, null, null, null, null, null, false, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -771,7 +771,7 @@ class BookServiceTest {
         when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, "", null, null, null,
-                null, null, null, null, null, null, null, false, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -783,7 +783,7 @@ class BookServiceTest {
         when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, null, null, null, null,
-                -1, null, null, null, null, null, null, false, null, null);
+                -1, null, null, null, null, null, null, false, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -796,7 +796,7 @@ class BookServiceTest {
 
         int futureYear = Year.now().getValue() + 1;
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, futureYear, false, null, null);
+                null, null, null, null, null, null, futureYear, false, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -810,7 +810,7 @@ class BookServiceTest {
 
         int currentYear = Year.now().getValue();
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, currentYear, false, null, null);
+                null, null, null, null, null, null, currentYear, false, null, null, null, null);
 
         assertDoesNotThrow(() -> bookService.updateBook(10L, update));
         verify(bookRepository, times(1)).save(book);
@@ -823,7 +823,7 @@ class BookServiceTest {
         when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, null, false, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null);
 
         BookDTO result = bookService.updateBook(10L, update);
 
@@ -840,7 +840,7 @@ class BookServiceTest {
 
         BookDTO update = new BookDTO(null, "New Title", List.of("New Author"), "New Publisher",
                 "New Description", 200, List.of("Fiction"), "new-thumbnail", "fr", 3.5, "9780000000000", 2020, false,
-                List.of("Label"), "A");
+                List.of("Label"), "A", 1, 1);
 
         BookDTO result = bookService.updateBook(10L, update);
 
@@ -863,7 +863,7 @@ class BookServiceTest {
         when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, 0, false, null, null);
+                null, null, null, null, null, null, 0, false, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
