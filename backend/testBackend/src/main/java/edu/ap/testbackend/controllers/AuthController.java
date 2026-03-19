@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.IOException;
 import java.util.Map;
@@ -23,10 +24,10 @@ public class AuthController {
      * naar de frontend (http://localhost:3000/) of (https://gosmartbib.tech/)
      */
     @GetMapping("/login")
-    public void login(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String authorizationPath = request.getContextPath() + "/oauth2/authorization/smartschool";
-        response.sendRedirect(authorizationPath);
+    public RedirectView login() {
+        return new RedirectView("/api/oauth2/authorization/smartschool");
     }
+
 
     /**
      * /me endpoint geeft informatie terug over de huidige ingelogde gebruiker,
