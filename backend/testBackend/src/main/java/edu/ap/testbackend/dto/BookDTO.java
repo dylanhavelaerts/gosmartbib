@@ -14,5 +14,10 @@ public record BookDTO(
                 String language,
                 Double rating,
                 String isbn,
-                Integer publishedYear) {
+                Integer publishedYear,
+                boolean didacticTag,
+                List<String> labels,
+                String readingLevel,
+                Integer totalCopies,
+                Integer availableCopies) {
 }

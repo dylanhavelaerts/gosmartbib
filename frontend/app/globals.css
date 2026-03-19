@@ -41,19 +41,16 @@ nav {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
-  padding: 0.25rem clamp(0.5rem, 2vw, 1.5rem);
+  padding: 0rem clamp(0.5rem, 2vw, 1.5rem);
   gap: clamp(0.25rem, 2vw, 1.5rem);
   height: auto;
-}
-#headerNav button:hover {
-  padding-bottom: 0.4rem;
 }
 
 nav button {
   height: 100%;
   margin: 0 0.5rem;
   border: none;
-  padding: 0.6rem 0;
+  padding: 14px 0;
   background: none;
   font-size: clamp(0.65rem, 1.5vw, 1rem);
   white-space: nowrap;
@@ -61,8 +58,8 @@ nav button {
 }
 nav button:hover {
   color: #8e1f42;
-  background-color: #e4d9dc;
-  border-bottom: solid #8e1f42 0.2rem;
+  border-bottom: #8e1f42 solid 2px;
+  padding-bottom: 12px;
 }
 #backgroundImage {
   position: absolute;

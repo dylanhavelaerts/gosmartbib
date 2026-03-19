@@ -8,11 +8,17 @@
 }
 #dashboard nav {
   background-color: transparent;
-  border-bottom: solid #8e1f42 0.1rem;
+  border-bottom: solid #ddd 1px;
+  padding: 4px 0 0 0;
 }
 #dashboard button {
   background-color: transparent;
   height: 130%;
+}
+#dashboard button:hover {
+  color: black;
+  border: none;
+  padding-bottom: 14px;
 }
 #dashboard {
   padding: 0rem;
@@ -20,7 +26,11 @@
 .selectedCategory {
   color: #8e1f42;
   background-color: #e4d9dc;
-  border-bottom: solid #8e1f42 0.2rem;
+  border-bottom: solid #8e1f42 2px;
+}
+#dashboard .selectedCategory:hover {
+  color: #8e1f42;
+  border-bottom: solid #8e1f42 2px;
 }
 main {
   padding: 1rem 2rem;

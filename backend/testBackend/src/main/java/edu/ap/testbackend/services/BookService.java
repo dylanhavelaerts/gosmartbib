@@ -1,6 +1,7 @@
 package edu.ap.testbackend.services;
 
 import edu.ap.testbackend.dto.BookDTO;
+import edu.ap.testbackend.dto.CreateBookRequestDTO;
 import edu.ap.testbackend.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.testbackend.dto.googlebooks.VolumeInfo;
 import edu.ap.testbackend.entities.BookEntity;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
@@ -29,9 +31,9 @@ import java.time.Year;
 import java.util.ArrayList;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class BookService {
     private final BookRepository bookRepository;
     private final RestTemplate restTemplate;
@@ -56,6 +58,7 @@ public class BookService {
         return bookRepository.findAll(pageable)
                 .map(this::toDTO);
     }
+
     public List<BookDTO> getAllBooksUnpaged() {
         return bookRepository.findAll()
                 .stream()
@@ -121,7 +124,7 @@ public class BookService {
      * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle
      *              boeken teruggegeven.
      * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar
-     * DTO's.
+     *         DTO's.
      */
     public Page<BookDTO> searchByTitleOrAuthor(String query, int page, int size) {
         if (page < 0 || size <= 0)
@@ -158,7 +161,7 @@ public class BookService {
     }
 
     public Page<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,
-                                     Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size) {
+            Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
@@ -170,7 +173,8 @@ public class BookService {
         }
 
         Pageable pageable = PageRequest.of(page, size);
-        return bookRepository.filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear, pageable)
+        return bookRepository
+                .filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear, pageable)
                 .map(this::toDTO);
     }
 
@@ -280,35 +284,90 @@ public class BookService {
 
         if (updatedBook.publishedYear() != null && updatedBook.publishedYear() > Year.now().getValue())
             throw new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen");
-        if (updatedBook.title() != null) book.setTitle(updatedBook.title());
-        if (updatedBook.authors() != null) book.setAuthors(updatedBook.authors());
-        if (updatedBook.publisher() != null) book.setPublisher(updatedBook.publisher());
-        if (updatedBook.description() != null) book.setDescription(updatedBook.description());
-        if (updatedBook.pageCount() != null) book.setPageCount(updatedBook.pageCount());
-        if (updatedBook.categories() != null) book.setCategories(updatedBook.categories());
-        if (updatedBook.thumbnail() != null) book.setThumbnail(updatedBook.thumbnail());
-        if (updatedBook.language() != null) book.setLanguage(updatedBook.language());
-        if (updatedBook.isbn() != null) book.setIsbn(updatedBook.isbn());
-        if (updatedBook.publishedYear() != null) book.setPublishedYear(updatedBook.publishedYear());
-
+        if (updatedBook.title() != null)
+            book.setTitle(updatedBook.title());
+        if (updatedBook.authors() != null)
+            book.setAuthors(updatedBook.authors());
+        if (updatedBook.publisher() != null)
+            book.setPublisher(updatedBook.publisher());
+        if (updatedBook.description() != null)
+            book.setDescription(updatedBook.description());
+        if (updatedBook.pageCount() != null)
+            book.setPageCount(updatedBook.pageCount());
+        if (updatedBook.categories() != null)
+            book.setCategories(updatedBook.categories());
+        if (updatedBook.thumbnail() != null)
+            book.setThumbnail(updatedBook.thumbnail());
+        if (updatedBook.language() != null)
+            book.setLanguage(updatedBook.language());
+        if (updatedBook.isbn() != null)
+            book.setIsbn(updatedBook.isbn());
+        if (updatedBook.publishedYear() != null)
+            book.setPublishedYear(updatedBook.publishedYear());
 
         return toDTO(bookRepository.save(book));
     }
 
+    public BookDTO addManualBook(CreateBookRequestDTO request) {
+        if (request.title() == null || request.title().isBlank()) {
+            throw new IllegalArgumentException("Titel is verplicht");
+        }
+
+        BookEntity book = new BookEntity();
+        book.setTitle(request.title().trim());
+        book.setAuthors(cleanStringList(request.authors()));
+        book.setPublisher(safeTrim(request.publisher()));
+        book.setDescription(safeTrim(request.description()));
+        book.setPageCount(request.pageCount() != null ? request.pageCount() : 0);
+        book.setCategories(cleanStringList(request.categories()));
+        book.setThumbnail(safeTrim(request.thumbnail()));
+        book.setLanguage(safeTrim(request.language()));
+        book.setRating(request.rating() != null ? request.rating() : 0.0);
+        book.setPublishedYear(request.publishedYear());
+        book.setSpotlight(Boolean.TRUE.equals(request.spotlight()));
+        book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
+
+        BookEntity saved = bookRepository.saveAndFlush(book);
+
+        // Reload so the DB-generated ISBN is present in the response DTO
+        BookEntity reloaded = bookRepository.findById(saved.getId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Boek werd opgeslagen maar kon niet opnieuw geladen worden"));
+
+        return toDTO(reloaded);
+    }
+
     private BookDTO toDTO(BookEntity book) {
+        List<String> authors = book.getAuthors() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(book.getAuthors());
+
+        List<String> categories = book.getCategories() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(book.getCategories());
+
+        List<String> labels = book.getLabels() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(book.getLabels());
+
         return new BookDTO(
                 book.getId(),
                 book.getTitle(),
-                book.getAuthors(),
+                authors,
                 book.getPublisher(),
                 book.getDescription(),
                 book.getPageCount(),
-                book.getCategories(),
+                categories,
                 book.getThumbnail(),
                 book.getLanguage(),
                 book.getRating(),
                 book.getIsbn(),
-                book.getPublishedYear());
+                book.getPublishedYear(),
+                book.isDidacticTag(),
+                labels,
+                book.getReadingLevel(),
+                book.getTotalCopies(),
+                book.getAvailableCopies());
     }
 
     // Helper functions
@@ -371,6 +430,19 @@ public class BookService {
                 .replaceAll("\\s+", " ");
     }
 
+    private List<String> cleanStringList(List<String> values) {
+        if (values == null) {
+            return new ArrayList<>();
+        }
+
+        return values.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
+                .toList();
+    }
+
+    private String safeTrim(String value) {
+        return value == null ? null : value.trim();
+    }
 
 }
-
