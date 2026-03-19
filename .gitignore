@@ -5,3 +5,5 @@ builds/
 .next
 .idea
 .vscode/
+
+.env
