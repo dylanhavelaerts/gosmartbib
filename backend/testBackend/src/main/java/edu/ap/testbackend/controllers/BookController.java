@@ -35,6 +35,10 @@ public class BookController {
             @RequestParam(defaultValue = "20") int size) {
         return bookService.getAllBooks(page, size);
     }
+    @GetMapping("/all/unpaged")
+    public List<BookDTO> getAllBooksUnpaged() {
+        return bookService.getAllBooksUnpaged();
+    }
 
     /**
      * Zoekt boeken op titel of auteur met server-side paginatie.
@@ -154,7 +158,8 @@ public class BookController {
     }
 
 
-    /**
+
+  /**
      * Importeert boeken vanuit een Excel-bestand.
      */
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -166,6 +171,28 @@ public class BookController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             return new ResponseEntity<>("An error occurred while importing the Excel file.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
+
+
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
+        try {
+            BookDTO updated = bookService.updateBook(id, bookDTO);
+            return ResponseEntity.ok(updated);
+        } catch (BookNotFoundException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch(IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
+
+        catch (Exception e) {
+            return new ResponseEntity<>("An error occurred while updating the book.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

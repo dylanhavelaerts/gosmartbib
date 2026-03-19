@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Book } from "../interfaces/Book";
+import { Book, BOOK_CATEGORIES } from "../interfaces/Book";
 import BookCard from "./bookCard";
 import Pagination from "./pagination";
 import "./bookList.css";
@@ -172,22 +172,7 @@ export default function Home() {
             </button>
             {categoryOpen && (
               <div className="filterDropdownPanel">
-                {[
-                  "Programming",
-                  "Software Engineering",
-                  "Best Practices",
-                  "Architecture",
-                  "Code Quality",
-                  "Java",
-                  "Spring",
-                  "Algorithms",
-                  "Computer Science",
-                  "JavaScript",
-                  "Web Development",
-                  "Career",
-                  "Design Patterns",
-                  "Software Design",
-                ].map((cat) => (
+                {BOOK_CATEGORIES.map((cat) => (
                   <label key={cat} className="filterCheckboxLabel">
                     <input
                       type="checkbox"

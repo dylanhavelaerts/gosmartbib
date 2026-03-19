@@ -13,3 +13,21 @@ export interface Book {
   publishedYear: number;
   spotlight: boolean;
 }
+
+export const BOOK_CATEGORIES = [
+  "Avontuur",
+  "Biography",
+  "Fantasy",
+  "Fiction",
+  "Fictie",
+  "Historische fictie",
+  "History",
+  "Horror",
+  "Mysterie",
+  "Non-Fiction",
+  "Non-fictie",
+  "Programming",
+  "Romantiek",
+  "Science Fiction",
+  "Thriller",
+];
