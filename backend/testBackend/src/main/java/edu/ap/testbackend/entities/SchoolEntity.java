@@ -20,13 +20,4 @@ public class SchoolEntity {
     // Zelfe scholendomein????
     @Column(nullable = false, unique = true)
     private String domain; // !!! "go-antwerpen.smartschool.be" of "school1.smartschool.be"
-
-
-    // Als scholen niet in dezelfde groep zitten, kunnen ze verschillende client_id's en client_secrets hebben.
-    // Daarom moeten we deze per school opslaan.
-//    @Column(name = "oauth_client_id")
-//    private String oauthClientId;
-//
-//    @Column(name = "oauth_client_secret")
-//    private String oauthClientSecret;
 }
