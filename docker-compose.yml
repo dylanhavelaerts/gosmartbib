@@ -56,11 +56,19 @@ services:
     container_name: backend
     restart: on-failure
     environment:
+      SPRING_PROFILES_ACTIVE: prod
+
       SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/gosmartlib
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: admin
+
       SERVER_SERVLET_CONTEXT_PATH: /api
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+
       APIKEY: ${APIKEY}
+
+      SMARTSCHOOL_CLIENT_ID: ${SMARTSCHOOL_CLIENT_ID}
+      SMARTSCHOOL_CLIENT_SECRET: ${SMARTSCHOOL_CLIENT_SECRET}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`gosmartbib.tech`) && PathPrefix(`/api`)"

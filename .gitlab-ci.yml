@@ -13,6 +13,11 @@ deploy_to_server:
   script:
     - echo "Nieuwe code is gedetecteerd en gedownload op de server."
 
+    - echo "SMARTSCHOOL_CLIENT_ID=$SMARTSCHOOL_CLIENT_ID" > .env
+    - echo "SMARTSCHOOL_CLIENT_SECRET=$SMARTSCHOOL_CLIENT_SECRET" >> .env
+    
+    - echo "APIKEY" >> .env
+
     - docker compose up -d --build --remove-orphans
 
   environment:

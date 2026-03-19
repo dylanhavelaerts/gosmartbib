@@ -1,6 +1,7 @@
 package edu.ap.testbackend.controllers;
 
 import edu.ap.testbackend.dto.BookDTO;
+import edu.ap.testbackend.dto.CreateBookRequestDTO;
 import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
 import edu.ap.testbackend.dto.importdto.ImportMismatchDTO;
 import edu.ap.testbackend.exceptions.BookNotFoundException;
@@ -22,6 +23,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,7 +38,7 @@ class BookControllerTest {
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023);
+                2023, false, null, "A", 1, 1);
     }
 
     @Test
@@ -80,7 +82,6 @@ class BookControllerTest {
         assertEquals("Refactoring", result.getContent().get(2).title());
         verify(bookService, times(1)).getAllBooks(0, 20);
     }
-
 
     @Test
     void givenServiceFails_whenGetBooks_thenThrowsException() {
@@ -191,7 +192,8 @@ class BookControllerTest {
         when(bookService.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023, 0, 20))
                 .thenReturn(expected);
 
-        ResponseEntity<?> result = bookController.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023, 0, 20);
+        ResponseEntity<?> result = bookController.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023, 0,
+                20);
 
         assertEquals(200, result.getStatusCode().value());
         assertEquals(expected, result.getBody());
@@ -222,13 +224,13 @@ class BookControllerTest {
     @Test
     void givenDatabaseFails_whenFilterBooks_thenReturnsInternalServerError() {
         when(bookService.filterBooks(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
-                .thenThrow(new DataAccessException("DB down") {});
+                .thenThrow(new DataAccessException("DB down") {
+                });
 
         ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null, 0, 20);
 
         assertEquals(500, result.getStatusCode().value());
     }
-
 
     @Test
     void givenNoResults_whenFilterBooks_thenReturnsEmptyPage() {
@@ -398,7 +400,7 @@ class BookControllerTest {
     @Test
     void givenNegativePageCount_whenUpdateBook_thenReturnsBadRequest() {
         BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
-                -1, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 2023);
+                -1, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 2023, false, null, "A", 1, 1);
         when(bookService.updateBook(1L, updatedDTO))
                 .thenThrow(new IllegalArgumentException("Paginacount mag niet negatief zijn"));
 
@@ -412,7 +414,7 @@ class BookControllerTest {
     @Test
     void givenFuturePublishedYear_whenUpdateBook_thenReturnsBadRequest() {
         BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
-                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 9999);
+                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 9999, false, null, "A", 1, 1);
         when(bookService.updateBook(1L, updatedDTO))
                 .thenThrow(new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen"));
 
@@ -424,15 +426,16 @@ class BookControllerTest {
     }
 
     @Test
-    void givenUnexpectedServiceError_whenUpdateBook_thenReturnsInternalServerError() {
-        BookDTO updatedDTO = buildDTO(1L, "Valid Title");
-        when(bookService.updateBook(1L, updatedDTO)).thenThrow(new RuntimeException("DB down"));
+    void givenBookDoesNotExist_whenUpdateBook_thenReturnsNotFoundWithMessage() {
+        BookDTO updatedDTO = buildDTO(99L, "Some Title");
+        when(bookService.updateBook(99L, updatedDTO))
+                .thenThrow(new BookNotFoundException(99L));
 
-        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+        ResponseEntity<?> result = bookController.updateBook(99L, updatedDTO);
 
-        assertEquals(500, result.getStatusCode().value());
-        assertEquals("An error occurred while updating the book.", result.getBody());
-        verify(bookService, times(1)).updateBook(1L, updatedDTO);
+        assertEquals(404, result.getStatusCode().value());
+        assertEquals("Book with id 99 could not be found", result.getBody());
+        verify(bookService, times(1)).updateBook(99L, updatedDTO);
     }
 
     @Test
@@ -445,6 +448,7 @@ class BookControllerTest {
         verify(bookService, times(1)).updateBook(1L, updatedDTO);
         verifyNoMoreInteractions(bookService);
     }
+
     @Test
     void givenBooksExist_whenGetAllBooksUnpaged_thenReturnsAllDTOs() {
         List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"), buildDTO(2L, "Effective Java"));
@@ -484,8 +488,169 @@ class BookControllerTest {
         verify(bookService, times(1)).getAllBooksUnpaged();
         verifyNoMoreInteractions(bookService);
     }
+
     // -- helper
     private Page<BookDTO> toPage(List<BookDTO> list) {
         return new PageImpl<>(list, PageRequest.of(0, 20), list.size());
+    }
+
+    @Test
+    void givenValidManualBookRequest_whenAddManualBook_thenReturnsCreatedBook() {
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "Manual Book",
+                List.of("Author One", "Author Two"),
+                "Manual Publisher",
+                "Manual Description",
+                321,
+                List.of("Fantasy", "Young adult"),
+                "thumbnail-url",
+                "nl",
+                4.5,
+                2024,
+                false);
+
+        BookDTO createdBook = new BookDTO(
+                42L,
+                "Manual Book",
+                List.of("Author One", "Author Two"),
+                "Manual Publisher",
+                "Manual Description",
+                321,
+                List.of("Fantasy", "Young adult"),
+                "thumbnail-url",
+                "nl",
+                4.5,
+                "NOISBN-123e4567-e89b-12d3-a456-426614174000",
+                2024, false, null, "A", 1, 1);
+
+        when(bookService.addManualBook(request)).thenReturn(createdBook);
+
+        ResponseEntity<?> result = bookController.addManualBook(request);
+
+        assertEquals(201, result.getStatusCode().value());
+        assertEquals(createdBook, result.getBody());
+        verify(bookService, times(1)).addManualBook(request);
+    }
+
+    @Test
+    void givenBlankTitle_whenAddManualBook_thenReturnsBadRequest() {
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "   ",
+                List.of("Author One"),
+                "Publisher",
+                "Description",
+                100,
+                List.of("Fantasy"),
+                "thumbnail-url",
+                "nl",
+                4.0,
+                2024,
+                false);
+
+        when(bookService.addManualBook(request))
+                .thenThrow(new IllegalArgumentException("Titel is verplicht"));
+
+        ResponseEntity<?> result = bookController.addManualBook(request);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("Titel is verplicht", result.getBody());
+        verify(bookService, times(1)).addManualBook(request);
+    }
+
+    @Test
+    void givenUnexpectedServiceError_whenAddManualBook_thenReturnsInternalServerError() {
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "Manual Book",
+                List.of("Author One"),
+                "Publisher",
+                "Description",
+                100,
+                List.of("Fantasy"),
+                "thumbnail-url",
+                "nl",
+                4.0,
+                2024,
+                false);
+
+        when(bookService.addManualBook(request))
+                .thenThrow(new RuntimeException("DB down"));
+
+        ResponseEntity<?> result = bookController.addManualBook(request);
+
+        assertEquals(500, result.getStatusCode().value());
+        assertEquals("An error occurred while saving the book.", result.getBody());
+        verify(bookService, times(1)).addManualBook(request);
+    }
+
+    @Test
+    void givenValidIsbn_whenAddBookByIsbn_thenReturnsCreatedBook() {
+        BookDTO createdBook = buildDTO(5L, "Clean Code");
+        when(bookService.addBookByIsbn("9780132350884")).thenReturn(createdBook);
+
+        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884");
+
+        assertEquals(201, result.getStatusCode().value());
+        assertEquals(createdBook, result.getBody());
+        verify(bookService, times(1)).addBookByIsbn("9780132350884");
+    }
+
+    @Test
+    void givenUnknownIsbn_whenAddBookByIsbn_thenReturnsNotFound() {
+        when(bookService.addBookByIsbn("0000000000000"))
+                .thenThrow(new IllegalArgumentException("Geen boek voor ISBN: 0000000000000"));
+
+        ResponseEntity<?> result = bookController.addBookByIsbn("0000000000000");
+
+        assertEquals(404, result.getStatusCode().value());
+        assertEquals("Geen boek voor ISBN: 0000000000000", result.getBody());
+        verify(bookService, times(1)).addBookByIsbn("0000000000000");
+    }
+
+    @Test
+    void givenUnexpectedServiceError_whenAddBookByIsbn_thenReturnsInternalServerError() {
+        when(bookService.addBookByIsbn("9780132350884"))
+                .thenThrow(new RuntimeException("Google API down"));
+
+        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884");
+
+        assertEquals(500, result.getStatusCode().value());
+        assertEquals("An error occurred while fetching the book.", result.getBody());
+        verify(bookService, times(1)).addBookByIsbn("9780132350884");
+    }
+
+    @Test
+    void givenValidIsbn_whenSearchBookByIsbn_thenReturnsPreviewBook() {
+        BookDTO previewBook = buildDTO(99L, "Preview Book");
+        when(bookService.searchBookByIsbn("9780132350884")).thenReturn(previewBook);
+
+        ResponseEntity<?> result = bookController.searchBookByIsbn("9780132350884");
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals(previewBook, result.getBody());
+        verify(bookService, times(1)).searchBookByIsbn("9780132350884");
+    }
+
+    @Test
+    void givenUnknownIsbn_whenSearchBookByIsbn_thenReturnsNotFound() {
+        when(bookService.searchBookByIsbn("0000000000000"))
+                .thenThrow(new IllegalArgumentException("Geen boek voor ISBN: 0000000000000"));
+
+        ResponseEntity<?> result = bookController.searchBookByIsbn("0000000000000");
+
+        assertEquals(404, result.getStatusCode().value());
+        assertEquals("Geen boek voor ISBN: 0000000000000", result.getBody());
+        verify(bookService, times(1)).searchBookByIsbn("0000000000000");
+    }
+
+    @Test
+    void givenUnexpectedServiceError_whenSearchBookByIsbn_thenReturnsInternalServerError() {
+        when(bookService.searchBookByIsbn("9780132350884"))
+                .thenThrow(new RuntimeException("Google API down"));
+
+        ResponseEntity<?> result = bookController.searchBookByIsbn("9780132350884");
+
+        assertEquals(500, result.getStatusCode().value());
+        assertEquals("An error occurred while fetching the book.", result.getBody());
+        verify(bookService, times(1)).searchBookByIsbn("9780132350884");
     }
 }

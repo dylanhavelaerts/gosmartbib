@@ -1,43 +1,78 @@
 package edu.ap.testbackend.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
 @Table(name = "tblBooks")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString
 public class BookEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
+
     @Column(nullable = false)
     private String title;
+
     @ElementCollection
+    @CollectionTable(name = "book_authors", joinColumns = @JoinColumn(name = "book_id"))
+    @Column(name = "author")
     private List<String> authors;
+
     private String publisher;
+
     @Column(columnDefinition = "TEXT")
     private String description;
-    private Integer pageCount;
-    @ElementCollection
-    private List<String> categories;
-    private String thumbnail;
-    private String language;
-    private Double rating;
-    @Column(unique = true)
-    private String isbn;
-    private Integer publishedYear;
-    private boolean spotlight;
 
-    public BookEntity() {
-    }
+    @Column(name = "page_count")
+    private Integer pageCount;
+
+    @ElementCollection
+    @CollectionTable(name = "book_categories", joinColumns = @JoinColumn(name = "book_id"))
+    private List<String> categories;
+
+    private String thumbnail;
+
+    private String language;
+
+    private Double rating;
+    @Column(unique = true, nullable = false)
+    private String isbn;
+
+    @Column(name = "published_year")
+    private Integer publishedYear;
+
+    @Column(nullable = false)
+    private boolean spotlight = false;
+
+    @Column(name = "didactic_tag", nullable = false)
+    private boolean didacticTag;
+
+    @Column(name = "reading_level")
+    private String readingLevel;
+
+    @ElementCollection
+    @CollectionTable(name = "book_labels", joinColumns = @JoinColumn(name = "book_id"))
+    @Column(name = "label")
+    private List<String> labels;
+
+    @Column(nullable = false, columnDefinition = "int default 1")
+    private Integer totalCopies = 1;
+
+    @Column(nullable = false, columnDefinition = "int default 1")
+    private Integer availableCopies = 1;
 
     public BookEntity(String title, List<String> authors, String publisher, String description, int pageCount,
             List<String> categories, String thumbnail, String language, double rating, String isbn,
-            Integer publishedYear) {
+            Integer publishedYear, boolean didacticTag, List<String> labels, String readingLevel, Integer totalCopies,
+            Integer availableCopies) {
         this.title = title;
         this.authors = authors;
         this.publisher = publisher;
@@ -50,36 +85,10 @@ public class BookEntity {
         this.spotlight = false;
         this.isbn = isbn;
         this.publishedYear = publishedYear;
-    }
-
-    @Override
-    public String toString() {
-        return "BookEntity{" +
-                "id=" + id +
-                ", title='" + title + '\'' +
-                ", authors=" + authors +
-                ", publisher='" + publisher + '\'' +
-                ", description='" + description + '\'' +
-                ", pageCount=" + pageCount +
-                ", categories=" + categories +
-                ", thumbnail='" + thumbnail + '\'' +
-                ", language='" + language + '\'' +
-                ", rating=" + rating +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof BookEntity))
-            return false;
-        BookEntity that = (BookEntity) o;
-        return id != null && id.equals(that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
+        this.didacticTag = didacticTag;
+        this.labels = labels;
+        this.readingLevel = readingLevel;
+        this.totalCopies = totalCopies;
+        this.availableCopies = availableCopies;
     }
 }
