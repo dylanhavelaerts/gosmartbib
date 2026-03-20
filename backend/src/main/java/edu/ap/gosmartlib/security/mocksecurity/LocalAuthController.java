@@ -3,8 +3,9 @@ package edu.ap.gosmartlib.security.mocksecurity;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.context.annotation.Profile;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -23,10 +24,12 @@ public class LocalAuthController {
 
     private final UserService userService;
     private final UserRepository userRepository;
+    private final HttpSessionSecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     @PostMapping("/mock-role/{role}")
     public ResponseEntity<String> switchRole(@PathVariable String role,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
         Map<String, Object> attributes = buildMockAttributes(role);
 
         if (attributes == null) {
@@ -50,6 +53,10 @@ public class LocalAuthController {
         request.getSession(true);
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // Slaag de security contet in de sessie zodat het blijft na een reload
+        securityContextRepository.saveContext(SecurityContextHolder.getContext(), request, response);
+
         userService.syncUser(mockUser);
 
         if (role.equalsIgnoreCase("bibliotheekbeheerder")) {

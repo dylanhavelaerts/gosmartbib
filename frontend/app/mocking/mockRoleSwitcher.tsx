@@ -7,11 +7,11 @@ const roles = ["Leerling", "Leerkracht", "Bibliotheekbeheerder"];
 
 export default function MockRoleSwitcher() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-  const isLocal = apiUrl.includes("localhost");
+  const isDevEnvironment = apiUrl.includes("localhost") || apiUrl.includes("gosmartbib.tech");
 
   const [open, setOpen] = useState(false);
 
-  if (!isLocal) return null;
+  if (!isDevEnvironment) return null;
 
   const switchRole = async (role: string) => {
     await fetch(`${apiUrl}/auth/mock-role/${role.toLowerCase()}`, {
