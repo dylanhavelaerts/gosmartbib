@@ -146,7 +146,7 @@ public class BookController {
      * Verwijdert een boek via het id.
      * Geeft 204 No Content terug bij succes.
      */
-    @DeleteMapping("/book/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) throws BookNotFoundException {
         bookService.deleteBook(id);
         return ResponseEntity.noContent().build();
@@ -155,7 +155,7 @@ public class BookController {
     /**
      * Past de spotlight status aan van een boek.
      */
-    @PatchMapping("/book/{id}/spotlight")
+    @PatchMapping("/{id}/spotlight")
     public ResponseEntity<Void> updateSpotlight(
             @PathVariable Long id,
             @RequestParam boolean value) throws BookNotFoundException {

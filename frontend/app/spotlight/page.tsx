@@ -34,7 +34,7 @@ export default function Home() {
     try {
       await Promise.all(
         Array.from(selectedIds).map((id) =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}/spotlight?value=false`, {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}/spotlight?value=false`, {
             method: "PATCH",
           }),
         ),

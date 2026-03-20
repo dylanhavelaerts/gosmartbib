@@ -105,7 +105,7 @@ export default function Home() {
     try {
       await Promise.all(
         Array.from(selectedIds).map((id) =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}`, {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`, {
             method: "DELETE",
           }),
         ),
@@ -126,7 +126,7 @@ export default function Home() {
       await Promise.all(
         Array.from(selectedIds).map((id) =>
           fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}/spotlight?value=true`,
+            `${process.env.NEXT_PUBLIC_API_URL}/books/${id}/spotlight?value=true`,
             {
               method: "PATCH",
             },
