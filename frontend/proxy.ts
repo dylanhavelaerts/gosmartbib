@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/login") || 
@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Middleware toepassen op alle routes behalve de login pagina, statische bestanden en API routes
+// Proxy toepassen op alle routes behalve de login pagina, statische bestanden en API routes
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico).*)",    // exclude Next.js internals
