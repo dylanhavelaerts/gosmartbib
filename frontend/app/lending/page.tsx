@@ -118,7 +118,7 @@ export default function UitleenPagina() {
     setUserQuery("");
   };
 
-  const handleUitleenRegistreren = () => {
+  const handleUitleenRegistreren = async () => {
     if (cart.length === 0 || !selectedUser) return;
     
     const payload = cart.map(item => ({
@@ -132,11 +132,29 @@ export default function UitleenPagina() {
       }
     }));
 
-    console.log("POST request naar /api/loans met payload:", payload);
-    alert(`Succes! Uitlening geregistreerd aan ${selectedUser.name}.`);
-    
-    // Na succesvolle registratie maken we de pagina ook leeg
-    handleAnnuleren();
+    try {
+      // Stuur de data naar de backend
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/loans`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Er is een fout opgetreden bij het registreren in de database.");
+      }
+
+      alert(`Succes! Uitlening correct geregistreerd aan ${selectedUser.name}.`);
+      
+      // Na succesvolle registratie maken we de pagina leeg (en verversen evt. we de zoekresultaten)
+      handleAnnuleren();
+      
+    } catch (err) {
+      console.error(err);
+      alert("Er ging iets mis bij het uitlenen van de boeken. Controleer de verbinding en de voorraad.");
+    }
   };
 
   return (

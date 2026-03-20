@@ -36,7 +36,7 @@ class BookControllerTest {
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023);
+                2023, 1, 1);
     }
 
     @Test
@@ -398,7 +398,7 @@ class BookControllerTest {
     @Test
     void givenNegativePageCount_whenUpdateBook_thenReturnsBadRequest() {
         BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
-                -1, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 2023);
+                -1, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 2023, 1, 1);
         when(bookService.updateBook(1L, updatedDTO))
                 .thenThrow(new IllegalArgumentException("Paginacount mag niet negatief zijn"));
 
@@ -412,7 +412,7 @@ class BookControllerTest {
     @Test
     void givenFuturePublishedYear_whenUpdateBook_thenReturnsBadRequest() {
         BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
-                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 9999);
+                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 9999, 1, 1);
         when(bookService.updateBook(1L, updatedDTO))
                 .thenThrow(new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen"));
 

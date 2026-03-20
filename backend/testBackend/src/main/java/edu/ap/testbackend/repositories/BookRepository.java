@@ -3,6 +3,7 @@ package edu.ap.testbackend.repositories;
 import edu.ap.testbackend.entities.BookEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +35,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
             "REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')")
     Page<BookEntity> searchByTitleOrAuthor(@Param("query") String query, Pageable pageable);
 
+    Optional<BookEntity> findByIsbn(String isbn);
     @Query(value = """
         SELECT DISTINCT b FROM BookEntity b
         LEFT JOIN b.categories c

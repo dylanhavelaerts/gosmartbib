@@ -8,25 +8,25 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "tblLoans")
+@Table(name = "tblLoanHistory")
 @Getter @Setter @NoArgsConstructor
-public class LoanEntity {
+public class LoanHistoryEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private String smartschoolUserId; // Gebruikers ID
+    private String smartschoolUserId;
 
     @Column(nullable = false)
-    private String isbn; // ISBN nummer per uitleen
+    private String isbn;
 
     @Column(nullable = false)
-    private int quantity; // Aantal uitgeleende exemplaren
+    private int quantity; // Aantal dat is TERUGGEBRACHT
 
     @Column(nullable = false)
-    private LocalDate loanDate; // Datum van uitleen
+    private LocalDate loanDate; // Oorspronkelijke uitleendatum
 
     @Column(nullable = false)
-    private LocalDate dueDate; // Ten laatste terugbrengen
+    private LocalDate returnDate; // Datum waarop het is teruggebracht
 }
