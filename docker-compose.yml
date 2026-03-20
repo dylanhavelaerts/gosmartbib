@@ -63,12 +63,12 @@ services:
       SERVER_SERVLET_CONTEXT_PATH: /api
       SERVER_FORWARD_HEADERS_STRATEGY: framework
 
-      SMARTSCHOOL_CLIENT_ID: ${SMARTSCHOOL_CLIENT_ID}
-      SMARTSCHOOL_CLIENT_SECRET: ${SMARTSCHOOL_CLIENT_SECRET}
     secrets:
       - GOOGLE_BOOKS_API_KEY
       - DB_USERNAME
       - DB_PASSWORD
+      - SMARTSCHOOL_CLIENT_ID
+      - SMARTSCHOOL_CLIENT_SECRET
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`gosmartbib.tech`) && PathPrefix(`/api`)"
@@ -121,3 +121,7 @@ secrets:
     environment: DB_PASSWORD
   DB_ROOT_PASSWORD:
     environment: DB_ROOT_PASSWORD
+  SMARTSCHOOL_CLIENT_ID:
+    environment: SMARTSCHOOL_CLIENT_ID
+  SMARTSCHOOL_CLIENT_SECRET:
+    environment: SMARTSCHOOL_CLIENT_SECRET
