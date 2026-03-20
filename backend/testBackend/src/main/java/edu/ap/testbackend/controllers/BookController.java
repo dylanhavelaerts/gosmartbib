@@ -1,6 +1,7 @@
 package edu.ap.testbackend.controllers;
 
 import edu.ap.testbackend.dto.BookDTO;
+import edu.ap.testbackend.dto.CreateBookRequestDTO;
 import edu.ap.testbackend.dto.importdto.BulkImportResponseDTO;
 import edu.ap.testbackend.exceptions.BookNotFoundException;
 import edu.ap.testbackend.services.BookService;
@@ -26,6 +27,7 @@ public class BookController {
 
     /**
      * Geeft alle boeken terug met server-side paginatie.
+     * 
      * @param page de pagina (0-based)
      * @param size aantal boeken per pagina
      */
@@ -35,6 +37,7 @@ public class BookController {
             @RequestParam(defaultValue = "20") int size) {
         return bookService.getAllBooks(page, size);
     }
+
     @GetMapping("/all/unpaged")
     public List<BookDTO> getAllBooksUnpaged() {
         return bookService.getAllBooksUnpaged();
@@ -43,9 +46,10 @@ public class BookController {
     /**
      * Zoekt boeken op titel of auteur met server-side paginatie.
      * Als de zoekterm leeg is, worden alle boeken teruggegeven.
+     * 
      * @param query de zoekterm
-     * @param page de pagina (0-based)
-     * @param size aantal boeken per pagina
+     * @param page  de pagina (0-based)
+     * @param size  aantal boeken per pagina
      */
     @GetMapping("/search")
     public ResponseEntity<Page<BookDTO>> searchByTitleOrAuthor(
@@ -56,7 +60,9 @@ public class BookController {
     }
 
     /**
-     * Filtert boeken op taal, categorie, pagina's en publicatiejaar met server-side paginatie.
+     * Filtert boeken op taal, categorie, pagina's en publicatiejaar met server-side
+     * paginatie.
+     * 
      * @param page de pagina (0-based)
      * @param size aantal boeken per pagina
      */
@@ -157,9 +163,7 @@ public class BookController {
         return ResponseEntity.noContent().build();
     }
 
-
-
-  /**
+    /**
      * Importeert boeken vanuit een Excel-bestand.
      */
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -170,15 +174,11 @@ public class BookController {
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            return new ResponseEntity<>("An error occurred while importing the Excel file.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("An error occurred while importing the Excel file.",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-
-
-
-
-    
     @PutMapping("/{id}")
     public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
         try {
@@ -186,13 +186,21 @@ public class BookController {
             return ResponseEntity.ok(updated);
         } catch (BookNotFoundException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        } catch(IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
 
-
-        catch (Exception e) {
-            return new ResponseEntity<>("An error occurred while updating the book.", HttpStatus.INTERNAL_SERVER_ERROR);
+    @PostMapping("/add")
+    public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request) {
+        try {
+            BookDTO addedBook = bookService.addManualBook(request);
+            return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>("An error occurred while saving the book.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 }

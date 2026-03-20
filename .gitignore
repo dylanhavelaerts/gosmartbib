@@ -1,4 +1,9 @@
+.env*
+env
+
 builds/
 .next
 .idea
 .vscode/
+
+.env

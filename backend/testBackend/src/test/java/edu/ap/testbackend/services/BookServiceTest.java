@@ -1,6 +1,7 @@
 package edu.ap.testbackend.services;
 
 import edu.ap.testbackend.dto.BookDTO;
+import edu.ap.testbackend.dto.CreateBookRequestDTO;
 import edu.ap.testbackend.dto.googlebooks.GoogleBookItem;
 import edu.ap.testbackend.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.testbackend.dto.googlebooks.VolumeInfo;
@@ -40,8 +41,10 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -176,12 +179,14 @@ class BookServiceTest {
 
         assertThrows(RuntimeException.class, () -> bookService.getAllBooks(0, 20));
     }
- //tests for invalid page/size
+
+    // tests for invalid page/size
     @Test
     void givenNegativePage_whenGetAllBooks_thenThrowsException() {
         assertThrows(RuntimeException.class, () -> bookService.getAllBooks(-1, 20));
         verify(bookRepository, never()).findAll(any(Pageable.class));
     }
+
     @Test
     void givenZeroSize_whenGetAllBooks_thenThrowsException() {
         assertThrows(RuntimeException.class, () -> bookService.getAllBooks(0, 0));
@@ -504,7 +509,7 @@ class BookServiceTest {
                 "en",
                 4.7,
                 "9780132350884",
-                2008);
+                2008, true, List.of("Toekomst & technologie"), "A", 1, 1);
         book.setId(10L);
         book.setSpotlight(true);
         book.setTotalCopies(5);
@@ -516,39 +521,46 @@ class BookServiceTest {
     @Test
     void givenValidFilters_whenFilterBooks_thenReturnsMappedDTOs() {
         Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook()), PageRequest.of(0, 20), 1);
-        when(bookRepository.filterBooks(eq("en"), eq(List.of("Programming")), eq(100), eq(500), eq(2000), eq(2023), any(Pageable.class)))
+        when(bookRepository.filterBooks(eq("en"), eq(List.of("Programming")), eq(100), eq(500), eq(2000), eq(2023),
+                any(Pageable.class)))
                 .thenReturn(entityPage);
 
         Page<BookDTO> result = bookService.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023, 0, 20);
 
         assertEquals(1, result.getTotalElements());
         assertEquals("Clean Code", result.getContent().get(0).title());
-        verify(bookRepository, times(1)).filterBooks(eq("en"), eq(List.of("Programming")), eq(100), eq(500), eq(2000), eq(2023), any(Pageable.class));
+        verify(bookRepository, times(1)).filterBooks(eq("en"), eq(List.of("Programming")), eq(100), eq(500), eq(2000),
+                eq(2023), any(Pageable.class));
     }
 
     @Test
     void givenNullFilters_whenFilterBooks_thenReturnsAllBooks() {
         Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook(), buildBook()), PageRequest.of(0, 20), 2);
-        when(bookRepository.filterBooks(isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+        when(bookRepository.filterBooks(isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                any(Pageable.class)))
                 .thenReturn(entityPage);
 
         Page<BookDTO> result = bookService.filterBooks(null, null, null, null, null, null, 0, 20);
 
         assertEquals(2, result.getTotalElements());
-        verify(bookRepository, times(1)).filterBooks(isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
+        verify(bookRepository, times(1)).filterBooks(isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                any(Pageable.class));
     }
 
     @Test
     void givenNoMatchingBooks_whenFilterBooks_thenReturnsEmptyPage() {
         Page<BookEntity> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
-        when(bookRepository.filterBooks(eq("nl"), isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+        when(bookRepository.filterBooks(eq("nl"), isNull(), isNull(), isNull(), isNull(), isNull(),
+                any(Pageable.class)))
                 .thenReturn(emptyPage);
 
         Page<BookDTO> result = bookService.filterBooks("nl", null, null, null, null, null, 0, 20);
 
         assertEquals(0, result.getTotalElements());
-        verify(bookRepository, times(1)).filterBooks(eq("nl"), isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
+        verify(bookRepository, times(1)).filterBooks(eq("nl"), isNull(), isNull(), isNull(), isNull(), isNull(),
+                any(Pageable.class));
     }
+
     @Test
     void givenMinPageCountGreaterThanMaxPageCount_whenFilterBooks_thenThrowsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class,
@@ -573,7 +585,6 @@ class BookServiceTest {
         assertThrows(RuntimeException.class,
                 () -> bookService.filterBooks(null, null, null, null, null, null, 0, 20));
     }
-
 
     @Test
     void givenEmptyExcelFile_whenImportBooksFromExcel_thenThrowsIllegalArgumentException() {
@@ -724,7 +735,7 @@ class BookServiceTest {
         when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         BookDTO update = new BookDTO(null, "Refactoring", List.of("Martin Fowler"), null, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null);
 
         BookDTO result = bookService.updateBook(10L, update);
 
@@ -739,7 +750,7 @@ class BookServiceTest {
         when(bookRepository.findById(99L)).thenReturn(Optional.empty());
 
         BookDTO update = new BookDTO(null, "New Title", null, null, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null);
 
         assertThrows(BookNotFoundException.class, () -> bookService.updateBook(99L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -751,7 +762,7 @@ class BookServiceTest {
         when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, "   ", null, null, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -763,7 +774,7 @@ class BookServiceTest {
         when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, "", null, null, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -775,7 +786,7 @@ class BookServiceTest {
         when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, null, null, null, null,
-                -1, null, null, null, null, null, null, null, null);
+                -1, null, null, null, null, null, null, false, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -788,7 +799,7 @@ class BookServiceTest {
 
         int futureYear = Year.now().getValue() + 1;
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, futureYear, null, null);
+                null, null, null, null, null, null, futureYear, false, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -802,7 +813,7 @@ class BookServiceTest {
 
         int currentYear = Year.now().getValue();
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, currentYear, null, null);
+                null, null, null, null, null, null, currentYear, false, null, null, null, null);
 
         assertDoesNotThrow(() -> bookService.updateBook(10L, update));
         verify(bookRepository, times(1)).save(book);
@@ -815,7 +826,7 @@ class BookServiceTest {
         when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null);
 
         BookDTO result = bookService.updateBook(10L, update);
 
@@ -831,7 +842,8 @@ class BookServiceTest {
         when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         BookDTO update = new BookDTO(null, "New Title", List.of("New Author"), "New Publisher",
-                "New Description", 200, List.of("Fiction"), "new-thumbnail", "fr", 3.5, "9780000000000", 2020, 5, 5);
+                "New Description", 200, List.of("Fiction"), "new-thumbnail", "fr", 3.5, "9780000000000", 2020, false,
+                List.of("Label"), "A", 1, 1);
 
         BookDTO result = bookService.updateBook(10L, update);
 
@@ -856,7 +868,7 @@ class BookServiceTest {
         when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, 0, null, null);
+                null, null, null, null, null, null, 0, false, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -908,6 +920,170 @@ class BookServiceTest {
         assertEquals("en", dto.language());
         assertEquals(4.7, dto.rating());
         verify(bookRepository, times(1)).findAll();
+    }
+
+    @Test
+    void givenValidManualBookRequest_whenAddManualBook_thenSavesBookWithGeneratedNoIsbnUuid() {
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "  Manual Book  ",
+                List.of(" Author One ", " ", "Author Two"),
+                "  Publisher  ",
+                "  Description  ",
+                250,
+                List.of(" Fantasy ", "", "Young adult"),
+                "  thumbnail-url  ",
+                "  nl  ",
+                4.5,
+                2024,
+                true);
+
+        BookEntity savedEntity = new BookEntity();
+        savedEntity.setId(42L);
+        savedEntity.setTitle("Manual Book");
+        savedEntity.setAuthors(List.of("Author One", "Author Two"));
+        savedEntity.setPublisher("Publisher");
+        savedEntity.setDescription("Description");
+        savedEntity.setPageCount(250);
+        savedEntity.setCategories(List.of("Fantasy", "Young adult"));
+        savedEntity.setThumbnail("thumbnail-url");
+        savedEntity.setLanguage("nl");
+        savedEntity.setRating(4.5);
+        savedEntity.setPublishedYear(2024);
+        savedEntity.setSpotlight(true);
+
+        when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
+            BookEntity entity = invocation.getArgument(0);
+            savedEntity.setIsbn(entity.getIsbn());
+            return savedEntity;
+        });
+
+        when(bookRepository.findById(42L)).thenReturn(Optional.of(savedEntity));
+
+        BookDTO result = bookService.addManualBook(request);
+
+        assertNotNull(result);
+        assertEquals(42L, result.id());
+        assertEquals("Manual Book", result.title());
+        assertEquals(List.of("Author One", "Author Two"), result.authors());
+        assertEquals("Publisher", result.publisher());
+        assertEquals("Description", result.description());
+        assertEquals(250, result.pageCount());
+        assertEquals(List.of("Fantasy", "Young adult"), result.categories());
+        assertEquals("thumbnail-url", result.thumbnail());
+        assertEquals("nl", result.language());
+        assertEquals(4.5, result.rating());
+        assertEquals(2024, result.publishedYear());
+        assertNotNull(result.isbn());
+        assertTrue(result.isbn().matches("^NOISBN-[0-9a-fA-F\\-]{36}$"));
+
+        ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
+        verify(bookRepository, times(1)).saveAndFlush(captor.capture());
+        verify(bookRepository, times(1)).findById(42L);
+
+        BookEntity entityToSave = captor.getValue();
+        assertEquals("Manual Book", entityToSave.getTitle());
+        assertEquals(List.of("Author One", "Author Two"), entityToSave.getAuthors());
+        assertEquals("Publisher", entityToSave.getPublisher());
+        assertEquals("Description", entityToSave.getDescription());
+        assertEquals(250, entityToSave.getPageCount());
+        assertEquals(List.of("Fantasy", "Young adult"), entityToSave.getCategories());
+        assertEquals("thumbnail-url", entityToSave.getThumbnail());
+        assertEquals("nl", entityToSave.getLanguage());
+        assertEquals(4.5, entityToSave.getRating());
+        assertEquals(2024, entityToSave.getPublishedYear());
+        assertTrue(entityToSave.isSpotlight());
+        assertNotNull(entityToSave.getIsbn());
+        assertTrue(entityToSave.getIsbn().matches("^NOISBN-[0-9a-fA-F\\-]{36}$"));
+    }
+
+    @Test
+    void givenBlankTitle_whenAddManualBook_thenThrowsIllegalArgumentException() {
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "   ",
+                List.of("Author"),
+                "Publisher",
+                "Description",
+                100,
+                List.of("Fantasy"),
+                "thumbnail-url",
+                "nl",
+                4.0,
+                2024,
+                false);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> bookService.addManualBook(request));
+
+        assertEquals("Titel is verplicht", ex.getMessage());
+        verify(bookRepository, never()).saveAndFlush(any(BookEntity.class));
+        verify(bookRepository, never()).findById(anyLong());
+    }
+
+    @Test
+    void givenNullOptionalFields_whenAddManualBook_thenUsesSafeDefaults() {
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "Manual Book",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+
+        BookEntity savedEntity = new BookEntity();
+        savedEntity.setId(7L);
+        savedEntity.setTitle("Manual Book");
+        savedEntity.setAuthors(List.of());
+        savedEntity.setPublisher(null);
+        savedEntity.setDescription(null);
+        savedEntity.setPageCount(0);
+        savedEntity.setCategories(List.of());
+        savedEntity.setThumbnail(null);
+        savedEntity.setLanguage(null);
+        savedEntity.setRating(0.0);
+        savedEntity.setPublishedYear(null);
+        savedEntity.setSpotlight(false);
+
+        when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
+            BookEntity entity = invocation.getArgument(0);
+            savedEntity.setIsbn(entity.getIsbn());
+            return savedEntity;
+        });
+
+        when(bookRepository.findById(7L)).thenReturn(Optional.of(savedEntity));
+
+        BookDTO result = bookService.addManualBook(request);
+
+        assertEquals(7L, result.id());
+        assertEquals("Manual Book", result.title());
+        assertEquals(List.of(), result.authors());
+        assertEquals(0, result.pageCount());
+        assertEquals(List.of(), result.categories());
+        assertEquals(0.0, result.rating());
+        assertNotNull(result.isbn());
+        assertTrue(result.isbn().matches("^NOISBN-[0-9a-fA-F\\-]{36}$"));
+
+        ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
+        verify(bookRepository).saveAndFlush(captor.capture());
+
+        BookEntity entityToSave = captor.getValue();
+        assertEquals("Manual Book", entityToSave.getTitle());
+        assertEquals(List.of(), entityToSave.getAuthors());
+        assertNull(entityToSave.getPublisher());
+        assertNull(entityToSave.getDescription());
+        assertEquals(0, entityToSave.getPageCount());
+        assertEquals(List.of(), entityToSave.getCategories());
+        assertNull(entityToSave.getThumbnail());
+        assertNull(entityToSave.getLanguage());
+        assertEquals(0.0, entityToSave.getRating());
+        assertNull(entityToSave.getPublishedYear());
+        assertFalse(entityToSave.isSpotlight());
+        assertTrue(entityToSave.getIsbn().matches("^NOISBN-[0-9a-fA-F\\-]{36}$"));
     }
 
     // Helperfunctions
