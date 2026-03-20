@@ -191,3 +191,27 @@
     align-items: center;    
     padding:1.5rem 1.5rem 0 1.5rem;
 }
+
+/* Linkerbalk copies bijhouden */
+ .copies-pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+}
+
+.copies-pill--available {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.copies-pill--empty {
+  background-color: #fdecea;
+  color: #c0392b;
+}
+
+.copies-pill--total {
+  background-color: #ede7f6;
+  color: #5e35b1;
+}

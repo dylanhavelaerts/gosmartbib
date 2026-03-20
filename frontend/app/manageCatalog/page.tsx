@@ -322,6 +322,22 @@ export default function ManageCatalogPage() {
                         >
                           ISBN: {book.isbn || "-"}
                         </p>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "0.4rem",
+                            marginTop: "0.4rem",
+                          }}
+                        >
+                          <span
+                            className={`copies-pill ${book.availableCopies === 0 ? "copies-pill--empty" : "copies-pill--available"}`}
+                          >
+                            {book.availableCopies ?? "-"} beschikbaar
+                          </span>
+                          <span className="copies-pill copies-pill--total">
+                            {book.totalCopies ?? "-"} totaal
+                          </span>
+                        </div>
                       </div>
                     </li>
                   );
@@ -368,11 +384,11 @@ export default function ManageCatalogPage() {
                   flexWrap: "wrap",
                   gap: "1rem",
                   justifyContent: "space-between",
-                  alignItems: "flex-start",
+                  alignItems: "center",
                   marginBottom: "2rem",
                 }}
               >
-                <div style={{ flex: "1 1 300px" }}>
+                <div style={{ flex: "1 1 200px" }}>
                   <h1
                     style={{
                       margin: "0 0 0.5rem 0",
