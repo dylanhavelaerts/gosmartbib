@@ -11,6 +11,8 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -28,31 +30,22 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
         try {
-            Object principal = authentication.getPrincipal();
+            OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
 
-            // Log de details van de geauthenticeerde gebruiker, 
-            // vooral de attributen die door Smartschool worden teruggegeven.
-            if (principal instanceof OAuth2User oauth2User) {
-                log.info("=== SMARTSCHOOL CREDENTIALS ===");
-                oauth2User.getAttributes().forEach((key, value) -> log.info("{}: {}", key, value));
-                log.info("====================================");
-            } else {
-                log.warn("OAuth2 login principal is not an OAuth2User: {}", principal);
-            }
+            List<Map<String, Object>> groups = oauth2User.getAttribute("groups");
+            List<Map<String, Object>> parentGroups = oauth2User.getAttribute("parentGroups");
 
-            // Bepaal de redirect URL na succesvolle login, standaard naar de frontend root.
+            log.info("Groups available in success handler: {}", groups);
+
+            // TODO : Na inladen de nodige info opslagen in de database
+
             String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl : "/";
             String targetUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
+
         } catch (Exception ex) {
             log.error("OAuth2 success handling failed", ex);
-
-            // In geval van een fout tijdens het verwerken van de succesvolle authenticatie,
-            // redirect de gebruiker naar een foutpagina op de frontend.
-            String fallback = (frontendUrl != null && !frontendUrl.isBlank())
-                    ? frontendUrl + "/login?error=true"
-                    : "/login?error=true";
-            response.sendRedirect(fallback);
+            response.sendRedirect(frontendUrl + "/login?error=true");
         }
     }
 }
