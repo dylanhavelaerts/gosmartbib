@@ -18,6 +18,7 @@ export default function ManageCatalogPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [query, setQuery] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     fetch(`${apiUrl}/books/all/unpaged`)
@@ -169,12 +170,9 @@ export default function ManageCatalogPage() {
           }
         }
       `}</style>
-
-      {/* AANGEPAST: margin-bottom verhoogd naar 1.5rem voor iets meer ademruimte */}
       <h1 style={{ margin: "0 0 1.5rem 0", padding: 0, lineHeight: "1" }}>
         Beheer catalogus
       </h1>
-
       <div className="manage-wrapper">
         <div
           className="eiland-lijst"
@@ -190,6 +188,15 @@ export default function ManageCatalogPage() {
             overflow: "hidden",
           }}
         >
+          <div className="headerdiv">
+            <button
+              onClick={() => router.push("/add-book")}
+              className="modal-btn-save"
+              type="button"
+            >
+              + Boek(en) toevoegen
+            </button>
+          </div>
           <div
             style={{
               padding: "1.5rem",
