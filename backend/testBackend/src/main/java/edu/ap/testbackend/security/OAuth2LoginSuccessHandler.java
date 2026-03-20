@@ -37,14 +37,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                                         Authentication authentication) throws IOException, ServletException {
         try {
             OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+            userService.syncUser(oauth2User);
 
-            List<Map<String, Object>> groups = oauth2User.getAttribute("groups");
-            List<Map<String, Object>> parentGroups = oauth2User.getAttribute("parentGroups");
-
-            log.info("Groups available in success handler: {}", groups);
-
-            UserEntity user = userService.syncUser(oauth2User);
-            log.info("User {} succesvol ingelogd met rol: {}", user.getSmartschoolUid(), user.getRole());
+            HttpSession session = request.getSession(true);
+            session.setAttribute("authenticated", true);
 
             String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl : "/";
             String targetUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
