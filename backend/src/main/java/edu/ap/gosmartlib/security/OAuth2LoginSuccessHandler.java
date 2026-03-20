@@ -1,6 +1,5 @@
 package edu.ap.gosmartlib.security;
 
-import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.services.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,8 +14,6 @@ import org.springframework.stereotype.Component;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
