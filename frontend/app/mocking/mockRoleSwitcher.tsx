@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import "./MockRoleSwitcher.css";
+import "./mockRoleSwitcher.css";
 
 const roles = ["Leerling", "Leerkracht", "Bibliotheekbeheerder"];
 
