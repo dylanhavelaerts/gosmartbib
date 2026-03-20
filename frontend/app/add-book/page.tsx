@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import "./addBook.css";
+import styles from "./addBookPage.module.css";
 
 import AddBookWithIsbn from "./components/addBookWithIsbn";
 import AddBookWithoutIsbn from "./components/addBookWithoutIsbn";
@@ -13,18 +13,11 @@ export default function AddBookPage() {
   const [selected, setSelected] = useState<TabId>("Boek");
 
   const cls = (id: TabId) =>
-    `tabBtn ${selected === id ? "selectedCategory" : ""}`;
+    `${styles.tabBtn} ${selected === id ? styles.selectedCategory : ""}`.trim();
 
   return (
-    <div
-      style={{
-        padding: "2rem",
-        maxWidth: "800px",
-        margin: "0 auto",
-        fontFamily: "sans-serif",
-      }}
-    >
-      <nav className="lowerNav">
+    <div className={styles.page}>
+      <nav className={styles.lowerNav}>
         <button className={cls("Boek")} onClick={() => setSelected("Boek")}>
           Boek toevoegen
         </button>

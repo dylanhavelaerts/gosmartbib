@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Book } from "../../interfaces/Book";
+import styles from "./addBookForm.module.css";
 
 export default function AddBookWithIsbn() {
   const [isbn, setIsbn] = useState("");
@@ -20,7 +21,7 @@ export default function AddBookWithIsbn() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/books/search/${isbn}`
+        `${process.env.NEXT_PUBLIC_API_URL}/books/search/${isbn}`,
       );
 
       if (response.ok) {
@@ -51,7 +52,7 @@ export default function AddBookWithIsbn() {
         `${process.env.NEXT_PUBLIC_API_URL}/books/add/${isbn}`,
         {
           method: "POST",
-        }
+        },
       );
 
       if (response.ok) {
@@ -77,33 +78,30 @@ export default function AddBookWithIsbn() {
   };
 
   useEffect(() => {
-    setImgSrc(previewBook?.thumbnail || "No-Image-Available-Placeholder.png");
-  }, [previewBook])
+    setImgSrc(previewBook?.thumbnail || "/No-Image-Available-Placeholder.png");
+  }, [previewBook]);
+
+  const searchButtonClass = `${styles.submitButton} ${loading ? styles.submitButtonLoading : ""}`.trim();
+  const messageClass = `${styles.message} ${
+    message.includes("succesvol")
+      ? styles.messageSuccess
+      : message.includes("gevonden!")
+        ? styles.messageInfo
+        : styles.messageError
+  }`.trim();
 
   return (
     <>
-      <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
-        Nieuw boek toevoegen
-      </h1>
+      <h1 className={styles.title}>Nieuw boek toevoegen</h1>
 
-      <p style={{ marginBottom: "2rem", color: "#555" }}>
+      <p className={styles.description}>
         Scan of typ het ISBN-nummer in. We halen eerst een voorbeeld op voordat
         we het opslaan.
       </p>
 
-      <form
-        onSubmit={handleSearchBook}
-        style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-      >
-        <div>
-          <label
-            htmlFor="isbn"
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
+      <form onSubmit={handleSearchBook} className={styles.form}>
+        <div className={styles.fieldGroup}>
+          <label htmlFor="isbn" className={styles.label}>
             ISBN Nummer:
           </label>
 
@@ -113,66 +111,29 @@ export default function AddBookWithIsbn() {
             value={isbn}
             onChange={(e) => setIsbn(e.target.value)}
             placeholder="Bijv. 9781473227989"
-            style={{
-                width: "100%",
-                padding: "0.75rem",
-                fontSize: "1rem",
-                borderRadius: "4px",
-                border: "1px solid #8e2446",
-                background: "white",
-                color: "#8e2446",
-                boxSizing: "border-box"
-            }}
+            className={styles.input}
             disabled={previewBook !== null}
           />
         </div>
 
         {!previewBook && (
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              cursor: loading ? "not-allowed" : "pointer",
-              backgroundColor: loading ? "#ccc" : "#8e2446",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              fontWeight: "bold",
-              flex: 1,
-              padding: "0.75rem",
-              maxWidth: "14rem",
-            }}
-          >
+          <button type="submit" disabled={loading} className={searchButtonClass}>
             {loading ? "Bezig met zoeken..." : "Zoek Boek"}
           </button>
         )}
       </form>
 
       {previewBook && (
-        <div
-          style={{
-            marginTop: "2rem",
-            padding: "1.5rem",
-            border: "2px solid #8e2446",
-            borderRadius: "8px",
-            backgroundColor: "#f9f9f9",
-            color: "black",
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Preview van het boek:</h2>
+        <div className={styles.previewCard}>
+          <h2 className={styles.previewTitle}>Preview van het boek:</h2>
 
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-              <img
-                src={imgSrc}
-                alt="Cover"
-                onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
-                style={{
-                  width: "100px",
-                  height: "150px",
-                  objectFit: "cover",
-                  borderRadius: "4px",
-                }}
-              />
+          <div className={styles.previewContent}>
+            <img
+              src={imgSrc}
+              alt="Cover"
+              onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
+              className={styles.previewImage}
+            />
 
             <div>
               <p>
@@ -197,21 +158,12 @@ export default function AddBookWithIsbn() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
+          <div className={styles.actionRow}>
             <button
               type="button"
               onClick={handleConfirmAdd}
               disabled={loading}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                backgroundColor: "#28a745",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
+              className={styles.confirmButton}
             >
               {loading ? "Bezig..." : "Ja, Voeg toe aan Catalogus"}
             </button>
@@ -220,16 +172,7 @@ export default function AddBookWithIsbn() {
               type="button"
               onClick={handleCancelPreview}
               disabled={loading}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                backgroundColor: "#dc3545",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
+              className={styles.cancelButton}
             >
               Annuleren
             </button>
@@ -237,27 +180,7 @@ export default function AddBookWithIsbn() {
         </div>
       )}
 
-      {message && (
-        <div
-          style={{
-            marginTop: "2rem",
-            padding: "1rem",
-            backgroundColor: message.includes("succesvol")
-              ? "#d4edda"
-              : message.includes("gevonden!")
-                ? "#cce5ff"
-                : "#f8d7da",
-            color: message.includes("succesvol")
-              ? "#155724"
-              : message.includes("gevonden!")
-                ? "#004085"
-                : "#721c24",
-            borderRadius: "4px",
-          }}
-        >
-          {message}
-        </div>
-      )}
+      {message && <div className={messageClass}>{message}</div>}
     </>
   );
 }

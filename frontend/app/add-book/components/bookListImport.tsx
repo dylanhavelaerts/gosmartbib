@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import styles from "./bookListImport.module.css";
 
 type ImportMismatch = {
   rowNumber: number;
@@ -41,13 +42,10 @@ export default function BookListImport() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/books/import`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/import`, {
+        method: "POST",
+        body: formData,
+      });
 
       const data = await response.json();
 
@@ -66,50 +64,40 @@ export default function BookListImport() {
     }
   };
 
+  const uploadButtonClass = `${styles.uploadButton} ${loading ? styles.uploadButtonLoading : ""}`.trim();
+  const messageClass = `${styles.message} ${
+    message.includes("klaar") || message.includes("opgeslagen")
+      ? styles.messageSuccess
+      : styles.messageError
+  }`.trim();
+
   return (
     <>
-      <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
-        Excel file toevoegen
-      </h1>
+      <h1 className={styles.title}>Excel file toevoegen</h1>
 
-      <p style={{ color: "#555" }}>
+      <p className={styles.text}>
         Hieronder vind u een link naar een template om boeken toe te voegen.
       </p>
 
-      <a href="/BoekenlijstTemplate.xlsx" download>
+      <a href="/BoekenlijstTemplate.xlsx" download className={styles.downloadLink}>
         Download Excelbestand
       </a>
 
-      <p style={{ color: "#555", marginTop: "1rem" }}>
-        Voeg hieronder de aangevulde excel file toe.
-      </p>
+      <p className={styles.spacedText}>Voeg hieronder de aangevulde excel file toe.</p>
 
-      <div className="fileInputBox">
-        <input
-          className="fileInput"
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={handleFileChange}
-        />
+      <div className={styles.fileInputBox}>
+        <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} />
       </div>
 
       {selectedFile && (
-        <div style={{ marginTop: "1rem" }}>
+        <div className={styles.selectedFile}>
           <p>Geselecteerd bestand: {selectedFile.name}</p>
 
           <button
             type="button"
             onClick={handleUploadExcel}
             disabled={loading}
-            style={{
-              padding: "0.75rem 1.5rem",
-              backgroundColor: loading ? "#ccc" : "#28a745",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              fontWeight: "bold",
-              cursor: loading ? "not-allowed" : "pointer",
-            }}
+            className={uploadButtonClass}
           >
             {loading ? "Bezig met importeren..." : "Importeer Excelbestand"}
           </button>
@@ -117,29 +105,20 @@ export default function BookListImport() {
       )}
 
       {importResult && (
-        <div
-          style={{
-            marginTop: "2rem",
-            padding: "1rem",
-            border: "1px solid #8e2446",
-            borderRadius: "8px",
-            backgroundColor: "#f9f9f9",
-            color: "black",
-          }}
-        >
+        <div className={styles.resultCard}>
           <h2>Import resultaat</h2>
           <p>Totaal aantal rijen: {importResult.totalRows}</p>
           <p>Opgeslagen boeken: {importResult.savedCount}</p>
           <p>Mismatches / fouten: {importResult.mismatchCount}</p>
 
           {importResult.mismatches.length > 0 && (
-            <div style={{ marginTop: "1rem" }}>
+            <div className={styles.mismatchSection}>
               <p>Problemen gevonden in deze rijen:</p>
               <ul>
                 {importResult.mismatches.map((mismatch, index) => (
                   <li key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
-                    Rij {mismatch.rowNumber}: {mismatch.isbn} |{" "}
-                    {mismatch.excelTitle} | Reden: {mismatch.reason}
+                    Rij {mismatch.rowNumber}: {mismatch.isbn} | {mismatch.excelTitle} |
+                    {" "}Reden: {mismatch.reason}
                   </li>
                 ))}
               </ul>
@@ -148,25 +127,7 @@ export default function BookListImport() {
         </div>
       )}
 
-      {message && (
-        <div
-          style={{
-            marginTop: "2rem",
-            padding: "1rem",
-            backgroundColor:
-              message.includes("klaar") || message.includes("opgeslagen")
-                ? "#d4edda"
-                : "#f8d7da",
-            color:
-              message.includes("klaar") || message.includes("opgeslagen")
-                ? "#155724"
-                : "#721c24",
-            borderRadius: "4px",
-          }}
-        >
-          {message}
-        </div>
-      )}
+      {message && <div className={messageClass}>{message}</div>}
     </>
   );
 }

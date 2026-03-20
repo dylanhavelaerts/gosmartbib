@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Book } from "../../interfaces/Book";
+import styles from "./addBookForm.module.css";
 
 export default function AddBookWithoutIsbn() {
   const [message, setMessage] = useState("");
@@ -21,9 +22,9 @@ export default function AddBookWithoutIsbn() {
   const [openDropdown, setOpenDropdown] = useState(false);
   const [openLabelDropdown, setOpenLabelDropdown] = useState(false);
   const [didacticTag, setDidacticTag] = useState(false);
-  const [labels, setLabels] = useState<String[]>([]);
-  const [readingLevel, setReadingLevel] = useState("")
-  const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png")
+  const [labels, setLabels] = useState<string[]>([]);
+  const [readingLevel, setReadingLevel] = useState("");
+  const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
 
   const categoryChoice = [
     "Fictie algemeen",
@@ -42,7 +43,7 @@ export default function AddBookWithoutIsbn() {
     "Humor",
     "Graphic Novel / strip",
     "Poëzie",
-    "Non-fictie algemeen"
+    "Non-fictie algemeen",
   ];
 
   const labelChoice = [
@@ -61,8 +62,8 @@ export default function AddBookWithoutIsbn() {
     "Macht & onrecht",
     "Avontuur & ontdekking",
     "Overleven",
-    "Toekomst & technologie"
-  ]
+    "Toekomst & technologie",
+  ];
 
   const handleAuthorChange = (index: number, value: string) => {
     const updatedAuthors = [...authors];
@@ -102,43 +103,43 @@ export default function AddBookWithoutIsbn() {
     setMessage("Controleer de gegevens hieronder.");
   };
 
-const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-useEffect(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    if (
-      dropdownRef.current &&
-      !dropdownRef.current.contains(event.target as Node)
-    ) {
-      setOpenDropdown(false);
-    }
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setOpenDropdown(false);
+      }
+    };
 
-  document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
 
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
-const dropdownRefLabel = useRef<HTMLDivElement | null>(null);
+  const dropdownRefLabel = useRef<HTMLDivElement | null>(null);
 
-useEffect(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    if (
-      dropdownRefLabel.current &&
-      !dropdownRefLabel.current.contains(event.target as Node)
-    ) {
-      setOpenLabelDropdown(false);
-    }
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRefLabel.current &&
+        !dropdownRefLabel.current.contains(event.target as Node)
+      ) {
+        setOpenLabelDropdown(false);
+      }
+    };
 
-  document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
 
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleConfirmAdd = async () => {
     if (!previewBook) return;
@@ -201,61 +202,40 @@ useEffect(() => {
 
   useEffect(() => {
     setImgSrc(previewBook?.thumbnail || "/No-Image-Available-Placeholder.png");
-  }, [previewBook])
+  }, [previewBook]);
+
+  const submitButtonClass = `${styles.submitButton} ${loading ? styles.submitButtonLoading : ""}`.trim();
+  const messageClass = `${styles.message} ${
+    message.includes("succesvol")
+      ? styles.messageSuccess
+      : message.includes("Controleer")
+        ? styles.messageInfo
+        : styles.messageError
+  }`.trim();
 
   return (
     <>
-      <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
-        Nieuw boek toevoegen zonder ISBN nummer
-      </h1>
+      <h1 className={styles.title}>Nieuw boek toevoegen zonder ISBN nummer</h1>
 
-      <p style={{ marginBottom: "2rem", color: "#555" }}>
+      <p className={styles.description}>
         Geef hier de nodige info om het boek aan te maken.
       </p>
 
-      <form
-        onSubmit={handlePreviewBook}
-        style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-      >
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Titel
-          </label>
+      <form onSubmit={handlePreviewBook} className={styles.form}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Titel</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Titel van het boek"
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #8e2446",
-              background: "white",
-              color: "#8e2446",
-              boxSizing: "border-box",
-            }}
+            className={styles.input}
             disabled={previewBook !== null}
           />
         </div>
 
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Auteur(s)
-          </label>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Auteur(s)</label>
 
           {authors.map((author, index) => (
             <input
@@ -264,173 +244,75 @@ useEffect(() => {
               value={author}
               onChange={(e) => handleAuthorChange(index, e.target.value)}
               placeholder={`Auteur ${index + 1}`}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                fontSize: "1rem",
-                borderRadius: "4px",
-                border: "1px solid #8e2446",
-                background: "white",
-                color: "#8e2446",
-                marginBottom: "0.1rem",
-                boxSizing: "border-box",
-              }}
+              className={`${styles.input} ${styles.authorInput}`}
               disabled={previewBook !== null}
             />
           ))}
 
-          <button
-            type="button"
-            onClick={handleAddAuthorField}
-            disabled={previewBook !== null}
-            style={{
-              padding: "0.75rem 1rem",
-              backgroundColor: "#8e2446",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              fontWeight: "bold",
-              cursor: "pointer",
-              marginTop:"0.8rem"
-            }}
-          >
-            Auteur toevoegen
-          </button>
+          <div className={styles.authorButtons}>
+            <button
+              type="button"
+              onClick={handleAddAuthorField}
+              disabled={previewBook !== null}
+              className={styles.smallButton}
+            >
+              Auteur toevoegen
+            </button>
 
-          <button
-            type="button"
-            onClick={handleRemoveAuthorField}
-            disabled={previewBook !== null}
-            style={{
-              padding: "0.75rem 1rem",
-              backgroundColor: "#8e2446",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              fontWeight: "bold",
-              cursor: "pointer",
-              marginLeft: "1rem",
-            }}
-          >
-            Auteur verwijderen
-          </button>
+            <button
+              type="button"
+              onClick={handleRemoveAuthorField}
+              disabled={previewBook !== null}
+              className={styles.smallButton}
+            >
+              Auteur verwijderen
+            </button>
+          </div>
         </div>
 
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Uitgever
-          </label>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Uitgever</label>
           <input
             type="text"
             value={publisher}
             onChange={(e) => setPublisher(e.target.value)}
             placeholder="Uitgever van het boek"
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #8e2446",
-              background: "white",
-              color: "#8e2446",
-              boxSizing: "border-box",
-            }}
+            className={styles.input}
             disabled={previewBook !== null}
           />
         </div>
 
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Omschrijving
-          </label>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Omschrijving</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Omschrijving van het boek"
             rows={5}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #8e2446",
-              background: "white",
-              color: "#8e2446",
-              resize: "none",
-              boxSizing: "border-box",
-            }}
+            className={styles.textarea}
             disabled={previewBook !== null}
           />
         </div>
 
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Aantal pagina's
-          </label>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Aantal pagina's</label>
           <input
             type="number"
             value={pageCount}
             onChange={(e) => setPageCount(Number(e.target.value) || 0)}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #8e2446",
-              background: "white",
-              color: "#8e2446",
-              boxSizing: "border-box",
-            }}
+            className={styles.input}
             disabled={previewBook !== null}
           />
         </div>
 
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Categorieën
-          </label>
-          <div ref={dropdownRef} style={{width: "100%"}}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Categorieën</label>
+          <div ref={dropdownRef} className={styles.dropdownWrapper}>
             <button
               type="button"
               onClick={() => setOpenDropdown(!openDropdown)}
               disabled={previewBook !== null}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                fontSize: "1rem",
-                borderRadius: "4px",
-                border: "1px solid #8e2446",
-                background: "white",
-                color: "#8e2446",
-                minHeight: "20px",
-                textAlign: "left",
-                cursor: "pointer",
-                boxSizing: "border-box",
-              }}
+              className={styles.dropdownToggle}
             >
               {categories.length !== 0
                 ? categories.join(", ")
@@ -438,29 +320,9 @@ useEffect(() => {
             </button>
 
             {openDropdown && (
-              <div
-                style={{
-                  borderRadius: "4px",
-                  border: "1px solid #8e2446",
-                  display: "flex",
-                  flexDirection: "column",
-                  width: "100%",
-                  backgroundColor: "white",
-                  marginTop: "0.5rem",
-                  boxSizing: "border-box",
-                }}
-              >
+              <div className={styles.dropdownPanel}>
                 {categoryChoice.map((category) => (
-                  <label
-                    key={category}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      padding: "0.5rem 0.75rem",
-                      color: "black",
-                    }}
-                  >
+                  <label key={category} className={styles.checkboxLabel}>
                     <input
                       type="checkbox"
                       checked={categories.includes(category)}
@@ -468,7 +330,7 @@ useEffect(() => {
                         setCategories((prev) =>
                           prev.includes(category)
                             ? prev.filter((c) => c !== category)
-                            : [...prev, category]
+                            : [...prev, category],
                         );
                       }}
                       disabled={previewBook !== null}
@@ -481,64 +343,22 @@ useEffect(() => {
           </div>
         </div>
 
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Leefwereldlabels
-          </label>
-          <div ref={dropdownRefLabel} style={{width: "100%"}}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Leefwereldlabels</label>
+          <div ref={dropdownRefLabel} className={styles.dropdownWrapper}>
             <button
               type="button"
               onClick={() => setOpenLabelDropdown(!openLabelDropdown)}
               disabled={previewBook !== null}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                fontSize: "1rem",
-                borderRadius: "4px",
-                border: "1px solid #8e2446",
-                background: "white",
-                color: "#8e2446",
-                minHeight: "20px",
-                textAlign: "left",
-                cursor: "pointer",
-                boxSizing: "border-box",
-              }}
+              className={styles.dropdownToggle}
             >
-              {labels.length !== 0
-                ? labels.join(", ")
-                : "Selecteer labels"}
+              {labels.length !== 0 ? labels.join(", ") : "Selecteer labels"}
             </button>
 
             {openLabelDropdown && (
-              <div
-                style={{
-                  borderRadius: "4px",
-                  border: "1px solid #8e2446",
-                  display: "flex",
-                  flexDirection: "column",
-                  width: "100%",
-                  backgroundColor: "white",
-                  marginTop: "0.5rem",
-                  boxSizing: "border-box",
-                }}
-              >
+              <div className={styles.dropdownPanel}>
                 {labelChoice.map((label) => (
-                  <label
-                    key={label}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      padding: "0.5rem 0.75rem",
-                      color: "black",
-                    }}
-                  >
+                  <label key={label} className={styles.checkboxLabel}>
                     <input
                       type="checkbox"
                       checked={labels.includes(label)}
@@ -546,7 +366,7 @@ useEffect(() => {
                         setLabels((prev) =>
                           prev.includes(label)
                             ? prev.filter((c) => c !== label)
-                            : [...prev, label]
+                            : [...prev, label],
                         );
                       }}
                       disabled={previewBook !== null}
@@ -559,58 +379,24 @@ useEffect(() => {
           </div>
         </div>
 
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Foto
-          </label>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Foto</label>
           <input
             type="text"
             value={thumbnail}
             onChange={(e) => setThumbnail(e.target.value)}
             placeholder="Url voor een foto van de voorpagina"
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #8e2446",
-              background: "white",
-              color: "#8e2446",
-              boxSizing: "border-box",
-            }}
+            className={styles.input}
             disabled={previewBook !== null}
           />
         </div>
 
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Taal
-          </label>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Taal</label>
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #8e2446",
-              background: "white",
-              color: "#8e2446",
-              boxSizing: "border-box",
-            }}
+            className={styles.select}
             disabled={previewBook !== null}
           >
             <option value="">Alle talen</option>
@@ -620,16 +406,8 @@ useEffect(() => {
           </select>
         </div>
 
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Rating
-          </label>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Rating</label>
           <input
             type="number"
             min="0"
@@ -637,70 +415,28 @@ useEffect(() => {
             step="0.1"
             value={rating}
             onChange={(e) => setRating(Number(e.target.value) || 0)}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #8e2446",
-              background: "white",
-              color: "#8e2446",
-              boxSizing: "border-box",
-            }}
+            className={styles.input}
             disabled={previewBook !== null}
           />
         </div>
 
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Jaar van uitgave
-          </label>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Jaar van uitgave</label>
           <input
             type="number"
             value={publishedYear}
             onChange={(e) => setPublishedYear(Number(e.target.value) || 0)}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #8e2446",
-              background: "white",
-              color: "#8e2446",
-              boxSizing: "border-box",
-            }}
+            className={styles.input}
             disabled={previewBook !== null}
           />
         </div>
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
-          >
-            Leesniveau
-          </label>
-         <select
+
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Leesniveau</label>
+          <select
             value={readingLevel}
             onChange={(e) => setReadingLevel(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              fontSize: "1rem",
-              borderRadius: "4px",
-              border: "1px solid #8e2446",
-              background: "white",
-              color: "#8e2446",
-              boxSizing: "border-box",
-            }}
+            className={styles.select}
             disabled={previewBook !== null}
           >
             <option value="">leesniveau</option>
@@ -710,83 +446,38 @@ useEffect(() => {
             <option value="D">D</option>
           </select>
         </div>
-        
-        <div>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: "bold",
-            }}
+
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Didactisch boek</label>
+          <select
+            value={String(didacticTag)}
+            onChange={(e) => setDidacticTag(e.target.value === "true")}
+            className={styles.select}
+            disabled={previewBook !== null}
           >
-            Didactisch boek
-          </label>
-            <select
-              value={String(didacticTag)}
-              onChange={(e) => setDidacticTag(e.target.value === "true")}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                fontSize: "1rem",
-                borderRadius: "4px",
-                border: "1px solid #8e2446",
-                background: "white",
-                color: "#8e2446",
-                boxSizing: "border-box",
-              }}
-              disabled={previewBook !== null}
-            >
-              <option value="true">Ja</option>
-              <option value="false">Nee</option>
-            </select>
-          </div>
+            <option value="true">Ja</option>
+            <option value="false">Nee</option>
+          </select>
+        </div>
 
         {!previewBook && (
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              cursor: loading ? "not-allowed" : "pointer",
-              backgroundColor: loading ? "#ccc" : "#8e2446",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              fontWeight: "bold",
-              flex: 1,
-              padding: "0.75rem",
-              maxWidth: "14rem",
-            }}
-          >
+          <button type="submit" disabled={loading} className={submitButtonClass}>
             {loading ? "Bezig..." : "Toon boek"}
           </button>
         )}
       </form>
 
       {previewBook && (
-        <div
-          style={{
-            marginTop: "2rem",
-            padding: "1.5rem",
-            border: "2px solid #8e2446",
-            borderRadius: "8px",
-            backgroundColor: "#f9f9f9",
-            color: "black",
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Preview van het boek:</h2>
+        <div className={styles.previewCard}>
+          <h2 className={styles.previewTitle}>Preview van het boek:</h2>
 
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-              <img
-                src={imgSrc}
-                alt="Cover"
-                onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
-                style={{
-                  width: "100px",
-                  height: "150px",
-                  objectFit: "cover",
-                  borderRadius: "4px",
-                }}
-              />
+          <div className={styles.previewContent}>
+            <img
+              src={imgSrc}
+              alt="Cover"
+              onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
+              className={styles.previewImage}
+            />
 
             <div>
               <p>
@@ -811,21 +502,12 @@ useEffect(() => {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
+          <div className={styles.actionRow}>
             <button
               type="button"
               onClick={handleConfirmAdd}
               disabled={loading}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                backgroundColor: "#28a745",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
+              className={styles.confirmButton}
             >
               {loading ? "Bezig..." : "Ja, Voeg toe aan Catalogus"}
             </button>
@@ -834,16 +516,7 @@ useEffect(() => {
               type="button"
               onClick={handleCancelPreview}
               disabled={loading}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                backgroundColor: "#dc3545",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
+              className={styles.cancelButton}
             >
               Annuleren
             </button>
@@ -851,27 +524,7 @@ useEffect(() => {
         </div>
       )}
 
-      {message && (
-        <div
-          style={{
-            marginTop: "2rem",
-            padding: "1rem",
-            backgroundColor: message.includes("succesvol")
-              ? "#d4edda"
-              : message.includes("Controleer")
-                ? "#cce5ff"
-                : "#f8d7da",
-            color: message.includes("succesvol")
-              ? "#155724"
-              : message.includes("Controleer")
-                ? "#004085"
-                : "#721c24",
-            borderRadius: "4px",
-          }}
-        >
-          {message}
-        </div>
-      )}
+      {message && <div className={messageClass}>{message}</div>}
     </>
   );
 }
