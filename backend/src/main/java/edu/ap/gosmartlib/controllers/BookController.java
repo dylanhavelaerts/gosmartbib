@@ -188,6 +188,9 @@ public class BookController {
         }
     }
 
+    /**
+     * Vervangt het boek met gegeven ID met een bookDTO (voor aanpassing)
+     */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
         try {
@@ -200,6 +203,9 @@ public class BookController {
         }
     }
 
+    /**
+     * Voegt boek toe aan database
+     */
     @PostMapping("/add")
     public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request) {
         try {

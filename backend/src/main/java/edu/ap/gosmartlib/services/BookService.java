@@ -325,6 +325,9 @@ public class BookService {
         book.setRating(request.rating() != null ? request.rating() : 0.0);
         book.setPublishedYear(request.publishedYear());
         book.setSpotlight(Boolean.TRUE.equals(request.spotlight()));
+        // Maakt random ISBN aan
+        // Enorm kleine kans voor een dubbele ID
+        // In dat geval, gewoon opnieuw indienen
         book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
 
         BookEntity saved = bookRepository.saveAndFlush(book);

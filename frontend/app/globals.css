@@ -78,7 +78,7 @@ nav button:hover {
 }
 main {
   padding: 1rem;
-  flex: 1; /* this pushes the footer down */
+  flex: 1; /* Duwt de footer naar beneden */
 }
 
 @media (min-width: 768px) {
