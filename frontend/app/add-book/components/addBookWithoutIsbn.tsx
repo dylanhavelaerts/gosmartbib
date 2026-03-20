@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Book } from "../../interfaces/Book";
+import { Book, BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
 import styles from "./addBookForm.module.css";
 
 export default function AddBookWithoutIsbn() {
@@ -25,45 +25,6 @@ export default function AddBookWithoutIsbn() {
   const [labels, setLabels] = useState<string[]>([]);
   const [readingLevel, setReadingLevel] = useState("");
   const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
-
-  const categoryChoice = [
-    "Fictie algemeen",
-    "Literaire roman",
-    "Spanning / thriller",
-    "Detective / misdaad",
-    "Fantasy",
-    "Science fiction",
-    "Dystopie",
-    "Historische roman",
-    "Romantiek",
-    "Coming-of-age",
-    "Avontuur",
-    "Oorlog & conflict",
-    "Horror",
-    "Humor",
-    "Graphic Novel / strip",
-    "Poëzie",
-    "Non-fictie algemeen",
-  ];
-
-  const labelChoice = [
-    "Liefde & relatie",
-    "Vriendschap",
-    "Identiteit & zelfbeeld",
-    "Gender & seksualiteit",
-    "Diversiteit & inclusie",
-    "Mentale gezondheid",
-    "Rouw & verlies",
-    "Familie",
-    "School & prestatiedruk",
-    "Sociale media",
-    "Migratie & afkomst",
-    "Armoede & ongelijkheid",
-    "Macht & onrecht",
-    "Avontuur & ontdekking",
-    "Overleven",
-    "Toekomst & technologie",
-  ];
 
   const handleAuthorChange = (index: number, value: string) => {
     const updatedAuthors = [...authors];
@@ -321,7 +282,7 @@ export default function AddBookWithoutIsbn() {
 
             {openDropdown && (
               <div className={styles.dropdownPanel}>
-                {categoryChoice.map((category) => (
+                {BOOK_CATEGORIES.map((category) => (
                   <label key={category} className={styles.checkboxLabel}>
                     <input
                       type="checkbox"
@@ -357,7 +318,7 @@ export default function AddBookWithoutIsbn() {
 
             {openLabelDropdown && (
               <div className={styles.dropdownPanel}>
-                {labelChoice.map((label) => (
+                {BOOK_LABELS.map((label) => (
                   <label key={label} className={styles.checkboxLabel}>
                     <input
                       type="checkbox"

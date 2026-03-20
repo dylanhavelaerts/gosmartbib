@@ -33,3 +33,22 @@ export const BOOK_CATEGORIES = [
   "Poëzie",
   "Non-fictie algemeen",
 ];
+
+export const BOOK_LABELS = [
+  "Liefde & relatie",
+  "Vriendschap",
+  "Identiteit & zelfbeeld",
+  "Gender & seksualiteit",
+  "Diversiteit & inclusie",
+  "Mentale gezondheid",
+  "Rouw & verlies",
+  "Familie",
+  "School & prestatiedruk",
+  "Sociale media",
+  "Migratie & afkomst",
+  "Armoede & ongelijkheid",
+  "Macht & onrecht",
+  "Avontuur & ontdekking",
+  "Overleven",
+  "Toekomst & technologie",
+];
