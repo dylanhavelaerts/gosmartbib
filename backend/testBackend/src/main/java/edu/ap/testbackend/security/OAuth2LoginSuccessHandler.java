@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -41,6 +42,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
             HttpSession session = request.getSession(true);
             session.setAttribute("authenticated", true);
+
+            log.info("Session ID: {}", session.getId());
+            log.info("Session is new: {}", session.isNew());
+            log.info("Response headers: {}", response.getHeaderNames());
+            log.info("Set-Cookie header: {}", response.getHeader("Set-Cookie"));
 
             String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl : "/";
             String targetUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
