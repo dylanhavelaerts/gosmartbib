@@ -42,6 +42,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             HttpSession session = request.getSession(true);
             session.setAttribute("authenticated", true);
 
+            log.info("Session ID: {}", session.getId());
+            log.info("Session is new: {}", session.isNew());
+            log.info("Response headers: {}", response.getHeaderNames());
+            log.info("Set-Cookie header: {}", response.getHeader("Set-Cookie"));
+
             String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl : "/";
             String targetUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
