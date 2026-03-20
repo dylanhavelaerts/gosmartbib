@@ -19,7 +19,7 @@ public class SchoolEntity {
     @Column(nullable = false)
     private String name;
 
-    // Zelfe scholendomein????
+    // Zelfde scholendomein????
     @Column(nullable = false, unique = true)
     private String domain; // !!! "go-antwerpen.smartschool.be" of "school1.smartschool.be"
 

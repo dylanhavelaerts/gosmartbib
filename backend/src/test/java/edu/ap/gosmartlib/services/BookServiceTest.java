@@ -180,7 +180,7 @@ class BookServiceTest {
         assertThrows(RuntimeException.class, () -> bookService.getAllBooks(0, 20));
     }
 
-    // tests for invalid page/size
+    // tests voor invalid page/size
     @Test
     void givenNegativePage_whenGetAllBooks_thenThrowsException() {
         assertThrows(RuntimeException.class, () -> bookService.getAllBooks(-1, 20));
@@ -738,7 +738,7 @@ class BookServiceTest {
 
         assertEquals("Refactoring", result.title());
         assertEquals(List.of("Martin Fowler"), result.authors());
-        assertEquals("Prentice Hall", result.publisher()); // unchanged
+        assertEquals("Prentice Hall", result.publisher()); // onveranderd
         verify(bookRepository, times(1)).save(book);
     }
 
@@ -1081,7 +1081,7 @@ class BookServiceTest {
         assertTrue(entityToSave.getIsbn().matches("^NOISBN-[0-9a-fA-F\\-]{36}$"));
     }
 
-    // Helperfunctions
+    // Helperfuncties
 
     private MockMultipartFile createExcelFile(String[][] rows) throws IOException {
         try (Workbook workbook = new XSSFWorkbook();

@@ -53,7 +53,7 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         List<Map<String, Object>> groups = (List<Map<String, Object>>) groupInfoResponse.get("groups");
         List<Map<String, Object>> parentGroups = (List<Map<String, Object>>) groupInfoResponse.get("parentGroups");
 
-        // proper formatting
+        // goede formatting
         if (groups != null) {
             log.info("  groups:");
             groups.forEach(group -> group.forEach((k, v) -> log.info("    {} = {}", k, v)));

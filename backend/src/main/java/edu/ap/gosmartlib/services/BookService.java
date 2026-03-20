@@ -329,7 +329,7 @@ public class BookService {
 
         BookEntity saved = bookRepository.saveAndFlush(book);
 
-        // Reload so the DB-generated ISBN is present in the response DTO
+        // Reload zo dat de DB-gegenereerde ISBN in de response DTO zit
         BookEntity reloaded = bookRepository.findById(saved.getId())
                 .orElseThrow(() -> new IllegalStateException(
                         "Boek werd opgeslagen maar kon niet opnieuw geladen worden"));
@@ -370,7 +370,7 @@ public class BookService {
                 book.getAvailableCopies());
     }
 
-    // Helper functions
+    // Helper functies
     private BookEntity buildBookEntityFromGoogle(String isbn) {
         String url = UriComponentsBuilder
                 .fromUriString(googleBooksApiUrl)

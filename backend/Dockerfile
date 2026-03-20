@@ -7,10 +7,11 @@ COPY src ./src
 
 RUN mvn clean package -DskipTests -Dmaven.test.skip=true
 
-# Debug: List what's in target directory
+# Debug: Toont wat er in target directory zit
 RUN ls -la target/
 
 EXPOSE 8080
 
-# Use a more robust approach to find and run the jar
+
+# Gebruikt een robuustere aanpak om de jar te vinden en te runnen
 CMD ["sh", "-c", "java -jar target/*.jar"]

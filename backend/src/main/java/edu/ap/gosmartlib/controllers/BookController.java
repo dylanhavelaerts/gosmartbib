@@ -97,16 +97,25 @@ public class BookController {
         return bookService.getBookById(id);
     }
 
+    /**
+     * Geeft de 4 boeken terug met de hoogste ID en spotlight = true
+     */
     @GetMapping("/spotlight")
     public List<BookDTO> getBooksInSpotlight() {
         return bookService.getTop4BooksInSpotlight();
     }
 
+    /**
+     * Geeft alle boeken terug met spotlight = true
+     */
     @GetMapping("/spotlight/all")
     public List<BookDTO> getAllBooksInSpotlight() {
         return bookService.getAllBooksInSpotlight();
     }
 
+    /**
+     * Geeft de 4 boeken terug met de hoogste ID
+     */
     @GetMapping("/latest")
     public List<BookDTO> getLatestBooks() {
         return bookService.getLatestBooks();
