@@ -1,0 +1,48 @@
+.mockRoleSwitcher {
+  position: relative;
+  display: inline-block;
+  margin-left: auto; /* pushes it to the right */
+}
+
+.mockRoleSwitcherButton {
+  background: none;
+  border: none;
+  padding: 14px 0;
+  font-size: clamp(0.65rem, 1.5vw, 1rem);
+  color: #e74c3c;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mockRoleSwitcherButton:hover {
+  color: #c0392b;
+  border-bottom: #c0392b solid 2px;
+  padding-bottom: 12px;
+}
+
+.mockRoleDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 1000;
+  min-width: 180px;
+}
+
+.mockRoleOption {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  color: black;
+  font-size: clamp(0.65rem, 1.5vw, 1rem);
+}
+
+.mockRoleOption:hover {
+  color: #8e1f42;
+}
+
+.mockRoleOption:last-child {
+  border-bottom: none;
+}
