@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/public/**",
                                 "/auth/login",
+                                "/auth/mock-role/**",  // TIJDELIJK!! Als rolbeheer beschikbaar is voor bibbeheerder moet dit weg
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/login/**",

@@ -1,5 +1,9 @@
 package edu.ap.testbackend.controllers;
 
+import edu.ap.testbackend.dto.UserDTO;
+import edu.ap.testbackend.entities.UserEntity;
+import edu.ap.testbackend.repositories.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,16 +12,20 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     @Value("${app.frontend.base-url}")
     private String frontendUrl;
+
+    private final UserRepository userRepository;
 
     /**
      * Redirect de gebruiker naar de Smartschool OAuth2 loginpagina. 
@@ -34,15 +42,15 @@ public class AuthController {
      * Endpoint om de informatie van de ingelogde gebruiker op te halen. 
      */
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> me(@AuthenticationPrincipal OAuth2User user) {
-        if (user == null) {
+    public ResponseEntity<UserDTO> me(@AuthenticationPrincipal OAuth2User oauth2User) {
+        if (oauth2User == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        return ResponseEntity.ok(Map.of(
-                "userID", user.getAttribute("userID"),
-                "platform", user.getAttribute("platform"),
-                "isMainAccount", user.getAttribute("isMainAccount")
-        ));
+        String uid = oauth2User.getAttribute("userID");
+        UserEntity user = userRepository.findBySmartschoolUid(uid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        return ResponseEntity.ok(UserDTO.from(user));
     }
 }
