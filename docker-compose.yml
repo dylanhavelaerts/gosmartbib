@@ -52,23 +52,23 @@ services:
       - backend
 
   backend:
-    build: ./backend/testBackend
+    build: ./backend
     container_name: backend
     restart: on-failure
     environment:
       SPRING_PROFILES_ACTIVE: prod
 
       SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/gosmartlib
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin
 
       SERVER_SERVLET_CONTEXT_PATH: /api
       SERVER_FORWARD_HEADERS_STRATEGY: framework
 
-      APIKEY: ${APIKEY}
-
       SMARTSCHOOL_CLIENT_ID: ${SMARTSCHOOL_CLIENT_ID}
       SMARTSCHOOL_CLIENT_SECRET: ${SMARTSCHOOL_CLIENT_SECRET}
+    secrets:
+      - GOOGLE_BOOKS_API_KEY
+      - DB_USERNAME
+      - DB_PASSWORD
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`gosmartbib.tech`) && PathPrefix(`/api`)"
@@ -86,10 +86,14 @@ services:
     container_name: database
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: Root
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/DB_ROOT_PASSWORD
       MYSQL_DATABASE: gosmartlib
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin
+      MYSQL_USER_FILE: /run/secrets/DB_USERNAME
+      MYSQL_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+    secrets:
+      - DB_ROOT_PASSWORD
+      - DB_USERNAME
+      - DB_PASSWORD
     ports:
       - "3307:3306"
     volumes:
@@ -107,3 +111,13 @@ networks:
 volumes:
   mysql_data:
     driver: local
+
+secrets:
+  GOOGLE_BOOKS_API_KEY:
+    environment: GOOGLE_BOOKS_API_KEY
+  DB_USERNAME:
+    environment: DB_USERNAME
+  DB_PASSWORD:
+    environment: DB_PASSWORD
+  DB_ROOT_PASSWORD:
+    environment: DB_ROOT_PASSWORD
