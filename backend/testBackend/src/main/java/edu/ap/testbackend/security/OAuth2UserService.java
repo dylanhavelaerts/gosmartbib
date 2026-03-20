@@ -12,6 +12,7 @@ import org.springframework.web.client.RestClient;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -46,8 +47,27 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         Map<String, Object> groupInfoResponse = fetchGroupInfo(platform, accessToken);
 
         log.info("=== GROUPINFO ===");
-        groupInfoResponse.forEach((k, v) -> log.info("  {} = {}", k, v));
-        log.info("==================");
+
+        List<Map<String, Object>> groups = (List<Map<String, Object>>) groupInfoResponse.get("groups");
+        List<Map<String, Object>> parentGroups = (List<Map<String, Object>>) groupInfoResponse.get("parentGroups");
+
+
+        // proper formatting
+        if (groups != null) {
+            log.info("  groups:");
+            groups.forEach(group ->
+                    group.forEach((k, v) -> log.info("    {} = {}", k, v))
+            );
+        }
+
+        if (parentGroups != null) {
+            log.info("  parentGroups:");
+            parentGroups.forEach(group ->
+                    group.forEach((k, v) -> log.info("    {} = {}", k, v))
+            );
+        }
+
+        log.info("=================");
 
         // Stap 3. voeg de twee bronnen samen in memory
         Map<String, Object> mergedAttributes = new HashMap<>(fulluserinfo.getAttributes());
