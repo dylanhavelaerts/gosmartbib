@@ -28,6 +28,7 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final OAuth2AuthorizationRequestResolver pkceDisabledResolver;
     private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
+    private final OAuth2UserService OAuth2UserService;
 
     @Value("${app.frontend.base-url}")
     private String frontendUrl;
@@ -49,6 +50,9 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(OAuth2UserService)
+                        )
                         .authorizationEndpoint(auth -> auth
                                 .authorizationRequestResolver(pkceDisabledResolver)
                                 .authorizationRequestRepository(authorizationRequestRepository)
