@@ -13,8 +13,6 @@ export default function Home() {
   const [results, setResults] = useState<Book[]>([]);
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [showConfirm, setShowConfirm] = useState<boolean>(false);
-  const [deleting, setDeleting] = useState<boolean>(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -96,31 +94,6 @@ export default function Home() {
     });
   };
 
-  /**
-   * Probeer de geselecteerde boeken te verwijderen. Stuur voor elk geselecteerd boek een DELETE request naar de API.
-   */
-  const tryDelete = async () => {
-    setDeleting(true);
-
-    try {
-      await Promise.all(
-        Array.from(selectedIds).map((id) =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`, {
-            method: "DELETE",
-          }),
-        ),
-      );
-
-      setBooks((prev) => prev.filter((b) => !selectedIds.has(b.id)));
-      setSelectedIds(new Set());
-      setShowConfirm(false);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setDeleting(false);
-    }
-  };
-
   const setSpotlight = async () => {
     try {
       await Promise.all(
@@ -182,11 +155,6 @@ export default function Home() {
         </li>
 
         {selectedIds.size > 0 && (
-          <li onClick={() => setShowConfirm(true)}>
-            Verwijder {selectedIds.size} boek(en)
-          </li>
-        )}
-        {selectedIds.size > 0 && (
           <li onClick={() => setSpotlight()}>
             Voeg {selectedIds.size} boek(en) toe aan kijker
           </li>
@@ -203,27 +171,6 @@ export default function Home() {
           />
         ))}
       </div>
-
-      {showConfirm && (
-        <div className="modalOverlay">
-          <div className="modalBox">
-            <p>Ben je zeker dat je deze wilt verwijderen?</p>
-            <p>Deze actie is onterugkeerbaar!</p>
-            <div>
-              <button onClick={() => setShowConfirm(false)} disabled={deleting}>
-                Ga terug
-              </button>
-              <button
-                className="confirmButton"
-                onClick={tryDelete}
-                disabled={deleting}
-              >
-                {deleting ? "deleting..." : "Bevestig"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
