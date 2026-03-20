@@ -1,8 +1,11 @@
 package edu.ap.testbackend.security;
 
+import edu.ap.testbackend.entities.UserEntity;
+import edu.ap.testbackend.services.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -16,10 +19,13 @@ import java.util.Map;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     // pulls http://localhost:3000 lokaal, of https://gosmartbib.tech in productie
     @Value("${app.frontend.base-url}")
     private String frontendUrl;
+
+    private final UserService userService;
 
     /**
      * Deze methode wordt aangeroepen na een succesvolle OAuth2-authenticatie. 
@@ -37,7 +43,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
             log.info("Groups available in success handler: {}", groups);
 
-            // TODO : Na inladen de nodige info opslagen in de database
+            UserEntity user = userService.syncUser(oauth2User);
+            log.info("User {} succesvol ingelogd met rol: {}", user.getSmartschoolUid(), user.getRole());
 
             String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl : "/";
             String targetUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";

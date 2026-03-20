@@ -1,0 +1,130 @@
+package edu.ap.testbackend.security.mocksecurity;
+
+import edu.ap.testbackend.repositories.UserRepository;
+import edu.ap.testbackend.util.UserRoles;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.web.bind.annotation.*;
+import edu.ap.testbackend.services.UserService;
+import lombok.RequiredArgsConstructor;
+
+import java.util.*;
+
+@RestController
+@RequestMapping("/auth")
+@RequiredArgsConstructor
+public class LocalAuthController {
+
+    private final UserService userService;
+    private final UserRepository userRepository;
+
+    @PostMapping("/mock-role/{role}")
+    public ResponseEntity<String> switchRole(@PathVariable String role,
+                                             HttpServletRequest request) {
+        Map<String, Object> attributes = buildMockAttributes(role);
+
+        if (attributes == null) {
+            return ResponseEntity.badRequest().body("Unknown role: " + role);
+        }
+
+        OAuth2User mockUser = new DefaultOAuth2User(
+                Collections.emptyList(),
+                attributes,
+                "userID"
+        );
+
+        OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
+                mockUser,
+                Collections.emptyList(),
+                "smartschool"
+        );
+
+        // Clear de bestaande sessie voor een nieuwe gebruiker te mocken
+        HttpSession session = request.getSession(false);
+        if (session != null) session.invalidate();
+        request.getSession(true);
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        userService.syncUser(mockUser);
+
+        if (role.equalsIgnoreCase("bibliotheekbeheerder")) {
+            userRepository.findBySmartschoolUid("mock-librarian-local")
+                    .ifPresent(user -> {
+                        user.setRole(UserRoles.BIBLIOTHEEKBEHEERDER);
+                        userRepository.save(user);
+                    });
+        }
+
+        return ResponseEntity.ok("Switched to role: " + role);
+    }
+
+    private Map<String, Object> buildMockAttributes(String role) {
+        return switch (role.toLowerCase()) {
+            case "leerling" -> {
+                Map<String, Object> attrs = new HashMap<>();
+                attrs.put("userID",        "mock-student-local");
+                attrs.put("name",          "Jan");
+                attrs.put("surname",       "Janssen");
+                attrs.put("fullname",      "Janssen Jan");
+                attrs.put("username",      "janssej");
+                attrs.put("email",         "jan.janssen@student.ap.be");
+                attrs.put("basisrol",      "Leerling");
+                attrs.put("status",        "actief");
+                attrs.put("platform",      "https://aphogeschool.smartschool.be");
+                attrs.put("isMainAccount", 1);
+                attrs.put("isCoAccount",   0);
+                attrs.put("groups", List.of(
+                        Map.of("groupID", "mock-group-1", "name", "2ITSOF2", "description", "Bachelor IT software - 2")
+                ));
+                attrs.put("parentGroups", List.of(
+                        Map.of("groupID", "mock-parent-1", "name", "2de jaars", "description", "2de jaars")
+                ));
+                yield attrs;
+            }
+            case "leerkracht" -> {
+                Map<String, Object> attrs = new HashMap<>();
+                attrs.put("userID",        "mock-teacher-local");
+                attrs.put("name",          "Petra");
+                attrs.put("surname",       "Peeters");
+                attrs.put("fullname",      "Peeters Petra");
+                attrs.put("username",      "peetersP");
+                attrs.put("email",         "petra.peeters@ap.be");
+                attrs.put("basisrol",      "Leerkracht");
+                attrs.put("status",        "actief");
+                attrs.put("platform",      "https://aphogeschool.smartschool.be");
+                attrs.put("isMainAccount", 1);
+                attrs.put("isCoAccount",   0);
+                attrs.put("groups", List.of(
+                        Map.of("groupID", "mock-group-1", "name", "2ITSOF2", "description", "Bachelor IT software - 2"),
+                        Map.of("groupID", "mock-group-2", "name", "2ITSOF1", "description", "Bachelor IT software - 1")
+                ));
+                attrs.put("parentGroups", List.of());
+                yield attrs;
+            }
+            case "bibliotheekbeheerder" -> {
+                Map<String, Object> attrs = new HashMap<>();
+                attrs.put("userID",        "mock-librarian-local");
+                attrs.put("name",          "Lieve");
+                attrs.put("surname",       "Lemmens");
+                attrs.put("fullname",      "Lemmens Lieve");
+                attrs.put("username",      "lemmensL");
+                attrs.put("email",         "lieve.lemmens@ap.be");
+                attrs.put("basisrol",      "Bibliotheekbeheerder");
+                attrs.put("status",        "actief");
+                attrs.put("platform",      "https://aphogeschool.smartschool.be");
+                attrs.put("isMainAccount", 1);
+                attrs.put("isCoAccount",   0);
+                attrs.put("groups",        List.of());
+                attrs.put("parentGroups",  List.of());
+                yield attrs;
+            }
+            default -> null;
+        };
+    }
+}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
+import MockRoleSwitcher from "./mocking/mockRoleSwitcher";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -22,15 +23,12 @@ export default function RootLayout({
           /></Link>
         </header>
         <nav id="headerNav">
-          <Link href="/">
-            <button>Startpagina</button>
-          </Link>
-          <Link href="/catalog">
-            <button>Catalogus</button>
-          </Link>
+          <Link href="/"><button>Startpagina</button></Link>
+          <Link href="/catalog"><button>Catalogus</button></Link>
           <Link href="/spotlight"><button>In de kijker</button></Link>
           <Link href="/"><button>Mijn uitleningen</button></Link>
           <Link href="/"><button>Mijn leeslijst & favorieten</button></Link>
+          <MockRoleSwitcher />
         </nav>
         <div id="backgroundImage"></div>
         {children}
