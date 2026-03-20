@@ -10,6 +10,7 @@ public record UserDTO(
         Long id,
         UserRoles role,
         SchoolDTO school,
+        String smartschoolUid,
         Set<SchoolClassDTO> classes
 ) {
     public static UserDTO from(UserEntity user) {
@@ -17,6 +18,7 @@ public record UserDTO(
                 user.getId(),
                 user.getRole(),
                 SchoolDTO.from(user.getSchool()),
+                user.getSmartschoolUid(),
                 user.getClasses().stream()
                         .map(SchoolClassDTO::from)
                         .collect(Collectors.toSet())

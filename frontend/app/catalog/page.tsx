@@ -6,6 +6,7 @@ import { Book, BOOK_CATEGORIES } from "../interfaces/Book";
 import BookCard from "./bookCard";
 import Pagination from "./pagination";
 import "./bookList.css";
+import { useAuth } from "../context/AuthContext";
 
 export default function Home() {
   // -- States ------------------------------------------------------------------------------------------------------------------------------
@@ -36,6 +37,7 @@ export default function Home() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const { user } = useAuth();
 
   // -- URL zoek aspect --------------------------------------------------------------------------------------------------------------------
   // Leest de ?search query param bij het laden van de pagina en zet deze als zoekquery.
@@ -266,6 +268,18 @@ export default function Home() {
           >
             Naar admin pagina
           </li>
+          {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
+            user?.role === "ADMIN") && (
+            <li
+              className={activeTab === "Beheer catalogus" ? "active" : ""}
+              onClick={() => {
+                setActiveTab("Beheer catalogus");
+                router.push("/manageCatalog");
+              }}
+            >
+              Beheer catalogus
+            </li>
+          )}
         </ul>
 
         {/* Toolbar - totaal paginas en aantal boeken kiezen*/}

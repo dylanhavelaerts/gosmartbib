@@ -85,6 +85,15 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public UserRoles getRoleBySmartschoolUid(String smartschoolUid) {
+        return userRepository.findBySmartschoolUid(smartschoolUid)
+                .map(UserEntity::getRole)
+                .orElseGet(() -> {
+                    log.warn("No user found for smartschoolUid: {}. Defaulting to STUDENT.", smartschoolUid);
+                    return UserRoles.STUDENT;
+                });
+    }
+
     // Maakt van Smartschool groups een SchoolClassEntity
     private Set<SchoolClassEntity> resolveClasses(
             List<Map<String, Object>> groups,
@@ -102,7 +111,7 @@ public class UserService {
         Set<SchoolClassEntity> resolved = new HashSet<>();
         for (Map<String, Object> group : groups) {
             String groupId = (String) group.get("groupID");
-            String name    = (String) group.get("name");
+            String name = (String) group.get("name");
 
             SchoolClassEntity schoolClass = schoolClassRepository.findBySmartschoolGroupId(groupId)
                     .orElseGet(() -> {

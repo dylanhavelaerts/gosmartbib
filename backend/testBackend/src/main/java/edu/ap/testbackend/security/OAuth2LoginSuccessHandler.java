@@ -9,6 +9,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -46,6 +50,17 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             UserEntity user = userService.syncUser(oauth2User);
             log.info("User {} succesvol ingelogd met rol: {}", user.getSmartschoolUid(), user.getRole());
 
+            List<GrantedAuthority> authorities = List.of(
+                    new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+            );
+
+            OAuth2AuthenticationToken enriched = new OAuth2AuthenticationToken(
+                    oauth2User,
+                    authorities,
+                    ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId()
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(enriched);
             String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl : "/";
             String targetUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
             getRedirectStrategy().sendRedirect(request, response, targetUrl);

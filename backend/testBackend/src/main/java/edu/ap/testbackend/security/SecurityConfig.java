@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
@@ -21,6 +23,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableMethodSecurity // enabled preauthorisation samen met de authorized URL zorgt dit voor een dubbele muur beveiliging
 @Profile("prod") // Security config voor server in productie, met echte Smartschool OAuth2 login en CORS ingesteld voor frontend
 @Slf4j
 public class SecurityConfig {
@@ -47,7 +50,11 @@ public class SecurityConfig {
                                 "/login/oauth2/**",
                                 "/login/**",
                                 "/error"
-                        ).permitAll()
+                        ).hasAnyRole("BIBLIOTHEEKBEHEERDER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/books/**")
+                        .hasAnyRole("BIBLIOTHEEKBEHEERDER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/books/{id}")
+                        .hasAnyRole("BIBLIOTHEEKBEHEERDER", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
