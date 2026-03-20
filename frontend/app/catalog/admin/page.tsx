@@ -115,7 +115,7 @@ export default function Home() {
       setSelectedIds(new Set());
       setShowConfirm(false);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     } finally {
       setDeleting(false);
     }
@@ -135,7 +135,7 @@ export default function Home() {
       );
       setSelectedIds(new Set());
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
