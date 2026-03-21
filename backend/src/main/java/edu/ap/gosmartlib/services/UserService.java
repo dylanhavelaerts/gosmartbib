@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.services;
 
+import edu.ap.gosmartlib.dto.UserDTO;
 import edu.ap.gosmartlib.entities.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -86,6 +87,15 @@ public class UserService {
         }
 
         return userRepository.save(user);
+    }
+
+    //
+    @Transactional(readOnly = true)
+    public UserDTO getCurrentUser(String uid) {
+        UserEntity user = userRepository.findDetailedBySmartschoolUid(uid)
+                .orElseThrow(() -> new RuntimeException("Gebruiker niet gevonden"));
+
+        return UserDTO.from(user);
     }
 
     // Maakt van Smartschool groups een SchoolClassEntity

@@ -1,8 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.UserDTO;
-import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -12,7 +11,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.view.RedirectView;
 
 @RestController
@@ -23,7 +21,7 @@ public class AuthController {
     @Value("${app.frontend.base-url}")
     private String frontendUrl;
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     /**
      * Redirect de gebruiker naar de Smartschool OAuth2 loginpagina.
@@ -45,9 +43,6 @@ public class AuthController {
         }
 
         String uid = oauth2User.getAttribute("userID");
-        UserEntity user = userRepository.findBySmartschoolUid(uid)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-        return ResponseEntity.ok(UserDTO.from(user));
+        return ResponseEntity.ok(userService.getCurrentUser(uid));
     }
 }
