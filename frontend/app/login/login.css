@@ -1,16 +1,16 @@
-/* ── Background overlay ── */
+/* ── Achtergrond overlay ── */
 .loginBackground {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background-image: url('/backgroundImage.jpg');
+  background-image: url("/backgroundImage.jpg");
   background-repeat: repeat;
   background-size: 500px auto;
   filter: grayscale(1) blur(1px);
   transform: scale(1.02);
 }
 
-/* ── Page wrapper ── */
+/* ── Pagina wrapper ── */
 .loginPage {
   position: fixed;
   inset: 0;
@@ -119,7 +119,7 @@
 }
 
 @media (max-height: 500px) {
-  /* Landscape on small phones */
+  /* Landscape op kleine gsms */
   .loginPage {
     align-items: flex-start;
     overflow-y: auto;

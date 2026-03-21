@@ -1,6 +1,7 @@
 import { Book } from "../interfaces/Book";
 import Link from "next/link";
 import "./bookCard.css";
+import { useState } from "react";
 
 interface Props {
   book: Book;
@@ -15,6 +16,8 @@ export default function BookCard({
   onToggle,
   withCheckbox = true,
 }: Props) {
+  const [imgSrc, setImgSrc] = useState(book.thumbnail || "/No-Image-Available-Placeholder.png")
+
   return (
     <div className={`bookCard ${isSelected ? "selected" : ""}`}>
       {withCheckbox && (
@@ -27,7 +30,7 @@ export default function BookCard({
       )}
       <Link href={`/detailpage/${book.id}`}>
         <div className="bookCover">
-          <img src={book.thumbnail} alt={book.title} />
+          <img src={imgSrc} alt={book.title} onError={() => setImgSrc("/No-Image-Available-Placeholder.png")} />
         </div>
       </Link>
 

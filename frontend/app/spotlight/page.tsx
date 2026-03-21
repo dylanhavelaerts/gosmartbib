@@ -34,7 +34,7 @@ export default function Home() {
     try {
       await Promise.all(
         Array.from(selectedIds).map((id) =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}/spotlight?value=false`, {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}/spotlight?value=false`, {
             method: "PATCH",
           }),
         ),
@@ -44,10 +44,10 @@ export default function Home() {
       setBooks((prev) => prev.filter((b) => !selectedIds.has(b.id)));
       setSelectedIds(new Set());
     } catch (error) {
-      console.log(error);
+      console.error(error);
     } finally {
-  };
-}
+    };
+  }
 
 
   return (
@@ -55,7 +55,7 @@ export default function Home() {
       <h1>In de kijker</h1>
       <ul>
         {selectedIds.size > 0 && (
-          <li onClick={() => tryDelete() }>
+          <li onClick={() => tryDelete()}>
             Verwijder {selectedIds.size} boek(en) uit de kijker
           </li>
         )}

@@ -99,7 +99,7 @@ export default function Home() {
       await Promise.all(
         Array.from(selectedIds).map((id) =>
           fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/books/book/${id}/spotlight?value=true`,
+            `${process.env.NEXT_PUBLIC_API_URL}/books/${id}/spotlight?value=true`,
             {
               method: "PATCH",
             },
@@ -108,7 +108,7 @@ export default function Home() {
       );
       setSelectedIds(new Set());
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
