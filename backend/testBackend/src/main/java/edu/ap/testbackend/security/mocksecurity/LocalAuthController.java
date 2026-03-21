@@ -45,6 +45,8 @@ public class LocalAuthController {
                 "smartschool"
         );
 
+        userService.syncUser(mockUser);
+
         // Clear de bestaande sessie voor een nieuwe gebruiker te mocken
         HttpSession session = request.getSession(false);
         if (session != null) session.invalidate();
