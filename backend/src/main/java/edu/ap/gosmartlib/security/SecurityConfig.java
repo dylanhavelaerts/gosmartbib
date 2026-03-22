@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
@@ -20,6 +21,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 @Profile("prod") // Security config voor server in productie, met echte Smartschool OAuth2 login
                  // en CORS ingesteld voor frontend
@@ -43,9 +45,6 @@ public class SecurityConfig {
                                                 .requestMatchers(
                                                                 "/public/**",
                                                                 "/auth/login",
-                                                                "/auth/mock-role/**", // TIJDELIJK!! Als rolbeheer
-                                                                                      // beschikbaar is voor
-                                                                                      // bibbeheerder moet dit weg
                                                                 "/oauth2/**",
                                                                 "/login/oauth2/**",
                                                                 "/login/**",

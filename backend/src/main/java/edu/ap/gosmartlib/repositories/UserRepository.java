@@ -13,10 +13,23 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findBySmartschoolUid(String smartschoolUid);
 
     /**
-     * Laad de hele user met alle details
+     * Laad de hele user met alle nodige details
      */
     @EntityGraph(attributePaths = { "school", "classes" })
     Optional<UserEntity> findDetailedBySmartschoolUid(String smartschoolUid);
+
+    /**
+     * Vindt alle users van een zekere school
+     */
+    @EntityGraph(attributePaths = { "school", "classes" })
+    List<UserEntity> findAllBySchool_IdOrderBySmartschoolUidAsc(Long schoolId);
+
+    /**
+     * Vindt één specifieke user van een zekere school (scope zo klein mogelijk
+     * houden)
+     */
+    @EntityGraph(attributePaths = { "school", "classes" })
+    Optional<UserEntity> findByIdAndSchool_Id(Long id, Long schoolId);
 
     List<UserEntity> findAllByActiveIsFalseAndScheduledDeletionAtBefore(LocalDateTime cutoff);
 }

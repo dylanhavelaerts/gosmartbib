@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 
+@Profile("local")
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
