@@ -86,7 +86,7 @@ export default function AdminUserPage() {
     }
 
     return (
-        <div>
+        <main>
             {error && <p>{error}</p>}
 
             {!error && me?.role === "BIBLIOTHEEKBEHEERDER" && (
@@ -127,13 +127,15 @@ export default function AdminUserPage() {
                                         )) }
                                             </select>
                                             </td>
-                                        <td><button>Save</button></td>
+                                        <td>{changed && (
+                                            <button>Opslaan</button>
+                                        )}</td>
                                     </tr>
                                 )
                             })}
                         </tbody>
                     </table>
                 </div>)}
-        </div>
+        </main>
     )
 }
