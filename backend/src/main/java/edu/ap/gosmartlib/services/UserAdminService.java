@@ -25,7 +25,7 @@ public class UserAdminService {
 
         Long schoolId = actor.getSchool().getId();
 
-        return userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(schoolId)
+        return userRepository.findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(schoolId)
                 .stream()
                 .map(AdminUserDTO::from)
                 .toList();

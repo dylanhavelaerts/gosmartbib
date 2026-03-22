@@ -32,15 +32,17 @@ class UserAdminServiceTest {
     private UserAdminService userAdminService;
 
     @Test
-    void givenBibbeheerderExists_whenListUsersForAdmin_thenReturnsMappedUsersFromSameSchool() {
-        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
-        UserEntity student = buildUser(4L, "student-uid", UserRoles.STUDENT, 100L, "GO! School");
-        UserEntity teacher = buildUser(5L, "teacher-uid", UserRoles.TEACHER, 100L, "GO! School");
-        UserEntity wrongTeacher = buildUser(2L, "teacher-uid2", UserRoles.TEACHER, 1L, "FOUTE SCHOOL");
-        UserEntity wrongStudent = buildUser(3L, "student-uid2", UserRoles.STUDENT, 1L, "FOUTE SCHOOL");
+    void givenBibbeheerderExists_whenListUsersForAdmin_thenReturnsActiveMappedUsersFromSameSchool() {
+        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
+        UserEntity student = buildUser(4L, "student-uid", UserRoles.STUDENT, 100L, "GO! School", true);
+        UserEntity teacher = buildUser(5L, "teacher-uid", UserRoles.TEACHER, 100L, "GO! School", true);
+        UserEntity wrongTeacher = buildUser(2L, "teacher-uid2", UserRoles.TEACHER, 1L, "FOUTE SCHOOL", true);
+        UserEntity wrongStudent = buildUser(3L, "student-uid2", UserRoles.STUDENT, 1L, "FOUTE SCHOOL", true);
+        UserEntity inactiveStudent = buildUser(6L, "student-uid3", UserRoles.STUDENT, 100L, "GO! School", false);
 
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
-        when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(100L)).thenReturn(List.of(student, teacher));
+        when(userRepository.findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(100L))
+                .thenReturn(List.of(student, teacher));
 
         List<AdminUserDTO> result = userAdminService.listUsersForAdmin("admin-uid");
 
@@ -54,7 +56,7 @@ class UserAdminServiceTest {
         assertEquals(UserRoles.TEACHER, result.get(1).role());
 
         verify(userRepository).findDetailedBySmartschoolUid("admin-uid");
-        verify(userRepository).findAllBySchool_IdOrderBySmartschoolUidAsc(100L);
+        verify(userRepository).findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(100L);
         verifyNoMoreInteractions(userRepository);
     }
 
@@ -73,7 +75,7 @@ class UserAdminServiceTest {
 
     @Test
     void givenActorIsNotBibbeheerder_whenListUsersForAdmin_thenThrowsForbidden() {
-        UserEntity actor = buildUser(1L, "teacher-uid", UserRoles.TEACHER, 100L, "GO! School");
+        UserEntity actor = buildUser(1L, "teacher-uid", UserRoles.TEACHER, 100L, "GO! School", true);
         when(userRepository.findDetailedBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(actor));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
@@ -97,7 +99,7 @@ class UserAdminServiceTest {
 
     @Test
     void givenTargetUserDoesNotExistInAdminsSchool_whenUpdateUserRole_thenThrowsNotFound() {
-        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
         when(userRepository.findByIdAndSchool_Id(99L, 100L)).thenReturn(Optional.empty());
 
@@ -114,7 +116,7 @@ class UserAdminServiceTest {
 
     @Test
     void givenActorTriesToUpdateOwnRole_whenUpdateUserRole_thenThrowsBadRequest() {
-        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
         when(userRepository.findByIdAndSchool_Id(1L, 100L)).thenReturn(Optional.of(actor));
 
@@ -131,8 +133,8 @@ class UserAdminServiceTest {
 
     @Test
     void givenValidAdminAndTarget_whenUpdateUserRole_thenUpdatesRoleAndReturnsMappedDto() {
-        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
-        UserEntity target = buildUser(2L, "student-uid", UserRoles.STUDENT, 100L, "GO! School");
+        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
+        UserEntity target = buildUser(2L, "student-uid", UserRoles.STUDENT, 100L, "GO! School", true);
 
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
         when(userRepository.findByIdAndSchool_Id(2L, 100L)).thenReturn(Optional.of(target));
@@ -156,7 +158,7 @@ class UserAdminServiceTest {
 
     @Test
     void givenBibbeheerderExists_whenGetCurrentAdmin_thenReturnsActor() {
-        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
 
         UserEntity result = userAdminService.getCurrentAdmin("admin-uid");
@@ -167,7 +169,8 @@ class UserAdminServiceTest {
     }
 
     // Hulpmethodes
-    private UserEntity buildUser(Long id, String uid, UserRoles role, Long schoolId, String schoolName) {
+    private UserEntity buildUser(Long id, String uid, UserRoles role, Long schoolId, String schoolName,
+            boolean active) {
         SchoolEntity school = new SchoolEntity();
         school.setId(schoolId);
         school.setName(schoolName);
@@ -185,7 +188,7 @@ class UserAdminServiceTest {
         user.setId(id);
         user.setSmartschoolUid(uid);
         user.setRole(role);
-        user.setActive(true);
+        user.setActive(active);
         user.setSchool(school);
         user.setClasses(Set.of(schoolClass));
         return user;

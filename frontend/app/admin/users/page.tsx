@@ -2,16 +2,15 @@
 
 import { UserRole } from "@/app/interfaces/user";
 import type { MeResponse, AdminUser } from "@/app/interfaces/user";
-import { Main } from "next/document";
 import { useEffect, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-const ROLE_OPTIONS: UserRole[] = [
-    "STUDENT",
-    "LEERKRACHT",
-    "BIBLIOTHEEKBEHEERDER"
-]
+const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
+  { value: "STUDENT", label: "STUDENT" },
+  { value: "TEACHER", label: "LEERKRACHT" },
+  { value: "BIBLIOTHEEKBEHEERDER", label: "BIBLIOTHEEKBEHEERDER" },
+];
 
 export default function AdminUserPage() {
     const [loading, setLoading] = useState(true);
@@ -92,14 +91,48 @@ export default function AdminUserPage() {
 
             {!error && me?.role === "BIBLIOTHEEKBEHEERDER" && (
                 <div>
-                    {users.map((user) => {
-                        return (
-                            <div key={user.id}>
-                                <p>{user.id}</p>
-                                <p>{user.role}</p>
-                            </div>
-                        );
-                    })}
+                    <h1>Gebruikersbeheer voor jou school</h1>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>UID</th>
+                                <th>Rol</th>
+                                <th>Klassen</th>
+                                <th>Nieuwe rol</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {users.map((user) => {
+                                const selectedRole = selectedRoles[user.id] ?? user.role;
+                                const changed = selectedRole !== user.role;
+
+                                return (
+                                    <tr key={user.id}>
+                                        <td>{user.smartschoolUid}</td>
+                                        <td>{user.role}</td>
+                                        <td>{user.classes.length === 0 ? "-" : user.classes.map((c) => c.name).join(", ")}</td>
+                                        <td><select 
+                                            value={selectedRole}
+                                            onChange={(e) => {
+                                                setSelectedRoles((prev) => ({
+                                                    ...prev,
+                                                    [user.id]: e.target.value as UserRole,
+                                                }))
+                                            }}
+                                        >{ROLE_OPTIONS.map((role) => (
+                                            <option key={role.value} value={role.value}>
+                                                {role.label}
+                                            </option>
+                                        )) }
+                                            </select>
+                                            </td>
+                                        <td><button>Save</button></td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
                 </div>)}
         </div>
     )

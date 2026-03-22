@@ -22,7 +22,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * Vindt alle users van een zekere school
      */
     @EntityGraph(attributePaths = { "school", "classes" })
-    List<UserEntity> findAllBySchool_IdOrderBySmartschoolUidAsc(Long schoolId);
+    List<UserEntity> findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(Long schoolId);
 
     /**
      * Vindt één specifieke user van een zekere school (scope zo klein mogelijk
