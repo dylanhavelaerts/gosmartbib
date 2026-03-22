@@ -14,6 +14,10 @@ export function proxy(request: NextRequest) {
   }
 
   const hasSession = request.cookies.has("JSESSIONID");
+  const isLocal = request.nextUrl.hostname === "localhost";
+  if (isLocal) {
+    return NextResponse.next();
+  }
 
   if (!hasSession) {
     return NextResponse.redirect(new URL("/login", request.url));

@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.security;
 
+import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.services.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -40,7 +42,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             Authentication authentication) throws IOException, ServletException {
         try {
             OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-            userService.syncUser(oauth2User);
+            UserEntity user = userService.syncUser(oauth2User);
 
             HttpSession session = request.getSession(true);
             session.setAttribute("authenticated", true);

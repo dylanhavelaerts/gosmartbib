@@ -16,7 +16,6 @@ public record UserDTO(
                 user.getId(),
                 user.getRole(),
                 SchoolDTO.from(user.getSchool()),
-                user.getSmartschoolUid(),
                 user.getClasses().stream()
                         .map(SchoolClassDTO::from)
                         .collect(Collectors.toSet()));

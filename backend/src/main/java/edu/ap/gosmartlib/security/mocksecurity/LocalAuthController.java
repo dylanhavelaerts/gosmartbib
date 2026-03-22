@@ -5,6 +5,7 @@ import edu.ap.gosmartlib.util.UserRoles;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,8 +29,8 @@ public class LocalAuthController {
 
     @PostMapping("/mock-role/{role}")
     public ResponseEntity<String> switchRole(@PathVariable String role,
-            HttpServletRequest request,
-            HttpServletResponse response) {
+                                             HttpServletRequest request,
+                                             HttpServletResponse response) {
         Map<String, Object> attributes = buildMockAttributes(role);
 
         if (attributes == null) {
@@ -41,11 +42,17 @@ public class LocalAuthController {
                 attributes,
                 "userID");
 
+
+        String basisrol = (String) attributes.get("basisrol");
+        UserRoles userRole = UserRoles.fromSmartschool(basisrol);
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + userRole.name())
+        );
+
         OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
                 mockUser,
-                Collections.emptyList(),
+                authorities,
                 "smartschool");
-
         userService.syncUser(mockUser);
 
         // Clear de bestaande sessie voor een nieuwe gebruiker te mocken
