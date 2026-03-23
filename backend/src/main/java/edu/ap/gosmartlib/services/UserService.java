@@ -89,6 +89,15 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public UserRoles getRoleBySmartschoolUid(String smartschoolUid) {
+        return userRepository.findBySmartschoolUid(smartschoolUid)
+                .map(UserEntity::getRole)
+                .orElseGet(() -> {
+                    log.warn("No user found for smartschoolUid: {}. Defaulting to STUDENT.", smartschoolUid);
+                    return UserRoles.STUDENT;
+                });
+    }
+
     //
     @Transactional(readOnly = true)
     public UserDTO getCurrentUser(String uid) {

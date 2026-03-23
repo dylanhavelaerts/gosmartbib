@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.security;
 
+import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.services.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,12 +9,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -36,11 +42,22 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             Authentication authentication) throws IOException, ServletException {
         try {
             OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-            userService.syncUser(oauth2User);
+            UserEntity user = userService.syncUser(oauth2User);
 
             HttpSession session = request.getSession(true);
             session.setAttribute("authenticated", true);
 
+            List<GrantedAuthority> authorities = List.of(
+                    new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+            );
+
+            OAuth2AuthenticationToken enriched = new OAuth2AuthenticationToken(
+                    oauth2User,
+                    authorities,
+                    ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId()
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(enriched);
             String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl : "/";
             String targetUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
             getRedirectStrategy().sendRedirect(request, response, targetUrl);

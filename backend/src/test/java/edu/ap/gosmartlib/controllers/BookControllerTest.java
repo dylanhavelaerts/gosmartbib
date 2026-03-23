@@ -17,8 +17,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -488,6 +490,23 @@ class BookControllerTest {
         verify(bookService, times(1)).getAllBooksUnpaged();
         verifyNoMoreInteractions(bookService);
     }
+    @Test
+    void deleteBook_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
+        Method method = BookController.class.getMethod("deleteBook", Long.class);
+        PreAuthorize preAuthorize = method.getAnnotation(PreAuthorize.class);
+
+        assertNotNull(preAuthorize);
+        assertEquals("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')", preAuthorize.value());
+    }
+
+    @Test
+    void updateBook_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
+        Method method = BookController.class.getMethod("updateBook", Long.class, edu.ap.gosmartlib.dto.BookDTO.class);
+        PreAuthorize preAuthorize = method.getAnnotation(PreAuthorize.class);
+
+        assertNotNull(preAuthorize);
+        assertEquals("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')", preAuthorize.value());
+    }
 
     // -- helper
     private Page<BookDTO> toPage(List<BookDTO> list) {
@@ -653,4 +672,5 @@ class BookControllerTest {
         assertEquals("An error occurred while fetching the book.", result.getBody());
         verify(bookService, times(1)).searchBookByIsbn("9780132350884");
     }
+
 }

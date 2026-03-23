@@ -9,6 +9,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
@@ -155,6 +156,7 @@ public class BookController {
      * Verwijdert een boek via het id.
      * Geeft 204 No Content terug bij succes.
      */
+    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) throws BookNotFoundException {
         bookService.deleteBook(id);
@@ -188,10 +190,12 @@ public class BookController {
         }
     }
 
-    /**
-     * Vervangt het boek met gegeven ID met een bookDTO (voor aanpassing)
-     */
-    @PutMapping("/{id}")
+
+
+
+
+    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    @PatchMapping("/{id}")
     public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
         try {
             BookDTO updated = bookService.updateBook(id, bookDTO);

@@ -12,6 +12,11 @@ export interface Book {
   isbn: string;
   publishedYear: number;
   spotlight: boolean;
+  didacticTag: boolean;
+  readingLevel: string;
+  labels: string[];
+  totalCopies: number;
+  availableCopies: number;
 }
 
 export const BOOK_CATEGORIES = [
