@@ -75,7 +75,7 @@ useEffect(() => {
               className={cls("spotlight")}
               onClick={() => setSelected("spotlight")}
             >
-              in de kijker
+              In de kijker
             </button>
             <button className={cls("new")} onClick={() => setSelected("new")}>
               Nieuw in bibliotheek
