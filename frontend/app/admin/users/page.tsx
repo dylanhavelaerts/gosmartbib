@@ -1,16 +1,30 @@
 "use client"
 
-import { UserRole } from "@/app/interfaces/user";
-import type { MeResponse, AdminUser } from "@/app/interfaces/user";
+import { UserRole } from "@/app/interfaces/User";
+import type { MeResponse, AdminUser } from "@/app/interfaces/User";
 import { useEffect, useState } from "react";
+import "./userAdmin.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "STUDENT", label: "STUDENT" },
   { value: "TEACHER", label: "LEERKRACHT" },
-  { value: "BIBLIOTHEEKBEHEERDER", label: "BIBLIOTHEEKBEHEERDER" },
+  { value: "BIBLIOTHEEKBEHEERDER", label: "BEHEERDER" },
 ];
+
+const replaceRoleName = (role: string):string => {
+    switch(role){
+        case "BIBLIOTHEEKBEHEERDER":
+            return "BEHEERDER";
+        case "TEACHER":
+            return "LEERKRACHT";
+        case "STUDENT":
+            return "STUDENT";
+        default:
+            return "-";
+    }
+}
 
 export default function AdminUserPage() {
     const [loading, setLoading] = useState(true);
@@ -18,6 +32,8 @@ export default function AdminUserPage() {
     const [me, setMe] = useState<MeResponse | null>(null);
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [selectedRoles, setSelectedRoles] = useState<Record<number, UserRole>>({});
+    const [savingUserId, setSavingUserId] = useState<number | null>(null);
+    const [succes, setSucces] = useState("");
 
     useEffect(() => {
         const load = async() => {
@@ -78,6 +94,53 @@ export default function AdminUserPage() {
         load();
     }, []);
 
+        const handleSave = async (userId: number) => {
+        if(!API_URL) return;
+
+        const role = selectedRoles[userId];
+        if(!role) return;
+
+        try {
+            setSavingUserId(userId);
+            setError("");
+            setSucces("");
+
+            const response = await fetch(`${API_URL}/admin/users/${userId}/role`, {
+                method: "PATCH",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({role})
+            });
+            
+            if(!response.ok) {
+                setError("Rol aanpassen mislukt");
+                return;
+            }
+
+            const updatedUser: AdminUser = await response.json();
+
+            setUsers((prev) => 
+                prev.map((user) => (user.id === updatedUser.id ? updatedUser : user))
+            );
+
+            setSelectedRoles((prev) => ({
+                ...prev,
+                [updatedUser.id]: updatedUser.role,
+            }));
+
+            setSucces(`Rol van ${updatedUser.smartschoolUid} aangepast`);
+        }
+        catch(e) {
+            setError("Er ging iets mis bij het opslaan");
+            console.error(e);
+        }
+        finally{
+            setSavingUserId(null);
+        }
+    }
+
 
     if (loading) {
         return (
@@ -91,13 +154,13 @@ export default function AdminUserPage() {
 
             {!error && me?.role === "BIBLIOTHEEKBEHEERDER" && (
                 <div>
-                    <h1>Gebruikersbeheer voor jou school</h1>
+                    <h1>Gebruikersbeheer {me?.school?.name}</h1>
                     <table>
                         <thead>
                             <tr>
                                 <th>UID</th>
-                                <th>Rol</th>
-                                <th>Klassen</th>
+                                <th className="fullScreen">Rol</th>
+                                <th className="fullScreen">Klassen</th>
                                 <th>Nieuwe rol</th>
                                 <th></th>
                             </tr>
@@ -110,8 +173,8 @@ export default function AdminUserPage() {
                                 return (
                                     <tr key={user.id}>
                                         <td>{user.smartschoolUid}</td>
-                                        <td>{user.role}</td>
-                                        <td>{user.classes.length === 0 ? "-" : user.classes.map((c) => c.name).join(", ")}</td>
+                                        <td className="fullScreen">{replaceRoleName(user.role)}</td>
+                                        <td className="fullScreen">{user.classes.length === 0 ? "-" : user.classes.map((c) => c.name).join(", ")}</td>
                                         <td><select 
                                             value={selectedRole}
                                             onChange={(e) => {
@@ -127,9 +190,13 @@ export default function AdminUserPage() {
                                         )) }
                                             </select>
                                             </td>
-                                        <td>{changed && (
-                                            <button>Opslaan</button>
-                                        )}</td>
+                                            {!changed && (
+                                                <td></td>
+                                            )}{changed && (
+                                                <td className="saveButton">
+                                                    <button onClick={() => {handleSave(user.id)}}>{savingUserId === user.id ? "Opslaan..." : "Opslaan"}</button>
+                                                </td>
+                                        )}
                                     </tr>
                                 )
                             })}

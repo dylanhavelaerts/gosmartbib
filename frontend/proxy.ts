@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, hostname } = request.nextUrl;
 
   if (
     pathname === "/login" ||
@@ -10,6 +10,12 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/smartschool") ||
     pathname.startsWith("/public")
   ) {
+    return NextResponse.next();
+  }
+
+  const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+
+  if (isLocal) {
     return NextResponse.next();
   }
 
