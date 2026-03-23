@@ -116,9 +116,11 @@ export default function BookListImport() {
               <p>Problemen gevonden in deze rijen:</p>
               <ul>
                 {importResult.mismatches.map((mismatch, index) => (
-                  <li key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
-                    Rij {mismatch.rowNumber}: {mismatch.isbn} | {mismatch.excelTitle} |
-                    {" "}Reden: {mismatch.reason}
+                  <li className={styles.mismatchElement} key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
+                    <p className={styles.mismatchTitle}>Rij {mismatch.rowNumber}: {mismatch.isbn} | {mismatch.excelTitle} |
+                    {" "}Reden: {mismatch.reason}</p>{mismatch.reason.includes("De titel komt niet overeen") && (
+                      <button className={styles.mismatchButton}>Toch opslaan</button>
+                    )}
                   </li>
                 ))}
               </ul>

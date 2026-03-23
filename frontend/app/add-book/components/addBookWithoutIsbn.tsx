@@ -58,6 +58,11 @@ export default function AddBookWithoutIsbn() {
       rating,
       publishedYear,
       spotlight: false,
+      didacticTag: false,
+      readingLevel: "",
+      labels: [],
+      totalCopies: 0,
+      availableCopies: 0
     };
 
     setPreviewBook(book);

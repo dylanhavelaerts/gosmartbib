@@ -73,3 +73,20 @@
   background-color: #f8d7da;
   color: #721c24;
 }
+.mismatchElement {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: center;
+}
+.mismatchTitle {
+  grid-column: 1/7;
+  margin-right: 2rem;
+}
+.mismatchButton {
+  background-color: #28a745;
+  border-radius: 0.5rem;
+  height: 3rem;
+  color: white;
+  border: none;
+  font-weight: bold;
+}
