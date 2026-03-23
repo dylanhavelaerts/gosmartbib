@@ -160,6 +160,13 @@ public class BookService {
                 .toList();
     }
 
+    public List<BookDTO> getHighestRatedBooks() {
+        return bookRepository.findTop4ByOrderByRatingDesc()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
     public Page<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,
             Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size) {
         if (page < 0 || size <= 0)

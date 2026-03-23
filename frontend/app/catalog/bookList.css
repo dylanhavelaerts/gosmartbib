@@ -100,24 +100,6 @@ main h1 {
   margin: 0;
 }
 
-#spotlightHeader {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#spotlightButton {
-  background-color: #8e2446;
-  border: none;
-  border-radius: 0.5rem;
-  color: white;
-  font-weight: bold;
-  width: auto;
-  padding: 0 1rem;
-  height: 3rem;
-}
-
 main ul {
   display: flex;
   flex-wrap: nowrap;
@@ -128,6 +110,13 @@ main ul {
   border-bottom: 1px solid #ddd;
   gap: 0;
   overflow-x: auto;
+}
+
+.selectAllCheckbox {
+  display: flex;
+  flex-direction: row;
+  color: #c0392b;
+  margin-bottom: -1rem;
 }
 
 main ul li {

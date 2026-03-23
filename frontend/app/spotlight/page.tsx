@@ -10,6 +10,7 @@ export default function Home() {
 
   //houdt bij welk boeken de gebruiker wil verwijderen -> als dit op null staat is er geen boek geselecteerd en is de extra modal gesloten
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectAllBox, setSelectAllBox] = useState(false);
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/spotlight/all`)
@@ -46,16 +47,26 @@ export default function Home() {
     } catch (error) {
       console.error(error);
     } finally {
+      setSelectAllBox(false);
     };
+  }
+
+  const selectAll = () => {
+    if(!selectAllBox){
+    setSelectedIds(new Set(books.map((book) => book.id)));
+    setSelectAllBox(true);
+    }
+    else {
+      setSelectedIds(new Set());
+      setSelectAllBox(false)
+    }
+    
   }
 
 
   return (
     <main>
-      <div id="spotlightHeader">
         <h1>In de kijker</h1>
-        <button id="spotlightButton">Best beoordeeld in kijker</button>
-      </div>
       <ul>
         {selectedIds.size > 0 && (
           <li onClick={() => tryDelete()}>
@@ -63,6 +74,9 @@ export default function Home() {
           </li>
         )}
       </ul>
+      <div className="selectAllCheckbox">
+      <input type="checkbox" checked={selectAllBox} onChange={selectAll}/> <p>Select all</p>
+      </div>
       <div id="bookList">
         {books.map((book) => (
           <BookCard

@@ -12,53 +12,55 @@ import org.springframework.data.repository.query.Param;
 
 public interface BookRepository extends JpaRepository<BookEntity, Long> {
 
-    Page<BookEntity> findAll(Pageable pageable);
+        Page<BookEntity> findAll(Pageable pageable);
 
-    List<BookEntity> findTop4BySpotlightTrueOrderByIdDesc();
+        List<BookEntity> findTop4BySpotlightTrueOrderByIdDesc();
 
-    List<BookEntity> findBySpotlightTrueOrderByIdDesc();
+        List<BookEntity> findBySpotlightTrueOrderByIdDesc();
 
-    List<BookEntity> findTop4ByOrderByIdDesc();
+        List<BookEntity> findTop4ByOrderByIdDesc();
 
-    boolean existsByIsbn(String isbn);
+        List<BookEntity> findTop4ByOrderByRatingDesc();
 
-    /**
-     * Zoek boeken op titel of auteur, case-insensitive en ondersteunt gedeeltelijke
-     * overeenkomsten.
-     * 
-     * @param query
-     * @return
-     */
-    @Query("SELECT DISTINCT b FROM BookEntity b JOIN b.authors a WHERE " +
-            "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-            "LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))")
-    Page<BookEntity> searchByTitleOrAuthor(@Param("query") String query, Pageable pageable);
+        boolean existsByIsbn(String isbn);
 
-    @Query(value = """
-            SELECT DISTINCT b FROM BookEntity b
-            LEFT JOIN b.categories c
-            WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
-            AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
-            AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
-            AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
-            AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
-            AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
-            """, countQuery = """
-            SELECT COUNT(DISTINCT b) FROM BookEntity b
-            LEFT JOIN b.categories c
-            WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
-            AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
-            AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
-            AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
-            AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
-            AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
-            """)
-    Page<BookEntity> filterBooks(
-            @Param("language") String language,
-            @Param("categories") List<String> categories,
-            @Param("minPageCount") Integer minPageCount,
-            @Param("maxPageCount") Integer maxPageCount,
-            @Param("minPubYear") Integer minPubYear,
-            @Param("maxPubYear") Integer maxPubYear,
-            Pageable pageable);
+        /**
+         * Zoek boeken op titel of auteur, case-insensitive en ondersteunt gedeeltelijke
+         * overeenkomsten.
+         * 
+         * @param query
+         * @return
+         */
+        @Query("SELECT DISTINCT b FROM BookEntity b JOIN b.authors a WHERE " +
+                        "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))")
+        Page<BookEntity> searchByTitleOrAuthor(@Param("query") String query, Pageable pageable);
+
+        @Query(value = """
+                        SELECT DISTINCT b FROM BookEntity b
+                        LEFT JOIN b.categories c
+                        WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
+                        AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
+                        AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
+                        AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
+                        AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
+                        AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
+                        """, countQuery = """
+                        SELECT COUNT(DISTINCT b) FROM BookEntity b
+                        LEFT JOIN b.categories c
+                        WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
+                        AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
+                        AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
+                        AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
+                        AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
+                        AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
+                        """)
+        Page<BookEntity> filterBooks(
+                        @Param("language") String language,
+                        @Param("categories") List<String> categories,
+                        @Param("minPageCount") Integer minPageCount,
+                        @Param("maxPageCount") Integer maxPageCount,
+                        @Param("minPubYear") Integer minPubYear,
+                        @Param("maxPubYear") Integer maxPubYear,
+                        Pageable pageable);
 }

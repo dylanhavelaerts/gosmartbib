@@ -122,6 +122,11 @@ public class BookController {
         return bookService.getLatestBooks();
     }
 
+    @GetMapping("/rating/highest")
+    public List<BookDTO> getHighestRatedBooks() {
+        return bookService.getHighestRatedBooks();
+    }
+
     /**
      * Voegt een boek toe aan de database via ISBN (opgehaald van Google Books).
      */
@@ -189,10 +194,6 @@ public class BookController {
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
-
-
 
     @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     @PatchMapping("/{id}")
