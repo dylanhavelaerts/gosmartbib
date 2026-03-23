@@ -1,7 +1,8 @@
 export interface SmartschoolUser {
   smartschoolUserId: string;
-  name?: string; // Optioneel, we gebruiken dit enkel in de UI, wordt niet naar DB gestuurd
+  name: string;
   classGroup: string;
-  school: string;
-  schoolId: string;
+  school?: string;
+  schoolId?: string;
+  photoUrl?: string;
 }

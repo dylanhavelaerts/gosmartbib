@@ -6,41 +6,48 @@ import { Book } from "../interfaces/Book";
 import { SmartschoolUser } from "../interfaces/SmartschoolUser";
 import "./lending.css";
 
-// Interface voor items in het winkelmandje
 interface CartItem {
   book: Book;
   quantity: number;
 }
 
-export default function UitleenPagina() {
+export default function LendingPage() {
   const router = useRouter();
 
   // --- States ---
-  // Lener
   const [userQuery, setUserQuery] = useState("");
   const [userSearchResults, setUserSearchResults] = useState<SmartschoolUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<SmartschoolUser | null>(null);
 
-  // Boeken (Zoeklijst)
   const [bookQuery, setBookQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Book[]>([]);
-  
-  // Winkelmandje (Cart)
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // --- Lener Zoeken (Simulatie) ---
-  const handleSearchSmartschoolUser = () => {
+  // --- Search Smartschool User (API Call) ---
+  const handleSearchSmartschoolUser = async () => {
     if (!userQuery.trim()) {
       setUserSearchResults([]);
       return;
     }
-    setUserSearchResults([
-      { smartschoolUserId: "SS-987654", name: "Jan Peeters", classGroup: "5IT", school: "GO! Atheneum", schoolId: "GO-ANT-01" },
-      { smartschoolUserId: "SS-112233", name: "Janssen Peter", classGroup: "6B", school: "GO! Atheneum", schoolId: "GO-ANT-01" }
-    ]);
+
+    try {
+      // Call our backend proxy which communicates with the Smartschool API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/smartschool/users?query=${encodeURIComponent(userQuery.trim())}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch Smartschool users");
+      }
+
+      const data = await response.json();
+      setUserSearchResults(data);
+    } catch (err) {
+      console.error("Error searching users:", err);
+      alert("Kan momenteel geen verbinding maken met de Smartschool API.");
+    }
   };
 
   const handleSelectUser = (user: SmartschoolUser) => {
+    // This replaces the currently selected user with the new one
     setSelectedUser(user);
     setUserSearchResults([]); 
     setUserQuery(""); 
@@ -48,7 +55,7 @@ export default function UitleenPagina() {
 
   const handleRemoveUser = () => setSelectedUser(null);
 
-  // --- Boeken Zoeken (Live Backend) ---
+  // --- Search Books ---
   useEffect(() => {
     if (!bookQuery || bookQuery.trim() === "") {
       setSearchResults([]);
@@ -64,13 +71,13 @@ export default function UitleenPagina() {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/search?${params}`)
         .then((res) => res.json())
         .then((data) => setSearchResults(data.content || []))
-        .catch((err) => console.error("Fout bij ophalen:", err));
+        .catch((err) => console.error("Error fetching books:", err));
     }, 300);
 
     return () => clearTimeout(timer);
   }, [bookQuery]);
 
-  // --- Handlers voor Winkelmandje & Zoeklijst ---
+  // --- Cart Handlers ---
   const handleAddToCart = (book: Book) => {
     const available = book.availableCopies !== undefined ? book.availableCopies : 5; 
 
@@ -107,9 +114,8 @@ export default function UitleenPagina() {
     setCart(cart.filter((item) => item.book.id !== bookId));
   };
 
-  // --- Registreren & Annuleren ---
-  const handleAnnuleren = () => {
-    // Maakt de volledige pagina leeg
+  // --- Registration & Cancel ---
+  const handleCancel = () => {
     setCart([]);
     setSelectedUser(null);
     setSearchResults([]);
@@ -118,38 +124,35 @@ export default function UitleenPagina() {
     setUserQuery("");
   };
 
-  const handleUitleenRegistreren = async () => {
+  const handleRegisterLoan = async () => {
     if (cart.length === 0 || !selectedUser) return;
     
+    // The payload sends the required user info. 
+    // The backend LoanService extracts ONLY the smartschoolUserId to save into the DB.
     const payload = cart.map(item => ({
       bookId: item.book.id,
       quantity: item.quantity,
       user: {
         smartschoolUserId: selectedUser.smartschoolUserId,
         classGroup: selectedUser.classGroup,
-        school: selectedUser.school,
-        schoolId: selectedUser.schoolId
+        school: selectedUser.school || "",
+        schoolId: selectedUser.schoolId || ""
       }
     }));
 
     try {
-      // Stuur de data naar de backend
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/loans`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error("Er is een fout opgetreden bij het registreren in de database.");
+        throw new Error("Database error during registration.");
       }
 
       alert(`Succes! Uitlening correct geregistreerd aan ${selectedUser.name}.`);
-      
-      // Na succesvolle registratie maken we de pagina leeg (en verversen evt. we de zoekresultaten)
-      handleAnnuleren();
+      handleCancel();
       
     } catch (err) {
       console.error(err);
@@ -166,14 +169,18 @@ export default function UitleenPagina() {
 
       <div className="uitleenGrid driekolomsGrid">
         
-        {/* --- KOLOM 1: LENER --- */}
+        {/* --- COLUMN 1: BORROWER --- */}
         <div className="gridColumn borderRight">
           <div className="sectieHeader"><h2>Geselecteerde Lener</h2></div>
           
           <div className="userProfileCard">
             {selectedUser ? (
               <>
-                <div className="userPhotoPlaceholder">👤</div>
+                {selectedUser.photoUrl ? (
+                  <img src={selectedUser.photoUrl} alt="Profile" className="userPhotoPlaceholder" style={{ objectFit: 'cover' }} />
+                ) : (
+                  <div className="userPhotoPlaceholder">👤</div>
+                )}
                 <div className="userInfo">
                   <p className="userName">{selectedUser.name}</p>
                   <p><strong>ID:</strong> {selectedUser.smartschoolUserId}</p>
@@ -188,29 +195,42 @@ export default function UitleenPagina() {
 
           <div className="sectieHeader" style={{ marginTop: '1.5rem' }}><h2>Lener zoeken</h2></div>
           <div className="searchbar">
-            <input type="text" placeholder="Naam, ID of klas..." value={userQuery} onChange={(e) => setUserQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchSmartschoolUser()} />
+            <input 
+              type="text" 
+              placeholder="Naam of ID..." 
+              value={userQuery} 
+              onChange={(e) => setUserQuery(e.target.value)} 
+              onKeyDown={(e) => e.key === 'Enter' && handleSearchSmartschoolUser()} 
+            />
             <button id="searchButton" onClick={handleSearchSmartschoolUser}>🔎︎</button>
           </div>
 
           <div className="resultsFrame">
             {userSearchResults.length === 0 ? (
-               <p className="placeholderText" style={{textAlign: "center", marginTop: "2rem"}}>Typ een naam of ID.</p>
+               <p className="placeholderText" style={{textAlign: "center", marginTop: "2rem"}}>Typ een deel van de naam in.</p>
             ) : (
               userSearchResults.map((user, idx) => (
                 <div key={idx} className="listItem">
-                  <div className="userPhotoSmall">👤</div>
+                  {user.photoUrl ? (
+                    <img src={user.photoUrl} alt="Profile" className="userPhotoSmall" style={{ objectFit: 'cover' }} />
+                  ) : (
+                    <div className="userPhotoSmall">👤</div>
+                  )}
                   <div className="itemDetails">
                     <strong>{user.name}</strong>
-                    <span>{user.classGroup} • {user.smartschoolUserId}</span>
+                    <span>{user.classGroup}</span>
                   </div>
-                  <button className="actionBtn addBtn" onClick={() => handleSelectUser(user)}>+</button>
+                  {/* Button to Select/Replace the user */}
+                  <button className="actionBtn addBtn" onClick={() => handleSelectUser(user)}>
+                    {selectedUser?.smartschoolUserId === user.smartschoolUserId ? '✓' : '+'}
+                  </button>
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* --- KOLOM 2: BOEKEN ZOEKEN --- */}
+        {/* --- COLUMN 2: SEARCH BOOKS --- */}
         <div className="gridColumn borderRight">
           <div className="sectieHeader"><h2>Boek zoeken</h2></div>
           
@@ -238,7 +258,6 @@ export default function UitleenPagina() {
                     </div>
 
                     {cartItem ? (
-                      // AANGEPAST: De stock-indicator staat hier nu ook!
                       <div className="addArea">
                         <span className={available > 0 ? "stock-ok" : "stock-empty"}>
                           {available > 0 ? `${available} vrij` : "Op"}
@@ -250,7 +269,6 @@ export default function UitleenPagina() {
                         </div>
                       </div>
                     ) : (
-                      // Hier stond de stock-indicator al
                       <div className="addArea">
                         <span className={available > 0 ? "stock-ok" : "stock-empty"}>
                           {available > 0 ? `${available} vrij` : "Op"}
@@ -272,7 +290,7 @@ export default function UitleenPagina() {
           </div>
         </div>
 
-        {/* --- KOLOM 3: GESELECTEERDE BOEKEN --- */}
+        {/* --- COLUMN 3: SELECTED BOOKS --- */}
         <div className="gridColumn flexBetween">
           <div style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
             <div className="sectieHeader">
@@ -295,7 +313,6 @@ export default function UitleenPagina() {
                         <span className="qtyDisplay">{item.quantity}</span>
                         <button className="qtyBtn" onClick={() => updateQuantity(item.book.id, 1)}>+</button>
                       </div>
-
                     </div>
                     <button className="actionBtn removeBtn" onClick={() => handleRemoveFromCart(item.book.id)} title="Verwijder uit selectie">✕</button>
                   </div>
@@ -304,18 +321,17 @@ export default function UitleenPagina() {
             </div>
           </div>
 
-          {/* ACTIE FOOTER: Twee knoppen onder elkaar */}
           <div className="actionFooter">
             <button 
               className="primaryBtn" 
-              onClick={handleUitleenRegistreren} 
+              onClick={handleRegisterLoan} 
               disabled={cart.length === 0 || !selectedUser}
             >
               Boeken uitlenen
             </button>
             <button 
               className="secondaryBtn" 
-              onClick={handleAnnuleren}
+              onClick={handleCancel}
               disabled={cart.length === 0 && !selectedUser && bookQuery === "" && userQuery === ""}
             >
               Uitlenen annuleren
