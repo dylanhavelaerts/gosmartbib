@@ -167,7 +167,8 @@ public class BookService {
                 .toList();
     }
 
-    public Page<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,
+    public Page<BookDTO> filterBooks(String language, List<String> categories, List<String> labels,
+            Integer minPageCount,
             Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
@@ -181,7 +182,7 @@ public class BookService {
 
         Pageable pageable = PageRequest.of(page, size);
         return bookRepository
-                .filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear, pageable)
+                .filterBooks(language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, pageable)
                 .map(this::toDTO);
     }
 

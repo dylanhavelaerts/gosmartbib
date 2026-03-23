@@ -71,6 +71,7 @@ public class BookController {
     public ResponseEntity<?> filterBooks(
             @RequestParam(required = false) String language,
             @RequestParam(required = false) List<String> categories,
+            @RequestParam(required = false) List<String> labels,
             @RequestParam(required = false) Integer minPageCount,
             @RequestParam(required = false) Integer maxPageCount,
             @RequestParam(required = false) Integer minPubYear,
@@ -79,7 +80,7 @@ public class BookController {
             @RequestParam(defaultValue = "20") int size) {
         try {
             Page<BookDTO> filteredBooks = bookService.filterBooks(
-                    language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear, page, size);
+                    language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, page, size);
             return ResponseEntity.ok(filteredBooks);
         } catch (IllegalArgumentException e) {
             // 400 als de filter combinatie ongeldig is

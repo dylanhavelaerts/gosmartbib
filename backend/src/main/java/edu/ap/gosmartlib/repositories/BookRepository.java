@@ -39,8 +39,10 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
         @Query(value = """
                         SELECT DISTINCT b FROM BookEntity b
                         LEFT JOIN b.categories c
+                        LEFT JOIN b.labels l
                         WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
                         AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
+                        AND (:#{#labels == null || #labels.isEmpty()} = true OR l IN :labels)
                         AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
                         AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
                         AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
@@ -48,8 +50,10 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                         """, countQuery = """
                         SELECT COUNT(DISTINCT b) FROM BookEntity b
                         LEFT JOIN b.categories c
+                        LEFT JOIN b.labels l
                         WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
                         AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
+                        AND (:#{#labels == null || #labels.isEmpty()} = true OR l IN :labels)
                         AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
                         AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
                         AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
@@ -58,6 +62,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
         Page<BookEntity> filterBooks(
                         @Param("language") String language,
                         @Param("categories") List<String> categories,
+                        @Param("labels") List<String> labels,
                         @Param("minPageCount") Integer minPageCount,
                         @Param("maxPageCount") Integer maxPageCount,
                         @Param("minPubYear") Integer minPubYear,

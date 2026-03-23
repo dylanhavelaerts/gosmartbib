@@ -519,69 +519,116 @@ class BookServiceTest {
     @Test
     void givenValidFilters_whenFilterBooks_thenReturnsMappedDTOs() {
         Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook()), PageRequest.of(0, 20), 1);
-        when(bookRepository.filterBooks(eq("en"), eq(List.of("Programming")), eq(100), eq(500), eq(2000), eq(2023),
+        when(bookRepository.filterBooks(eq("en"), eq(List.of("Programming")), eq(List.of("Toekomst & technologie")),
+                eq(100), eq(500), eq(2000), eq(2023),
                 any(Pageable.class)))
                 .thenReturn(entityPage);
 
-        Page<BookDTO> result = bookService.filterBooks("en", List.of("Programming"), 100, 500, 2000, 2023, 0, 20);
+        Page<BookDTO> result = bookService.filterBooks("en", List.of("Programming"), List.of("Toekomst & technologie"),
+                100, 500, 2000, 2023, 0, 20);
 
         assertEquals(1, result.getTotalElements());
         assertEquals("Clean Code", result.getContent().get(0).title());
-        verify(bookRepository, times(1)).filterBooks(eq("en"), eq(List.of("Programming")), eq(100), eq(500), eq(2000),
+        verify(bookRepository, times(1)).filterBooks(eq("en"), eq(List.of("Programming")),
+                eq(List.of("Toekomst & technologie")), eq(100), eq(500), eq(2000),
                 eq(2023), any(Pageable.class));
     }
 
     @Test
     void givenNullFilters_whenFilterBooks_thenReturnsAllBooks() {
         Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook(), buildBook()), PageRequest.of(0, 20), 2);
-        when(bookRepository.filterBooks(isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+        when(bookRepository.filterBooks(isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
                 any(Pageable.class)))
                 .thenReturn(entityPage);
 
-        Page<BookDTO> result = bookService.filterBooks(null, null, null, null, null, null, 0, 20);
+        Page<BookDTO> result = bookService.filterBooks(null, null, null, null, null, null, null, 0, 20);
 
         assertEquals(2, result.getTotalElements());
         verify(bookRepository, times(1)).filterBooks(isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                isNull(),
+                any(Pageable.class));
+    }
+
+    @Test
+    void givenOnlyLabels_whenFilterBooks_thenReturnsMatchingBooks() {
+        Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook()), PageRequest.of(0, 20), 1);
+
+        when(bookRepository.filterBooks(
+                isNull(),
+                isNull(),
+                eq(List.of("Toekomst & technologie")),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                any(Pageable.class)))
+                .thenReturn(entityPage);
+
+        Page<BookDTO> result = bookService.filterBooks(
+                null,
+                null,
+                List.of("Toekomst & technologie"),
+                null,
+                null,
+                null,
+                null,
+                0,
+                20);
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals("Clean Code", result.getContent().get(0).title());
+
+        verify(bookRepository, times(1)).filterBooks(
+                isNull(),
+                isNull(),
+                eq(List.of("Toekomst & technologie")),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
                 any(Pageable.class));
     }
 
     @Test
     void givenNoMatchingBooks_whenFilterBooks_thenReturnsEmptyPage() {
         Page<BookEntity> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
-        when(bookRepository.filterBooks(eq("nl"), isNull(), isNull(), isNull(), isNull(), isNull(),
+        when(bookRepository.filterBooks(eq("nl"), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
                 any(Pageable.class)))
                 .thenReturn(emptyPage);
 
-        Page<BookDTO> result = bookService.filterBooks("nl", null, null, null, null, null, 0, 20);
+        Page<BookDTO> result = bookService.filterBooks("nl", null, null, null, null, null, null, 0, 20);
 
         assertEquals(0, result.getTotalElements());
         verify(bookRepository, times(1)).filterBooks(eq("nl"), isNull(), isNull(), isNull(), isNull(), isNull(),
+                isNull(),
                 any(Pageable.class));
     }
 
     @Test
     void givenMinPageCountGreaterThanMaxPageCount_whenFilterBooks_thenThrowsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class,
-                () -> bookService.filterBooks(null, null, 500, 100, null, null, 0, 20));
+                () -> bookService.filterBooks(null, null, null, 500, 100, null, null, 0, 20));
 
-        verify(bookRepository, never()).filterBooks(any(), any(), any(), any(), any(), any(), any(Pageable.class));
+        verify(bookRepository, never()).filterBooks(any(), any(), any(), any(), any(), any(), any(),
+                any(Pageable.class));
     }
 
     @Test
     void givenMinYearGreaterThanMaxYear_whenFilterBooks_thenThrowsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class,
-                () -> bookService.filterBooks(null, null, null, null, 2023, 2000, 0, 20));
+                () -> bookService.filterBooks(null, null, null, null, null, 2023, 2000, 0, 20));
 
-        verify(bookRepository, never()).filterBooks(any(), any(), any(), any(), any(), any(), any(Pageable.class));
+        verify(bookRepository, never()).filterBooks(any(), any(), any(), any(), any(), any(), any(),
+                any(Pageable.class));
     }
 
     @Test
     void givenRepositoryFails_whenFilterBooks_thenThrowsException() {
-        when(bookRepository.filterBooks(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(bookRepository.filterBooks(any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenThrow(new RuntimeException("Database unavailable"));
 
         assertThrows(RuntimeException.class,
-                () -> bookService.filterBooks(null, null, null, null, null, null, 0, 20));
+                () -> bookService.filterBooks(null, null, null, null, null, null, null, 0, 20));
     }
 
     @Test
