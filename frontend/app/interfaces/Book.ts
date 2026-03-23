@@ -14,22 +14,48 @@ export interface Book {
   totalCopies?: number;
   availableCopies?: number;
   spotlight: boolean;
+  didacticTag: boolean;
+  readingLevel: string;
+  labels: string[];
+  totalCopies: number;
+  availableCopies: number;
 }
 
 export const BOOK_CATEGORIES = [
-  "Avontuur",
-  "Biography",
+  "Fictie algemeen",
+  "Literaire roman",
+  "Spanning / thriller",
+  "Detective / misdaad",
   "Fantasy",
-  "Fiction",
-  "Fictie",
-  "Historische fictie",
-  "History",
-  "Horror",
-  "Mysterie",
-  "Non-Fiction",
-  "Non-fictie",
-  "Programming",
+  "Science fiction",
+  "Dystopie",
+  "Historische roman",
   "Romantiek",
-  "Science Fiction",
-  "Thriller",
+  "Coming-of-age",
+  "Avontuur",
+  "Oorlog & conflict",
+  "Horror",
+  "Humor",
+  "Graphic Novel / strip",
+  "Poëzie",
+  "Non-fictie algemeen",
+];
+
+export const BOOK_LABELS = [
+  "Liefde & relatie",
+  "Vriendschap",
+  "Identiteit & zelfbeeld",
+  "Gender & seksualiteit",
+  "Diversiteit & inclusie",
+  "Mentale gezondheid",
+  "Rouw & verlies",
+  "Familie",
+  "School & prestatiedruk",
+  "Sociale media",
+  "Migratie & afkomst",
+  "Armoede & ongelijkheid",
+  "Macht & onrecht",
+  "Avontuur & ontdekking",
+  "Overleven",
+  "Toekomst & technologie",
 ];

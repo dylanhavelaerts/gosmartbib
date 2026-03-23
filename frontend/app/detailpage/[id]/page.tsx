@@ -12,6 +12,7 @@ export default function DetailPage({
 }) {
   const { id } = use(params);
   const [book, setBook] = useState<Book | null>(null);
+  const [imgSrc, setImgSrc] = useState(book?.thumbnail || "/No-Image-Available-Placeholder.png")
 
   useEffect(() => {
     if (!id) return;
@@ -30,7 +31,7 @@ export default function DetailPage({
 
       <div className="detailContainer">
         <div className="detailLeft">
-          <img src={book.thumbnail} alt={book.title} className="detailCover" />
+          <img src={imgSrc} alt={book.title} onError={() => setImgSrc("/No-Image-Available-Placeholder.png")} className="detailCover" />
           <div className="detailUnder">
             <p>
               <img className="bookIcon" src={"/book-alt.png"} />{" "}

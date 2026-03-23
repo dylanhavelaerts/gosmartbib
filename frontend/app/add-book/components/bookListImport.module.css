@@ -1,0 +1,75 @@
+.title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.text {
+  color: #555;
+}
+
+.spacedText {
+  color: #555;
+  margin-top: 1rem;
+}
+
+.downloadLink {
+  text-decoration: none;
+  color: #8e1f42;
+}
+
+.fileInputBox {
+  padding: 2rem;
+  background-color: #ede7f0;
+  border-radius: 1rem;
+  width: auto;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.selectedFile {
+  margin-top: 1rem;
+}
+
+.uploadButton {
+  padding: 0.75rem 1.5rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.uploadButtonLoading {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.resultCard {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid #8e2446;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  color: black;
+}
+
+.mismatchSection {
+  margin-top: 1rem;
+}
+
+.message {
+  margin-top: 2rem;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.messageSuccess {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.messageError {
+  background-color: #f8d7da;
+  color: #721c24;
+}

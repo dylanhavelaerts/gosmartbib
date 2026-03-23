@@ -341,9 +341,18 @@ main ul li.active {
 }
 
 .confirmButton {
-  background: black;
+  background: red;
   color: white;
+  margin-left: .20rem;
   border-radius: 4px;
+  padding: .5rem;
+
+}
+.gobackButton {
+  background: #ddd;
+  color: #333;
+  border-radius: 4px;
+  padding: .5rem;
 }
 
 /* ── Mobile sidebar ── */
