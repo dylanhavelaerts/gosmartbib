@@ -1,0 +1,34 @@
+.page {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: sans-serif;
+}
+
+.lowerNav {
+  background-color: transparent;
+  border-bottom: solid #ddd 1px;
+  padding: 0;
+}
+
+.tabBtn {
+  background-color: transparent;
+  height: 130%;
+}
+
+.selectedCategory {
+  color: #8e1f42;
+  background-color: #e4d9dc;
+  border-bottom: solid #8e1f42 2px;
+}
+
+.lowerNav button:hover {
+  color: black;
+  border: none;
+  padding-bottom: 14px;
+}
+
+.lowerNav .selectedCategory:hover {
+  color: #8e1f42;
+  border-bottom: solid #8e1f42 2px;
+}

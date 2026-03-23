@@ -1,4 +1,4 @@
-package edu.ap.testbackend.entities;
+package edu.ap.gosmartlib.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;

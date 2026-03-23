@@ -1,13 +1,13 @@
-package edu.ap.testbackend.services;
+package edu.ap.gosmartlib.services;
 
-import edu.ap.testbackend.dto.loan.LoanRequestDTO;
-import edu.ap.testbackend.entities.BookEntity;
-import edu.ap.testbackend.entities.LoanEntity;
-import edu.ap.testbackend.entities.LoanHistoryEntity;
-import edu.ap.testbackend.exceptions.BookNotFoundException;
-import edu.ap.testbackend.repositories.BookRepository;
-import edu.ap.testbackend.repositories.LoanHistoryRepository;
-import edu.ap.testbackend.repositories.LoanRepository;
+import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
+import edu.ap.gosmartlib.entities.BookEntity;
+import edu.ap.gosmartlib.entities.LoanEntity;
+import edu.ap.gosmartlib.entities.LoanHistoryEntity;
+import edu.ap.gosmartlib.exceptions.BookNotFoundException;
+import edu.ap.gosmartlib.repositories.BookRepository;
+import edu.ap.gosmartlib.repositories.LoanHistoryRepository;
+import edu.ap.gosmartlib.repositories.LoanRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

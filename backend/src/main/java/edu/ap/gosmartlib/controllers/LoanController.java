@@ -1,7 +1,7 @@
-package edu.ap.testbackend.controllers;
+package edu.ap.gosmartlib.controllers;
 
-import edu.ap.testbackend.dto.loan.LoanRequestDTO;
-import edu.ap.testbackend.services.LoanService;
+import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
+import edu.ap.gosmartlib.services.LoanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
