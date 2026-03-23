@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 
-@Profile("local")
+@ConditionalOnProperty(name = "app.mock-role.enabled", havingValue = "true")
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -31,8 +31,8 @@ public class LocalAuthController {
 
     @PostMapping("/mock-role/{role}")
     public ResponseEntity<String> switchRole(@PathVariable String role,
-                                             HttpServletRequest request,
-                                             HttpServletResponse response) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
         Map<String, Object> attributes = buildMockAttributes(role);
 
         if (attributes == null) {
@@ -44,12 +44,10 @@ public class LocalAuthController {
                 attributes,
                 "userID");
 
-
         String basisrol = (String) attributes.get("basisrol");
         UserRoles userRole = UserRoles.fromSmartschool(basisrol);
         List<SimpleGrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + userRole.name())
-        );
+                new SimpleGrantedAuthority("ROLE_" + userRole.name()));
 
         OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
                 mockUser,
