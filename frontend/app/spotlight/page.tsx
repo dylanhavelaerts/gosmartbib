@@ -52,7 +52,10 @@ export default function Home() {
 
   return (
     <main>
-      <h1>In de kijker</h1>
+      <div id="spotlightHeader">
+        <h1>In de kijker</h1>
+        <button id="spotlightButton">Best beoordeeld in kijker</button>
+      </div>
       <ul>
         {selectedIds.size > 0 && (
           <li onClick={() => tryDelete()}>
