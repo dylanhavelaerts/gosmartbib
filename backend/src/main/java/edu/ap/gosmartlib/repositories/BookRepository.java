@@ -31,10 +31,11 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
          * @param query
          * @return
          */
-        @Query("SELECT DISTINCT b FROM BookEntity b JOIN b.authors a WHERE " +
-                        "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-                        "LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))")
-        Page<BookEntity> searchByTitleOrAuthor(@Param("query") String query, Pageable pageable);
+        @Query("SELECT DISTINCT b FROM BookEntity b LEFT JOIN b.authors a LEFT JOIN b.categories c WHERE " +
+                        "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%'))" +
+                        " OR LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))" +
+                        " OR LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))")
+        Page<BookEntity> searchByTitleOrAuthorOrCategory(@Param("query") String query, Pageable pageable);
 
         @Query(value = """
                         SELECT DISTINCT b FROM BookEntity b

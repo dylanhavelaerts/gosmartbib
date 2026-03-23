@@ -414,65 +414,66 @@ class BookServiceTest {
         verify(bookRepository, times(1)).findBySpotlightTrueOrderByIdDesc();
     }
 
-    // --- searchByTitleOrAuthor Tests ---
+    // --- searchByTitleOrAuthorOrCategory Tests ---
 
     @Test
-    void givenNullQuery_whenSearchByTitleOrAuthor_thenReturnsAllBooks() {
+    void givenNullQuery_whenSearchByTitleOrAuthorOrCategory_thenReturnsAllBooks() {
         when(bookRepository.findAll(any(Pageable.class))).thenReturn(toEntityPage(List.of(buildBook())));
 
-        Page<BookDTO> result = bookService.searchByTitleOrAuthor(null, 0, 20);
+        Page<BookDTO> result = bookService.searchByTitleOrAuthorOrCategory(null, 0, 20);
 
         assertEquals(1, result.getTotalElements());
         assertEquals("Clean Code", result.getContent().get(0).title());
         verify(bookRepository, times(1)).findAll(any(Pageable.class));
-        verify(bookRepository, never()).searchByTitleOrAuthor(anyString(), any(Pageable.class));
+        verify(bookRepository, never()).searchByTitleOrAuthorOrCategory(anyString(), any(Pageable.class));
     }
 
     @Test
-    void givenBlankQuery_whenSearchByTitleOrAuthor_thenReturnsAllBooks() {
+    void givenBlankQuery_whenSearchByTitleOrAuthorOrCategory_thenReturnsAllBooks() {
         when(bookRepository.findAll(any(Pageable.class))).thenReturn(toEntityPage(List.of(buildBook())));
 
-        Page<BookDTO> result = bookService.searchByTitleOrAuthor("   ", 0, 20);
+        Page<BookDTO> result = bookService.searchByTitleOrAuthorOrCategory("   ", 0, 20);
 
         assertEquals(1, result.getTotalElements());
         verify(bookRepository, times(1)).findAll(any(Pageable.class));
-        verify(bookRepository, never()).searchByTitleOrAuthor(anyString(), any(Pageable.class));
+        verify(bookRepository, never()).searchByTitleOrAuthorOrCategory(anyString(), any(Pageable.class));
     }
 
     @Test
-    void givenValidQuery_whenSearchByTitleOrAuthor_thenReturnsMatchingBooks() {
+    void givenValidQuery_whenSearchByTitleOrAuthorOrCategory_thenReturnsMatchingBooks() {
         Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook()), PageRequest.of(0, 20), 1);
-        when(bookRepository.searchByTitleOrAuthor(eq("Clean"), any(Pageable.class))).thenReturn(entityPage);
+        when(bookRepository.searchByTitleOrAuthorOrCategory(eq("Clean"), any(Pageable.class))).thenReturn(entityPage);
 
-        Page<BookDTO> result = bookService.searchByTitleOrAuthor("Clean", 0, 20);
+        Page<BookDTO> result = bookService.searchByTitleOrAuthorOrCategory("Clean", 0, 20);
 
         assertEquals(1, result.getTotalElements());
         assertEquals("Clean Code", result.getContent().get(0).title());
-        verify(bookRepository, times(1)).searchByTitleOrAuthor(eq("Clean"), any(Pageable.class));
+        verify(bookRepository, times(1)).searchByTitleOrAuthorOrCategory(eq("Clean"), any(Pageable.class));
         verify(bookRepository, never()).findAll(any(Pageable.class));
     }
 
     @Test
-    void givenQueryWithWhitespace_whenSearchByTitleOrAuthor_thenTrimsAndSearches() {
+    void givenQueryWithWhitespace_whenSearchByTitleOrAuthorOrCategory_thenTrimsAndSearches() {
         Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook()), PageRequest.of(0, 20), 1);
-        when(bookRepository.searchByTitleOrAuthor(eq("Clean"), any(Pageable.class))).thenReturn(entityPage);
+        when(bookRepository.searchByTitleOrAuthorOrCategory(eq("Clean"), any(Pageable.class))).thenReturn(entityPage);
 
-        Page<BookDTO> result = bookService.searchByTitleOrAuthor("  Clean  ", 0, 20);
+        Page<BookDTO> result = bookService.searchByTitleOrAuthorOrCategory("  Clean  ", 0, 20);
 
         assertEquals(1, result.getTotalElements());
-        verify(bookRepository, times(1)).searchByTitleOrAuthor(eq("Clean"), any(Pageable.class));
+        verify(bookRepository, times(1)).searchByTitleOrAuthorOrCategory(eq("Clean"), any(Pageable.class));
     }
 
     @Test
-    void givenNoMatchingBooks_whenSearchByTitleOrAuthor_thenReturnsEmptyPage() {
+    void givenNoMatchingBooks_whenSearchByTitleOrAuthorOrCategory_thenReturnsEmptyPage() {
         Page<BookEntity> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
-        when(bookRepository.searchByTitleOrAuthor(eq("Nonexistent"), any(Pageable.class))).thenReturn(emptyPage);
+        when(bookRepository.searchByTitleOrAuthorOrCategory(eq("Nonexistent"), any(Pageable.class)))
+                .thenReturn(emptyPage);
 
-        Page<BookDTO> result = bookService.searchByTitleOrAuthor("Nonexistent", 0, 20);
+        Page<BookDTO> result = bookService.searchByTitleOrAuthorOrCategory("Nonexistent", 0, 20);
 
         assertNotNull(result);
         assertEquals(0, result.getTotalElements());
-        verify(bookRepository, times(1)).searchByTitleOrAuthor(eq("Nonexistent"), any(Pageable.class));
+        verify(bookRepository, times(1)).searchByTitleOrAuthorOrCategory(eq("Nonexistent"), any(Pageable.class));
     }
 
     // --- Hulpmethoden (Helper Methods) ---

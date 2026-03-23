@@ -336,13 +336,13 @@ class BookControllerTest {
     @Test
     void givenQuery_whenSearchByTitleOrAuthor_thenReturnsOkWithResults() {
         Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
-        when(bookService.searchByTitleOrAuthor("Clean", 0, 20)).thenReturn(expected);
+        when(bookService.searchByTitleOrAuthorOrCategory("Clean", 0, 20)).thenReturn(expected);
 
-        ResponseEntity<Page<BookDTO>> result = bookController.searchByTitleOrAuthor("Clean", 0, 20);
+        ResponseEntity<Page<BookDTO>> result = bookController.searchByTitleOrAuthorOrCategory("Clean", 0, 20);
 
         assertEquals(200, result.getStatusCode().value());
         assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).searchByTitleOrAuthor("Clean", 0, 20);
+        verify(bookService, times(1)).searchByTitleOrAuthorOrCategory("Clean", 0, 20);
     }
 
     @Test

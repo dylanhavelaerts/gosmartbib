@@ -53,11 +53,11 @@ public class BookController {
      * @param size  aantal boeken per pagina
      */
     @GetMapping("/search")
-    public ResponseEntity<Page<BookDTO>> searchByTitleOrAuthor(
+    public ResponseEntity<Page<BookDTO>> searchByTitleOrAuthorOrCategory(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(bookService.searchByTitleOrAuthor(query, page, size));
+        return ResponseEntity.ok(bookService.searchByTitleOrAuthorOrCategory(query, page, size));
     }
 
     /**
@@ -83,7 +83,7 @@ public class BookController {
                     language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, page, size);
             return ResponseEntity.ok(filteredBooks);
         } catch (IllegalArgumentException e) {
-            // 400 als de filter combinatie ongeldig is
+            // 400 als de filter combinatie Fongeldig is
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (DataAccessException e) {
             // 500 als de error op database niveau is

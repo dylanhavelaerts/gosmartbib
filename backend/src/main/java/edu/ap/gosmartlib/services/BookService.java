@@ -126,7 +126,7 @@ public class BookService {
      * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar
      *         DTO's.
      */
-    public Page<BookDTO> searchByTitleOrAuthor(String query, int page, int size) {
+    public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
@@ -136,7 +136,7 @@ public class BookService {
             return bookRepository.findAll(pageable).map(this::toDTO);
         }
 
-        return bookRepository.searchByTitleOrAuthor(query.trim(), pageable).map(this::toDTO);
+        return bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), pageable).map(this::toDTO);
     }
 
     public List<BookDTO> getTop4BooksInSpotlight() {
