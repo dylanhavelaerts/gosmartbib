@@ -8,25 +8,29 @@ main h1 {
   padding: clamp(8px, 2vw, 16px);
   margin: 0 0 2rem 0;
 }
-table {
+.adminTable {
   width: 100%;
   border: 4px, solid, #8e2446;
   gap: 0;
   border-collapse: collapse;
 }
-td {
+.adminCell {
   padding: 1rem 1rem;
   border: 1px dashed #8e2446;
   min-width: 4.5rem;
   text-align: center;
 }
-th {
+.adminHeader {
   border-bottom: 4px solid #8e2446;
+}
+.uidCell {
+  padding: 1rem 0;
+  max-width: 3rem;
 }
 .fullScreen {
   display: none;
 }
-table button {
+.adminTableButton {
   background-color: transparent;
   width: 100%;
   height: 100%;

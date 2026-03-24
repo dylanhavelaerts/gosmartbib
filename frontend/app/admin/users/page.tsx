@@ -155,14 +155,14 @@ export default function AdminUserPage() {
             {!error && me?.role === "BIBLIOTHEEKBEHEERDER" && (
                 <div>
                     <h1>Gebruikersbeheer {me?.school?.name}</h1>
-                    <table>
+                    <table className="adminTable">
                         <thead>
                             <tr>
-                                <th>UID</th>
-                                <th className="fullScreen">Rol</th>
-                                <th className="fullScreen">Klassen</th>
-                                <th>Nieuwe rol</th>
-                                <th></th>
+                                <th className="adminHeader">UID</th>
+                                <th className="fullScreen adminHeader">Rol</th>
+                                <th className="fullScreen adminHeader">Klassen</th>
+                                <th className="adminHeader">Nieuwe rol</th>
+                                <th className="adminHeader"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -172,10 +172,10 @@ export default function AdminUserPage() {
 
                                 return (
                                     <tr key={user.id}>
-                                        <td>{user.smartschoolUid}</td>
-                                        <td className="fullScreen">{replaceRoleName(user.role)}</td>
-                                        <td className="fullScreen">{user.classes.length === 0 ? "-" : user.classes.map((c) => c.name).join(", ")}</td>
-                                        <td><select 
+                                        <td className="adminCell uidCell">{user.smartschoolUid}</td>
+                                        <td className="fullScreen adminCell">{replaceRoleName(user.role)}</td>
+                                        <td className="fullScreen adminCell">{user.classes.length === 0 ? "-" : user.classes.map((c) => c.name).join(", ")}</td>
+                                        <td className="adminCell"><select 
                                             value={selectedRole}
                                             onChange={(e) => {
                                                 setSelectedRoles((prev) => ({
@@ -191,10 +191,10 @@ export default function AdminUserPage() {
                                             </select>
                                             </td>
                                             {!changed && (
-                                                <td></td>
+                                                <td className="adminCell"></td>
                                             )}{changed && (
-                                                <td className="saveButton">
-                                                    <button onClick={() => {handleSave(user.id)}}>{savingUserId === user.id ? "Opslaan..." : "Opslaan"}</button>
+                                                <td className="saveButton adminCell">
+                                                    <button className="adminTableButton" onClick={() => {handleSave(user.id)}}>{savingUserId === user.id ? "Opslaan..." : "Opslaan"}</button>
                                                 </td>
                                         )}
                                     </tr>
