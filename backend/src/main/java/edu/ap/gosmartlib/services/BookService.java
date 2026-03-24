@@ -172,8 +172,7 @@ public class BookService {
 
         if (user.getRole() == UserRoles.TEACHER) {
             books = bookRepository.findTop4ByDidacticTagTrueOrderByRatingDesc();
-        }
-        if (user.getRole() == UserRoles.STUDENT) {
+        } else if (user.getRole() == UserRoles.STUDENT) {
             String ageRange = determineAgeRangeFromStudentClass(user);
             books = bookRepository.findTop4ByAgeRangeIgnoreCaseAndDidacticTagFalseOrderByRatingDesc(ageRange);
         } else {
@@ -191,7 +190,7 @@ public class BookService {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
-        else if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
+        if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
             throw new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount");
         }
         if (minPubYear != null && maxPubYear != null && minPubYear > maxPubYear) {
