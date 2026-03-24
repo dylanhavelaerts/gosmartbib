@@ -18,6 +18,15 @@ public class DataSeeding implements CommandLineRunner {
                 this.bookRepository = bookRepository;
         }
 
+        private String mapAgeRange(String readingLevel) {
+                return switch (readingLevel) {
+                        case "A", "B" -> "Eerste graad";
+                        case "C" -> "Tweede graad";
+                        case "D" -> "Derde graad";
+                        default -> "Tweede graad";
+                };
+        }
+
         private BookEntity book(
                         String title,
                         List<String> authors,
@@ -36,6 +45,7 @@ public class DataSeeding implements CommandLineRunner {
                         String readingLevel,
                         Integer totalCopies,
                         Integer availableCopies) {
+                String ageRange = mapAgeRange(readingLevel);
                 BookEntity b = new BookEntity(
                                 title,
                                 authors,
@@ -52,7 +62,8 @@ public class DataSeeding implements CommandLineRunner {
                                 labels,
                                 readingLevel,
                                 totalCopies,
-                                availableCopies);
+                                availableCopies,
+                                ageRange);
                 b.setSpotlight(spotlight);
                 return b;
         }

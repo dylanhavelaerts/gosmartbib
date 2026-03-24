@@ -285,33 +285,69 @@ public class BookService {
         if (updatedBook.title() != null && updatedBook.title().isBlank())
             throw new IllegalArgumentException("Titel mag niet leeg zijn");
 
-        if (updatedBook.pageCount() != null && updatedBook.pageCount() <= 0)
+        if (updatedBook.pageCount() != null && updatedBook.pageCount() < 0)
             throw new IllegalArgumentException("Paginacount mag niet negatief zijn");
         if (updatedBook.publishedYear() != null && updatedBook.publishedYear() <= 0)
             throw new IllegalArgumentException("Publicatiejaar moet groter zijn dan 0");
 
         if (updatedBook.publishedYear() != null && updatedBook.publishedYear() > Year.now().getValue())
             throw new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen");
+        if (updatedBook.totalCopies() != null && updatedBook.totalCopies() < 0)
+            throw new IllegalArgumentException("Totaal aantal exemplaren mag niet negatief zijn");
+
+        if (updatedBook.availableCopies() != null && updatedBook.availableCopies() < 0)
+            throw new IllegalArgumentException("Beschikbare exemplaren mogen niet negatief zijn");
+
+        int finalTotal = updatedBook.totalCopies() != null ? updatedBook.totalCopies() : book.getTotalCopies();
+        int finalAvailable = updatedBook.availableCopies() != null ? updatedBook.availableCopies()
+                : book.getAvailableCopies();
+
+        if (finalAvailable > finalTotal)
+            throw new IllegalArgumentException(
+                    "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren");
+
+        if (updatedBook.isbn() != null && !updatedBook.isbn().equals(book.getIsbn())
+                && bookRepository.existsByIsbn(updatedBook.isbn())) {
+            throw new IllegalArgumentException("ISBN bestaat al in de database");
+        }
+
+        if (updatedBook.isbn() != null && updatedBook.isbn().isBlank())
+            throw new IllegalArgumentException("ISBN mag niet leeg zijn");
+
         if (updatedBook.title() != null)
-            book.setTitle(updatedBook.title());
+            book.setTitle(updatedBook.title().trim());
         if (updatedBook.authors() != null)
-            book.setAuthors(updatedBook.authors());
+            book.setAuthors(cleanStringList(updatedBook.authors()));
         if (updatedBook.publisher() != null)
-            book.setPublisher(updatedBook.publisher());
+            book.setPublisher(safeTrim(updatedBook.publisher()));
         if (updatedBook.description() != null)
-            book.setDescription(updatedBook.description());
+            book.setDescription(safeTrim(updatedBook.description()));
         if (updatedBook.pageCount() != null)
             book.setPageCount(updatedBook.pageCount());
         if (updatedBook.categories() != null)
-            book.setCategories(updatedBook.categories());
+            book.setCategories(cleanStringList(updatedBook.categories()));
+        if (updatedBook.labels() != null)
+            book.setLabels(cleanStringList(updatedBook.labels()));
         if (updatedBook.thumbnail() != null)
-            book.setThumbnail(updatedBook.thumbnail());
+            book.setThumbnail(safeTrim(updatedBook.thumbnail()));
         if (updatedBook.language() != null)
-            book.setLanguage(updatedBook.language());
+            book.setLanguage(safeTrim(updatedBook.language()));
         if (updatedBook.isbn() != null)
-            book.setIsbn(updatedBook.isbn());
+            book.setIsbn(updatedBook.isbn().trim());
+        if (updatedBook.rating() != null)
+            book.setRating(updatedBook.rating());
         if (updatedBook.publishedYear() != null)
             book.setPublishedYear(updatedBook.publishedYear());
+        if (updatedBook.didacticTag() != null)
+            book.setDidacticTag(updatedBook.didacticTag());
+        if (updatedBook.availableCopies() != null)
+            book.setAvailableCopies(updatedBook.availableCopies());
+        if (updatedBook.totalCopies() != null)
+            book.setTotalCopies(updatedBook.totalCopies());
+        if (updatedBook.readingLevel() != null)
+            book.setReadingLevel(safeTrim(updatedBook.readingLevel()));
+        if (updatedBook.ageRange() != null)
+            book.setAgeRange(safeTrim(updatedBook.ageRange()));
 
         return toDTO(bookRepository.save(book));
     }
@@ -333,6 +369,10 @@ public class BookService {
         book.setRating(request.rating() != null ? request.rating() : 0.0);
         book.setPublishedYear(request.publishedYear());
         book.setSpotlight(Boolean.TRUE.equals(request.spotlight()));
+        book.setDidacticTag(request.didacticTag());
+        book.setLabels(cleanStringList(request.labels()));
+        book.setReadingLevel(safeTrim(request.readingLevel()));
+        book.setAgeRange(safeTrim(request.ageRange()));
         // Maakt random ISBN aan
         // Enorm kleine kans voor een dubbele ID
         // In dat geval, gewoon opnieuw indienen
@@ -378,7 +418,8 @@ public class BookService {
                 labels,
                 book.getReadingLevel(),
                 book.getTotalCopies(),
-                book.getAvailableCopies());
+                book.getAvailableCopies(),
+                book.getAgeRange());
     }
 
     // Helper functies

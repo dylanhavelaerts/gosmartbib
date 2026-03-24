@@ -40,7 +40,7 @@ class BookControllerTest {
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023, false, null, "A", 1, 1);
+                2023, false, null, "A", 1, 1, "Eerste graad");
     }
 
     @Test
@@ -445,7 +445,8 @@ class BookControllerTest {
     @Test
     void givenNegativePageCount_whenUpdateBook_thenReturnsBadRequest() {
         BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
-                -1, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 2023, false, null, "A", 1, 1);
+                -1, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 2023, false, null, "A", 1, 1,
+                "Eerste graad");
         when(bookService.updateBook(1L, updatedDTO))
                 .thenThrow(new IllegalArgumentException("Paginacount mag niet negatief zijn"));
 
@@ -459,7 +460,8 @@ class BookControllerTest {
     @Test
     void givenFuturePublishedYear_whenUpdateBook_thenReturnsBadRequest() {
         BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
-                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 9999, false, null, "A", 1, 1);
+                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 9999, false, null, "A", 1, 1,
+                "Eerste graad");
         when(bookService.updateBook(1L, updatedDTO))
                 .thenThrow(new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen"));
 
@@ -570,7 +572,13 @@ class BookControllerTest {
                 "nl",
                 4.5,
                 2024,
-                false);
+                false,
+                false,
+                null,
+                "A",
+                1,
+                1,
+                "Eerste graad");
 
         BookDTO createdBook = new BookDTO(
                 42L,
@@ -584,7 +592,7 @@ class BookControllerTest {
                 "nl",
                 4.5,
                 "NOISBN-123e4567-e89b-12d3-a456-426614174000",
-                2024, false, null, "A", 1, 1);
+                2024, false, null, "A", 1, 1, "Eerste graad");
 
         when(bookService.addManualBook(request)).thenReturn(createdBook);
 
@@ -608,7 +616,15 @@ class BookControllerTest {
                 "nl",
                 4.0,
                 2024,
-                false);
+                false,
+                false,
+                null,
+                "A",
+                1,
+                1,
+                "Eerste graad"
+
+        );
 
         when(bookService.addManualBook(request))
                 .thenThrow(new IllegalArgumentException("Titel is verplicht"));
@@ -633,7 +649,13 @@ class BookControllerTest {
                 "nl",
                 4.0,
                 2024,
-                false);
+                false,
+                false,
+                null,
+                "A",
+                1,
+                1,
+                "Eerste graad");
 
         when(bookService.addManualBook(request))
                 .thenThrow(new RuntimeException("DB down"));
