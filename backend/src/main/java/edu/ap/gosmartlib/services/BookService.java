@@ -191,7 +191,7 @@ public class BookService {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
-        if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
+        else if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
             throw new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount");
         }
         if (minPubYear != null && maxPubYear != null && minPubYear > maxPubYear) {
