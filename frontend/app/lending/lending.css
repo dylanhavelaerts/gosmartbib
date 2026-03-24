@@ -369,3 +369,23 @@
   border-color: #ccc;
   cursor: not-allowed;
 }
+
+.sectieHeader.margined {
+  margin-top: 1.5rem;
+}
+
+.placeholderText.centered {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.userPhotoPlaceholder.cover,
+.userPhotoSmall.cover {
+  object-fit: cover;
+}
+
+.flexColumnGrow {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}

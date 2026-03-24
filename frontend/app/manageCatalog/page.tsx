@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Book, BOOK_CATEGORIES } from "../interfaces/Book";
 import { useRouter, useSearchParams } from "next/navigation";
 import "../catalog/bookList.css";
-import "../manageCatalog/editbook.css";
+import "./editbook.css";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function ManageCatalogPage() {
@@ -22,7 +22,7 @@ export default function ManageCatalogPage() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`${apiUrl}/books/all/unpaged`, { credentials: "include" }) // tijdelijke endpoint om alle boeken te krijgen zonder paginatie
+    fetch(`${apiUrl}/books/all/unpaged`, { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error("Netwerk response was niet ok");
         return res.json();
@@ -38,23 +38,27 @@ export default function ManageCatalogPage() {
         }
       })
       .catch((err) => console.error("Fout bij ophalen boeken:", err));
-  }, []);
+  }, [apiUrl, searchParams]);
+
   function openModal() {
     if (!selectedBook) return;
     setFormData({ ...selectedBook });
     setModalOpen(true);
     setError(null);
   }
+
   function closeModal() {
     setModalOpen(false);
     setError(null);
   }
+
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
+
   function handleArrayChange(
     e: React.ChangeEvent<HTMLInputElement>,
     field: keyof Book,
@@ -62,6 +66,7 @@ export default function ManageCatalogPage() {
     const values = e.target.value.split(",").map((v) => v.trim());
     setFormData((prev) => ({ ...prev, [field]: values }));
   }
+
   const filteredBooks = books.filter((book) => {
     const q = query.toLowerCase();
     return (
@@ -70,6 +75,7 @@ export default function ManageCatalogPage() {
       book.isbn?.toLowerCase().includes(q)
     );
   });
+
   async function handleSave() {
     if (!selectedBook) return;
     setError(null);
@@ -116,9 +122,10 @@ export default function ManageCatalogPage() {
       setSelectedBook(updated);
       closeModal();
     } catch {
-      setError("Er is iets misgegaan tijdens het opslagen, probeer opnieuw.");
+      setError("Er is iets misgegaan tijdens het opslaan, probeer opnieuw.");
     }
   }
+
   async function tryDelete() {
     if (!selectedBook) return;
     setDeleting(true);
@@ -143,57 +150,12 @@ export default function ManageCatalogPage() {
   return (
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
       <div>
-        <main style={{ display: "flex", flexDirection: "column" }}>
-          <style>{`
-        .manage-wrapper {
-          display: flex;
-          flex-direction: column-reverse;
-          gap: 2rem;
-          width: 100%;
-          max-width: 1400px;
-          flex: 1;
-          margin: 0 auto; 
-          padding-bottom: 0; 
-        }
-        .eiland-lijst {
-          width: 100%;
-        }
-        .eiland-details {
-          width: 100%;
-        }
-
-        @media (min-width: 900px) {
-          .manage-wrapper {
-            flex-direction: row; 
-          }
-          .eiland-lijst {
-            width: 350px;
-            flex-shrink: 0;
-          }
-          .eiland-details {
-            flex: 1;
-            min-width: 0;
-          }
-        }
-      `}</style>
-          <h1 style={{ margin: "0 0 1.5rem 0", padding: 0, lineHeight: "1" }}>
-            Beheer catalogus
-          </h1>
+        <main className="manage-main-layout">
+          <h1 className="manage-title">Beheer catalogus</h1>
+          
           <div className="manage-wrapper">
-            <div
-              className="eiland-lijst"
-              style={{
-                height: "calc(80vh - 4rem)",
-                boxSizing: "border-box",
-                backgroundColor: "white",
-                borderRadius: "7px",
-                border: "1.2px solid #8a1d40",
-                boxShadow: "0 2px 12px rgba(0, 0, 0, 0.12)",
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-              }}
-            >
+            {/* EILAND LIJST */}
+            <div className="eiland-lijst">
               <div className="headerdiv">
                 <button
                   onClick={() => router.push("/add-book")}
@@ -203,142 +165,47 @@ export default function ManageCatalogPage() {
                   + Boek(en) toevoegen
                 </button>
               </div>
-              <div
-                style={{
-                  padding: "1.5rem",
-                  borderBottom: "1px solid #ddd",
-                  backgroundColor: "#fdfdfd",
-                }}
-              >
+              
+              <div className="search-container">
                 <input
                   type="text"
                   placeholder="Zoek op titel, auteur of ISBN..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "0.8rem",
-                    borderRadius: "6px",
-                    border: "1px solid #ccc",
-                    boxSizing: "border-box",
-                    backgroundColor: "#ece6f0",
-                    outline: "none",
-                  }}
+                  className="search-input"
                 />
               </div>
 
-              <div style={{ flex: 1, overflowY: "auto", padding: "1rem" }}>
+              <div className="list-container">
                 {books.length === 0 ? (
-                  <p style={{ textAlign: "center", color: "#888" }}>
-                    Geen boeken gevonden.
-                  </p>
+                  <p className="empty-message">Geen boeken gevonden.</p>
                 ) : (
-                  <ul
-                    style={{
-                      listStyle: "none",
-                      margin: 0,
-                      padding: 0,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "stretch",
-                      gap: "0.5rem",
-                    }}
-                  >
+                  <ul className="book-list">
                     {filteredBooks.map((book) => {
                       const isSelected = selectedBook?.id === book.id;
                       return (
                         <li
                           key={book.id}
                           onClick={() => setSelectedBook(book)}
-                          style={{
-                            padding: "0.8rem",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            backgroundColor: isSelected ? "#8e2446" : "#fff",
-                            color: isSelected ? "white" : "#333",
-                            border: isSelected
-                              ? "1px solid #8e2446"
-                              : "1px solid #eee",
-                            transition: "all 0.2s ease",
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: "1rem",
-                          }}
+                          className={`book-list-item ${isSelected ? "selected" : ""}`}
                         >
-                          <div
-                            style={{
-                              flexShrink: 0,
-                              width: "45px",
-                              height: "65px",
-                              backgroundColor: "#eee",
-                              borderRadius: "4px",
-                              overflow: "hidden",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              marginTop: "0.2rem",
-                            }}
-                          >
+                          <div className="book-list-thumb">
                             {book.thumbnail && book.thumbnail.trim() !== "" ? (
-                              <img
-                                src={book.thumbnail}
-                                alt={book.title}
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                }}
-                              />
+                              <img src={book.thumbnail} alt={book.title} />
                             ) : (
-                              <span
-                                style={{ fontSize: "0.6rem", color: "#aaa" }}
-                              >
-                                Geen cover
-                              </span>
+                              <span>Geen cover</span>
                             )}
                           </div>
 
-                          <div style={{ flex: 1, overflow: "hidden" }}>
-                            <h3
-                              style={{
-                                margin: "0 0 0.25rem 0",
-                                fontSize: "1rem",
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              {book.title}
-                            </h3>
-                            <p
-                              style={{
-                                margin: 0,
-                                fontSize: "0.85rem",
-                                opacity: isSelected ? 0.9 : 0.6,
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              {book.authors
-                                ? book.authors.join(", ")
-                                : "Onbekend"}
+                          <div className="book-list-info">
+                            <h3 className="book-list-title">{book.title}</h3>
+                            <p className="book-list-authors">
+                              {book.authors ? book.authors.join(", ") : "Onbekend"}
                             </p>
-                            <p
-                              style={{
-                                margin: "0.25rem 0 0 0",
-                                fontSize: "0.75rem",
-                                opacity: isSelected ? 0.7 : 0.5,
-                                wordBreak: "break-word",
-                              }}
-                            >
+                            <p className="book-list-isbn">
                               ISBN: {book.isbn || "-"}
                             </p>
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: "0.4rem",
-                                marginTop: "0.4rem",
-                              }}
-                            >
+                            <div className="copies-container">
                               <span
                                 className={`copies-pill ${book.availableCopies === 0 ? "copies-pill--empty" : "copies-pill--available"}`}
                               >
@@ -357,226 +224,87 @@ export default function ManageCatalogPage() {
               </div>
             </div>
 
-            <div
-              className="eiland-details"
-              style={{
-                height: "calc(80vh - 4rem)",
-                boxSizing: "border-box",
-                backgroundColor: "white",
-                borderRadius: "7px",
-                border: "1.2px solid #8a1d40",
-                boxShadow: "0 2px 12px rgba(0, 0, 0, 0.12)",
-                display: "flex",
-                flexDirection: "column",
-                overflowY: "auto",
-                padding: "clamp(1.5rem, 3vw, 3rem)",
-              }}
-            >
+            {/* EILAND DETAILS */}
+            <div className="eiland-details">
               {!selectedBook ? (
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#888",
-                  }}
-                >
-                  <p style={{ fontSize: "1.2rem", textAlign: "center" }}>
-                    Klik op een boek in de lijst om de details te bekijken.
-                  </p>
+                <div className="details-empty">
+                  <p>Klik op een boek in de lijst om de details te bekijken.</p>
                 </div>
               ) : (
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "1rem",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "2rem",
-                    }}
-                  >
-                    <div style={{ flex: "1 1 200px" }}>
-                      <h1
-                        style={{
-                          margin: "0 0 0.5rem 0",
-                          fontSize: "clamp(1.5rem, 4vw, 2rem)",
-                          color: "#c0392b",
-                          padding: 0,
-                        }}
-                      >
-                        {selectedBook.title}
-                      </h1>
-                      <p
-                        style={{ margin: 0, fontSize: "1.1rem", color: "#666" }}
-                      >
+                  <div className="details-header">
+                    <div className="details-title-container">
+                      <h1 className="details-title">{selectedBook.title}</h1>
+                      <p className="details-author">
                         door {selectedBook.authors?.join(", ") || "Onbekend"}
                       </p>
                     </div>
 
-                    <div style={{ display: "flex", gap: "1rem" }}>
+                    <div className="details-actions">
                       <button
                         onClick={openModal}
-                        className="confirmButton"
+                        className="btn-secondary"
                         type="button"
-                        style={{
-                          padding: "0.6rem 1.2rem",
-                          backgroundColor: "#ece6f0",
-                          color: "#333",
-                          border: "none",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                        }}
                       >
                         Bewerken
                       </button>
                       <button
                         onClick={() => setShowDeleteConfirm(true)}
-                        className="confirmButton"
+                        className="btn-danger"
                         type="button"
-                        style={{
-                          padding: "0.6rem 1.2rem",
-                          backgroundColor: "#c0392b",
-                          color: "white",
-                          border: "none",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                        }}
                       >
                         Verwijderen
                       </button>
                     </div>
                   </div>
 
-                  <div
-                    style={{ display: "flex", flexWrap: "wrap", gap: "2rem" }}
-                  >
-                    <div style={{ flexShrink: 0, margin: "0 auto" }}>
+                  <div className="details-content">
+                    <div className="details-cover-container">
                       {selectedBook.thumbnail ? (
                         <img
                           src={selectedBook.thumbnail}
                           alt={`Cover van ${selectedBook.title}`}
-                          style={{
-                            width: "200px",
-                            maxWidth: "100%",
-                            height: "auto",
-                            borderRadius: "6px",
-                            boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                          }}
+                          className="details-cover"
                         />
                       ) : (
-                        <div
-                          style={{
-                            width: "200px",
-                            height: "300px",
-                            backgroundColor: "#eee",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: "6px",
-                          }}
-                        >
-                          <span style={{ color: "#aaa" }}>Geen cover</span>
+                        <div className="details-cover-placeholder">
+                          <span>Geen cover</span>
                         </div>
                       )}
                     </div>
 
-                    <div style={{ flex: "1 1 300px", minWidth: "0" }}>
-                      <div style={{ overflowX: "auto" }}>
-                        <table
-                          style={{
-                            width: "100%",
-                            borderCollapse: "collapse",
-                            textAlign: "left",
-                            minWidth: "250px",
-                          }}
-                        >
+                    <div className="details-info-container">
+                      <div className="details-table-wrapper">
+                        <table className="details-table">
                           <tbody>
-                            <tr style={{ borderBottom: "1px solid #ddd" }}>
-                              <th
-                                style={{
-                                  padding: "1rem 0",
-                                  color: "#8e2446",
-                                  width: "130px",
-                                }}
-                              >
-                                ISBN
-                              </th>
-                              <td
-                                style={{
-                                  padding: "1rem 0",
-                                  fontWeight: "bold",
-                                  color: "#333",
-                                }}
-                              >
-                                {selectedBook.isbn || "-"}
-                              </td>
+                            <tr>
+                              <th>ISBN</th>
+                              <td className="bold">{selectedBook.isbn || "-"}</td>
                             </tr>
-                            <tr style={{ borderBottom: "1px solid #ddd" }}>
-                              <th
-                                style={{ padding: "1rem 0", color: "#8e2446" }}
-                              >
-                                Uitgeverij
-                              </th>
-                              <td style={{ padding: "1rem 0", color: "#333" }}>
-                                {selectedBook.publisher || "-"}
-                              </td>
+                            <tr>
+                              <th>Uitgeverij</th>
+                              <td>{selectedBook.publisher || "-"}</td>
                             </tr>
-                            <tr style={{ borderBottom: "1px solid #ddd" }}>
-                              <th
-                                style={{ padding: "1rem 0", color: "#8e2446" }}
-                              >
-                                Uitgavejaar
-                              </th>
-                              <td style={{ padding: "1rem 0", color: "#333" }}>
-                                {selectedBook.publishedYear || "-"}
-                              </td>
+                            <tr>
+                              <th>Uitgavejaar</th>
+                              <td>{selectedBook.publishedYear || "-"}</td>
                             </tr>
-                            <tr style={{ borderBottom: "1px solid #ddd" }}>
-                              <th
-                                style={{ padding: "1rem 0", color: "#8e2446" }}
-                              >
-                                Pagina's
-                              </th>
-                              <td style={{ padding: "1rem 0", color: "#333" }}>
-                                {selectedBook.pageCount || "-"}
-                              </td>
+                            <tr>
+                              <th>Pagina's</th>
+                              <td>{selectedBook.pageCount || "-"}</td>
                             </tr>
-                            <tr style={{ borderBottom: "1px solid #ddd" }}>
-                              <th
-                                style={{ padding: "1rem 0", color: "#8e2446" }}
-                              >
-                                Categorie
-                              </th>
-                              <td style={{ padding: "1rem 0", color: "#333" }}>
-                                {selectedBook.categories?.join(", ") || "-"}
-                              </td>
+                            <tr>
+                              <th>Categorie</th>
+                              <td>{selectedBook.categories?.join(", ") || "-"}</td>
                             </tr>
                           </tbody>
                         </table>
                       </div>
 
-                      <div style={{ marginTop: "2rem" }}>
-                        <h3
-                          style={{
-                            fontSize: "1.2rem",
-                            color: "#8e2446",
-                            marginBottom: "1rem",
-                          }}
-                        >
-                          Samenvatting
-                        </h3>
-                        <p
-                          style={{
-                            lineHeight: "1.6",
-                            color: "#444",
-                            whiteSpace: "pre-wrap",
-                          }}
-                        >
-                          {selectedBook.description ||
-                            "Geen samenvatting beschikbaar voor dit boek."}
+                      <div className="details-summary">
+                        <h3>Samenvatting</h3>
+                        <p>
+                          {selectedBook.description || "Geen samenvatting beschikbaar voor dit boek."}
                         </p>
                       </div>
                     </div>
@@ -585,6 +313,8 @@ export default function ManageCatalogPage() {
               )}
             </div>
           </div>
+          
+          {/* BEWERKEN MODAL */}
           {modalOpen && selectedBook && (
             <div className="modal-overlay">
               <div className="modal-box">
@@ -678,20 +408,17 @@ export default function ManageCatalogPage() {
                       onChange={handleChange}
                     />
                   </div>
+                  
                   <div className="modal-row">
                     <label className="modal-label"> Categorie(ën)</label>
                     <div className="filterDropdown">
                       <button
                         type="button"
                         className="filterDropdownToggle"
-                        onClick={() =>
-                          setCategoryDropdownOpen(!categoryDropdownOpen)
-                        }
+                        onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
                       >
                         Categorie(ën){" "}
-                        {formData.categories?.length
-                          ? `(${formData.categories.length})`
-                          : ""}{" "}
+                        {formData.categories?.length ? `(${formData.categories.length})` : ""}{" "}
                         ▼
                       </button>
                       {categoryDropdownOpen && (
@@ -700,9 +427,7 @@ export default function ManageCatalogPage() {
                             <label key={cat} className="filterCheckboxLabel">
                               <input
                                 type="checkbox"
-                                checked={
-                                  formData.categories?.includes(cat) || false
-                                }
+                                checked={formData.categories?.includes(cat) || false}
                                 onChange={() => {
                                   const current = formData.categories || [];
                                   const updated = current.includes(cat)
@@ -720,7 +445,6 @@ export default function ManageCatalogPage() {
                         </div>
                       )}
                     </div>
-                    {/* Filter Pills */}
                     {formData.categories && formData.categories.length > 0 && (
                       <div className="modal-selected-categories">
                         {formData.categories.map((cat) => (
@@ -731,9 +455,7 @@ export default function ManageCatalogPage() {
                               onClick={() =>
                                 setFormData((prev) => ({
                                   ...prev,
-                                  categories: prev.categories?.filter(
-                                    (c) => c !== cat,
-                                  ),
+                                  categories: prev.categories?.filter((c) => c !== cat),
                                 }))
                               }
                             >
@@ -744,6 +466,7 @@ export default function ManageCatalogPage() {
                       </div>
                     )}
                   </div>
+                  
                   <div className="modal-row">
                     <label className="modal-label" htmlFor="thumbnail">
                       Voorpagina
@@ -791,12 +514,13 @@ export default function ManageCatalogPage() {
               </div>
             </div>
           )}
+
+          {/* VERWIJDER MODAL */}
           {showDeleteConfirm && selectedBook && (
             <div className="modalOverlay">
               <div className="modalBox">
                 <p>
-                  Ben je zeker dat je <strong>{selectedBook.title}</strong> wilt
-                  verwijderen?
+                  Ben je zeker dat je <strong>{selectedBook.title}</strong> wilt verwijderen?
                 </p>
                 <p>Deze actie is onterugkeerbaar!</p>
                 <div>
