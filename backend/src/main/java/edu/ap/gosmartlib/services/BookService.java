@@ -487,10 +487,11 @@ public class BookService {
             return new ArrayList<>();
         }
 
-        return values.stream()
-                .filter(value -> value != null && !value.isBlank())
-                .map(String::trim)
-                .toList();
+        return new ArrayList<>(
+                values.stream()
+                        .filter(value -> value != null && !value.isBlank())
+                        .map(String::trim)
+                        .toList());
     }
 
     private String safeTrim(String value) {

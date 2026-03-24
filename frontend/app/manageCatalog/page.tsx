@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Book, BOOK_CATEGORIES } from "../interfaces/Book";
+import { Book, BOOK_CATEGORIES, BOOK_LABELS } from "../interfaces/Book";
 import { useRouter, useSearchParams } from "next/navigation";
 import "../catalog/bookList.css";
 import "../manageCatalog/editbook.css";
@@ -16,6 +16,7 @@ export default function ManageCatalogPage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const searchParams = useSearchParams();
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [labelDropdownOpen, setLabelDropdownOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [query, setQuery] = useState("");
@@ -49,12 +50,23 @@ export default function ManageCatalogPage() {
     setModalOpen(false);
     setError(null);
   }
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  }
+function handleChange(
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+) {
+  const { name, value } = e.target;
+
+  setFormData((prev) => ({
+    ...prev,
+    [name]:
+      name === "pageCount" || name === "publishedYear"
+        ? value === ""
+          ? undefined
+          : Number(value)
+        : name === "didacticTag"
+          ? value === "true"
+          : value,
+  }));
+}
   function handleArrayChange(
     e: React.ChangeEvent<HTMLInputElement>,
     field: keyof Book,
@@ -745,6 +757,72 @@ export default function ManageCatalogPage() {
                     )}
                   </div>
                   <div className="modal-row">
+                    <label className="modal-label"> Leefwereldlabel(s)</label>
+                    <div className="filterDropdown">
+                      <button
+                        type="button"
+                        className="filterDropdownToggle"
+                        onClick={() =>
+                          setLabelDropdownOpen(!labelDropdownOpen)
+                        }
+                      >
+                        Label(s){" "}
+                        {formData.labels?.length
+                          ? `(${formData.labels?.length})`
+                          : ""}{" "}
+                        ▼
+                      </button>
+                      {labelDropdownOpen && (
+                        <div className="filterDropdownPanel">
+                          {BOOK_LABELS.map((label) => (
+                            <label key={label} className="filterCheckboxLabel">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  formData.labels?.includes(label) || false
+                                }
+                                onChange={() => {
+                                  const current = formData.labels || [];
+                                  const updated = current.includes(label)
+                                    ? current.filter((c) => c !== label)
+                                    : [...current, label];
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    labels: updated,
+                                  }));
+                                }}
+                              />
+                              {label}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* Filter Pills */}
+                    {formData.labels && formData.labels.length > 0 && (
+                      <div className="modal-selected-categories">
+                        {formData.labels.map((label) => (
+                          <span key={label} className="modal-category-pill">
+                            {label}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  labels: prev.labels?.filter(
+                                    (c) => c !== label,
+                                  ),
+                                }))
+                              }
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="modal-row">
                     <label className="modal-label" htmlFor="thumbnail">
                       Voorpagina
                     </label>
@@ -769,6 +847,71 @@ export default function ManageCatalogPage() {
                       value={formData.description || ""}
                       onChange={handleChange}
                     />
+                  </div>
+
+                  <div className="modal-row">
+                    <label className="modal-label" htmlFor="description">
+                      Taal
+                    </label>
+                    <select
+                      name="language"
+                      className="modal-input"
+                      value={formData.language ?? ""}
+                      onChange={handleChange}
+                    >
+                    <option value="">Alle talen</option>
+                    <option value="NE">NE</option>
+                    <option value="EN">EN</option>
+                    <option value="FR">FR</option>
+                      </select>
+                  </div>
+                  <div className="modal-row">
+                    <label className="modal-label" htmlFor="description">
+                      Leesniveau
+                    </label>
+                    <select
+                      className="modal-input"
+                      name="readingLevel"
+                      value={formData.readingLevel ?? ""}
+                      onChange={handleChange}
+                    ><option value="">Leesniveau</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                      </select>
+                  </div>
+                  <div className="modal-row">
+                    <label className="modal-label" htmlFor="description">
+                      Leeftijd
+                    </label>
+                    <select
+                      className="modal-input"
+                      name="ageRange"
+                      value={formData.ageRange ?? ""}
+                      onChange={handleChange}
+                    ><option value="">Leeftijd</option>
+                    <option value="Eerste graad">Eerste graad</option>
+                    <option value="Tweede graad">Tweede graad</option>
+                    <option value="Derde graad">Derde graad</option>
+                      </select>
+                  </div>
+                  <div className="modal-row">
+                    <label className="modal-label" htmlFor="description">
+                      Didactisch boek
+                    </label>
+                    <select
+                      className="modal-input"
+                      name="didacticTag"
+                      value={
+                        formData.didacticTag === undefined
+                          ? "true"
+                          : String(formData.didacticTag)
+                      }
+                      onChange={handleChange}
+                    ><option value="true">Ja</option>
+                    <option value="false">Nee</option>
+                      </select>
                   </div>
                 </div>
 
