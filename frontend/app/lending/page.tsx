@@ -177,7 +177,7 @@ export default function LendingPage() {
             {selectedUser ? (
               <>
                 {selectedUser.photoUrl ? (
-                  <img src={selectedUser.photoUrl} alt="Profile" className="userPhotoPlaceholder" style={{ objectFit: 'cover' }} />
+                  <img src={selectedUser.photoUrl} alt="Profile" className="userPhotoPlaceholder cover" />
                 ) : (
                   <div className="userPhotoPlaceholder">👤</div>
                 )}
@@ -193,7 +193,7 @@ export default function LendingPage() {
             )}
           </div>
 
-          <div className="sectieHeader" style={{ marginTop: '1.5rem' }}><h2>Lener zoeken</h2></div>
+          <div className="sectieHeader margined"><h2>Lener zoeken</h2></div>
           <div className="searchbar">
             <input 
               type="text" 
@@ -207,12 +207,12 @@ export default function LendingPage() {
 
           <div className="resultsFrame">
             {userSearchResults.length === 0 ? (
-               <p className="placeholderText" style={{textAlign: "center", marginTop: "2rem"}}>Typ een deel van de naam in.</p>
+               <p className="placeholderText centered">Typ een deel van de naam in.</p>
             ) : (
               userSearchResults.map((user, idx) => (
                 <div key={idx} className="listItem">
                   {user.photoUrl ? (
-                    <img src={user.photoUrl} alt="Profile" className="userPhotoSmall" style={{ objectFit: 'cover' }} />
+                    <img src={user.photoUrl} alt="Profile" className="userPhotoSmall cover" />
                   ) : (
                     <div className="userPhotoSmall">👤</div>
                   )}
@@ -241,9 +241,9 @@ export default function LendingPage() {
 
           <div className="resultsFrame">
             {searchResults.length === 0 && bookQuery.trim() !== "" ? (
-              <p className="placeholderText" style={{textAlign: "center", marginTop: "2rem"}}>Geen boeken gevonden.</p>
+              <p className="placeholderText centered">Geen boeken gevonden.</p>
             ) : searchResults.length === 0 ? (
-              <p className="placeholderText" style={{textAlign: "center", marginTop: "2rem"}}>Typ een zoekterm.</p>
+              <p className="placeholderText centered">Typ een zoekterm.</p>
             ) : (
               searchResults.map((book) => {
                 const available = book.availableCopies !== undefined ? book.availableCopies : 5; 
@@ -292,14 +292,14 @@ export default function LendingPage() {
 
         {/* --- COLUMN 3: SELECTED BOOKS --- */}
         <div className="gridColumn flexBetween">
-          <div style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
+          <div className="flexColumnGrow">
             <div className="sectieHeader">
               <h2>Geselecteerde boeken ({cart.reduce((total, item) => total + item.quantity, 0)})</h2>
             </div>
             
             <div className="resultsFrame">
               {cart.length === 0 ? (
-                <p className="placeholderText" style={{textAlign: "center", marginTop: "2rem"}}>Nog geen boeken.</p>
+                <p className="placeholderText centered">Nog geen boeken.</p>
               ) : (
                 cart.map((item) => (
                   <div key={item.book.id} className="listItem selectedItem">
