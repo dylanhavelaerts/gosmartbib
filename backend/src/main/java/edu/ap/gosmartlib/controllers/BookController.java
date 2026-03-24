@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
@@ -123,9 +125,12 @@ public class BookController {
         return bookService.getLatestBooks();
     }
 
-    @GetMapping("/rating/highest")
-    public List<BookDTO> getHighestRatedBooks() {
-        return bookService.getHighestRatedBooks();
+    @GetMapping("/top-rated")
+    public ResponseEntity<List<BookDTO>> getRecommendedBooks(
+            Authentication authentication) {
+        OAuth2User principal = (OAuth2User) authentication.getPrincipal();
+        String uid = principal.getAttribute("userID");
+        return ResponseEntity.ok(bookService.getRecommendedBooksForUser(uid));
     }
 
     /**

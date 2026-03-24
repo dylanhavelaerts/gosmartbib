@@ -9,6 +9,7 @@ type UserRole =
   | "ADMIN"
   | "OTHER";
 
+
 interface AuthUser {
   smartschoolUid: string;
   role: UserRole;

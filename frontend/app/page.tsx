@@ -5,6 +5,7 @@ import { Book } from "./interfaces/Book";
 import BookCard from "./catalog/bookCard";
 import "./dashboard.css";
 import { useRouter } from "next/navigation";
+import { useAuth } from "./context/AuthContext";
 
 type TabId = "spotlight" | "new";
 
@@ -20,14 +21,14 @@ export default function Home() {
 useEffect(() => {
   const endpoint =
     selected === "spotlight" ? "/books/spotlight" : "/books/latest";
-
+    
   fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`)
     .then((res) => res.json())
     .then((data: Book[]) => {
       if (data.length > 0) {
         setBooks(data);
       } else {
-        return fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/rating/highest`)
+        return fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/top-rated`, {credentials: "include"})
           .then((res) => res.json())
           .then((fallbackData: Book[]) => setBooks(fallbackData));
       }

@@ -5,9 +5,15 @@ import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
 import edu.ap.gosmartlib.entities.BookEntity;
+import edu.ap.gosmartlib.entities.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.exceptions.NegativeValueException;
 import edu.ap.gosmartlib.repositories.BookRepository;
+import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.util.UserRoles;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,21 +39,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 @Transactional
 public class BookService {
     private final BookRepository bookRepository;
     private final RestTemplate restTemplate;
+    private final UserRepository userRepository;
 
     @Value("${google.books.api.url}")
     private String googleBooksApiUrl;
 
     @Value("${google.books.api.key}")
     private String googleBooksApiKey;
-
-    public BookService(BookRepository bookRepository, RestTemplate restTemplate) {
-        this.bookRepository = bookRepository;
-        this.restTemplate = restTemplate;
-    }
 
     // Size = aantal items per pagina, page = welke pagina (0-based)
     public Page<BookDTO> getAllBooks(int page, int size) {
@@ -160,9 +163,24 @@ public class BookService {
                 .toList();
     }
 
-    public List<BookDTO> getHighestRatedBooks() {
-        return bookRepository.findTop4ByOrderByRatingDesc()
-                .stream()
+    @Transactional(readOnly = true)
+    public List<BookDTO> getRecommendedBooksForUser(String smartschoolUid) {
+        UserEntity user = userRepository.findDetailedBySmartschoolUid(smartschoolUid)
+                .orElseThrow(() -> new IllegalArgumentException("Gebruiker niet gevonden"));
+
+        List<BookEntity> books;
+
+        if (user.getRole() == UserRoles.TEACHER) {
+            books = bookRepository.findTop4ByDidacticTagTrueOrderByRatingDesc();
+        }
+        if (user.getRole() == UserRoles.STUDENT) {
+            String ageRange = determineAgeRangeFromStudentClass(user);
+            books = bookRepository.findTop4ByAgeRangeIgnoreCaseAndDidacticTagFalseOrderByRatingDesc(ageRange);
+        } else {
+            books = bookRepository.findTop4ByOrderByRatingDesc();
+        }
+
+        return books.stream()
                 .map(this::toDTO)
                 .toList();
     }
@@ -496,6 +514,27 @@ public class BookService {
 
     private String safeTrim(String value) {
         return value == null ? null : value.trim();
+    }
+
+    private String determineAgeRangeFromStudentClass(UserEntity user) {
+        if (user.getClasses() == null || user.getClasses().isEmpty()) {
+            throw new IllegalArgumentException("Student heeft geen klas");
+        }
+
+        SchoolClassEntity schoolClass = user.getClasses().iterator().next();
+
+        if (schoolClass.getName() == null || schoolClass.getName().isBlank()) {
+            throw new IllegalArgumentException("Klasnaam ontbreekt");
+        }
+
+        char firstChar = schoolClass.getName().trim().charAt(0);
+
+        return switch (firstChar) {
+            case '1', '2' -> "Eerste graad";
+            case '3', '4' -> "Tweede graad";
+            case '5', '6', '7' -> "Derde graad";
+            default -> throw new IllegalArgumentException("Onbekende klasnaam: " + schoolClass.getName());
+        };
     }
 
 }

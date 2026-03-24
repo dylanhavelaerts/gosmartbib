@@ -23,6 +23,10 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
 
         List<BookEntity> findTop4ByOrderByRatingDesc();
 
+        List<BookEntity> findTop4ByDidacticTagTrueOrderByRatingDesc();
+
+        List<BookEntity> findTop4ByAgeRangeIgnoreCaseAndDidacticTagFalseOrderByRatingDesc(String ageRange);
+
         boolean existsByIsbn(String isbn);
 
         /**
