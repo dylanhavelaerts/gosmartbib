@@ -3,6 +3,7 @@ package edu.ap.gosmartlib.repositories;
 import edu.ap.gosmartlib.entities.BookEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,28 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
         boolean existsByIsbn(String isbn);
 
         /**
+         * <<<<<<<
+         * HEAD:backend/testBackend/src/main/java/edu/ap/testbackend/repositories/BookRepository.java
+         * Zoek boeken op titel, auteur of ISBN, case-insensitive en ondersteunt
+         * gedeeltelijke
+         * overeenkomsten. Negeert streepjes bij het zoeken op ISBN.
+         * =======
+         * Zoek boeken op titel of auteur, case-insensitive en ondersteunt gedeeltelijke
+         * overeenkomsten.
+         * 
+         * >>>>>>>
+         * origin/main:backend/src/main/java/edu/ap/gosmartlib/repositories/BookRepository.java
+         * 
+         * @param query
+         * @return
+         */
+        @Query("SELECT DISTINCT b FROM BookEntity b LEFT JOIN b.authors a WHERE " +
+                        "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(a) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')")
+        Page<BookEntity> searchByTitleOrAuthor(@Param("query") String query, Pageable pageable);
+
+        /**
          * Zoek boeken op titel of auteur, case-insensitive en ondersteunt gedeeltelijke
          * overeenkomsten.
          * 
@@ -36,6 +59,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                         " OR LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))" +
                         " OR LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))")
         Page<BookEntity> searchByTitleOrAuthorOrCategory(@Param("query") String query, Pageable pageable);
+
+        Optional<BookEntity> findByIsbn(String isbn);
 
         @Query(value = """
                         SELECT DISTINCT b FROM BookEntity b

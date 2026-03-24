@@ -1,0 +1,379 @@
+/* ── Layout ── */
+.pageLayout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.mainContent {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Sidebar ── */
+.filterSidebar {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.25s ease;
+  background: white;
+  flex-shrink: 0;
+}
+
+.filterSidebar.open {
+  width: 260px;
+  border-right: 1px solid #ddd;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  font-size: 16px;
+  font-weight: 600;
+  color: #8e2446;
+  border-bottom: 1px solid #eee;
+}
+
+.sidebarHeader button {
+  border: none;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #888;
+}
+
+.sidebarOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 99;
+}
+
+@media (min-width: 769px) {
+  .sidebarOverlay {
+    display: none;
+  }
+}
+
+/* ── Search bar ── */
+.filterSection {
+  display: flex;
+  justify-content: center;
+  padding: 1.2rem 1rem 0.5rem;
+}
+
+.catalogSearchbar {
+  background-color: #ece6f0;
+  border-radius: 2rem;
+  padding: 0.55rem 0.75rem 0.55rem 1.2rem;
+  width: 70%;
+  max-width: 850px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s;
+}
+
+.catalogSearchbar:focus-within {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.catalogSearchbar input {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.catalogSearchbar input::placeholder {
+  color: #999;
+}
+
+/* ── Tab bar ── */
+main h1 {
+  font-size: clamp(20px, 1.5vw, 16px);
+  color: #c0392b;
+  font-weight: 500;
+  padding: clamp(8px, 2vw, 16px);
+  margin: 0;
+}
+
+main ul {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0 clamp(8px, 2vw, 16px);
+  border-bottom: 1px solid #ddd;
+  gap: 0;
+  overflow-x: auto;
+}
+
+main ul li {
+  padding: clamp(6px, 1.5vw, 10px) clamp(10px, 2vw, 16px);
+  font-size: clamp(14px, 1.5vw, 16px);
+  cursor: pointer;
+  color: #333;
+  white-space: nowrap;
+}
+
+main ul li.active {
+  border-bottom: 2px solid #c0392b;
+  color: #c0392b;
+  margin-bottom: -1px;
+}
+
+/* ── Toolbar (result count + page size) ── */
+.bookListToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem clamp(8px, 2vw, 16px);
+  font-size: 13px;
+  color: #888;
+}
+
+.resultCount {
+  font-size: 14px;
+  color: #888;
+}
+
+.pageSizeSelector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pageSizeLabel {
+  font-size: 14px;
+  color: #888;
+  white-space: nowrap;
+}
+
+.pageSizeSelect {
+  padding: 0.25rem 0.3rem;
+  border: 1px solid #616161;
+  border-radius: 4px;
+  background: white;
+  color: #616161;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ── Book grid ── */
+#bookList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  #bookList {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  #bookList {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2.5rem;
+    padding: 2.5rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  #bookList {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3rem;
+    padding: 3rem;
+  }
+}
+
+/* ── Book card ── */
+.bookCard {
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+  border: 1.2px solid #8a1d40;
+  background-color: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  padding: clamp(8px, 2vw, 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.bookCover {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background-color: #f5f5f5;
+}
+
+.bookCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.bookTitle {
+  font-size: clamp(12px, 2.5vw, 14px);
+  font-weight: 700;
+  margin: 0;
+  color: #1a1a1a;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2lh;
+}
+
+.bookCard.selected {
+  border: 2px solid #8e2446;
+}
+
+.bookCheckBox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+
+/* ── Filter bar (sidebar contents) ── */
+.filterBar {
+  margin: 0.5rem;
+}
+
+.filterDropdown {
+  position: relative;
+}
+
+.filterDropdownToggle {
+  padding: 0.4rem 0.8rem;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  color: #8e2446;
+}
+
+.filterSelect,
+.filterInput {
+  padding: 0.4rem 0.8rem;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+  margin-right: 0.4rem;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  outline: none;
+}
+
+.filterInput {
+  width: 9rem;
+}
+
+.filterSelect:focus,
+.filterInput:focus,
+.filterDropdownToggle:focus {
+  border-color: #6b1a34;
+  box-shadow: 0 0 0 2px rgba(142, 36, 70, 0.15);
+}
+
+.filterDropdownPanel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #8e2446;
+  border-radius: 4px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 200px;
+  z-index: 10;
+}
+
+.filterCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ── Modal ── */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalBox {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 8px;
+}
+
+.confirmButton {
+  background: red;
+  color: white;
+  margin-left: .20rem;
+  border-radius: 4px;
+  padding: .5rem;
+
+}
+.gobackButton {
+  background: #ddd;
+  color: #333;
+  border-radius: 4px;
+  padding: .5rem;
+}
+
+/* ── Mobile sidebar ── */
+@media (max-width: 768px) {
+  .filterSidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 0;
+    border-right: none;
+    border-top: 1px solid #ddd;
+    border-radius: 12px 12px 0 0;
+    z-index: 100;
+    transition: height 0.25s ease;
+    overflow-y: auto;
+  }
+
+  .filterSidebar.open {
+    height: 75vh;
+    width: 100%;
+  }
+}

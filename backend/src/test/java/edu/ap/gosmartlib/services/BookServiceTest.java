@@ -513,6 +513,8 @@ class BookServiceTest {
                 2008, true, List.of("Toekomst & technologie"), "A", 1, 1, "Eerste graad");
         book.setId(10L);
         book.setSpotlight(true);
+        book.setTotalCopies(5);
+        book.setAvailableCopies(5);
         return book;
     }
     // --- filterBooks Service Tests ---
@@ -771,6 +773,7 @@ class BookServiceTest {
 
         assertEquals("Kon de excel file niet lezen", ex.getMessage());
     }
+
     // --- updateBook Service Tests ---
 
     @Test
@@ -902,6 +905,8 @@ class BookServiceTest {
         assertEquals("fr", result.language());
         assertEquals("9780000000000", result.isbn());
         assertEquals(2020, result.publishedYear());
+        assertEquals(5, result.totalCopies());
+        assertEquals(5, result.availableCopies());
         verify(bookRepository, times(1)).save(book);
     }
 
