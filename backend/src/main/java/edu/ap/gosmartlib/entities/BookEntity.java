@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -52,7 +53,7 @@ public class BookEntity {
 
     @Column(name = "published_year")
     private Integer publishedYear;
-@Column(nullable = false)
+    @Column(nullable = false)
     private boolean spotlight = false;
 
     @Column(name = "didactic_tag", nullable = false)
@@ -75,10 +76,13 @@ public class BookEntity {
     @Column(nullable = true)
     private String ageRange;
 
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true, fetch =  FetchType.LAZY)
+    private List<ReviewEntity> reviews = new ArrayList<>();
+
     public BookEntity(String title, List<String> authors, String publisher, String description, int pageCount,
             List<String> categories, String thumbnail, String language, double rating, String isbn,
             Integer publishedYear, boolean didacticTag, List<String> labels, String readingLevel, Integer totalCopies,
-            Integer availableCopies, String ageRange) {
+            Integer availableCopies, String ageRange, List<ReviewEntity> reviews) {
         this.title = title;
         this.authors = authors;
         this.publisher = publisher;
@@ -97,5 +101,6 @@ public class BookEntity {
         this.totalCopies = totalCopies;
         this.availableCopies = availableCopies;
         this.ageRange = ageRange;
+        this.reviews = reviews;
     }
 }
