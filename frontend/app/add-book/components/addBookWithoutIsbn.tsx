@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Book, BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
+import { AGE_RANGE, Book, BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
 import styles from "./addBookForm.module.css";
 
 export default function AddBookWithoutIsbn() {
@@ -25,6 +25,7 @@ export default function AddBookWithoutIsbn() {
   const [labels, setLabels] = useState<string[]>([]);
   const [readingLevel, setReadingLevel] = useState("");
   const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
+  const [ageRange, setAgeRange] = useState("");
 
   const handleAuthorChange = (index: number, value: string) => {
     const updatedAuthors = [...authors];
@@ -58,6 +59,12 @@ export default function AddBookWithoutIsbn() {
       rating,
       publishedYear,
       spotlight: false,
+      didacticTag: false,
+      readingLevel: "",
+      labels: [],
+      totalCopies: 0,
+      availableCopies: 0,
+      ageRange
     };
 
     setPreviewBook(book);
@@ -126,6 +133,12 @@ export default function AddBookWithoutIsbn() {
           rating,
           publishedYear,
           spotlight: false,
+          didacticTag,
+          labels,
+          readingLevel,
+          totalCopies: 1,
+          availableCopies: 1,
+          ageRange
         }),
       });
 
@@ -405,6 +418,21 @@ export default function AddBookWithoutIsbn() {
             <option value="B">B</option>
             <option value="C">C</option>
             <option value="D">D</option>
+          </select>
+        </div>
+
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Leeftijd</label>
+          <select
+            value={ageRange}
+            onChange={(e) => setAgeRange(e.target.value)}
+            className={styles.select}
+            disabled={previewBook !== null}
+          >
+            <option value="">leeftijd</option>
+            <option value="Eerste graad">Eerste graad</option>
+            <option value="Tweede graad">Tweede graad</option>
+            <option value="Derde graad">Derde graad</option>
           </select>
         </div>
 

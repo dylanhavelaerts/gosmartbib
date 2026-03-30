@@ -5,9 +5,15 @@ import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
 import edu.ap.gosmartlib.entities.BookEntity;
+import edu.ap.gosmartlib.entities.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.exceptions.NegativeValueException;
 import edu.ap.gosmartlib.repositories.BookRepository;
+import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.util.UserRoles;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,21 +39,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 @Transactional
 public class BookService {
     private final BookRepository bookRepository;
     private final RestTemplate restTemplate;
+    private final UserRepository userRepository;
 
     @Value("${google.books.api.url}")
     private String googleBooksApiUrl;
 
     @Value("${google.books.api.key}")
     private String googleBooksApiKey;
-
-    public BookService(BookRepository bookRepository, RestTemplate restTemplate) {
-        this.bookRepository = bookRepository;
-        this.restTemplate = restTemplate;
-    }
 
     // Size = aantal items per pagina, page = welke pagina (0-based)
     public Page<BookDTO> getAllBooks(int page, int size) {
@@ -126,7 +129,7 @@ public class BookService {
      * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar
      *         DTO's.
      */
-    public Page<BookDTO> searchByTitleOrAuthor(String query, int page, int size) {
+    public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
@@ -136,7 +139,7 @@ public class BookService {
             return bookRepository.findAll(pageable).map(this::toDTO);
         }
 
-        return bookRepository.searchByTitleOrAuthor(query.trim(), pageable).map(this::toDTO);
+        return bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), pageable).map(this::toDTO);
     }
 
     public List<BookDTO> getTop4BooksInSpotlight() {
@@ -160,7 +163,29 @@ public class BookService {
                 .toList();
     }
 
-    public Page<BookDTO> filterBooks(String language, List<String> categories, Integer minPageCount,
+    @Transactional(readOnly = true)
+    public List<BookDTO> getRecommendedBooksForUser(String smartschoolUid) {
+        UserEntity user = userRepository.findDetailedBySmartschoolUid(smartschoolUid)
+                .orElseThrow(() -> new IllegalArgumentException("Gebruiker niet gevonden"));
+
+        List<BookEntity> books;
+
+        if (user.getRole() == UserRoles.TEACHER) {
+            books = bookRepository.findTop4ByDidacticTagTrueOrderByRatingDesc();
+        } else if (user.getRole() == UserRoles.STUDENT) {
+            String ageRange = determineAgeRangeFromStudentClass(user);
+            books = bookRepository.findTop4ByAgeRangeIgnoreCaseAndDidacticTagFalseOrderByRatingDesc(ageRange);
+        } else {
+            books = bookRepository.findTop4ByOrderByRatingDesc();
+        }
+
+        return books.stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    public Page<BookDTO> filterBooks(String language, List<String> categories, List<String> labels,
+            Integer minPageCount,
             Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
@@ -174,7 +199,7 @@ public class BookService {
 
         Pageable pageable = PageRequest.of(page, size);
         return bookRepository
-                .filterBooks(language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear, pageable)
+                .filterBooks(language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, pageable)
                 .map(this::toDTO);
     }
 
@@ -277,33 +302,69 @@ public class BookService {
         if (updatedBook.title() != null && updatedBook.title().isBlank())
             throw new IllegalArgumentException("Titel mag niet leeg zijn");
 
-        if (updatedBook.pageCount() != null && updatedBook.pageCount() <= 0)
+        if (updatedBook.pageCount() != null && updatedBook.pageCount() < 0)
             throw new IllegalArgumentException("Paginacount mag niet negatief zijn");
         if (updatedBook.publishedYear() != null && updatedBook.publishedYear() <= 0)
             throw new IllegalArgumentException("Publicatiejaar moet groter zijn dan 0");
 
         if (updatedBook.publishedYear() != null && updatedBook.publishedYear() > Year.now().getValue())
             throw new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen");
+        if (updatedBook.totalCopies() != null && updatedBook.totalCopies() < 0)
+            throw new IllegalArgumentException("Totaal aantal exemplaren mag niet negatief zijn");
+
+        if (updatedBook.availableCopies() != null && updatedBook.availableCopies() < 0)
+            throw new IllegalArgumentException("Beschikbare exemplaren mogen niet negatief zijn");
+
+        int finalTotal = updatedBook.totalCopies() != null ? updatedBook.totalCopies() : book.getTotalCopies();
+        int finalAvailable = updatedBook.availableCopies() != null ? updatedBook.availableCopies()
+                : book.getAvailableCopies();
+
+        if (finalAvailable > finalTotal)
+            throw new IllegalArgumentException(
+                    "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren");
+
+        if (updatedBook.isbn() != null && !updatedBook.isbn().equals(book.getIsbn())
+                && bookRepository.existsByIsbn(updatedBook.isbn())) {
+            throw new IllegalArgumentException("ISBN bestaat al in de database");
+        }
+
+        if (updatedBook.isbn() != null && updatedBook.isbn().isBlank())
+            throw new IllegalArgumentException("ISBN mag niet leeg zijn");
+
         if (updatedBook.title() != null)
-            book.setTitle(updatedBook.title());
+            book.setTitle(updatedBook.title().trim());
         if (updatedBook.authors() != null)
-            book.setAuthors(updatedBook.authors());
+            book.setAuthors(cleanStringList(updatedBook.authors()));
         if (updatedBook.publisher() != null)
-            book.setPublisher(updatedBook.publisher());
+            book.setPublisher(safeTrim(updatedBook.publisher()));
         if (updatedBook.description() != null)
-            book.setDescription(updatedBook.description());
+            book.setDescription(safeTrim(updatedBook.description()));
         if (updatedBook.pageCount() != null)
             book.setPageCount(updatedBook.pageCount());
         if (updatedBook.categories() != null)
-            book.setCategories(updatedBook.categories());
+            book.setCategories(cleanStringList(updatedBook.categories()));
+        if (updatedBook.labels() != null)
+            book.setLabels(cleanStringList(updatedBook.labels()));
         if (updatedBook.thumbnail() != null)
-            book.setThumbnail(updatedBook.thumbnail());
+            book.setThumbnail(safeTrim(updatedBook.thumbnail()));
         if (updatedBook.language() != null)
-            book.setLanguage(updatedBook.language());
+            book.setLanguage(safeTrim(updatedBook.language()));
         if (updatedBook.isbn() != null)
-            book.setIsbn(updatedBook.isbn());
+            book.setIsbn(updatedBook.isbn().trim());
+        if (updatedBook.rating() != null)
+            book.setRating(updatedBook.rating());
         if (updatedBook.publishedYear() != null)
             book.setPublishedYear(updatedBook.publishedYear());
+        if (updatedBook.didacticTag() != null)
+            book.setDidacticTag(updatedBook.didacticTag());
+        if (updatedBook.availableCopies() != null)
+            book.setAvailableCopies(updatedBook.availableCopies());
+        if (updatedBook.totalCopies() != null)
+            book.setTotalCopies(updatedBook.totalCopies());
+        if (updatedBook.readingLevel() != null)
+            book.setReadingLevel(safeTrim(updatedBook.readingLevel()));
+        if (updatedBook.ageRange() != null)
+            book.setAgeRange(safeTrim(updatedBook.ageRange()));
 
         return toDTO(bookRepository.save(book));
     }
@@ -325,6 +386,10 @@ public class BookService {
         book.setRating(request.rating() != null ? request.rating() : 0.0);
         book.setPublishedYear(request.publishedYear());
         book.setSpotlight(Boolean.TRUE.equals(request.spotlight()));
+        book.setDidacticTag(request.didacticTag());
+        book.setLabels(cleanStringList(request.labels()));
+        book.setReadingLevel(safeTrim(request.readingLevel()));
+        book.setAgeRange(safeTrim(request.ageRange()));
         // Maakt random ISBN aan
         // Enorm kleine kans voor een dubbele ID
         // In dat geval, gewoon opnieuw indienen
@@ -370,7 +435,8 @@ public class BookService {
                 labels,
                 book.getReadingLevel(),
                 book.getTotalCopies(),
-                book.getAvailableCopies());
+                book.getAvailableCopies(),
+                book.getAgeRange());
     }
 
     // Helper functies
@@ -438,14 +504,36 @@ public class BookService {
             return new ArrayList<>();
         }
 
-        return values.stream()
-                .filter(value -> value != null && !value.isBlank())
-                .map(String::trim)
-                .toList();
+        return new ArrayList<>(
+                values.stream()
+                        .filter(value -> value != null && !value.isBlank())
+                        .map(String::trim)
+                        .toList());
     }
 
     private String safeTrim(String value) {
         return value == null ? null : value.trim();
+    }
+
+    private String determineAgeRangeFromStudentClass(UserEntity user) {
+        if (user.getClasses() == null || user.getClasses().isEmpty()) {
+            throw new IllegalArgumentException("Student heeft geen klas");
+        }
+
+        SchoolClassEntity schoolClass = user.getClasses().iterator().next();
+
+        if (schoolClass.getName() == null || schoolClass.getName().isBlank()) {
+            throw new IllegalArgumentException("Klasnaam ontbreekt");
+        }
+
+        char firstChar = schoolClass.getName().trim().charAt(0);
+
+        return switch (firstChar) {
+            case '1', '2' -> "Eerste graad";
+            case '3', '4' -> "Tweede graad";
+            case '5', '6', '7' -> "Derde graad";
+            default -> throw new IllegalArgumentException("Onbekende klasnaam: " + schoolClass.getName());
+        };
     }
 
 }

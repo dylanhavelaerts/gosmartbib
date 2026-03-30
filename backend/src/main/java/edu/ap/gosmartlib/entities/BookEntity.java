@@ -1,7 +1,11 @@
 package edu.ap.gosmartlib.entities;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -48,8 +52,7 @@ public class BookEntity {
 
     @Column(name = "published_year")
     private Integer publishedYear;
-
-    @Column(nullable = false)
+@Column(nullable = false)
     private boolean spotlight = false;
 
     @Column(name = "didactic_tag", nullable = false)
@@ -69,10 +72,13 @@ public class BookEntity {
     @Column(nullable = false, columnDefinition = "int default 1")
     private Integer availableCopies = 1;
 
+    @Column(nullable = true)
+    private String ageRange;
+
     public BookEntity(String title, List<String> authors, String publisher, String description, int pageCount,
             List<String> categories, String thumbnail, String language, double rating, String isbn,
             Integer publishedYear, boolean didacticTag, List<String> labels, String readingLevel, Integer totalCopies,
-            Integer availableCopies) {
+            Integer availableCopies, String ageRange) {
         this.title = title;
         this.authors = authors;
         this.publisher = publisher;
@@ -90,5 +96,6 @@ public class BookEntity {
         this.readingLevel = readingLevel;
         this.totalCopies = totalCopies;
         this.availableCopies = availableCopies;
+        this.ageRange = ageRange;
     }
 }

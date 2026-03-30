@@ -21,6 +21,7 @@ public enum UserRoles {
             case "leerling" -> STUDENT;
             case "leerkracht" -> TEACHER;
             case "directie" -> ADMIN;
+            case "bibliotheekbeheerder" -> BIBLIOTHEEKBEHEERDER;
             default -> OTHER;
         };
     }

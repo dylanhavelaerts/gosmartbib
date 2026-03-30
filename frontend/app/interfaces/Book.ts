@@ -11,8 +11,18 @@ export interface Book {
   rating: number;
   isbn: string;
   publishedYear: number;
+  totalCopies?: number;
+  availableCopies?: number;
   spotlight: boolean;
+  didacticTag: boolean;
+  readingLevel: string;
+  labels: string[];
+  totalCopies: number;
+  availableCopies: number;
+  ageRange: string;
 }
+
+export const AGE_RANGE = ["Eerste graad", "Tweede graad", "Derde graad"];
 
 export const BOOK_CATEGORIES = [
   "Fictie algemeen",

@@ -5,6 +5,7 @@ import { Book } from "./interfaces/Book";
 import BookCard from "./catalog/bookCard";
 import "./dashboard.css";
 import { useRouter } from "next/navigation";
+import { useAuth } from "./context/AuthContext";
 
 type TabId = "spotlight" | "new";
 
@@ -17,13 +18,23 @@ export default function Home() {
   const cls = (id: TabId) =>
     `tabBtn ${selected === id ? "selectedCategory" : ""}`;
 
-  useEffect(() => {
-    const endpoint =
-      selected === "spotlight" ? "/books/spotlight" : "/books/latest";
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`)
-      .then((res) => res.json())
-      .then((data: Book[]) => setBooks(data));
-  }, [selected]);
+useEffect(() => {
+  const endpoint =
+    selected === "spotlight" ? "/books/spotlight" : "/books/latest";
+    
+  fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`)
+    .then((res) => res.json())
+    .then((data: Book[]) => {
+      if (data.length > 0) {
+        setBooks(data);
+      } else {
+        return fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/top-rated`, {credentials: "include"})
+          .then((res) => res.json())
+          .then((fallbackData: Book[]) => setBooks(fallbackData));
+      }
+    })
+    .catch((error) => console.error(error));
+}, [selected]);
 
   const handleSearch = (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -65,7 +76,7 @@ export default function Home() {
               className={cls("spotlight")}
               onClick={() => setSelected("spotlight")}
             >
-              in de kijker
+              In de kijker
             </button>
             <button className={cls("new")} onClick={() => setSelected("new")}>
               Nieuw in bibliotheek

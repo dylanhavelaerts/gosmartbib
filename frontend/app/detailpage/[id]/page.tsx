@@ -12,7 +12,19 @@ export default function DetailPage({
 }) {
   const { id } = use(params);
   const [book, setBook] = useState<Book | null>(null);
-  const [imgSrc, setImgSrc] = useState(book?.thumbnail || "/No-Image-Available-Placeholder.png")
+  const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
+
+  useEffect(() => {
+    if (!id) return;
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`)
+      .then((res) => res.json())
+      .then((data: Book) => {
+        setBook(data);
+        setImgSrc(data.thumbnail?.trim() || "/No-Image-Available-Placeholder.png");
+      })
+      .catch((error) => console.error(error));
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;

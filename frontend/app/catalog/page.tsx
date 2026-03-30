@@ -2,10 +2,11 @@
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Book, BOOK_CATEGORIES } from "../interfaces/Book";
+import { Book, BOOK_CATEGORIES, BOOK_LABELS } from "../interfaces/Book";
 import BookCard from "./bookCard";
 import Pagination from "./pagination";
 import "./bookList.css";
+import { useAuth } from "../context/AuthContext";
 
 export default function Home() {
   // -- States ------------------------------------------------------------------------------------------------------------------------------
@@ -23,6 +24,7 @@ export default function Home() {
   // Filters
   const [language, setLanguage] = useState("");
   const [categories, setCategories] = useState<Set<string>>(new Set());
+  const [labels, setLabels] = useState<Set<string>>(new Set());
   const [minPages, setMinPages] = useState("");
   const [maxPages, setMaxPages] = useState("");
   const [minYear, setMinYear] = useState("");
@@ -32,10 +34,12 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("Catalogus");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [labelOpen, setLabelOpen] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const { user } = useAuth();
 
   // -- URL zoek aspect --------------------------------------------------------------------------------------------------------------------
   // Leest de ?search query param bij het laden van de pagina en zet deze als zoekquery.
@@ -67,6 +71,7 @@ export default function Home() {
     const hasFilters =
       language ||
       categories.size > 0 ||
+      labels.size > 0 ||
       minPages ||
       maxPages ||
       minYear ||
@@ -80,6 +85,7 @@ export default function Home() {
     } else if (hasFilters) {
       if (language) params.append("language", language);
       categories.forEach((cat) => params.append("categories", cat));
+      labels.forEach((label) => params.append("labels", label));
       if (minPages) params.append("minPageCount", minPages);
       if (maxPages) params.append("maxPageCount", maxPages);
       if (minYear) params.append("minPubYear", minYear);
@@ -104,6 +110,7 @@ export default function Home() {
   }, [
     language,
     categories,
+    labels,
     minPages,
     maxPages,
     minYear,
@@ -119,6 +126,15 @@ export default function Home() {
     setCategories((prev) => {
       const next = new Set(prev);
       next.has(cat) ? next.delete(cat) : next.add(cat);
+      return next;
+    });
+    setCurrentPage(1);
+  };
+
+    const toggleLabel = (label: string) => {
+    setLabels((prev) => {
+      const next = new Set(prev);
+      next.has(label) ? next.delete(label) : next.add(label);
       return next;
     });
     setCurrentPage(1);
@@ -166,7 +182,12 @@ export default function Home() {
           <div className="filterDropdown">
             <button
               className="filterDropdownToggle"
-              onClick={() => setCategoryOpen(!categoryOpen)}
+              onClick={() => {
+                setCategoryOpen(!categoryOpen);
+                if(labelOpen){
+                  setLabelOpen(false);
+                }
+              }}
             >
               Genre {categories.size > 0 ? `(${categories.size})` : ""} ▼
             </button>
@@ -180,6 +201,29 @@ export default function Home() {
                       onChange={() => toggleCategory(cat)}
                     />
                     {cat}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="filterDropdown">
+            <button
+              className="filterDropdownToggle"
+              onClick={() => setLabelOpen(!labelOpen)}
+            >
+              label {labels.size > 0 ? `(${labels.size})` : ""} ▼
+            </button>
+            {labelOpen && (
+              <div className="filterDropdownPanel">
+                {BOOK_LABELS.map((label) => (
+                  <label key={label} className="filterCheckboxLabel">
+                    <input
+                      type="checkbox"
+                      checked={labels.has(label)}
+                      onChange={() => toggleLabel(label)}
+                    />
+                    {label}
                   </label>
                 ))}
               </div>
@@ -266,6 +310,18 @@ export default function Home() {
           >
             Naar admin pagina
           </li>
+          {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
+            user?.role === "ADMIN") && (
+            <li
+              className={activeTab === "Beheer catalogus" ? "active" : ""}
+              onClick={() => {
+                setActiveTab("Beheer catalogus");
+                router.push("/manageCatalog");
+              }}
+            >
+              Beheer catalogus
+            </li>
+          )}
         </ul>
 
         {/* Toolbar - totaal paginas en aantal boeken kiezen*/}

@@ -23,7 +23,6 @@ export default function BookListImport() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setSelectedFile(file);
@@ -55,10 +54,46 @@ export default function BookListImport() {
       }
 
       setImportResult(data);
-      setMessage(`Import klaar. ${data.savedCount} boeken opgeslagen.`);
+      setMessage(`Import klaar. ${data.savedCount} boek(en) opgeslagen.`);
     } catch (error) {
       console.error(error);
       setMessage("Kan de server niet bereiken.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+    const addSingleBook = async (isbn: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/books/add/${isbn}`,
+        {
+          method: "POST",
+        },
+      );
+
+      if (response.ok) {
+            setImportResult((prev) => {
+      if (!prev) return prev;
+          setMessage(`Import klaar. ${prev.savedCount + 1} boek(en) opgeslagen.`);
+      return {
+        ...prev,
+        savedCount: prev.savedCount + 1,
+        mismatchCount: prev.mismatchCount - 1,
+        mismatches: prev.mismatches.filter(
+          (mismatch) => mismatch.isbn !== isbn
+        ),
+      };
+    });  
+    } else {
+        setMessage("Er ging iets mis bij het opslaan van het boek.")
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      setMessage("Kan de server niet bereiken")
+      return;
     } finally {
       setLoading(false);
     }
@@ -116,9 +151,11 @@ export default function BookListImport() {
               <p>Problemen gevonden in deze rijen:</p>
               <ul>
                 {importResult.mismatches.map((mismatch, index) => (
-                  <li key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
-                    Rij {mismatch.rowNumber}: {mismatch.isbn} | {mismatch.excelTitle} |
-                    {" "}Reden: {mismatch.reason}
+                  <li className={styles.mismatchElement} key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
+                    <p className={styles.mismatchTitle}>Rij {mismatch.rowNumber}: {mismatch.isbn} | {mismatch.excelTitle} |
+                    {" "}Reden: {mismatch.reason}</p>{mismatch.reason.includes("De titel komt niet overeen") && (
+                      <button className={styles.mismatchButton} onClick={() => addSingleBook(mismatch.isbn)} disabled={loading}>Toch opslaan</button>
+                    )}
                   </li>
                 ))}
               </ul>

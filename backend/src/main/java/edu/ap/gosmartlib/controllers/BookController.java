@@ -9,6 +9,9 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,11 +55,11 @@ public class BookController {
      * @param size  aantal boeken per pagina
      */
     @GetMapping("/search")
-    public ResponseEntity<Page<BookDTO>> searchByTitleOrAuthor(
+    public ResponseEntity<Page<BookDTO>> searchByTitleOrAuthorOrCategory(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(bookService.searchByTitleOrAuthor(query, page, size));
+        return ResponseEntity.ok(bookService.searchByTitleOrAuthorOrCategory(query, page, size));
     }
 
     /**
@@ -70,6 +73,7 @@ public class BookController {
     public ResponseEntity<?> filterBooks(
             @RequestParam(required = false) String language,
             @RequestParam(required = false) List<String> categories,
+            @RequestParam(required = false) List<String> labels,
             @RequestParam(required = false) Integer minPageCount,
             @RequestParam(required = false) Integer maxPageCount,
             @RequestParam(required = false) Integer minPubYear,
@@ -78,10 +82,10 @@ public class BookController {
             @RequestParam(defaultValue = "20") int size) {
         try {
             Page<BookDTO> filteredBooks = bookService.filterBooks(
-                    language, categories, minPageCount, maxPageCount, minPubYear, maxPubYear, page, size);
+                    language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, page, size);
             return ResponseEntity.ok(filteredBooks);
         } catch (IllegalArgumentException e) {
-            // 400 als de filter combinatie ongeldig is
+            // 400 als de filter combinatie Fongeldig is
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (DataAccessException e) {
             // 500 als de error op database niveau is
@@ -121,6 +125,14 @@ public class BookController {
         return bookService.getLatestBooks();
     }
 
+    @GetMapping("/top-rated")
+    public ResponseEntity<List<BookDTO>> getRecommendedBooks(
+            Authentication authentication) {
+        OAuth2User principal = (OAuth2User) authentication.getPrincipal();
+        String uid = principal.getAttribute("userID");
+        return ResponseEntity.ok(bookService.getRecommendedBooksForUser(uid));
+    }
+
     /**
      * Voegt een boek toe aan de database via ISBN (opgehaald van Google Books).
      */
@@ -155,6 +167,7 @@ public class BookController {
      * Verwijdert een boek via het id.
      * Geeft 204 No Content terug bij succes.
      */
+    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) throws BookNotFoundException {
         bookService.deleteBook(id);
@@ -188,10 +201,8 @@ public class BookController {
         }
     }
 
-    /**
-     * Vervangt het boek met gegeven ID met een bookDTO (voor aanpassing)
-     */
-    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    @PatchMapping("/{id}")
     public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
         try {
             BookDTO updated = bookService.updateBook(id, bookDTO);
