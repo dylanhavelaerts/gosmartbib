@@ -51,6 +51,18 @@ public class UserEntity {
     @Column(name = "scheduled_deletion_at")
     private LocalDateTime scheduledDeletionAt;
 
+    @Column(name = "oneroster_sourced_id", unique = true)
+    private String onerosterSourcedId;
+
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
+    @Column(name = "email")
+    private String email;
+
     public void deactivate(long retentionDays) {
         this.active = false;
         this.deactivatedAt = LocalDateTime.now();
