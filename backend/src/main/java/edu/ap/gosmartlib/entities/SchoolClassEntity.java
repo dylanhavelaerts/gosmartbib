@@ -21,8 +21,8 @@ public class SchoolClassEntity {
     @JoinColumn(name = "school_id", nullable = false)
     private SchoolEntity school;
 
-    @Column(name = "oneroster_sourced_id", unique = true)
-    private String onerosterSourcedId;
+    @Column(name = "smartschool_group_id", unique = true)
+    private String smartschoolGroupId;
 
     @Column(nullable = false, length = 50)
     private String name; // "1A01 B"
@@ -33,10 +33,10 @@ public class SchoolClassEntity {
     @Column(name = "grade", length = 10)
     private String grade; // 1ste jaar
 
-    public SchoolClassEntity(SchoolEntity school, String onerosterSourcedId,
+    public SchoolClassEntity(SchoolEntity school, String smartschoolGroupId,
             String name, String schoolYear, String grade) {
         this.school = school;
-        this.onerosterSourcedId = onerosterSourcedId;
+        this.smartschoolGroupId = smartschoolGroupId;
         this.name = name;
         this.schoolYear = schoolYear;
         this.grade = grade;
