@@ -33,7 +33,7 @@ public class LocalAuthController {
         Map<String, Object> attributes = buildMockAttributes(role);
 
         if (attributes == null) {
-            return ResponseEntity.badRequest().body("Unknown role: " + role);
+            return ResponseEntity.badRequest().body("De gegeven rol is niet bekend: " + role);
         }
 
         OAuth2User mockUser = new DefaultOAuth2User(

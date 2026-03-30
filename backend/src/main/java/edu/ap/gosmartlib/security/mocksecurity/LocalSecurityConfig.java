@@ -23,7 +23,7 @@ public class LocalSecurityConfig {
     @Bean
     public SecurityFilterChain localFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(localCorsConfigurationSource())) // VOEG DIT TOE
+                .cors(cors -> cors.configurationSource(localCorsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll())
