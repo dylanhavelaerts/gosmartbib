@@ -97,7 +97,7 @@ export default function Home() {
 
     const delay = isSearching ? 300 : 0;
     const timer = setTimeout(() => {
-      fetch(url)
+      fetch(url, { credentials: "include" })
         .then((res) => res.json())
         .then((data) => {
           setBooks(data.content);
@@ -131,7 +131,7 @@ export default function Home() {
     setCurrentPage(1);
   };
 
-    const toggleLabel = (label: string) => {
+  const toggleLabel = (label: string) => {
     setLabels((prev) => {
       const next = new Set(prev);
       next.has(label) ? next.delete(label) : next.add(label);
@@ -184,7 +184,7 @@ export default function Home() {
               className="filterDropdownToggle"
               onClick={() => {
                 setCategoryOpen(!categoryOpen);
-                if(labelOpen){
+                if (labelOpen) {
                   setLabelOpen(false);
                 }
               }}
@@ -301,15 +301,19 @@ export default function Home() {
           >
             Catalogus
           </li>
-          <li
-            className={activeTab === "Boek toevoegen" ? "active" : ""}
-            onClick={() => {
-              setActiveTab("Boek toevoegen");
-              router.push("/catalog/admin");
-            }}
-          >
-            Naar admin pagina
-          </li>
+          {(user?.role === "TEACHER" ||
+            user?.role === "BIBLIOTHEEKBEHEERDER" ||
+            user?.role === "ADMIN") && (
+            <li
+              className={activeTab === "Boek toevoegen" ? "active" : ""}
+              onClick={() => {
+                setActiveTab("Boek toevoegen");
+                router.push("/catalog/admin");
+              }}
+            >
+              Boeken selecteren
+            </li>
+          )}
           {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
             user?.role === "ADMIN") && (
             <li

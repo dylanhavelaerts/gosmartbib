@@ -21,7 +21,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                     SELECT COUNT(b) FROM BookEntity b
                     WHERE (:canSeeDidactic = true OR b.didacticTag = false)
                     """)
-    Page<BookEntity> findAllFiltered(@Param("includeDidactic") boolean includeDidactic, Pageable pageable);
+    Page<BookEntity> findAllFiltered(@Param("canSeeDidactic") boolean includeDidactic, Pageable pageable);
 
     List<BookEntity> findTop4BySpotlightTrueOrderByIdDesc();
 
@@ -90,6 +90,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
             AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
             AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
             AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
+            AND (:includeDidactic = true OR b.didacticTag = false)
             """, countQuery = """
             SELECT COUNT(DISTINCT b) FROM BookEntity b
             LEFT JOIN b.categories c

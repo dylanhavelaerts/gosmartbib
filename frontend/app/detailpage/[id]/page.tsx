@@ -17,18 +17,24 @@ export default function DetailPage({
   useEffect(() => {
     if (!id) return;
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`, {
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data: Book) => {
         setBook(data);
-        setImgSrc(data.thumbnail?.trim() || "/No-Image-Available-Placeholder.png");
+        setImgSrc(
+          data.thumbnail?.trim() || "/No-Image-Available-Placeholder.png",
+        );
       })
       .catch((error) => console.error(error));
   }, [id]);
 
   useEffect(() => {
     if (!id) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`, {
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data: Book) => setBook(data));
   }, [id]);
@@ -43,7 +49,12 @@ export default function DetailPage({
 
       <div className="detailContainer">
         <div className="detailLeft">
-          <img src={imgSrc} alt={book.title} onError={() => setImgSrc("/No-Image-Available-Placeholder.png")} className="detailCover" />
+          <img
+            src={imgSrc}
+            alt={book.title}
+            onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
+            className="detailCover"
+          />
           <div className="detailUnder">
             <p>
               <img className="bookIcon" src={"/book-alt.png"} />{" "}

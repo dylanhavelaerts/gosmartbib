@@ -65,9 +65,11 @@ public class BookService {
                 .map(this::toDTO);
     }
 
-    public List<BookDTO> getAllBooksUnpaged() {
+    public List<BookDTO> getAllBooksUnpaged(UserRoles  callerRoles) {
+        boolean includeDidactic = canSeeDidactic(callerRoles);
         return bookRepository.findAll()
                 .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
                 .map(this::toDTO)
                 .toList();
     }
@@ -150,23 +152,29 @@ public class BookService {
         return bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), canSeeDidactic(callerRoles), pageable).map(this::toDTO);
     }
 
-    public List<BookDTO> getTop4BooksInSpotlight() {
+    public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findTop4BySpotlightTrueOrderByIdDesc()
                 .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
                 .map(this::toDTO)
                 .toList();
     }
 
-    public List<BookDTO> getAllBooksInSpotlight() {
+    public List<BookDTO> getAllBooksInSpotlight(UserRoles callerRole) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findBySpotlightTrueOrderByIdDesc()
                 .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
                 .map(this::toDTO)
                 .toList();
     }
 
-    public List<BookDTO> getLatestBooks() {
+    public List<BookDTO> getLatestBooks(UserRoles callerRole) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findTop4ByOrderByIdDesc()
                 .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
                 .map(this::toDTO)
                 .toList();
     }

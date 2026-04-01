@@ -13,7 +13,9 @@ export default function Home() {
   const [selectAllBox, setSelectAllBox] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/spotlight/all`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/spotlight/all`, {
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data: Book[]) => setBooks(data));
   }, []);
@@ -35,9 +37,13 @@ export default function Home() {
     try {
       await Promise.all(
         Array.from(selectedIds).map((id) =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}/spotlight?value=false`, {
-            method: "PATCH",
-          }),
+          fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/books/${id}/spotlight?value=false`,
+            {
+              credentials: "include",
+              method: "PATCH",
+            },
+          ),
         ),
       );
 
@@ -48,25 +54,22 @@ export default function Home() {
       console.error(error);
     } finally {
       setSelectAllBox(false);
-    };
-  }
+    }
+  };
 
   const selectAll = () => {
-    if(!selectAllBox){
-    setSelectedIds(new Set(books.map((book) => book.id)));
-    setSelectAllBox(true);
-    }
-    else {
+    if (!selectAllBox) {
+      setSelectedIds(new Set(books.map((book) => book.id)));
+      setSelectAllBox(true);
+    } else {
       setSelectedIds(new Set());
-      setSelectAllBox(false)
+      setSelectAllBox(false);
     }
-    
-  }
-
+  };
 
   return (
     <main>
-        <h1>In de kijker</h1>
+      <h1>In de kijker</h1>
       <ul>
         {selectedIds.size > 0 && (
           <li onClick={() => tryDelete()}>
@@ -75,7 +78,8 @@ export default function Home() {
         )}
       </ul>
       <div className="selectAllCheckbox">
-      <input type="checkbox" checked={selectAllBox} onChange={selectAll}/> <p>Select all</p>
+        <input type="checkbox" checked={selectAllBox} onChange={selectAll} />{" "}
+        <p>Select all</p>
       </div>
       <div id="bookList">
         {books.map((book) => (
