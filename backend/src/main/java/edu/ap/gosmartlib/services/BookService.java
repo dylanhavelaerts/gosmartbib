@@ -14,7 +14,6 @@ import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
 
-import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
