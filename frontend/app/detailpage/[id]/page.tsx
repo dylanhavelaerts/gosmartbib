@@ -66,7 +66,9 @@ export default function DetailPage({
   useEffect(() => {
     if (!id) return;
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`, {
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data: Book) => {
         setBook(data);

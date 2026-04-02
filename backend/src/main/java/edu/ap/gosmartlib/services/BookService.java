@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -30,6 +31,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -53,18 +55,20 @@ public class BookService {
     private String googleBooksApiKey;
 
     // Size = aantal items per pagina, page = welke pagina (0-based)
-    public Page<BookDTO> getAllBooks(int page, int size) {
+    public Page<BookDTO> getAllBooks(int page, int size, UserRoles callerRoles) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
         Pageable pageable = PageRequest.of(page, size);
-        return bookRepository.findAll(pageable)
+        return bookRepository.findAllFiltered(canSeeDidactic(callerRoles), pageable)
                 .map(this::toDTO);
     }
 
-    public List<BookDTO> getAllBooksUnpaged() {
+    public List<BookDTO> getAllBooksUnpaged(UserRoles  callerRoles) {
+        boolean includeDidactic = canSeeDidactic(callerRoles);
         return bookRepository.findAll()
                 .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
                 .map(this::toDTO)
                 .toList();
     }
@@ -96,10 +100,15 @@ public class BookService {
      * Als het gevonden wordt, wordt het omgezet naar een DTO en teruggegeven.
      * Als het niet gevonden wordt, gooit het een BookNotFoundException met het id.
      */
-    public BookDTO getBookById(Long id) throws BookNotFoundException {
-        return bookRepository.findById(id)
-                .map(this::toDTO)
+    public BookDTO getBookById(Long id, UserRoles callerRole) throws BookNotFoundException {
+
+        BookEntity book = bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));
+        if (book.isDidacticTag() && !canSeeDidactic(callerRole)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Je hebt geen toegang tot dit boek");
+        }
+        return toDTO(book);
     }
 
     /**
@@ -126,36 +135,42 @@ public class BookService {
      * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle boeken teruggegeven.
      * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar DTO's.
      */
-    public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size) {
+    public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size, UserRoles callerRoles) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
         Pageable pageable = PageRequest.of(page, size);
 
         if (query == null || query.isBlank()) {
-            return bookRepository.findAll(pageable).map(this::toDTO);
+            return bookRepository.findAllFiltered(canSeeDidactic(callerRoles), pageable).map(this::toDTO);
         }
 
-        return bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), pageable).map(this::toDTO);
+        return bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), canSeeDidactic(callerRoles), pageable).map(this::toDTO);
     }
 
-    public List<BookDTO> getTop4BooksInSpotlight() {
+    public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findTop4BySpotlightTrueOrderByIdDesc()
                 .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
                 .map(this::toDTO)
                 .toList();
     }
 
-    public List<BookDTO> getAllBooksInSpotlight() {
+    public List<BookDTO> getAllBooksInSpotlight(UserRoles callerRole) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findBySpotlightTrueOrderByIdDesc()
                 .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
                 .map(this::toDTO)
                 .toList();
     }
 
-    public List<BookDTO> getLatestBooks() {
+    public List<BookDTO> getLatestBooks(UserRoles callerRole) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findTop4ByOrderByIdDesc()
                 .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
                 .map(this::toDTO)
                 .toList();
     }
@@ -182,8 +197,8 @@ public class BookService {
     }
 
     public Page<BookDTO> filterBooks(String language, List<String> categories, List<String> labels,
-            Integer minPageCount,
-            Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size) {
+                                     Integer minPageCount,
+                                     Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size,UserRoles callerRoles) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
@@ -196,7 +211,7 @@ public class BookService {
 
         Pageable pageable = PageRequest.of(page, size);
         return bookRepository
-                .filterBooks(language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, pageable)
+                .filterBooks(canSeeDidactic(callerRoles),language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, pageable)
                 .map(this::toDTO);
     }
 
@@ -531,6 +546,12 @@ public class BookService {
             case '5', '6', '7' -> "Derde graad";
             default -> throw new IllegalArgumentException("Onbekende klasnaam: " + schoolClass.getName());
         };
+    }
+
+    private boolean canSeeDidactic(UserRoles role) {
+        return role == UserRoles.TEACHER
+                || role == UserRoles.BIBLIOTHEEKBEHEERDER
+                || role == UserRoles.ADMIN;
     }
 
 }

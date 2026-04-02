@@ -18,23 +18,27 @@ export default function Home() {
   const cls = (id: TabId) =>
     `tabBtn ${selected === id ? "selectedCategory" : ""}`;
 
-useEffect(() => {
-  const endpoint =
-    selected === "spotlight" ? "/books/spotlight" : "/books/latest";
-    
-  fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`)
-    .then((res) => res.json())
-    .then((data: Book[]) => {
-      if (data.length > 0) {
-        setBooks(data);
-      } else {
-        return fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/top-rated`, {credentials: "include"})
-          .then((res) => res.json())
-          .then((fallbackData: Book[]) => setBooks(fallbackData));
-      }
+  useEffect(() => {
+    const endpoint =
+      selected === "spotlight" ? "/books/spotlight" : "/books/latest";
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+      credentials: "include",
     })
-    .catch((error) => console.error(error));
-}, [selected]);
+      .then((res) => res.json())
+      .then((data: Book[]) => {
+        if (data.length > 0) {
+          setBooks(data);
+        } else {
+          return fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/top-rated`, {
+            credentials: "include",
+          })
+            .then((res) => res.json())
+            .then((fallbackData: Book[]) => setBooks(fallbackData));
+        }
+      })
+      .catch((error) => console.error(error));
+  }, [selected]);
 
   const handleSearch = (e: React.SubmitEvent) => {
     e.preventDefault();
