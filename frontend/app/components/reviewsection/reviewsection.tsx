@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import "./reviewsection.css";
+import Pagination from "../../catalog/pagination";
+
+const REVIEWS_PER_PAGE = 5;
 
 interface ReviewSummary {
   id: number;
@@ -197,15 +200,25 @@ export default function ReviewSection({
   onReviewSubmitted,
 }: ReviewSectionProps) {
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [flaggingReviewId, setFlaggingReviewId] = useState<number | null>(null);
+
+  const totalPages = Math.ceil(reviews.length / REVIEWS_PER_PAGE);
+  const paginatedReviews = reviews.slice(
+    (currentPage - 1) * REVIEWS_PER_PAGE,
+    currentPage * REVIEWS_PER_PAGE,
+  );
 
   function fetchReviews() {
     setLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`)
       .then((res) => res.json())
-      .then((data: ReviewSummary[]) => setReviews(data))
+      .then((data: ReviewSummary[]) => {
+        setReviews(data);
+        setCurrentPage(1);
+      })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   }
@@ -263,16 +276,26 @@ export default function ReviewSection({
       ) : reviews.length === 0 ? (
         <p className="reviewEmpty">Nog geen reviews, wees de eerste!</p>
       ) : (
-        <div className="reviewList">
-          {reviews.map((review) => (
-            <ReviewCard
-              key={review.id}
-              review={review}
-              onFlag={handleFlag}
-              isFlagging={flaggingReviewId === review.id}
+        <>
+          <div className="reviewList">
+            {paginatedReviews.map((review) => (
+              <ReviewCard
+                key={review.id}
+                review={review}
+                onFlag={handleFlag}
+                isFlagging={flaggingReviewId === review.id}
+              />
+            ))}
+          </div>
+
+          {reviews.length > REVIEWS_PER_PAGE && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
             />
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
