@@ -30,7 +30,11 @@ public class ReviewEntity {
     @Column(columnDefinition = "TEXT")
     private String text;
 
-    private int rating; // 1 - 5
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private ReviewStatus status = ReviewStatus.AWAITING_MODERATION;
+
+    private float rating; // 1 - 5
 
     @Column(name = "review_date")
     private LocalDate reviewDate;

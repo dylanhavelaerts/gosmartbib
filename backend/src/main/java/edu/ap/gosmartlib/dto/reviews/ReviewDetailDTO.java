@@ -14,6 +14,6 @@ public record ReviewDetailDTO(
         String text,
         LocalDate reviewDate,
         ReviewStatus reviewStatus,
-        int rating,
+        float rating,
         int flagCount
 ) {}

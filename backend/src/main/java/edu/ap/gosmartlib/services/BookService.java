@@ -123,11 +123,8 @@ public class BookService {
     /**
      * Zoekt boeken op basis van een zoekterm. Er wordt gezocht in zowel de titel
      * als de auteurs van het boek.
-     *
-     * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle
-     *              boeken teruggegeven.
-     * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar
-     *         DTO's.
+     * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle boeken teruggegeven.
+     * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar DTO's.
      */
     public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size) {
         if (page < 0 || size <= 0)
