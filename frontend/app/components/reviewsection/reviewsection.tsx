@@ -251,7 +251,6 @@ export default function ReviewSection({
 
       fetchReviews();
     } catch {
-      // Keep UI quiet for now; review list remains unchanged on failure.
     } finally {
       setFlaggingReviewId(null);
     }
