@@ -33,7 +33,7 @@ export default function Home() {
   const [maxYear, setMaxYear] = useState("");
 
   // UI state
-  const [activeTab, setActiveTab] = useState("Catalogus");
+  const [activeTab, setActiveTab] = useState("Boek selecteren");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [labelOpen, setLabelOpen] = useState(false);
@@ -334,18 +334,21 @@ export default function Home() {
             <li onClick={() => setSidebarOpen(true)}>☰</li>
             <li
               className={activeTab === "Catalogus" ? "active" : ""}
-              onClick={() => setActiveTab("Catalogus")}
+              onClick={() => {
+                setActiveTab("Catalogus");
+                router.push("/catalog");
+              }}
             >
               Catalogus
             </li>
             <li
-              className={activeTab === "Boek toevoegen" ? "active" : ""}
+              className={activeTab === "Boek selecteren" ? "active" : ""}
               onClick={() => {
-                setActiveTab("Boek toevoegen");
+                setActiveTab("Boek selecteren");
                 router.push("/catalog/admin");
               }}
             >
-              Naar admin pagina
+              Boek selecteren
             </li>
             {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
               user?.role === "ADMIN") && (
