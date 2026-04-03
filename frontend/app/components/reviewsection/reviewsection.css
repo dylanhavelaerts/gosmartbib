@@ -186,8 +186,35 @@
 
 .reviewCardActions {
   display: flex;
+  align-items: center;
+  gap: 0.4rem;
   justify-content: flex-end;
   margin-top: 0.5rem;
+}
+
+.deleteReviewBtn {
+  border: 1px solid rgba(176, 42, 42, 0.4);
+  background: transparent;
+  color: #b02a2a;
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0.2rem 0.45rem;
+  min-width: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deleteReviewBtn:hover:not(:disabled) {
+  background-color: rgba(176, 42, 42, 0.08);
+}
+
+.deleteReviewBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .flagReviewBtn {
@@ -211,9 +238,163 @@
   cursor: not-allowed;
 }
 
+.deleteConfirmRow {
+  margin-top: 0.55rem;
+  border: 1px solid rgba(176, 42, 42, 0.25);
+  border-radius: 6px;
+  background: rgba(176, 42, 42, 0.03);
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.deleteConfirmText {
+  margin-right: auto;
+  font-size: 12px;
+  color: #7a1f1f;
+}
+
+.deleteConfirmCancel {
+  border: 1px solid rgba(142, 36, 70, 0.35);
+  background: transparent;
+  color: #8e2446;
+  border-radius: 6px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.deleteConfirmCancel:hover:not(:disabled) {
+  background: rgba(142, 36, 70, 0.08);
+}
+
+.deleteConfirmDelete {
+  border: 1px solid #b02a2a;
+  background: #b02a2a;
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.deleteConfirmDelete:hover:not(:disabled) {
+  background: #8f2121;
+  border-color: #8f2121;
+}
+
+.deleteConfirmCancel:disabled,
+.deleteConfirmDelete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .reviewLoading,
 .reviewEmpty {
   font-size: 13px;
   color: #aaa;
   margin: 0.5rem 0;
+}
+
+.reportModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 15, 24, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1100;
+}
+
+.reportModalBox {
+  width: 100%;
+  max-width: 360px;
+  background: #fff;
+  border: 1.5px solid #6e1a35;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(142, 36, 70, 0.2);
+}
+
+.reportModalTitle {
+  margin: 0 0 0.8rem;
+  font-size: 14px;
+  font-weight: 700;
+  color: #8e2446;
+}
+
+.reportReasonList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.reportReasonOption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 13px;
+  color: #333;
+}
+
+.reportReasonOption input {
+  accent-color: #8e2446;
+}
+
+.reportError {
+  margin: 0.6rem 0 0;
+  font-size: 12px;
+  color: #c0392b;
+}
+
+.reportModalActions {
+  margin-top: 0.9rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.reportCancelBtn,
+.reportSubmitBtn {
+  border-radius: 6px;
+  padding: 0.38rem 0.85rem;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.reportCancelBtn {
+  border: 1px solid rgba(142, 36, 70, 0.35);
+  background: transparent;
+  color: #8e2446;
+}
+
+.reportCancelBtn:hover:not(:disabled) {
+  background: rgba(142, 36, 70, 0.08);
+}
+
+.reportSubmitBtn {
+  border: 1px solid #8e2446;
+  background: #8e2446;
+  color: #fff;
+}
+
+.reportSubmitBtn:hover:not(:disabled) {
+  background: #6e1a35;
+  border-color: #6e1a35;
+}
+
+.reportCancelBtn:disabled,
+.reportSubmitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
