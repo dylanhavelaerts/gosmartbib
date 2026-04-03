@@ -11,14 +11,22 @@ import edu.ap.gosmartlib.exceptions.OutOfBoundsException;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReviewRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.util.ReviewFlagReason;
 import edu.ap.gosmartlib.util.ReviewStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 
 @Service
 @RequiredArgsConstructor
@@ -196,6 +204,41 @@ public class ReviewService {
             reviewRepository.incrementFlagCount(reviewId);
         } catch (Exception e) {
             throw new RuntimeException("Er is iets fout gegaan tijdens het verhogen van de flag count", e);
+        }
+    }
+
+    public void flagReview(Long reviewId, String smartschoolUid, ReviewFlagReason reason) {
+        try {
+            if (reason == null) {
+                throw new ResponseStatusException(BAD_REQUEST, "Geef een reden op voor de rapportage");
+            }
+
+            ReviewEntity review = reviewRepository.findById(reviewId)
+                    .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
+
+            boolean alreadyFlagged = reviewRepository.existsFlagByReviewIdAndUid(reviewId, smartschoolUid);
+            if (alreadyFlagged) {
+                throw new ResponseStatusException(CONFLICT, "Je hebt deze review al gerapporteerd");
+            }
+
+            Set<String> flaggedUids = new LinkedHashSet<>();
+            String rawUids = review.getFlaggedByUids();
+            if (rawUids != null && !rawUids.isBlank()) {
+                flaggedUids.addAll(Arrays.stream(rawUids.split(","))
+                        .map(String::trim)
+                        .filter(uid -> !uid.isBlank())
+                        .toList());
+            }
+
+            flaggedUids.add(smartschoolUid);
+            review.setFlaggedByUids(String.join(",", flaggedUids));
+            review.setFlagCount(review.getFlagCount() + 1);
+            reviewRepository.save(review);
+        } catch (Exception e) {
+            if (e instanceof EntityNotFoundException || e instanceof ResponseStatusException) {
+                throw e;
+            }
+            throw new RuntimeException("Er is iets fout gegaan tijdens het rapporteren van de review", e);
         }
     }
 

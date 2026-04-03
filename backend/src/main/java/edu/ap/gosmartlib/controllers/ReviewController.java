@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.reviews.ReviewDetailDTO;
+import edu.ap.gosmartlib.dto.reviews.ReviewFlagRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
 import edu.ap.gosmartlib.services.ReviewService;
@@ -75,8 +76,9 @@ public class ReviewController {
     }
 
     @PatchMapping("/{reviewId}/flag")
-    public ResponseEntity<Void> flagReview(@PathVariable Long reviewId) {
-        reviewService.increaseFlagCount(reviewId);
+    public ResponseEntity<Void> flagReview(@PathVariable Long reviewId, @RequestBody ReviewFlagRequestDTO request, @AuthenticationPrincipal OAuth2User principal) {
+        String smartschoolUid = extractUid(principal);
+        reviewService.flagReview(reviewId, smartschoolUid, request.reason());
         return ResponseEntity.noContent().build();
     }
 

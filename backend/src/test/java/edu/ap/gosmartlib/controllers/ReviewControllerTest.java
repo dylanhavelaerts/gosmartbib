@@ -1,9 +1,11 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.reviews.ReviewDetailDTO;
+import edu.ap.gosmartlib.dto.reviews.ReviewFlagRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
 import edu.ap.gosmartlib.services.ReviewService;
+import edu.ap.gosmartlib.util.ReviewFlagReason;
 import edu.ap.gosmartlib.util.ReviewStatus;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.Test;
@@ -175,10 +177,14 @@ class ReviewControllerTest {
 
     @Test
     void givenReviewId_whenFlagReview_thenReturnsNoContentAndDelegatesToService() {
-        ResponseEntity<Void> response = reviewController.flagReview(102L);
+        String testUid = "test-uid";
+        ReviewFlagRequestDTO request = new ReviewFlagRequestDTO(ReviewFlagReason.SPAM);
+        when(principal.getAttribute("userID")).thenReturn(testUid);
+
+        ResponseEntity<Void> response = reviewController.flagReview(102L, request, principal);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(reviewService, times(1)).increaseFlagCount(102L);
+        verify(reviewService, times(1)).flagReview(102L, testUid, ReviewFlagReason.SPAM);
     }
 
     @Test

@@ -44,4 +44,7 @@ public class ReviewEntity {
 
     @Column(name = "flag_count")
     private int flagCount; // Aantal keren gemeld
+
+    @Column(name = "flagged_by_uids", columnDefinition = "TEXT")
+    private String flaggedByUids;
 }
