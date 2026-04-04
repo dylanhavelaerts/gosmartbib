@@ -361,3 +361,81 @@
   margin-bottom: 1rem;
   font-weight: bold;
 }
+
+/* inline style fix */
+.create-form-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.search-step-label {
+  font-weight: bold;
+  color: #8e2446;
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.loading-text {
+  text-align: center;
+  color: #888;
+  margin-top: 2rem;
+}
+
+.selected-books-label-wrap {
+  margin-bottom: 1.5rem;
+}
+
+.selected-empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  border: 2px dashed #ddd;
+  border-radius: 7px;
+  padding: 2rem;
+}
+
+.selected-empty-state-text {
+  font-size: 1.1rem;
+  text-align: center;
+  margin: 0;
+}
+
+.selected-book-card {
+  padding: 0.8rem 1.2rem;
+}
+
+.selected-book-header {
+  margin-bottom: 0;
+  align-items: center;
+}
+
+.selected-book-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex: 1;
+}
+
+.selected-book-thumb {
+  width: 40px;
+  height: 60px;
+}
+
+.selected-book-title {
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+.selected-book-authors {
+  margin: 0;
+}
+
+.submit-full-width {
+  width: 100%;
+  align-self: center;
+}
