@@ -8,6 +8,5 @@ public class CreateReadingListDTO {
     private String title;
     private String taskDescription;
     private String deadline;
-    private Long creatorId;
-    private List<Long> bookIds; 
+    private List<Long> bookIds;
 }
