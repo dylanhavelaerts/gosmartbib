@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.services.ReadingListService;
@@ -29,6 +30,16 @@ public class ReadingListController {
             return ResponseEntity.ok(lists);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Could not load reading lists: " + e.getMessage());
+        }
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getListDetail(@PathVariable Long id, Authentication authentication) {
+        try {
+            String uid = extractUid(authentication);
+            ReadingListDetailDTO detail = readingListService.getListDetail(id, uid);
+            return ResponseEntity.ok(detail);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Could not load reading list: " + e.getMessage());
         }
     }
 

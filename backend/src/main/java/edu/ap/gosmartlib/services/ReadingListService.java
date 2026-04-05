@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
@@ -31,8 +32,7 @@ public class ReadingListService {
         public List<ReadingListOverviewDTO> getVisibleLists(String smartschoolUid) {
             UserEntity currentUser = requireCurrentUser(smartschoolUid);
 
-            // Use a LinkedHashMap keyed on id to prevent duplicates when a staff member
-            // created a class list (it would otherwise appear in both queries).
+
             Map<Long, ReadingListEntity> deduped = new LinkedHashMap<>();
 
             readingListRepository.findAllByCreator_IdOrderByIdDesc(currentUser.getId())
@@ -45,6 +45,25 @@ public class ReadingListService {
                     .filter(list -> !list.isArchived() || list.getListType() == ReadingListType.PERSONAL)
                     .map(list -> toOverview(list, currentUser.getId()))
                     .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ReadingListDetailDTO getListDetail(Long id, String smartschoolUid) {
+        UserEntity currentUser = requireCurrentUser(smartschoolUid);
+
+        ReadingListEntity list = readingListRepository.findByIdWithBooks(id)
+                .orElseThrow(() -> new IllegalArgumentException("Reading list not found"));
+
+        // Students can only see class lists or their own personal lists.
+        boolean isStaff = isStaffRole(currentUser.getRole());
+        boolean isOwner = Objects.equals(list.getCreator().getId(), currentUser.getId());
+        boolean isClassList = list.getListType() == ReadingListType.CLASS;
+
+        if (!isStaff && !isOwner && !isClassList) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        return toDetail(list, currentUser.getId());
     }
 
     @Transactional
@@ -131,10 +150,12 @@ public class ReadingListService {
         if (list.getListType() != ReadingListType.CLASS) {
             throw new AccessDeniedException("Only class lists can be archived");
         }
-
+//      Alle toegelate staff members kunnen zaken archiveren -> limiteren -> voor leerkracht -> creator check
         list.setArchived(true);
         return readingListRepository.save(list);
     }
+
+//HELPER METHODS HIERONDER
 
     private UserEntity requireCurrentUser(String smartschoolUid) {
         return userRepository.findBySmartschoolUid(smartschoolUid)
@@ -142,14 +163,15 @@ public class ReadingListService {
     }
 
     private void requireStaff(UserEntity user) {
-        UserRoles role = user.getRole();
-        boolean allowed = role == UserRoles.TEACHER
-                || role == UserRoles.ADMIN
-                || role == UserRoles.BIBLIOTHEEKBEHEERDER;
-
-        if (!allowed) {
+        if (!isStaffRole(user.getRole())) {
             throw new AccessDeniedException("Insufficient permissions");
         }
+    }
+
+    private boolean isStaffRole(UserRoles role) {
+        return role == UserRoles.TEACHER
+                || role == UserRoles.ADMIN
+                || role == UserRoles.BIBLIOTHEEKBEHEERDER;
     }
 
     private void validateTitle(String title) {
@@ -185,17 +207,51 @@ public class ReadingListService {
     private ReadingListOverviewDTO toOverview(ReadingListEntity list, Long currentUserId) {
         List<Long> ids = list.getBooks().stream().map(BookEntity::getId).toList();
 
-        return ReadingListOverviewDTO.builder()
-                .id(list.getId())
-                .title(list.getTitle())
-                .taskDescription(list.getTaskDescription())
-                .deadline(list.getDeadline())
-                .listType(list.getListType())
-                .archived(list.isArchived())
-                .ownList(Objects.equals(list.getCreator().getId(), currentUserId))
-                .creatorName("User " + list.getCreator().getId())
-                .bookIds(ids)
-                .bookCount(ids.size())
-                .build();
+//      voorlopig smartschooluid als creatorName, later misschien nog een aparte naam veld toevoegen aan de user entity
+        String creatorName = list.getCreator().getSmartschoolUid();
+        return new ReadingListOverviewDTO(
+                list.getId(),
+                list.getTitle(),
+                list.getTaskDescription(),
+                list.getDeadline(),
+                list.getListType(),
+                list.isArchived(),
+                Objects.equals(list.getCreator().getId(), currentUserId),
+                creatorName,
+                ids,
+                ids.size()
+        );
     }
+    private ReadingListDetailDTO toDetail(ReadingListEntity list, Long currentUserId) {
+        String creatorName = list.getCreator().getSmartschoolUid();
+
+        List<ReadingListDetailDTO.BookItem> books = list.getBooks().stream()
+                .map(book -> {
+                    List<String> authors = book.getAuthors() == null
+                            ? List.of()
+                            : List.copyOf(book.getAuthors()); // force init while tx is open
+
+                    return new ReadingListDetailDTO.BookItem(
+                            book.getId(),
+                            book.getTitle(),
+                            authors,
+                            book.getThumbnail(),
+                            book.getIsbn()
+                    );
+                })
+                .toList();
+
+        return new ReadingListDetailDTO(
+                list.getId(),
+                list.getTitle(),
+                list.getTaskDescription(),
+                list.getDeadline(),
+                list.getListType(),
+                list.isArchived(),
+                Objects.equals(list.getCreator().getId(), currentUserId),
+                creatorName,
+                books
+        );
+    }
+
 }
