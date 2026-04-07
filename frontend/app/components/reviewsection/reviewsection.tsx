@@ -20,6 +20,7 @@ export default function ReviewSection({
   onReviewSubmitted,
 }: ReviewSectionProps) {
   const { user } = useAuth();
+  const canModerateReviewDelete = user?.role === "TEACHER" || user?.role === "BIBLIOTHEEKBEHEERDER";
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -206,7 +207,7 @@ export default function ReviewSection({
                 review={review}
                 onFlag={openReportModal}
                 isFlagging={flaggingReviewId === review.id}
-                canDelete={user?.id === review.userId}
+                canDelete={user?.id === review.userId || canModerateReviewDelete}
                 onAskDelete={openDeleteConfirm}
                 onCancelDelete={closeDeleteConfirm}
                 onConfirmDelete={handleDeleteReview}

@@ -15,10 +15,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,6 +44,9 @@ class ReviewControllerTest {
 
     @Mock
     private OAuth2User principal;
+
+    @Mock
+    private Authentication authentication;
 
     @Test
     void givenReviewsForBookExist_whenGetReviewsByBook_thenReturnsOkWithBody() {
@@ -143,20 +149,33 @@ class ReviewControllerTest {
         when(principal.getAttribute("userID")).thenReturn(null);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> reviewController.userDeleteReview(10L, principal));
+            () -> reviewController.userDeleteReview(10L, principal, authentication));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
-        verify(reviewService, never()).userDeleteReview(10L, null);
+        verify(reviewService, never()).userDeleteReview(10L, null, false);
     }
 
     @Test
     void givenValidPrincipal_whenUserDeleteReview_thenReturnsNoContent() {
         when(principal.getAttribute("userID")).thenReturn("smart-uid-3");
+        when(authentication.getAuthorities()).thenReturn(List.of());
 
-        ResponseEntity<Void> response = reviewController.userDeleteReview(10L, principal);
+        ResponseEntity<Void> response = reviewController.userDeleteReview(10L, principal, authentication);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(reviewService, times(1)).userDeleteReview(10L, "smart-uid-3");
+        verify(reviewService, times(1)).userDeleteReview(10L, "smart-uid-3", false);
+    }
+
+    @Test
+    void givenTeacherPrincipal_whenUserDeleteReview_thenDelegatesWithModeratorDeleteAccess() {
+        when(principal.getAttribute("userID")).thenReturn("teacher-uid");
+        Collection<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_TEACHER"));
+        when(authentication.getAuthorities()).thenReturn(List.copyOf(authorities));
+
+        ResponseEntity<Void> response = reviewController.userDeleteReview(11L, principal, authentication);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(reviewService, times(1)).userDeleteReview(11L, "teacher-uid", true);
     }
 
     @Test

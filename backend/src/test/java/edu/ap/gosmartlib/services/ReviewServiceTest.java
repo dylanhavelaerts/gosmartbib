@@ -204,7 +204,7 @@ class ReviewServiceTest {
         ReviewEntity existing = buildReview(70L, buildUser(1L, "uid-1"), buildBook(10L, "9780000000001", "Book"));
         when(reviewRepository.findById(70L)).thenReturn(Optional.of(existing));
 
-        reviewService.userDeleteReview(70L, "uid-1");
+        reviewService.userDeleteReview(70L, "uid-1", false);
 
         verify(reviewRepository, times(1)).delete(existing);
     }
@@ -215,7 +215,7 @@ class ReviewServiceTest {
         when(reviewRepository.findById(71L)).thenReturn(Optional.of(existing));
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> reviewService.userDeleteReview(71L, "other-uid"));
+            () -> reviewService.userDeleteReview(71L, "other-uid", false));
 
         assertInstanceOf(SecurityException.class, exception.getCause());
         verify(reviewRepository, never()).delete(existing);
@@ -225,8 +225,18 @@ class ReviewServiceTest {
     void givenReviewNotFound_whenUserDeleteReview_thenThrowsEntityNotFoundException() {
         when(reviewRepository.findById(72L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> reviewService.userDeleteReview(72L, "uid-1"));
+        assertThrows(EntityNotFoundException.class, () -> reviewService.userDeleteReview(72L, "uid-1", false));
         verify(reviewRepository, never()).delete(org.mockito.ArgumentMatchers.any(ReviewEntity.class));
+    }
+
+    @Test
+    void givenDifferentOwnerWithModeratorDeleteAccess_whenUserDeleteReview_thenDeletesReview() {
+        ReviewEntity existing = buildReview(75L, buildUser(1L, "owner-uid"), buildBook(10L, "9780000000001", "Book"));
+        when(reviewRepository.findById(75L)).thenReturn(Optional.of(existing));
+
+        reviewService.userDeleteReview(75L, "teacher-uid", true);
+
+        verify(reviewRepository, times(1)).delete(existing);
     }
 
     @Test

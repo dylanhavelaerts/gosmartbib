@@ -168,12 +168,13 @@ public class ReviewService {
 //endregion
 
 //region Delete methods
-    public void userDeleteReview(Long reviewId, String smartschoolUid){
+    public void userDeleteReview(Long reviewId, String smartschoolUid, boolean canModerateDelete){
         try {
             ReviewEntity review = reviewRepository.findById(reviewId)
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
 
-            if (!review.getUser().getSmartschoolUid().equals(smartschoolUid))
+            boolean ownsReview = review.getUser().getSmartschoolUid().equals(smartschoolUid);
+            if (!ownsReview && !canModerateDelete)
                 throw new SecurityException("Je kan enkel je eigen reviews verwijderen");
 
             reviewRepository.delete(review);

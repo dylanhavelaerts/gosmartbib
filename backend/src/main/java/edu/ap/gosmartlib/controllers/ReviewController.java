@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
@@ -83,10 +85,23 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> userDeleteReview(@PathVariable Long reviewId, @AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<Void> userDeleteReview(@PathVariable Long reviewId,
+                                                 @AuthenticationPrincipal OAuth2User principal,
+                                                 Authentication authentication) {
         String smartschoolUid = extractUid(principal);
-        reviewService.userDeleteReview(reviewId, smartschoolUid);
+        boolean canModerateDelete = hasModeratorDeleteAccess(authentication);
+        reviewService.userDeleteReview(reviewId, smartschoolUid, canModerateDelete);
         return ResponseEntity.noContent().build();
+    }
+
+    private boolean hasModeratorDeleteAccess(Authentication authentication) {
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_TEACHER") || role.equals("ROLE_BIBLIOTHEEKBEHEERDER"));
     }
 
     private String extractUid(OAuth2User principal) {
