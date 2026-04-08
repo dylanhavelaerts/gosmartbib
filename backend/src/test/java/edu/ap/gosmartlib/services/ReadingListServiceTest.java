@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -190,5 +191,88 @@ class ReadingListServiceTest {
         // Controleer of hij uit veiligheid nooit heeft geprobeerd boeken te zoeken of op te slaan
         verify(bookRepository, never()).findAllById(any());
         verify(readingListRepository, never()).save(any());
+    }
+
+    //-------------------------------------------------------------------------------------
+
+    @Test
+    void syncBooksInList_RemoveBook_Success() {
+        // 1. ARRANGE
+        Long listId = 1L;
+        
+        // Stel: Boek 10 en Boek 20 zitten momenteel in de leeslijst.
+        BookEntity book1 = new BookEntity(); 
+        book1.setId(10L); 
+        book1.setTitle("Harry Potter");
+
+        BookEntity book2 = new BookEntity(); 
+        book2.setId(20L); 
+        book2.setTitle("Lord of the Rings");
+
+        ReadingListEntity existingList = new ReadingListEntity();
+        existingList.setId(listId);
+        existingList.setTitle("Bestaande Lijst");
+        existingList.setDeadline(LocalDateTime.now());
+        
+        // We vullen de bestaande lijst vooraf met BEIDE boeken
+        existingList.setBooks(new HashSet<>(List.of(book1, book2))); 
+
+        // De gebruiker klikt boek 20 weg en slaat op. Hij stuurt dus alleen ID 10 nog door.
+        List<Long> newBookIds = List.of(10L); 
+
+        // Repositories instellen
+        when(readingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
+        // De bookRepository zal nu alleen boek 10 nog terugvinden en toevoegen
+        when(bookRepository.findAllById(newBookIds)).thenReturn(List.of(book1));
+        
+        when(readingListRepository.save(any(ReadingListEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // 2. ACT
+        ReadingListResponseDTO resultDTO = readingListService.syncBooksInList(listId, newBookIds);
+
+        // 3. ASSERT
+        assertNotNull(resultDTO);
+        assertEquals(1, resultDTO.getBooks().size()); // Er mag er nu maar 1 overblijven in de DTO
+
+        ArgumentCaptor<ReadingListEntity> captor = ArgumentCaptor.forClass(ReadingListEntity.class);
+        verify(readingListRepository).save(captor.capture());
+        
+        ReadingListEntity savedList = captor.getValue();
+        assertEquals(1, savedList.getBooks().size()); // Er mag er ook maar 1 overblijven in de database
+        assertTrue(savedList.getBooks().contains(book1)); // Boek 10 moet er nog in zitten
+        assertFalse(savedList.getBooks().contains(book2)); // Boek 20 moet succesvol verwijderd zijn!
+    }
+
+    @Test
+    void syncBooksInList_RemoveAllBooks_Success() {
+        // 1. ARRANGE
+        Long listId = 1L;
+        
+        ReadingListEntity existingList = new ReadingListEntity();
+        existingList.setId(listId);
+        // De lijst bevat momenteel 1 boek (mockBook wordt in de @BeforeEach aangemaakt)
+        existingList.setBooks(new HashSet<>(List.of(mockBook))); 
+
+        // De gebruiker verwijdert alles en stuurt een lege lijst door
+        List<Long> emptyBookIds = new ArrayList<>(); 
+
+        when(readingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
+        when(bookRepository.findAllById(emptyBookIds)).thenReturn(new ArrayList<>());
+        when(readingListRepository.save(any(ReadingListEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // 2. ACT
+        ReadingListResponseDTO resultDTO = readingListService.syncBooksInList(listId, emptyBookIds);
+
+        // 3. ASSERT
+        assertNotNull(resultDTO);
+        assertEquals(0, resultDTO.getBooks().size()); // DTO moet een lege lijst tonen
+
+        ArgumentCaptor<ReadingListEntity> captor = ArgumentCaptor.forClass(ReadingListEntity.class);
+        verify(readingListRepository).save(captor.capture());
+        
+        // Controleer of de database entiteit nu ook echt 0 boeken bevat
+        assertEquals(0, captor.getValue().getBooks().size()); 
     }
 }
