@@ -15,7 +15,7 @@ public interface ReadingListRepository extends JpaRepository<ReadingListEntity, 
     List<ReadingListEntity> findAllByCreator_IdOrderByIdDesc(Long creatorId);
     List<ReadingListEntity> findAllByListTypeOrderByIdDesc(ReadingListType listType);
     Optional<ReadingListEntity> findByIdAndCreator_Id(Long id, Long creatorId);
-//    zonder dit truggert een sql query per boek -> performanter
+//    zonder dit triggert een sql query per boek -> performanter
     @Query("SELECT rl FROM ReadingListEntity rl LEFT JOIN FETCH rl.books WHERE rl.id = :id")
     Optional<ReadingListEntity> findByIdWithBooks(@Param("id") Long id);
 }

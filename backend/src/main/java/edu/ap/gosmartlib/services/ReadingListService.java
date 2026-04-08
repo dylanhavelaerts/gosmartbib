@@ -52,15 +52,15 @@ public class ReadingListService {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
 
         ReadingListEntity list = readingListRepository.findByIdWithBooks(id)
-                .orElseThrow(() -> new IllegalArgumentException("Reading list not found"));
+                .orElseThrow(() -> new IllegalArgumentException("LeesLijst niet gevonden"));
 
-        // Students can only see class lists or their own personal lists.
+        // Leerlingen kunnen enkel hun eigen lijst of klaslijsten zien.
         boolean isStaff = isStaffRole(currentUser.getRole());
         boolean isOwner = Objects.equals(list.getCreator().getId(), currentUser.getId());
         boolean isClassList = list.getListType() == ReadingListType.CLASS;
 
         if (!isStaff && !isOwner && !isClassList) {
-            throw new AccessDeniedException("Access denied");
+            throw new AccessDeniedException("Toegang geweigerd: deze leeslijst is niet zichtbaar voor jou");
         }
 
         return toDetail(list, currentUser.getId());
@@ -94,7 +94,7 @@ public class ReadingListService {
         ReadingListEntity list = new ReadingListEntity();
         list.setTitle(dto.getTitle().trim());
         list.setTaskDescription(normalizeText(dto.getTaskDescription()));
-        list.setDeadline(null); // personal lists have no deadline
+        list.setDeadline(null);
         list.setCreator(currentUser);
         list.setListType(ReadingListType.PERSONAL);
         list.setArchived(false);
@@ -108,17 +108,17 @@ public class ReadingListService {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
 
         ReadingListEntity list = readingListRepository.findByIdAndCreator_Id(id, currentUser.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Personal reading list not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Persoonlijke leeslijst niet gevonden"));
 
         if (list.getListType() != ReadingListType.PERSONAL) {
-            throw new AccessDeniedException("Only personal lists can be updated here");
+            throw new AccessDeniedException("Alleen persoonlijke lijsten kunnen hier worden aangepast");
         }
 
         validateTitle(dto.getTitle());
 
         list.setTitle(dto.getTitle().trim());
         list.setTaskDescription(normalizeText(dto.getTaskDescription()));
-        list.setDeadline(null); // keep personal lists without deadline
+        list.setDeadline(null);
         list.getBooks().clear();
         list.getBooks().addAll(loadBooks(dto.getBookIds()));
 
@@ -130,10 +130,10 @@ public class ReadingListService {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
 
         ReadingListEntity list = readingListRepository.findByIdAndCreator_Id(id, currentUser.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Personal reading list not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Persoonlijke lijst niet gevonden"));
 
         if (list.getListType() != ReadingListType.PERSONAL) {
-            throw new AccessDeniedException("Only personal lists can be deleted here");
+            throw new AccessDeniedException("Alleen persoonlijke lijsten kunnen hier worden verwijderd");
         }
 
         readingListRepository.delete(list);
@@ -145,17 +145,37 @@ public class ReadingListService {
         requireStaff(currentUser);
 
         ReadingListEntity list = readingListRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Class reading list not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Klasleeslijst niet gevonden"));
 
         if (list.getListType() != ReadingListType.CLASS) {
-            throw new AccessDeniedException("Only class lists can be archived");
+            throw new AccessDeniedException("Alleen klaslijsten kunnen worden gearchiveerd");
         }
 //      Alle toegelate staff members kunnen zaken archiveren -> limiteren -> voor leerkracht -> creator check
         list.setArchived(true);
         return readingListRepository.save(list);
     }
+    @Transactional
+    public ReadingListEntity updateClassList(Long id, CreateReadingListDTO dto, String smartschoolUid) {
+        UserEntity currentUser = requireCurrentUser(smartschoolUid);
+        requireStaff(currentUser);
+        ReadingListEntity list = readingListRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Klasleeslijst niet gevonden"));
+        if (list.getListType() != ReadingListType.CLASS) {
+            throw new AccessDeniedException("Alleen klaslijsten kunnen hier worden aangepast");
+        }
+        if(!Objects.equals(list.getCreator().getId(), currentUser.getId())){
+            throw new AccessDeniedException("Je kan alleen klaslijsten aanpassen die je zelf hebt aangemaakt");
+        }
+        validateTitle(dto.getTitle());
+        list.setTitle(dto.getTitle().trim());
+        list.setTaskDescription(normalizeText(dto.getTaskDescription()));
+        list.setDeadline(parseOptionalDeadline(dto.getDeadline()));
+        list.getBooks().clear();
+        list.getBooks().addAll(loadBooks(dto.getBookIds()));
+        return readingListRepository.save(list);
+    }
 
-//HELPER METHODS HIERONDER
+//  HELPER METHODS HIERONDER
 
     private UserEntity requireCurrentUser(String smartschoolUid) {
         return userRepository.findBySmartschoolUid(smartschoolUid)
@@ -229,7 +249,7 @@ public class ReadingListService {
                 .map(book -> {
                     List<String> authors = book.getAuthors() == null
                             ? List.of()
-                            : List.copyOf(book.getAuthors()); // force init while tx is open
+                            : List.copyOf(book.getAuthors());
 
                     return new ReadingListDetailDTO.BookItem(
                             book.getId(),

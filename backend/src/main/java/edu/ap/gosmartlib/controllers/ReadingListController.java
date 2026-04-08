@@ -102,6 +102,25 @@ public class ReadingListController {
             return ResponseEntity.badRequest().body("Error archiving class reading list: " + e.getMessage());
         }
     }
+    @PutMapping("/class/{id}")
+    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    public ResponseEntity<?> updateClassList(@PathVariable Long id,@RequestBody CreateReadingListDTO dto, Authentication authentication) {
+        try {
+            String uid = extractUid(authentication);
+            ReadingListEntity updated = readingListService.updateClassList(id, dto, uid);
+            return ResponseEntity.ok(updated.getId());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating class reading list: " + e.getMessage());
+        }
+    }
+
+    /**
+     * This helpermethod extracts the authenticated user's unique ID from the Spring Security Authentication object.
+     * It assumes that the user is authenticated via OAuth2 and that the principal contains a "userID" attribute.
+     * @param authentication
+     * @return the authenticated user's unique ID
+     * @throws IllegalArgumentException if the user is not authenticated
+     */
 
     private String extractUid(Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User principal)) {
