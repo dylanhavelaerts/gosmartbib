@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListResponseDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -16,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -119,5 +121,74 @@ class ReadingListServiceTest {
         // 3. ASSERT: Controleren of hij het opslaan overleeft zónder dat hij de bookRepository aanroept
         verify(bookRepository, never()).findAllById(any());
         verify(readingListRepository).save(any(ReadingListEntity.class));
+    }
+
+    //-------------------------------------------------------------------------------------
+
+    @Test
+    void syncBooksInList_Success() {
+        // 1. ARRANGE: Bereid de testdata voor
+        Long listId = 1L;
+        List<Long> bookIdsToAdd = List.of(10L, 20L); // De ID's van de boeken die we willen toevoegen
+
+        // Maak een neppe bestaande leeslijst
+        ReadingListEntity existingList = new ReadingListEntity();
+        existingList.setId(listId);
+        existingList.setTitle("Bestaande Lijst");
+        existingList.setDeadline(LocalDateTime.now());
+        // GEWIJZIGD: Gebruik een HashSet in plaats van een ArrayList!
+        existingList.setBooks(new HashSet<>()); 
+
+        // Maak neppe boeken die "gevonden" worden in de database
+        BookEntity book1 = new BookEntity(); 
+        book1.setId(10L); 
+        book1.setTitle("Harry Potter");
+
+        BookEntity book2 = new BookEntity(); 
+        book2.setId(20L); 
+        book2.setTitle("Lord of the Rings");
+
+        // Vertel de mock-repositories wat ze moeten antwoorden
+        when(readingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
+        when(bookRepository.findAllById(bookIdsToAdd)).thenReturn(List.of(book1, book2));
+        
+        // Zorg dat de save() methode gewoon het object teruggeeft dat hij binnenkrijgt
+        when(readingListRepository.save(any(ReadingListEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // 2. ACT: Voer de daadwerkelijke sync-methode uit (boeken toevoegen)
+        ReadingListResponseDTO resultDTO = readingListService.syncBooksInList(listId, bookIdsToAdd);
+
+        // 3. ASSERT: Controleer of alles perfect is verlopen
+        assertNotNull(resultDTO); // De methode moet een DTO teruggeven
+        assertEquals(listId, resultDTO.getId());
+        assertEquals(2, resultDTO.getBooks().size()); // Er moeten nu 2 boeken in zitten!
+
+        // Vang het object af dat daadwerkelijk naar de database gestuurd is om op te slaan
+        ArgumentCaptor<ReadingListEntity> captor = ArgumentCaptor.forClass(ReadingListEntity.class);
+        verify(readingListRepository).save(captor.capture());
+        
+        ReadingListEntity savedList = captor.getValue();
+        assertEquals(2, savedList.getBooks().size());
+        assertTrue(savedList.getBooks().contains(book1)); // Controleer of boek 1 is toegevoegd
+        assertTrue(savedList.getBooks().contains(book2)); // Controleer of boek 2 is toegevoegd
+    }
+
+    @Test
+    void syncBooksInList_ListNotFound_ThrowsException() {
+        // 1. ARRANGE: Stel dat de hacker/gebruiker een leeslijst ID doorgeeft dat niet bestaat
+        Long fakeListId = 999L;
+        when(readingListRepository.findById(fakeListId)).thenReturn(Optional.empty());
+
+        // 2 & 3. ACT & ASSERT: Controleren of hij keurig de juiste foutmelding gooit
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            readingListService.syncBooksInList(fakeListId, List.of(10L));
+        });
+
+        assertEquals("Leeslijst niet gevonden in DB met ID: 999", exception.getMessage());
+        
+        // Controleer of hij uit veiligheid nooit heeft geprobeerd boeken te zoeken of op te slaan
+        verify(bookRepository, never()).findAllById(any());
+        verify(readingListRepository, never()).save(any());
     }
 }

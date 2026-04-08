@@ -361,3 +361,25 @@
   margin-bottom: 1rem;
   font-weight: bold;
 }
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background-color: white;
+  color: #555;
+  border: 1.2px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background-color: #fdfdfd;
+  color: #8e2446;
+  border-color: #8e2446;
+  box-shadow: 0 2px 4px rgba(142, 36, 70, 0.1);
+}

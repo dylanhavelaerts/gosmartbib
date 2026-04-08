@@ -6,7 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +27,8 @@ public class BookEntity {
     @Column(nullable = false)
     private String title;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     @CollectionTable(name = "book_authors", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "author")
     private List<String> authors;
@@ -39,7 +41,8 @@ public class BookEntity {
     @Column(name = "page_count")
     private Integer pageCount;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     @CollectionTable(name = "book_categories", joinColumns = @JoinColumn(name = "book_id"))
     private List<String> categories;
 
@@ -62,7 +65,8 @@ public class BookEntity {
     @Column(name = "reading_level")
     private String readingLevel;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     @CollectionTable(name = "book_labels", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "label")
     private List<String> labels;
