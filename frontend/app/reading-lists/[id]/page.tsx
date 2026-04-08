@@ -182,7 +182,9 @@ export default function EditReadingListPage() {
                               <p className="book-list-authors" style={{ margin: 0 }}>door {book.authors?.join(", ") || "Onbekend"}</p>
                             </div>
                           </div>
-                          
+                          <button type="button" className="remove-btn" onClick={() => removeBookFromList(book.id!)}>
+                            ✕ Verwijder
+                          </button>
                         </div>
                       </div>
                     ))
