@@ -230,11 +230,11 @@
   padding: 1.2rem;
   cursor: pointer;
   flex: 1;
+  transition: background 0.2s;
 }
-.mrl-list-card-body:hover  {
-  font-size: 2rem;
-  flex-shrink: 0;
-  transition: transform 0.2s;
+
+.mrl-list-card-body:hover {
+  background: #fcf7f9;
 }
 .mrl-list-card-body h3 {
   font-size: 1rem;
@@ -541,12 +541,7 @@
   transition: width 0.4s ease;
 }
 
-/* Detail book grid */
-.mrl-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.2rem;
-}
+
 
 .mrl-detail-card {
   background: var(--mrl-surface);
