@@ -231,8 +231,7 @@
   cursor: pointer;
   flex: 1;
 }
-.mrl-list-card-body:hover .mrl-list-icon { transform: scale(1.12); }
-.mrl-list-icon {
+.mrl-list-card-body:hover  {
   font-size: 2rem;
   flex-shrink: 0;
   transition: transform 0.2s;
@@ -517,33 +516,6 @@
   padding: 0.75rem;
 }
 
-/* ── Detail view ── */
-.mrl-detail-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-.mrl-detail-header h1 {
-  font-size: clamp(1.3rem, 2.5vw, 1.8rem);
-  color: var(--mrl-text);
-  margin: 0 0 0.3rem;
-  font-weight: 700;
-}
-.mrl-detail-header p {
-  font-size: 0.9rem;
-  font-family: system-ui, sans-serif;
-  color: var(--mrl-text-muted);
-  margin: 0;
-}
-.mrl-detail-actions {
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
 
 /* Progress bar */
 .mrl-progress-bar-wrap {

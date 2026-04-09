@@ -16,7 +16,7 @@ interface PersonalList {
   listType: "PERSONAL" | "CLASS";
 }
 
-type ViewState = "overview" | "create" | "detail";
+type ViewState = "overview" | "create";
 
 export default function MyReadingListPage() {
   const { user } = useAuth();
@@ -41,10 +41,7 @@ export default function MyReadingListPage() {
     text: string;
   } | null>(null);
 
-  const [readStatus, setReadStatus] = useState<Record<number, boolean>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
-
-  const userId = user?.id ?? 0;
 
   const booksById = useCallback(() => {
     const map = new Map<number, Book>();
@@ -58,24 +55,6 @@ export default function MyReadingListPage() {
     return list.bookIds
       .map((id) => map.get(id))
       .filter((b): b is Book => Boolean(b));
-  };
-
-  const readStorageKey = (listId: number) =>
-    `reading-status:${userId}:${listId}`;
-
-  const loadReadStatus = (listId: number) => {
-    if (!userId || !listId) return;
-    try {
-      const raw = localStorage.getItem(readStorageKey(listId));
-      setReadStatus(raw ? JSON.parse(raw) : {});
-    } catch {
-      setReadStatus({});
-    }
-  };
-
-  const persistReadStatus = (listId: number, next: Record<number, boolean>) => {
-    if (!userId || !listId) return;
-    localStorage.setItem(readStorageKey(listId), JSON.stringify(next));
   };
 
   const fetchMyLists = useCallback(() => {
@@ -131,13 +110,6 @@ export default function MyReadingListPage() {
     setFormMsg(null);
   };
 
-  const openDetail = (list: PersonalList) => {
-    setActiveList(list);
-    setReadStatus({});
-    loadReadStatus(list.id);
-    setView("detail");
-  };
-
   const filteredBooks = allBooks.filter((book) => {
     const q = searchQuery.toLowerCase();
     return (
@@ -154,15 +126,6 @@ export default function MyReadingListPage() {
 
   const removeBook = (id: number) => {
     setFormBooks((prev) => prev.filter((b) => b.id !== id));
-  };
-
-  const toggleRead = (bookId: number) => {
-    if (!activeList) return;
-    setReadStatus((prev) => {
-      const next = { ...prev, [bookId]: !prev[bookId] };
-      persistReadStatus(activeList.id, next);
-      return next;
-    });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -229,16 +192,12 @@ export default function MyReadingListPage() {
       if (!res.ok) throw new Error();
 
       setMyLists((prev) => prev.filter((l) => l.id !== id));
-      if (view === "detail") setView("overview");
     } catch {
       alert("Verwijderen mislukt.");
     } finally {
       setDeleteConfirm(null);
     }
   };
-
-  const activeBooks = listBooks(activeList);
-  const readCount = activeBooks.filter((b) => readStatus[b.id]).length;
 
   return (
     <ProtectedRoute
@@ -290,7 +249,7 @@ export default function MyReadingListPage() {
                     <div key={list.id} className="mrl-list-card">
                       <div
                         className="mrl-list-card-body"
-                        onClick={() => openDetail(list)}
+                        onClick={() => router.push(`/reading-lists/${list.id}`)}
                       >
                         <div>
                           <h3>{list.title}</h3>
@@ -497,142 +456,6 @@ export default function MyReadingListPage() {
                 </button>
               </div>
             </form>
-          </>
-        )}
-
-        {view === "detail" && activeList && (
-          <>
-            <div className="mrl-subheader">
-              <button
-                className="mrl-back-btn"
-                onClick={() => setView("overview")}
-              >
-                Terug naar overzicht
-              </button>
-            </div>
-
-            <div className="mrl-detail-header">
-              <div>
-                <h1>{activeList.title}</h1>
-                {activeList.taskDescription && (
-                  <p>{activeList.taskDescription}</p>
-                )}
-              </div>
-              <div className="mrl-detail-actions">
-                <button
-                  className="mrl-btn-outline"
-                  onClick={() => openEdit(activeList)}
-                >
-                  Bewerken
-                </button>
-
-                {deleteConfirm === activeList.id ? (
-                  <span className="mrl-delete-row">
-                    Verwijderen?
-                    <button
-                      className="mrl-btn-sm-danger"
-                      onClick={() => handleDelete(activeList.id)}
-                    >
-                      Ja
-                    </button>
-                    <button
-                      className="mrl-btn-sm-ghost"
-                      onClick={() => setDeleteConfirm(null)}
-                    >
-                      Nee
-                    </button>
-                  </span>
-                ) : (
-                  <button
-                    className="mrl-btn-outline mrl-btn-outline--danger"
-                    onClick={() => setDeleteConfirm(activeList.id)}
-                  >
-                    Verwijderen
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {activeBooks.length === 0 && (
-              <div
-                className="mrl-state mrl-state--empty"
-                style={{ paddingTop: "3rem" }}
-              >
-                <p>
-                  Geen boeken in deze lijst. Bewerk de lijst om boeken toe te
-                  voegen.
-                </p>
-              </div>
-            )}
-
-            {activeBooks.length > 0 && (
-              <>
-                <div className="mrl-progress-bar-wrap">
-                  <div className="mrl-progress-label">
-                    {readCount} / {activeBooks.length} gelezen
-                  </div>
-                  <div className="mrl-progress-track">
-                    <div
-                      className="mrl-progress-fill"
-                      style={{
-                        width: `${(readCount / activeBooks.length) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="mrl-detail-grid">
-                  {activeBooks.map((book) => {
-                    const isRead = readStatus[book.id] ?? false;
-
-                    return (
-                      <div
-                        key={book.id}
-                        className={`mrl-detail-card ${isRead ? "mrl-detail-card--read" : ""}`}
-                      >
-                        <div className="mrl-detail-cover">
-                          {book.thumbnail ? (
-                            <img src={book.thumbnail} alt={book.title} />
-                          ) : (
-                            <div className="mrl-cover-placeholder">
-                              Geen cover
-                            </div>
-                          )}
-                          {isRead && (
-                            <div className="mrl-read-overlay">Gelezen</div>
-                          )}
-                        </div>
-
-                        <div className="mrl-detail-info">
-                          <h3>{book.title}</h3>
-                          <p>{book.authors?.join(", ") || "Onbekend"}</p>
-                        </div>
-
-                        <div className="mrl-detail-card-actions">
-                          <button
-                            className={`mrl-read-btn ${isRead ? "mrl-read-btn--done" : ""}`}
-                            onClick={() => toggleRead(book.id)}
-                          >
-                            {isRead
-                              ? "Markeer als ongelezen"
-                              : "Markeer als gelezen"}
-                          </button>
-
-                          <button
-                            className="mrl-detail-link"
-                            onClick={() =>
-                              router.push(`/detailpage/${book.id}`)
-                            }
-                          >
-                            Details
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
           </>
         )}
       </div>

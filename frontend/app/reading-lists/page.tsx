@@ -153,7 +153,7 @@ export default function ReadingListsPage() {
           <input
             type="text"
             className="rl-search"
-            placeholder="Zoeken op titel"
+            placeholder="Zoeken op titel, beschrijving of maker..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
