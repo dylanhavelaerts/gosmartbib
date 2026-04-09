@@ -1,278 +1,328 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.CreateReadingListDTO;
-import edu.ap.gosmartlib.dto.readinglist.ReadingListResponseDTO;
+import edu.ap.gosmartlib.dto.ReadingListDetailDTO;
+import edu.ap.gosmartlib.dto.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
+import edu.ap.gosmartlib.util.ReadingListType;
+import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ReadingListServiceTest {
-
-    // Mockito maakt 'nep' versies van je repositories
     @Mock
     private ReadingListRepository readingListRepository;
-
     @Mock
     private UserRepository userRepository;
-
     @Mock
     private BookRepository bookRepository;
-
-    // Mockito injecteert de nep-repositories in jouw échte service
     @InjectMocks
     private ReadingListService readingListService;
 
-    private CreateReadingListDTO dto;
-    private UserEntity mockUser;
-    private BookEntity mockBook;
-
-    @BeforeEach
-    void setUp() {
-        // Dit wordt voor ELKE test uitgevoerd, zo starten we met een propere lei
-        dto = new CreateReadingListDTO();
-        dto.setTitle("Test Lijst");
-        dto.setTaskDescription("Lees dit aandachtig voor het examen");
-        dto.setDeadline("2026-05-20T12:00:00");
-        dto.setCreatorId(1L);
-        dto.setBookIds(List.of(10L));
-
-        mockUser = new UserEntity();
-        mockUser.setId(1L);
-
-        mockBook = new BookEntity();
-        mockBook.setId(10L);
-    }
-
     @Test
-    void createReadingList_Success() {
-        // 1. ARRANGE (Voorbereiden: Wat moeten de nep-repositories antwoorden?)
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
-        when(bookRepository.findAllById(List.of(10L))).thenReturn(List.of(mockBook));
-        
-        ReadingListEntity savedEntity = new ReadingListEntity();
-        savedEntity.setId(100L); // Stel dat hij succesvol wordt opgeslagen en ID 100 krijgt
-        when(readingListRepository.save(any(ReadingListEntity.class))).thenReturn(savedEntity);
+    void givenStaffUserAndValidDto_whenCreateClassList_thenSavesClassList() {
+        UserEntity teacher = user(1L, "teacher-uid", UserRoles.TEACHER);
+        BookEntity book = book(10L, "Book One");
+        CreateReadingListDTO dto = dto("Klaslijst", "Beschrijving", "2026-05-20T12:00:00", List.of(10L));
 
-        // 2. ACT (Uitvoeren van jouw methode)
-        ReadingListEntity result = readingListService.createReadingList(dto);
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(bookRepository.findAllById(List.of(10L))).thenReturn(List.of(book));
+        when(readingListRepository.save(any(ReadingListEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // 3. ASSERT (Controleren)
-        assertNotNull(result); // Mag niet null zijn
-        
-        // We vangen het object af dat naar de repository.save() werd gestuurd om de inhoud te controleren
+        ReadingListEntity result = readingListService.createClassList(dto, "teacher-uid");
+
+        assertNotNull(result);
+        assertEquals(ReadingListType.CLASS, result.getListType());
+        assertEquals("Klaslijst", result.getTitle());
+        assertEquals(LocalDateTime.parse("2026-05-20T12:00:00"), result.getDeadline());
+
         ArgumentCaptor<ReadingListEntity> captor = ArgumentCaptor.forClass(ReadingListEntity.class);
         verify(readingListRepository).save(captor.capture());
-        
         ReadingListEntity captured = captor.getValue();
-        assertEquals("Test Lijst", captured.getTitle());
-        assertEquals("Lees dit aandachtig voor het examen", captured.getTaskDescription());
-        assertEquals(LocalDateTime.parse("2026-05-20T12:00:00"), captured.getDeadline());
-        assertEquals(mockUser, captured.getCreator());
-        assertTrue(captured.getBooks().contains(mockBook));
+        assertEquals(teacher, captured.getCreator());
+        assertEquals(1, captured.getBooks().size());
+        assertTrue(captured.getBooks().contains(book));
     }
 
     @Test
-    void createReadingList_UserNotFound_ThrowsException() {
-        // 1. ARRANGE: Stel dat de database zegt: "Ik kan deze ID niet vinden"
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+    void givenStudentUser_whenCreateClassList_thenThrowsAccessDenied() {
+        UserEntity student = user(2L, "student-uid", UserRoles.STUDENT);
+        CreateReadingListDTO dto = dto("Klaslijst", "Beschrijving", "2026-05-20T12:00:00", List.of(10L));
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
 
-        // 2 & 3. ACT & ASSERT: Controleren of hij inderdaad keurig crasht met de juiste error
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            readingListService.createReadingList(dto);
-        });
+        assertThrows(AccessDeniedException.class, () -> readingListService.createClassList(dto, "student-uid"));
 
-        assertEquals("Gebruiker niet gevonden in DB met ID: 1", exception.getMessage());
-        
-        // Extra controle: Als de gebruiker niet bestaat, mag hij ook nooit proberen om boeken te zoeken of op te slaan!
-        verify(bookRepository, never()).findAllById(any());
-        verify(readingListRepository, never()).save(any());
-    }
-    
-    @Test
-    void createReadingList_WithoutBooks_Success() {
-        // 1. ARRANGE: We halen de boeken uit de DTO
-        dto.setBookIds(null); 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
-        when(readingListRepository.save(any(ReadingListEntity.class))).thenReturn(new ReadingListEntity());
-
-        // 2. ACT
-        readingListService.createReadingList(dto);
-
-        // 3. ASSERT: Controleren of hij het opslaan overleeft zónder dat hij de bookRepository aanroept
-        verify(bookRepository, never()).findAllById(any());
-        verify(readingListRepository).save(any(ReadingListEntity.class));
-    }
-
-    //-------------------------------------------------------------------------------------
-
-    @Test
-    void syncBooksInList_Success() {
-        // 1. ARRANGE: Bereid de testdata voor
-        Long listId = 1L;
-        List<Long> bookIdsToAdd = List.of(10L, 20L); // De ID's van de boeken die we willen toevoegen
-
-        // Maak een neppe bestaande leeslijst
-        ReadingListEntity existingList = new ReadingListEntity();
-        existingList.setId(listId);
-        existingList.setTitle("Bestaande Lijst");
-        existingList.setDeadline(LocalDateTime.now());
-        // GEWIJZIGD: Gebruik een HashSet in plaats van een ArrayList!
-        existingList.setBooks(new HashSet<>()); 
-
-        // Maak neppe boeken die "gevonden" worden in de database
-        BookEntity book1 = new BookEntity(); 
-        book1.setId(10L); 
-        book1.setTitle("Harry Potter");
-
-        BookEntity book2 = new BookEntity(); 
-        book2.setId(20L); 
-        book2.setTitle("Lord of the Rings");
-
-        // Vertel de mock-repositories wat ze moeten antwoorden
-        when(readingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
-        when(bookRepository.findAllById(bookIdsToAdd)).thenReturn(List.of(book1, book2));
-        
-        // Zorg dat de save() methode gewoon het object teruggeeft dat hij binnenkrijgt
-        when(readingListRepository.save(any(ReadingListEntity.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        // 2. ACT: Voer de daadwerkelijke sync-methode uit (boeken toevoegen)
-        ReadingListResponseDTO resultDTO = readingListService.syncBooksInList(listId, bookIdsToAdd);
-
-        // 3. ASSERT: Controleer of alles perfect is verlopen
-        assertNotNull(resultDTO); // De methode moet een DTO teruggeven
-        assertEquals(listId, resultDTO.getId());
-        assertEquals(2, resultDTO.getBooks().size()); // Er moeten nu 2 boeken in zitten!
-
-        // Vang het object af dat daadwerkelijk naar de database gestuurd is om op te slaan
-        ArgumentCaptor<ReadingListEntity> captor = ArgumentCaptor.forClass(ReadingListEntity.class);
-        verify(readingListRepository).save(captor.capture());
-        
-        ReadingListEntity savedList = captor.getValue();
-        assertEquals(2, savedList.getBooks().size());
-        assertTrue(savedList.getBooks().contains(book1)); // Controleer of boek 1 is toegevoegd
-        assertTrue(savedList.getBooks().contains(book2)); // Controleer of boek 2 is toegevoegd
-    }
-
-    @Test
-    void syncBooksInList_ListNotFound_ThrowsException() {
-        // 1. ARRANGE: Stel dat de hacker/gebruiker een leeslijst ID doorgeeft dat niet bestaat
-        Long fakeListId = 999L;
-        when(readingListRepository.findById(fakeListId)).thenReturn(Optional.empty());
-
-        // 2 & 3. ACT & ASSERT: Controleren of hij keurig de juiste foutmelding gooit
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            readingListService.syncBooksInList(fakeListId, List.of(10L));
-        });
-
-        assertEquals("Leeslijst niet gevonden in DB met ID: 999", exception.getMessage());
-        
-        // Controleer of hij uit veiligheid nooit heeft geprobeerd boeken te zoeken of op te slaan
         verify(bookRepository, never()).findAllById(any());
         verify(readingListRepository, never()).save(any());
     }
 
-    //-------------------------------------------------------------------------------------
-
     @Test
-    void syncBooksInList_RemoveBook_Success() {
-        // 1. ARRANGE
-        Long listId = 1L;
-        
-        // Stel: Boek 10 en Boek 20 zitten momenteel in de leeslijst.
-        BookEntity book1 = new BookEntity(); 
-        book1.setId(10L); 
-        book1.setTitle("Harry Potter");
+    void givenValidDto_whenCreatePersonalList_thenSavesPersonalListWithoutDeadline() {
+        UserEntity student = user(2L, "student-uid", UserRoles.STUDENT);
+        BookEntity book = book(11L, "Book Two");
+        CreateReadingListDTO dto = dto("Persoonlijk", "Mijn lijst", "2027-01-01T10:15:30", List.of(11L));
 
-        BookEntity book2 = new BookEntity(); 
-        book2.setId(20L); 
-        book2.setTitle("Lord of the Rings");
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(bookRepository.findAllById(List.of(11L))).thenReturn(List.of(book));
+        when(readingListRepository.save(any(ReadingListEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ReadingListEntity existingList = new ReadingListEntity();
-        existingList.setId(listId);
-        existingList.setTitle("Bestaande Lijst");
-        existingList.setDeadline(LocalDateTime.now());
-        
-        // We vullen de bestaande lijst vooraf met BEIDE boeken
-        existingList.setBooks(new HashSet<>(List.of(book1, book2))); 
+        ReadingListEntity result = readingListService.createPersonalList(dto, "student-uid");
 
-        // De gebruiker klikt boek 20 weg en slaat op. Hij stuurt dus alleen ID 10 nog door.
-        List<Long> newBookIds = List.of(10L); 
+        assertEquals(ReadingListType.PERSONAL, result.getListType());
+        assertNull(result.getDeadline());
+        assertEquals(student, result.getCreator());
 
-        // Repositories instellen
-        when(readingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
-        // De bookRepository zal nu alleen boek 10 nog terugvinden en toevoegen
-        when(bookRepository.findAllById(newBookIds)).thenReturn(List.of(book1));
-        
-        when(readingListRepository.save(any(ReadingListEntity.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        // 2. ACT
-        ReadingListResponseDTO resultDTO = readingListService.syncBooksInList(listId, newBookIds);
-
-        // 3. ASSERT
-        assertNotNull(resultDTO);
-        assertEquals(1, resultDTO.getBooks().size()); // Er mag er nu maar 1 overblijven in de DTO
-
-        ArgumentCaptor<ReadingListEntity> captor = ArgumentCaptor.forClass(ReadingListEntity.class);
-        verify(readingListRepository).save(captor.capture());
-        
-        ReadingListEntity savedList = captor.getValue();
-        assertEquals(1, savedList.getBooks().size()); // Er mag er ook maar 1 overblijven in de database
-        assertTrue(savedList.getBooks().contains(book1)); // Boek 10 moet er nog in zitten
-        assertFalse(savedList.getBooks().contains(book2)); // Boek 20 moet succesvol verwijderd zijn!
+        verify(bookRepository, times(1)).findAllById(List.of(11L));
+        verify(readingListRepository, times(1)).save(any(ReadingListEntity.class));
     }
 
     @Test
-    void syncBooksInList_RemoveAllBooks_Success() {
-        // 1. ARRANGE
-        Long listId = 1L;
-        
-        ReadingListEntity existingList = new ReadingListEntity();
-        existingList.setId(listId);
-        // De lijst bevat momenteel 1 boek (mockBook wordt in de @BeforeEach aangemaakt)
-        existingList.setBooks(new HashSet<>(List.of(mockBook))); 
+    void givenOwnerPersonalList_whenUpdatePersonalList_thenUpdatesFieldsAndBooks() {
+        UserEntity owner = user(10L, "owner-uid", UserRoles.STUDENT);
+        ReadingListEntity existing = readingList(100L, "Old", ReadingListType.PERSONAL, owner, Set.of(book(1L, "Old Book")));
+        BookEntity newBook = book(2L, "New Book");
+        CreateReadingListDTO dto = dto("  New Title  ", "  New Description  ", "2028-01-01T00:00:00", List.of(2L));
 
-        // De gebruiker verwijdert alles en stuurt een lege lijst door
-        List<Long> emptyBookIds = new ArrayList<>(); 
+        when(userRepository.findBySmartschoolUid("owner-uid")).thenReturn(Optional.of(owner));
+        when(readingListRepository.findByIdAndCreator_Id(100L, 10L)).thenReturn(Optional.of(existing));
+        when(bookRepository.findAllById(List.of(2L))).thenReturn(List.of(newBook));
+        when(readingListRepository.save(any(ReadingListEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(readingListRepository.findById(listId)).thenReturn(Optional.of(existingList));
-        when(bookRepository.findAllById(emptyBookIds)).thenReturn(new ArrayList<>());
-        when(readingListRepository.save(any(ReadingListEntity.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        ReadingListEntity updated = readingListService.updatePersonalList(100L, dto, "owner-uid");
 
-        // 2. ACT
-        ReadingListResponseDTO resultDTO = readingListService.syncBooksInList(listId, emptyBookIds);
+        assertEquals("New Title", updated.getTitle());
+        assertEquals("New Description", updated.getTaskDescription());
+        assertNull(updated.getDeadline());
+        assertEquals(1, updated.getBooks().size());
+        assertTrue(updated.getBooks().contains(newBook));
+    }
 
-        // 3. ASSERT
-        assertNotNull(resultDTO);
-        assertEquals(0, resultDTO.getBooks().size()); // DTO moet een lege lijst tonen
+    @Test
+    void givenNonPersonalList_whenUpdatePersonalList_thenThrowsAccessDenied() {
+        UserEntity owner = user(10L, "owner-uid", UserRoles.STUDENT);
+        ReadingListEntity classList = readingList(100L, "Class", ReadingListType.CLASS, owner, Set.of());
+        CreateReadingListDTO dto = dto("Title", "Description", null, List.of());
 
-        ArgumentCaptor<ReadingListEntity> captor = ArgumentCaptor.forClass(ReadingListEntity.class);
-        verify(readingListRepository).save(captor.capture());
-        
-        // Controleer of de database entiteit nu ook echt 0 boeken bevat
-        assertEquals(0, captor.getValue().getBooks().size()); 
+        when(userRepository.findBySmartschoolUid("owner-uid")).thenReturn(Optional.of(owner));
+        when(readingListRepository.findByIdAndCreator_Id(100L, 10L)).thenReturn(Optional.of(classList));
+
+        assertThrows(AccessDeniedException.class, () -> readingListService.updatePersonalList(100L, dto, "owner-uid"));
+        verify(readingListRepository, never()).save(any(ReadingListEntity.class));
+    }
+
+    @Test
+    void givenOwnerPersonalList_whenDeletePersonalList_thenDeletes() {
+        UserEntity owner = user(15L, "owner-uid", UserRoles.STUDENT);
+        ReadingListEntity personalList = readingList(200L, "Personal", ReadingListType.PERSONAL, owner, Set.of());
+
+        when(userRepository.findBySmartschoolUid("owner-uid")).thenReturn(Optional.of(owner));
+        when(readingListRepository.findByIdAndCreator_Id(200L, 15L)).thenReturn(Optional.of(personalList));
+
+        readingListService.deletePersonalList(200L, "owner-uid");
+
+        verify(readingListRepository).delete(personalList);
+    }
+
+    @Test
+    void givenClassList_whenDeletePersonalList_thenThrowsAccessDenied() {
+        UserEntity owner = user(15L, "owner-uid", UserRoles.STUDENT);
+        ReadingListEntity classList = readingList(200L, "Class", ReadingListType.CLASS, owner, Set.of());
+
+        when(userRepository.findBySmartschoolUid("owner-uid")).thenReturn(Optional.of(owner));
+        when(readingListRepository.findByIdAndCreator_Id(200L, 15L)).thenReturn(Optional.of(classList));
+
+        assertThrows(AccessDeniedException.class, () -> readingListService.deletePersonalList(200L, "owner-uid"));
+        verify(readingListRepository, never()).delete(any(ReadingListEntity.class));
+    }
+
+    @Test
+    void givenOwnerStaffAndClassList_whenDeleteClassList_thenDeletes() {
+        UserEntity teacher = user(20L, "teacher-uid", UserRoles.TEACHER);
+        ReadingListEntity classList = readingList(300L, "Class", ReadingListType.CLASS, teacher, Set.of());
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(readingListRepository.findById(300L)).thenReturn(Optional.of(classList));
+
+        readingListService.deleteClassList(300L, "teacher-uid");
+
+        verify(readingListRepository).delete(classList);
+    }
+
+    @Test
+    void givenNonOwnerStaffAndClassList_whenDeleteClassList_thenThrowsAccessDenied() {
+        UserEntity teacher = user(20L, "teacher-uid", UserRoles.TEACHER);
+        UserEntity otherTeacher = user(21L, "other-uid", UserRoles.TEACHER);
+        ReadingListEntity classList = readingList(300L, "Class", ReadingListType.CLASS, otherTeacher, Set.of());
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(readingListRepository.findById(300L)).thenReturn(Optional.of(classList));
+
+        assertThrows(AccessDeniedException.class, () -> readingListService.deleteClassList(300L, "teacher-uid"));
+        verify(readingListRepository, never()).delete(any(ReadingListEntity.class));
+    }
+
+    @Test
+    void givenPersonalList_whenDeleteClassList_thenThrowsAccessDenied() {
+        UserEntity teacher = user(20L, "teacher-uid", UserRoles.TEACHER);
+        ReadingListEntity personalList = readingList(301L, "Personal", ReadingListType.PERSONAL, teacher, Set.of());
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(readingListRepository.findById(301L)).thenReturn(Optional.of(personalList));
+
+        assertThrows(AccessDeniedException.class, () -> readingListService.deleteClassList(301L, "teacher-uid"));
+        verify(readingListRepository, never()).delete(any(ReadingListEntity.class));
+    }
+
+    @Test
+    void givenOwnerStaffAndClassList_whenUpdateClassList_thenUpdates() {
+        UserEntity teacher = user(20L, "teacher-uid", UserRoles.TEACHER);
+        ReadingListEntity classList = readingList(400L, "Old Class", ReadingListType.CLASS, teacher, Set.of(book(5L, "Old")));
+        BookEntity newBook = book(6L, "New");
+        CreateReadingListDTO dto = dto("  New Class  ", "  New Desc  ", "2026-10-10T12:00:00", List.of(6L));
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(readingListRepository.findById(400L)).thenReturn(Optional.of(classList));
+        when(bookRepository.findAllById(List.of(6L))).thenReturn(List.of(newBook));
+        when(readingListRepository.save(any(ReadingListEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ReadingListEntity updated = readingListService.updateClassList(400L, dto, "teacher-uid");
+
+        assertEquals("New Class", updated.getTitle());
+        assertEquals("New Desc", updated.getTaskDescription());
+        assertEquals(LocalDateTime.parse("2026-10-10T12:00:00"), updated.getDeadline());
+        assertTrue(updated.getBooks().contains(newBook));
+    }
+
+    @Test
+    void givenNonOwnerStaffAndClassList_whenUpdateClassList_thenThrowsAccessDenied() {
+        UserEntity teacher = user(20L, "teacher-uid", UserRoles.TEACHER);
+        UserEntity otherTeacher = user(99L, "other-uid", UserRoles.TEACHER);
+        ReadingListEntity classList = readingList(400L, "Class", ReadingListType.CLASS, otherTeacher, Set.of());
+        CreateReadingListDTO dto = dto("Title", "Desc", "2026-10-10T12:00:00", List.of());
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(readingListRepository.findById(400L)).thenReturn(Optional.of(classList));
+
+        assertThrows(AccessDeniedException.class, () -> readingListService.updateClassList(400L, dto, "teacher-uid"));
+        verify(readingListRepository, never()).save(any(ReadingListEntity.class));
+    }
+
+    @Test
+    void givenDuplicateClassListsInSources_whenGetVisibleLists_thenReturnsDeduped() {
+        UserEntity user = user(50L, "student-uid", UserRoles.STUDENT);
+        ReadingListEntity ownPersonal = readingList(500L, "Own Personal", ReadingListType.PERSONAL, user, Set.of());
+        ReadingListEntity ownClass = readingList(501L, "Own Class", ReadingListType.CLASS, user, Set.of());
+        UserEntity otherTeacher = user(51L, "teacher-uid", UserRoles.TEACHER);
+        ReadingListEntity otherClass = readingList(502L, "Other Class", ReadingListType.CLASS, otherTeacher, Set.of());
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(user));
+        when(readingListRepository.findAllByCreator_IdOrderByIdDesc(50L)).thenReturn(List.of(ownClass, ownPersonal));
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS)).thenReturn(List.of(otherClass, ownClass));
+
+        List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
+
+        assertEquals(3, result.size());
+        List<Long> ids = result.stream().map(ReadingListOverviewDTO::id).toList();
+        assertTrue(ids.containsAll(List.of(500L, 501L, 502L)));
+    }
+
+    @Test
+    void givenStudentRequestingOtherPersonalList_whenGetListDetail_thenThrowsAccessDenied() {
+        UserEntity student = user(60L, "student-uid", UserRoles.STUDENT);
+        UserEntity otherStudent = user(61L, "other-student", UserRoles.STUDENT);
+        ReadingListEntity personalOfOther = readingList(600L, "Other Personal", ReadingListType.PERSONAL, otherStudent, Set.of(book(1L, "Book")));
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findByIdWithBooks(600L)).thenReturn(Optional.of(personalOfOther));
+
+        assertThrows(AccessDeniedException.class, () -> readingListService.getListDetail(600L, "student-uid"));
+    }
+
+    @Test
+    void givenStudentRequestingClassList_whenGetListDetail_thenReturnsDetail() {
+        UserEntity student = user(60L, "student-uid", UserRoles.STUDENT);
+        UserEntity teacher = user(61L, "teacher-uid", UserRoles.TEACHER);
+        BookEntity classBook = book(700L, "Class Book");
+        classBook.setAuthors(List.of("A. Author"));
+        classBook.setIsbn("isbn-700");
+        ReadingListEntity classList = readingList(700L, "Class List", ReadingListType.CLASS, teacher, Set.of(classBook));
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findByIdWithBooks(700L)).thenReturn(Optional.of(classList));
+
+        ReadingListDetailDTO detail = readingListService.getListDetail(700L, "student-uid");
+
+        assertEquals(700L, detail.id());
+        assertEquals("Class List", detail.title());
+        assertFalse(detail.ownList());
+        assertEquals(1, detail.books().size());
+        assertEquals("Class Book", detail.books().get(0).title());
+    }
+
+    private CreateReadingListDTO dto(String title, String description, String deadline, List<Long> bookIds) {
+        CreateReadingListDTO dto = new CreateReadingListDTO();
+        dto.setTitle(title);
+        dto.setTaskDescription(description);
+        dto.setDeadline(deadline);
+        dto.setBookIds(bookIds);
+        return dto;
+    }
+
+    private UserEntity user(Long id, String uid, UserRoles role) {
+        UserEntity user = new UserEntity();
+        user.setId(id);
+        user.setSmartschoolUid(uid);
+        user.setRole(role);
+        return user;
+    }
+
+    private BookEntity book(Long id, String title) {
+        BookEntity book = new BookEntity();
+        book.setId(id);
+        book.setTitle(title);
+        book.setAuthors(List.of());
+        book.setIsbn("isbn-" + id);
+        return book;
+    }
+
+    private ReadingListEntity readingList(Long id, String title, ReadingListType type, UserEntity creator, Set<BookEntity> books) {
+        ReadingListEntity list = new ReadingListEntity();
+        list.setId(id);
+        list.setTitle(title);
+        list.setTaskDescription("desc-" + id);
+        list.setListType(type);
+        list.setCreator(creator);
+        list.setBooks(new LinkedHashSet<>(Objects.requireNonNullElseGet(books, Set::of)));
+        return list;
     }
 }
