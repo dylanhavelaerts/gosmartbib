@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
 public interface ReadingListRepository extends JpaRepository<ReadingListEntity, Long> {
     List<ReadingListEntity> findAllByCreator_IdOrderByIdDesc(Long creatorId);
     List<ReadingListEntity> findAllByListTypeOrderByIdDesc(ReadingListType listType);

@@ -63,7 +63,8 @@ public class DataSeeding implements CommandLineRunner {
                                 readingLevel,
                                 totalCopies,
                                 availableCopies,
-                                ageRange);
+                                ageRange
+                                );
                 b.setSpotlight(spotlight);
                 return b;
         }

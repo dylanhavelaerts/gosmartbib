@@ -1,0 +1,400 @@
+.reviewSection {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.reviewSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.reviewSectionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #8e2446;
+  margin: 0;
+}
+
+.placeReview {
+  background: none;
+  border: 1.5px solid #8e2446;
+  color: #8e2446;
+  font-size: 13px;
+  padding: 0.3rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.placeReview:hover {
+  background-color: #8e2446;
+  color: white;
+}
+
+.reviewForm {
+  border: 1px solid rgba(142, 36, 70, 0.3);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  background-color: rgba(142, 36, 70, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reviewFormTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #8e2446;
+  margin: 0;
+}
+
+.reviewTextArea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(142, 36, 70, 0.3);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  font-size: 13px;
+  color: #333;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.reviewTextArea:focus {
+  border-color: #8e2446;
+}
+
+.reviewFormFooter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.charCount {
+  font-size: 11px;
+  color: #aaa;
+  margin-right: auto;
+}
+
+.reviewError {
+  font-size: 12px;
+  color: #c0392b;
+}
+
+.submitReviewBtn {
+  background-color: #8e2446;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.submitReviewBtn:hover:not(:disabled) {
+  background-color: #6e1a35;
+}
+
+.submitReviewBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+}
+
+.star {
+  font-size: 20px;
+  color: #ddd;
+  transition: color 0.15s ease;
+  line-height: 1;
+}
+
+.star.filled {
+  color: #8e2446;
+}
+
+.star.interactive {
+  cursor: pointer;
+}
+
+.star.interactive:hover {
+  transform: scale(1.15);
+}
+
+.reviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reviewCard {
+  border: 1px solid rgba(142, 36, 70, 0.2);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  background-color: white;
+  transition: box-shadow 0.2s ease;
+}
+
+.reviewCard:hover {
+  box-shadow: 0 2px 8px rgba(142, 36, 70, 0.1);
+}
+
+.reviewCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.reviewCardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reviewRole {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8e2446;
+  background-color: #f0e6ea;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  width: fit-content;
+}
+
+.reviewDate {
+  font-size: 11px;
+  color: #aaa;
+  padding-left: 0.1rem;
+}
+
+.reviewText {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.reviewCardActions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.deleteReviewBtn {
+  border: 1px solid rgba(176, 42, 42, 0.4);
+  background: transparent;
+  color: #b02a2a;
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0.2rem 0.45rem;
+  min-width: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deleteReviewBtn:hover:not(:disabled) {
+  background-color: rgba(176, 42, 42, 0.08);
+}
+
+.deleteReviewBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.flagReviewBtn {
+  border: 1px solid rgba(142, 36, 70, 0.35);
+  background: transparent;
+  color: #8e2446;
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0.2rem 0.45rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.flagReviewBtn:hover:not(:disabled) {
+  background-color: rgba(142, 36, 70, 0.08);
+}
+
+.flagReviewBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.deleteConfirmRow {
+  margin-top: 0.55rem;
+  border: 1px solid rgba(176, 42, 42, 0.25);
+  border-radius: 6px;
+  background: rgba(176, 42, 42, 0.03);
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.deleteConfirmText {
+  margin-right: auto;
+  font-size: 12px;
+  color: #7a1f1f;
+}
+
+.deleteConfirmCancel {
+  border: 1px solid rgba(142, 36, 70, 0.35);
+  background: transparent;
+  color: #8e2446;
+  border-radius: 6px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.deleteConfirmCancel:hover:not(:disabled) {
+  background: rgba(142, 36, 70, 0.08);
+}
+
+.deleteConfirmDelete {
+  border: 1px solid #b02a2a;
+  background: #b02a2a;
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.deleteConfirmDelete:hover:not(:disabled) {
+  background: #8f2121;
+  border-color: #8f2121;
+}
+
+.deleteConfirmCancel:disabled,
+.deleteConfirmDelete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reviewLoading,
+.reviewEmpty {
+  font-size: 13px;
+  color: #aaa;
+  margin: 0.5rem 0;
+}
+
+.reportModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 15, 24, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1100;
+}
+
+.reportModalBox {
+  width: 100%;
+  max-width: 360px;
+  background: #fff;
+  border: 1.5px solid #6e1a35;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(142, 36, 70, 0.2);
+}
+
+.reportModalTitle {
+  margin: 0 0 0.8rem;
+  font-size: 14px;
+  font-weight: 700;
+  color: #8e2446;
+}
+
+.reportReasonList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.reportReasonOption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 13px;
+  color: #333;
+}
+
+.reportReasonOption input {
+  accent-color: #8e2446;
+}
+
+.reportError {
+  margin: 0.6rem 0 0;
+  font-size: 12px;
+  color: #c0392b;
+}
+
+.reportModalActions {
+  margin-top: 0.9rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.reportCancelBtn,
+.reportSubmitBtn {
+  border-radius: 6px;
+  padding: 0.38rem 0.85rem;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.reportCancelBtn {
+  border: 1px solid rgba(142, 36, 70, 0.35);
+  background: transparent;
+  color: #8e2446;
+}
+
+.reportCancelBtn:hover:not(:disabled) {
+  background: rgba(142, 36, 70, 0.08);
+}
+
+.reportSubmitBtn {
+  border: 1px solid #8e2446;
+  background: #8e2446;
+  color: #fff;
+}
+
+.reportSubmitBtn:hover:not(:disabled) {
+  background: #6e1a35;
+  border-color: #6e1a35;
+}
+
+.reportCancelBtn:disabled,
+.reportSubmitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
