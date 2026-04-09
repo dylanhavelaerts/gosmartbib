@@ -53,6 +53,13 @@
   font-family: system-ui, sans-serif;
 }
 
+.mrl-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
 /* ── Sub-header (back + title) ── */
 .mrl-subheader {
   margin-bottom: 1.6rem;

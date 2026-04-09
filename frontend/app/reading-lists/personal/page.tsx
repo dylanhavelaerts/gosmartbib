@@ -252,9 +252,17 @@ export default function MyReadingListPage() {
                 <h1>Mijn leeslijsten</h1>
                 <p>Maak persoonlijke lijsten met boeken die jij wilt lezen.</p>
               </div>
-              <button className="mrl-btn-primary" onClick={openCreate}>
-                Nieuwe lijst
-              </button>
+              <div className="mrl-header-actions">
+                <button
+                  className="mrl-btn-outline"
+                  onClick={() => router.push("/reading-lists")}
+                >
+                  Terug naar alle leeslijsten
+                </button>
+                <button className="mrl-btn-primary" onClick={openCreate}>
+                  Nieuwe lijst
+                </button>
+              </div>
             </div>
 
             {listsLoading && (
