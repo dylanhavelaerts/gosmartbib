@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import ProtectedRoute from "../components/ProtectedRoute";
 import "./readingLists.css";
 
 type ListType = "CLASS" | "PERSONAL";
@@ -14,7 +13,6 @@ interface ReadingListOverview {
   taskDescription?: string | null;
   deadline?: string | null;
   listType: ListType;
-  archived: boolean;
   ownList: boolean;
   creatorName?: string | null;
   bookIds: number[];
@@ -34,7 +32,6 @@ export default function ReadingListsPage() {
   const [lists, setLists] = useState<ReadingListOverview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "active" | "archived">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -62,22 +59,6 @@ export default function ReadingListsPage() {
     if (user) fetchLists();
   }, [user]);
 
-  const handleArchive = async (id: number) => {
-    setActionLoading(id);
-    try {
-      const res = await fetch(`${apiUrl}/reading-lists/class/${id}/archive`, {
-        method: "PATCH",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error();
-      fetchLists();
-    } catch {
-      alert("Archiveren mislukt.");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   const handleDeletePersonal = async (id: number) => {
     setActionLoading(id);
     try {
@@ -96,11 +77,6 @@ export default function ReadingListsPage() {
   };
 
   const filtered = lists.filter((list) => {
-    const matchesFilter =
-      filter === "all" ||
-      (filter === "active" && !list.archived) ||
-      (filter === "archived" && list.archived);
-
     const q = searchQuery.toLowerCase();
     const matchesSearch =
       !q ||
@@ -108,7 +84,7 @@ export default function ReadingListsPage() {
       list.taskDescription?.toLowerCase().includes(q) ||
       (list.creatorName || "").toLowerCase().includes(q);
 
-    return matchesFilter && matchesSearch;
+    return matchesSearch;
   });
 
   const formatDeadline = (deadline?: string | null) => {
@@ -166,18 +142,6 @@ export default function ReadingListsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-
-        <div className="rl-filter-tabs">
-          {(["all", "active", "archived"] as const).map((f) => (
-            <button
-              key={f}
-              className={`rl-filter-tab ${filter === f ? "active" : ""}`}
-              onClick={() => setFilter(f)}
-            >
-              {f === "all" ? "Alle" : f === "active" ? "Actief" : "Archief"}
-            </button>
-          ))}
-        </div>
       </div>
 
       {loading && (
@@ -214,14 +178,11 @@ export default function ReadingListsPage() {
             const isClass = list.listType === "CLASS";
             const canEditPersonal =
               list.listType === "PERSONAL" && list.ownList;
-            const canArchiveClass = isStaff && isClass && !list.archived;
 
             return (
               <div
                 key={list.id}
-                className={`rl-card ${list.archived ? "rl-card--archived" : ""} ${
-                  isClass ? "rl-card--class" : "rl-card--personal"
-                }`}
+                className={`rl-card ${isClass ? "rl-card--class" : "rl-card--personal"}`}
               >
                 <div className="rl-card-badge">
                   <span
@@ -229,9 +190,6 @@ export default function ReadingListsPage() {
                   >
                     {isClass ? "Klas lijst" : "Eigen lijst"}
                   </span>
-                  {list.archived && (
-                    <span className="badge badge--archived">Archief</span>
-                  )}
                 </div>
 
                 <h2 className="rl-card-title">{list.title}</h2>
@@ -274,16 +232,6 @@ export default function ReadingListsPage() {
                       }
                     >
                       Bewerken
-                    </button>
-                  )}
-
-                  {canArchiveClass && (
-                    <button
-                      className="rl-btn-outline"
-                      disabled={actionLoading === list.id}
-                      onClick={() => handleArchive(list.id)}
-                    >
-                      {actionLoading === list.id ? "Bezig..." : "Archiveren"}
                     </button>
                   )}
 

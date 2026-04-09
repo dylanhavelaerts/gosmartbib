@@ -43,9 +43,6 @@ public class ReadingListEntity {
     @Column(name = "list_type", nullable = false, length = 20)
     private ReadingListType listType;
 
-    @Column(name = "archived", nullable = false)
-    private boolean archived = false;
-
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "tbl_reading_list_books",

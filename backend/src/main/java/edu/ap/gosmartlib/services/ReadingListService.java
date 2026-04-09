@@ -42,7 +42,6 @@ public class ReadingListService {
                     .forEach(list -> deduped.putIfAbsent(list.getId(), list));
 
             return deduped.values().stream()
-                    .filter(list -> !list.isArchived() || list.getListType() == ReadingListType.PERSONAL)
                     .map(list -> toOverview(list, currentUser.getId()))
                     .toList();
     }
@@ -79,7 +78,6 @@ public class ReadingListService {
         list.setDeadline(parseOptionalDeadline(dto.getDeadline()));
         list.setCreator(currentUser);
         list.setListType(ReadingListType.CLASS);
-        list.setArchived(false);
         list.getBooks().addAll(loadBooks(dto.getBookIds()));
 
         return readingListRepository.save(list);
@@ -97,7 +95,6 @@ public class ReadingListService {
         list.setDeadline(null);
         list.setCreator(currentUser);
         list.setListType(ReadingListType.PERSONAL);
-        list.setArchived(false);
         list.getBooks().addAll(loadBooks(dto.getBookIds()));
 
         return readingListRepository.save(list);
@@ -139,21 +136,6 @@ public class ReadingListService {
         readingListRepository.delete(list);
     }
 
-    @Transactional
-    public ReadingListEntity archiveClassList(Long id, String smartschoolUid) {
-        UserEntity currentUser = requireCurrentUser(smartschoolUid);
-        requireStaff(currentUser);
-
-        ReadingListEntity list = readingListRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Klasleeslijst niet gevonden"));
-
-        if (list.getListType() != ReadingListType.CLASS) {
-            throw new AccessDeniedException("Alleen klaslijsten kunnen worden gearchiveerd");
-        }
-//      Alle toegelate staff members kunnen zaken archiveren -> limiteren -> voor leerkracht -> creator check
-        list.setArchived(true);
-        return readingListRepository.save(list);
-    }
     @Transactional
     public ReadingListEntity updateClassList(Long id, CreateReadingListDTO dto, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -235,7 +217,6 @@ public class ReadingListService {
                 list.getTaskDescription(),
                 list.getDeadline(),
                 list.getListType(),
-                list.isArchived(),
                 Objects.equals(list.getCreator().getId(), currentUserId),
                 creatorName,
                 ids,
@@ -267,7 +248,6 @@ public class ReadingListService {
                 list.getTaskDescription(),
                 list.getDeadline(),
                 list.getListType(),
-                list.isArchived(),
                 Objects.equals(list.getCreator().getId(), currentUserId),
                 creatorName,
                 books

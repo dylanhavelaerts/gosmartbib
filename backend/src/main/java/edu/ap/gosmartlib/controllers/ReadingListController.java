@@ -90,18 +90,6 @@ public class ReadingListController {
             return ResponseEntity.badRequest().body("Error deleting personal reading list: " + e.getMessage());
         }
     }
-
-    @PatchMapping("/class/{id}/archive")
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
-    public ResponseEntity<?> archiveClassList(@PathVariable Long id, Authentication authentication) {
-        try {
-            String uid = extractUid(authentication);
-            ReadingListEntity archived = readingListService.archiveClassList(id, uid);
-            return ResponseEntity.ok(archived.getId());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error archiving class reading list: " + e.getMessage());
-        }
-    }
     @PutMapping("/class/{id}")
     @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
     public ResponseEntity<?> updateClassList(@PathVariable Long id,@RequestBody CreateReadingListDTO dto, Authentication authentication) {

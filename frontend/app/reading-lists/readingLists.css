@@ -265,10 +265,6 @@
   border-color: #d4a0b0;
 }
 
-.rl-card--archived {
-  opacity: 0.65;
-  background: #fafafa;
-}
 .rl-card--class { border-top: 3px solid var(--rl-accent); }
 .rl-card--personal { border-top: 3px solid var(--rl-accent); }
 
@@ -291,7 +287,6 @@
 }
 .badge--class    { background: #fdf0f4; color: var(--rl-accent); }
 .badge--personal { background: #fdf0f4; color: var(--rl-accent); }
-.badge--archived { background: #f0f0f0; color: #888; }
 
 /* Title */
 .rl-card-title {

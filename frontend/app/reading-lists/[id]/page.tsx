@@ -19,7 +19,6 @@ interface ReadingListDetail {
   taskDescription?: string | null;
   deadline?: string | null;
   listType: "CLASS" | "PERSONAL";
-  archived: boolean;
   ownList: boolean;
   creatorName?: string | null;
   books: BookItem[];
@@ -154,9 +153,6 @@ export default function ReadingListDetailPage() {
                     ? "Klasleeslijst"
                     : "Persoonlijke lijst"}
                 </span>
-                {detail.archived && (
-                  <span className="rld-badge rld-badge--archived">Archief</span>
-                )}
               </div>
 
               <h1>{detail.title}</h1>

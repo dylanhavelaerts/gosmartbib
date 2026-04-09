@@ -1,8 +1,6 @@
 package edu.ap.gosmartlib.dto;
 
 import edu.ap.gosmartlib.util.ReadingListType;
-import lombok.Builder;
-import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,7 +10,6 @@ public record ReadingListOverviewDTO(
         String taskDescription,
         LocalDateTime deadline,
         ReadingListType listType,
-        boolean archived,
         boolean ownList,
         String creatorName,
         List<Long> bookIds,

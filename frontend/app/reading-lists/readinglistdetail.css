@@ -117,7 +117,6 @@ box-sizing: border-box;
 }
 .rld-badge--class    { background: var(--rld-accent-pale); color: var(--rld-accent); }
 .rld-badge--personal { background: var(--rld-accent-pale); color: var(--rld-accent); }
-.rld-badge--archived { background: #f0f0f0; color: #888; }
 
 .rld-header h1 {
   font-size: clamp(1.5rem, 3vw, 2.1rem);

@@ -11,7 +11,6 @@ public record ReadingListDetailDTO(
         String taskDescription,
         LocalDateTime deadline,
         ReadingListType listType,
-        boolean archived,
         boolean ownList,
         String creatorName,
         List<BookItem> books
