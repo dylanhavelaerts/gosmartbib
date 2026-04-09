@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.entities;
 
+import edu.ap.gosmartlib.util.ReadingListType;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -10,6 +11,8 @@ import lombok.ToString;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Getter
@@ -31,12 +34,17 @@ public class ReadingListEntity {
     @Column(name = "task_description", columnDefinition = "TEXT")
     private String taskDescription;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private LocalDateTime deadline;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", nullable = false)
+    @JsonIgnore
     private UserEntity creator;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "list_type", nullable = false, length = 20)
+    private ReadingListType listType;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

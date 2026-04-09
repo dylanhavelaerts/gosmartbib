@@ -17,8 +17,6 @@ export interface Book {
   didacticTag: boolean;
   readingLevel: string;
   labels: string[];
-  totalCopies: number;
-  availableCopies: number;
   ageRange: string;
 }
 
