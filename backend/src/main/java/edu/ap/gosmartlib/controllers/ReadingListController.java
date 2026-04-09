@@ -90,6 +90,17 @@ public class ReadingListController {
             return ResponseEntity.badRequest().body("Error deleting personal reading list: " + e.getMessage());
         }
     }
+    @DeleteMapping("/class/{id}")
+    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    public ResponseEntity<?> deleteClassList(@PathVariable Long id, Authentication authentication) {
+        try {
+            String uid = extractUid(authentication);
+            readingListService.deleteClassList(id, uid);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error deleting class reading list: " + e.getMessage());
+        }
+    }
     @PutMapping("/class/{id}")
     @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
     public ResponseEntity<?> updateClassList(@PathVariable Long id,@RequestBody CreateReadingListDTO dto, Authentication authentication) {

@@ -135,7 +135,24 @@ public class ReadingListService {
 
         readingListRepository.delete(list);
     }
+    @Transactional
+    public void deleteClassList(Long id, String smartschoolUid) {
+        UserEntity currentUser = requireCurrentUser(smartschoolUid);
+        requireStaff(currentUser);
 
+        ReadingListEntity list = readingListRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Klasleeslijst niet gevonden"));
+
+        if (list.getListType() != ReadingListType.CLASS) {
+            throw new AccessDeniedException("Alleen klaslijsten kunnen hier worden verwijderd");
+        }
+
+        if (!Objects.equals(list.getCreator().getId(), currentUser.getId())) {
+            throw new AccessDeniedException("Je kan alleen klaslijsten verwijderen die je zelf hebt aangemaakt");
+        }
+
+        readingListRepository.delete(list);
+    }
     @Transactional
     public ReadingListEntity updateClassList(Long id, CreateReadingListDTO dto, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);

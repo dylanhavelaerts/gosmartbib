@@ -75,6 +75,22 @@ export default function ReadingListsPage() {
       setDeleteConfirm(null);
     }
   };
+  const handleDeleteClass = async (id: number) => {
+    setActionLoading(id);
+    try {
+      const res = await fetch(`${apiUrl}/reading-lists/class/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error();
+      setLists((prev) => prev.filter((l) => l.id !== id));
+    } catch {
+      alert("Verwijderen mislukt.");
+    } finally {
+      setActionLoading(null);
+      setDeleteConfirm(null);
+    }
+  };
 
   const filtered = lists.filter((list) => {
     const q = searchQuery.toLowerCase();
@@ -137,7 +153,7 @@ export default function ReadingListsPage() {
           <input
             type="text"
             className="rl-search"
-            placeholder="Zoeken op titel, beschrijving of maker..."
+            placeholder="Zoeken op titel"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -176,6 +192,7 @@ export default function ReadingListsPage() {
             const deadline = formatDeadline(list.deadline);
             const bookCount = list.bookIds?.length ?? list.bookCount ?? 0;
             const isClass = list.listType === "CLASS";
+            const canDeleteClass = isStaff && isClass && list.ownList;
             const canEditPersonal =
               list.listType === "PERSONAL" && list.ownList;
 
@@ -243,6 +260,32 @@ export default function ReadingListsPage() {
                           className="rl-btn-danger"
                           disabled={actionLoading === list.id}
                           onClick={() => handleDeletePersonal(list.id)}
+                        >
+                          {actionLoading === list.id ? "Bezig..." : "Ja"}
+                        </button>
+                        <button
+                          className="rl-btn-ghost"
+                          onClick={() => setDeleteConfirm(null)}
+                        >
+                          Nee
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="rl-btn-ghost rl-btn-ghost--danger"
+                        onClick={() => setDeleteConfirm(list.id)}
+                      >
+                        Verwijderen
+                      </button>
+                    ))}
+                  {canDeleteClass &&
+                    (deleteConfirm === list.id ? (
+                      <div className="rl-delete-confirm">
+                        <span>Zeker verwijderen?</span>
+                        <button
+                          className="rl-btn-danger"
+                          disabled={actionLoading === list.id}
+                          onClick={() => handleDeleteClass(list.id)}
                         >
                           {actionLoading === list.id ? "Bezig..." : "Ja"}
                         </button>
