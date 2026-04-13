@@ -31,10 +31,16 @@ export default function HomeReadingLists({
         </div>
 
         <div className="homeReadingListsActions">
-          <button className="homeRlBtn" onClick={onOpenPersonal}>
+          <button
+            className="semitransparentButton homeRlBtn"
+            onClick={onOpenPersonal}
+          >
             Mijn leeslijsten
           </button>
-          <button className="homeRlBtn homeRlBtnGhost" onClick={onOpenAll}>
+          <button
+            className="semitransparentButton homeRlBtn homeRlBtnGhost"
+            onClick={onOpenAll}
+          >
             Alle leeslijsten
           </button>
         </div>
@@ -45,7 +51,7 @@ export default function HomeReadingLists({
       {!loading && error && (
         <div className="homeReadingListsState">
           <p>{error}</p>
-          <button className="homeRlBtn" onClick={onRetry}>
+          <button className="semitransparentButton homeRlBtn" onClick={onRetry}>
             Opnieuw proberen
           </button>
         </div>
@@ -54,7 +60,10 @@ export default function HomeReadingLists({
       {!loading && !error && lists.length === 0 && (
         <div className="homeReadingListsState">
           <p>Je hebt nog geen persoonlijke leeslijst.</p>
-          <button className="homeRlBtn" onClick={onOpenPersonal}>
+          <button
+            className="semitransparentButton homeRlBtn"
+            onClick={onOpenPersonal}
+          >
             Maak je eerste lijst
           </button>
         </div>
