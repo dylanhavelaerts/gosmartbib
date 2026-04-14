@@ -48,7 +48,6 @@ export default function ReadingListDetailPage() {
   useEffect(() => {
     if (!id || !user) return;
 
-    // laad persisted read status
     try {
       const raw = localStorage.getItem(storageKey);
       setReadStatus(raw ? JSON.parse(raw) : {});
@@ -142,47 +141,40 @@ export default function ReadingListDetailPage() {
 
       {!loading && !error && detail && (
         <>
-          {/* ── Page header ── */}
-          <div className="rld-header">
-            <div className="rld-header-left">
-              <div className="rld-badges">
-                <span
-                  className={`rld-badge rld-badge--${detail.listType === "CLASS" ? "class" : "personal"}`}
-                >
-                  {detail.listType === "CLASS"
-                    ? "Klasleeslijst"
-                    : "Persoonlijke lijst"}
-                </span>
-              </div>
-
-              <h1>{detail.title}</h1>
-
-              {detail.taskDescription && (
-                <p className="rld-description">{detail.taskDescription}</p>
-              )}
-
-              <div className="rld-meta">
-                {detail.creatorName && (
-                  <span className="rld-meta-item">
-                    Aangemaakt door: <strong>{detail.creatorName}</strong>
-                  </span>
-                )}
-                <span className="rld-meta-item">
-                  <strong>{totalCount}</strong>{" "}
-                  {totalCount === 1 ? "boek" : "boeken"}
-                </span>
-              </div>
-
-              {deadline && (
-                <div
-                  className={`rld-deadline rld-deadline--${deadline.urgency}`}
-                >
-                  {deadline.label}
-                </div>
-              )}
+          {/* ── Header card ── */}
+          <div className="rld-header-card">
+            <div className="rld-badges">
+              <span className="rld-badge">
+                {detail.listType === "CLASS"
+                  ? "Klasleeslijst"
+                  : "Eigen leeslijst"}
+              </span>
             </div>
 
-            {/* Staff edit shortcut for class lists they own */}
+            <h1>{detail.title}</h1>
+
+            {detail.taskDescription && (
+              <p className="rld-description">{detail.taskDescription}</p>
+            )}
+
+            <div className="rld-meta">
+              {detail.creatorName && (
+                <span className="rld-meta-item">
+                  Aangemaakt door: <strong>{detail.creatorName}</strong>
+                </span>
+              )}
+              <span className="rld-meta-item">
+                <strong>{totalCount}</strong>{" "}
+                {totalCount === 1 ? "boek" : "boeken"}
+              </span>
+            </div>
+
+            {deadline && (
+              <div className={`rld-deadline rld-deadline--${deadline.urgency}`}>
+                {deadline.label}
+              </div>
+            )}
+
             {isStaff && detail.ownList && detail.listType === "CLASS" && (
               <div className="rld-header-actions">
                 <button
@@ -197,7 +189,7 @@ export default function ReadingListDetailPage() {
             )}
           </div>
 
-          {/* ── Progress bar */}
+          {/* ── Progress bar ── */}
           {detail.listType === "CLASS" && totalCount > 0 && (
             <div className="rld-progress-wrap">
               <div className="rld-progress-label">
@@ -226,41 +218,53 @@ export default function ReadingListDetailPage() {
                     key={book.id}
                     className={`rld-book-card ${isRead ? "rld-book-card--read" : ""}`}
                   >
+                    {/* Cover */}
                     <div className="rld-cover">
                       {book.thumbnail ? (
                         <img src={book.thumbnail} alt={book.title} />
                       ) : (
                         <div className="rld-cover-placeholder">Geen cover</div>
                       )}
-                      {isRead && (
-                        <div className="rld-read-overlay">Gelezen</div>
-                      )}
                     </div>
 
-                    <div className="rld-book-info">
-                      <h3>{book.title}</h3>
-                      <p>{book.authors?.join(", ") || "Onbekend"}</p>
+                    {/* Body */}
+                    <div className="rld-book-body">
+                      <h3 className="rld-book-title">{book.title}</h3>
+                      <p className="rld-book-author">
+                        {book.authors?.join(", ") || "Onbekend"}
+                      </p>
                       {book.isbn && (
                         <span className="rld-isbn">ISBN: {book.isbn}</span>
                       )}
+
+                      <div className="rld-book-actions">
+                        <button
+                          className="rld-open-btn"
+                          onClick={() => router.push(`/detailpage/${book.id}`)}
+                        >
+                          Openen
+                        </button>
+                        <button
+                          className={`rld-read-btn ${isRead ? "rld-read-btn--done" : ""}`}
+                          onClick={() => toggleRead(book.id)}
+                        >
+                          {isRead
+                            ? "Markeer als ongelezen"
+                            : "Markeer als gelezen"}
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="rld-book-actions">
-                      <button
-                        className={`rld-read-btn ${isRead ? "rld-read-btn--done" : ""}`}
-                        onClick={() => toggleRead(book.id)}
-                      >
-                        {isRead
-                          ? "Markeer als ongelezen"
-                          : "Markeer als gelezen"}
-                      </button>
-                      <button
-                        className="rld-detail-link"
-                        onClick={() => router.push(`/detailpage/${book.id}`)}
-                      >
-                        Boekdetails →
-                      </button>
-                    </div>
+                    {/* Read status badge */}
+                    <span
+                      className={`rld-status-badge ${
+                        isRead
+                          ? "rld-status-badge--read"
+                          : "rld-status-badge--unread"
+                      }`}
+                    >
+                      {isRead ? "Gelezen" : "Nog te lezen"}
+                    </span>
                   </div>
                 );
               })}

@@ -272,11 +272,9 @@ export default function ReadingListsPage() {
                       </div>
                     ) : (
                       <button
-                        className="rl-btn-ghost rl-btn-ghost--danger"
+                        className="rl-btn-ghost rl-btn-ghost--danger rl-btn-trash"
                         onClick={() => setDeleteConfirm(list.id)}
-                      >
-                        Verwijderen
-                      </button>
+                      ></button>
                     ))}
                   {canDeleteClass &&
                     (deleteConfirm === list.id ? (
@@ -298,11 +296,9 @@ export default function ReadingListsPage() {
                       </div>
                     ) : (
                       <button
-                        className="rl-btn-ghost rl-btn-ghost--danger"
+                        className="rl-btn-ghost rl-btn-ghost--danger rl-btn-trash"
                         onClick={() => setDeleteConfirm(list.id)}
-                      >
-                        Verwijderen
-                      </button>
+                      ></button>
                     ))}
                 </div>
               </div>
