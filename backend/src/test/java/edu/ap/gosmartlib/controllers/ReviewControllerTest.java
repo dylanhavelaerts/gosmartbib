@@ -27,6 +27,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -158,7 +159,7 @@ class ReviewControllerTest {
     @Test
     void givenValidPrincipal_whenUserDeleteReview_thenReturnsNoContent() {
         when(principal.getAttribute("userID")).thenReturn("smart-uid-3");
-        when(authentication.getAuthorities()).thenReturn(List.of());
+        doReturn(List.<SimpleGrantedAuthority>of()).when(authentication).getAuthorities();
 
         ResponseEntity<Void> response = reviewController.userDeleteReview(10L, principal, authentication);
 
@@ -170,7 +171,7 @@ class ReviewControllerTest {
     void givenTeacherPrincipal_whenUserDeleteReview_thenDelegatesWithModeratorDeleteAccess() {
         when(principal.getAttribute("userID")).thenReturn("teacher-uid");
         Collection<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_TEACHER"));
-        when(authentication.getAuthorities()).thenReturn(List.copyOf(authorities));
+        doReturn(authorities).when(authentication).getAuthorities();
 
         ResponseEntity<Void> response = reviewController.userDeleteReview(11L, principal, authentication);
 

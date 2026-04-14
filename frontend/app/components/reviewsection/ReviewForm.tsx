@@ -1,18 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import StarRating from "./StarRating";
 
 interface ReviewFormProps {
   isbn: string;
   onSubmitted: () => void;
+  mode?: "create" | "edit";
+  reviewId?: number;
+  initialText?: string;
+  initialRating?: number;
 }
 
-export default function ReviewForm({ isbn, onSubmitted }: ReviewFormProps) {
-  const [rating, setRating] = useState(0);
-  const [text, setText] = useState("");
+export default function ReviewForm({
+  isbn,
+  onSubmitted,
+  mode = "create",
+  reviewId,
+  initialText = "",
+  initialRating = 0,
+}: ReviewFormProps) {
+  const [rating, setRating] = useState(initialRating);
+  const [text, setText] = useState(initialText);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setText(initialText);
+    setRating(initialRating);
+    setError("");
+  }, [initialText, initialRating, mode, reviewId]);
 
   async function extractErrorMessage(res: Response): Promise<string> {
     try {
@@ -46,12 +63,22 @@ export default function ReviewForm({ isbn, onSubmitted }: ReviewFormProps) {
       return;
     }
 
+    if (mode === "edit" && !reviewId) {
+      setError("Review niet gevonden.");
+      return;
+    }
+
     setError("");
     setLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews`, {
-        method: "POST",
+      const endpoint =
+        mode === "edit"
+          ? `${process.env.NEXT_PUBLIC_API_URL}/reviews/${reviewId}`
+          : `${process.env.NEXT_PUBLIC_API_URL}/reviews`;
+
+      const res = await fetch(endpoint, {
+        method: mode === "edit" ? "PATCH" : "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookIsbn: isbn, text, rating }),
@@ -74,7 +101,9 @@ export default function ReviewForm({ isbn, onSubmitted }: ReviewFormProps) {
 
   return (
     <div className="reviewForm">
-      <h3 className="reviewFormTitle">Jouw review</h3>
+      <h3 className="reviewFormTitle">
+        {mode === "edit" ? "Bewerk je review" : "Jouw review"}
+      </h3>
       <StarRating value={rating} onChange={setRating} />
       <textarea
         className="reviewTextArea"
@@ -92,7 +121,7 @@ export default function ReviewForm({ isbn, onSubmitted }: ReviewFormProps) {
           onClick={handleSubmit}
           disabled={loading}
         >
-          {loading ? "Bezig..." : "Plaatsen"}
+          {loading ? "Bezig..." : mode === "edit" ? "Opslaan" : "Plaatsen"}
         </button>
       </div>
     </div>

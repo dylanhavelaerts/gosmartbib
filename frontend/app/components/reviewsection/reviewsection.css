@@ -192,6 +192,26 @@
   margin-top: 0.5rem;
 }
 
+.editReviewBtn {
+  border: 1px solid rgba(32, 95, 145, 0.35);
+  background: transparent;
+  color: #205f91;
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0.2rem 0.45rem;
+  min-width: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editReviewBtn:hover:not(:disabled) {
+  background-color: rgba(32, 95, 145, 0.08);
+}
+
 .deleteReviewBtn {
   border: 1px solid rgba(176, 42, 42, 0.4);
   background: transparent;

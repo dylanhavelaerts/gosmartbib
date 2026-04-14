@@ -7,6 +7,8 @@ interface ReviewCardProps {
   review: ReviewSummary;
   onFlag: (reviewId: number) => void;
   isFlagging: boolean;
+  canEdit: boolean;
+  onEdit: (reviewId: number) => void;
   canDelete: boolean;
   onAskDelete: (reviewId: number) => void;
   onCancelDelete: () => void;
@@ -19,6 +21,8 @@ export default function ReviewCard({
   review,
   onFlag,
   isFlagging,
+  canEdit,
+  onEdit,
   canDelete,
   onAskDelete,
   onCancelDelete,
@@ -26,11 +30,14 @@ export default function ReviewCard({
   isDeleteConfirmOpen,
   isDeleting,
 }: ReviewCardProps) {
-  const formattedDate = new Date(review.reviewDate).toLocaleDateString("nl-BE", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const formattedDate = new Date(review.reviewDate).toLocaleDateString(
+    "nl-BE",
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    },
+  );
 
   const roleLabel: Record<string, string> = {
     STUDENT: "Student",
@@ -51,6 +58,16 @@ export default function ReviewCard({
       </div>
       {review.text && <p className="reviewText">{review.text}</p>}
       <div className="reviewCardActions">
+        {canEdit && (
+          <button
+            className="editReviewBtn"
+            onClick={() => onEdit(review.id)}
+            title="Bewerk review"
+            aria-label="Bewerk review"
+          >
+            ✎
+          </button>
+        )}
         {canDelete && (
           <button
             className="deleteReviewBtn"

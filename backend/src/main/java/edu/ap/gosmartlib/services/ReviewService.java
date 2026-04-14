@@ -159,6 +159,10 @@ public class ReviewService {
             review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
 
             reviewRepository.save(review);
+        } catch (OutOfBoundsException e) {
+            throw e;
+        } catch (SecurityException e) {
+            throw e;
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e) {

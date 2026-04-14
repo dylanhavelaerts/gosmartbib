@@ -186,16 +186,26 @@ class ReviewServiceTest {
     }
 
     @Test
-    void givenDifferentOwner_whenEditReview_thenThrowsRuntimeExceptionWrappingSecurityException() {
+    void givenDifferentOwner_whenEditReview_thenThrowsSecurityException() {
         ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f);
         ReviewEntity existing = buildReview(60L, buildUser(1L, "owner-uid"), buildBook(10L, "9780000000001", "Book"));
 
         when(reviewRepository.findById(60L)).thenReturn(Optional.of(existing));
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
+        assertThrows(SecurityException.class,
                 () -> reviewService.editReview(60L, request, "other-uid"));
 
-        assertInstanceOf(SecurityException.class, exception.getCause());
+        verify(reviewRepository, never()).save(org.mockito.ArgumentMatchers.any(ReviewEntity.class));
+    }
+
+    @Test
+    void givenInvalidRating_whenEditReview_thenThrowsOutOfBoundsException() {
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Updated", 6.0f);
+        ReviewEntity existing = buildReview(61L, buildUser(1L, "uid-1"), buildBook(10L, "9780000000001", "Book"));
+
+        when(reviewRepository.findById(61L)).thenReturn(Optional.of(existing));
+
+        assertThrows(OutOfBoundsException.class, () -> reviewService.editReview(61L, request, "uid-1"));
         verify(reviewRepository, never()).save(org.mockito.ArgumentMatchers.any(ReviewEntity.class));
     }
 

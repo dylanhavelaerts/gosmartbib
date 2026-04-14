@@ -20,17 +20,26 @@ export default function ReviewSection({
   onReviewSubmitted,
 }: ReviewSectionProps) {
   const { user } = useAuth();
-  const canModerateReviewDelete = user?.role === "TEACHER" || user?.role === "BIBLIOTHEEKBEHEERDER";
+  const canModerateReviewDelete =
+    user?.role === "TEACHER" || user?.role === "BIBLIOTHEEKBEHEERDER";
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [flaggingReviewId, setFlaggingReviewId] = useState<number | null>(null);
   const [deleteReviewId, setDeleteReviewId] = useState<number | null>(null);
   const [isDeletingReview, setIsDeletingReview] = useState(false);
   const [reportReviewId, setReportReviewId] = useState<number | null>(null);
   const [reportReason, setReportReason] = useState<ReportReason | "">("");
   const [reportError, setReportError] = useState("");
+  const ownReview = user
+    ? (reviews.find((review) => review.userId === user.id) ?? null)
+    : null;
+  const editingReview =
+    editingReviewId !== null
+      ? (reviews.find((review) => review.id === editingReviewId) ?? null)
+      : null;
 
   async function extractErrorMessage(res: Response): Promise<string> {
     try {
@@ -81,9 +90,31 @@ export default function ReviewSection({
   }, [isbn]);
 
   function handleSubmitted() {
+    setEditingReviewId(null);
     setShowForm(false);
     fetchReviews();
     onReviewSubmitted?.();
+  }
+
+  function toggleForm() {
+    if (showForm) {
+      setShowForm(false);
+      setEditingReviewId(null);
+      return;
+    }
+
+    if (ownReview) {
+      setEditingReviewId(ownReview.id);
+    } else {
+      setEditingReviewId(null);
+    }
+
+    setShowForm(true);
+  }
+
+  function openEditForm(reviewId: number) {
+    setEditingReviewId(reviewId);
+    setShowForm(true);
   }
 
   function openReportModal(reviewId: number) {
@@ -184,15 +215,25 @@ export default function ReviewSection({
     <div className="reviewSection">
       <div className="reviewSectionHeader">
         <h2 className="reviewSectionTitle">Reviews</h2>
-        <button
-          className="placeReview"
-          onClick={() => setShowForm((prev) => !prev)}
-        >
-          {showForm ? "Annuleren" : "Plaats review"}
+        <button className="placeReview" onClick={toggleForm}>
+          {showForm
+            ? "Annuleren"
+            : ownReview
+              ? "Bewerk review"
+              : "Plaats review"}
         </button>
       </div>
 
-      {showForm && <ReviewForm isbn={isbn} onSubmitted={handleSubmitted} />}
+      {showForm && (
+        <ReviewForm
+          isbn={isbn}
+          onSubmitted={handleSubmitted}
+          mode={editingReview ? "edit" : "create"}
+          reviewId={editingReview?.id}
+          initialText={editingReview?.text ?? ""}
+          initialRating={editingReview?.rating ?? 0}
+        />
+      )}
 
       {loading ? (
         <p className="reviewLoading">Reviews laden...</p>
@@ -207,7 +248,11 @@ export default function ReviewSection({
                 review={review}
                 onFlag={openReportModal}
                 isFlagging={flaggingReviewId === review.id}
-                canDelete={user?.id === review.userId || canModerateReviewDelete}
+                canEdit={user?.id === review.userId}
+                onEdit={openEditForm}
+                canDelete={
+                  user?.id === review.userId || canModerateReviewDelete
+                }
                 onAskDelete={openDeleteConfirm}
                 onCancelDelete={closeDeleteConfirm}
                 onConfirmDelete={handleDeleteReview}
