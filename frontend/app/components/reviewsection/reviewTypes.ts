@@ -5,6 +5,7 @@ export interface ReviewSummary {
   text: string;
   reviewDate: string;
   rating: number;
+  spoiler: boolean;
 }
 
 export interface ReviewSectionProps {

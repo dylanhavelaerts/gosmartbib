@@ -10,6 +10,7 @@ interface ReviewFormProps {
   reviewId?: number;
   initialText?: string;
   initialRating?: number;
+  initialSpoiler?: boolean;
 }
 
 export default function ReviewForm({
@@ -19,17 +20,20 @@ export default function ReviewForm({
   reviewId,
   initialText = "",
   initialRating = 0,
+  initialSpoiler = false,
 }: ReviewFormProps) {
   const [rating, setRating] = useState(initialRating);
   const [text, setText] = useState(initialText);
+  const [spoiler, setSpoiler] = useState(initialSpoiler);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setText(initialText);
     setRating(initialRating);
+    setSpoiler(initialSpoiler);
     setError("");
-  }, [initialText, initialRating, mode, reviewId]);
+  }, [initialText, initialRating, initialSpoiler, mode, reviewId]);
 
   async function extractErrorMessage(res: Response): Promise<string> {
     try {
@@ -81,7 +85,7 @@ export default function ReviewForm({
         method: mode === "edit" ? "PATCH" : "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookIsbn: isbn, text, rating }),
+        body: JSON.stringify({ bookIsbn: isbn, text, rating, spoiler }),
       });
 
       if (!res.ok) {
@@ -91,6 +95,7 @@ export default function ReviewForm({
 
       setText("");
       setRating(0);
+      setSpoiler(false);
       onSubmitted();
     } catch {
       setError("Er liep iets fout. Probeer opnieuw.");
@@ -113,6 +118,14 @@ export default function ReviewForm({
         maxLength={255}
         rows={4}
       />
+      <label className="spoilerCheckboxRow">
+        <input
+          type="checkbox"
+          checked={spoiler}
+          onChange={(e) => setSpoiler(e.target.checked)}
+        />
+        <span>Markeer als spoiler</span>
+      </label>
       <div className="reviewFormFooter">
         <span className="charCount">{text.length}/255</span>
         {error && <span className="reviewError">{error}</span>}

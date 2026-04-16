@@ -232,6 +232,7 @@ export default function ReviewSection({
           reviewId={editingReview?.id}
           initialText={editingReview?.text ?? ""}
           initialRating={editingReview?.rating ?? 0}
+          initialSpoiler={editingReview?.spoiler ?? false}
         />
       )}
 

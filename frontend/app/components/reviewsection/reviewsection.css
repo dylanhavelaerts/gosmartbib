@@ -69,6 +69,22 @@
   border-color: #8e2446;
 }
 
+.spoilerCheckboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  font-size: 12px;
+  color: #5c1d34;
+  cursor: pointer;
+}
+
+.spoilerCheckboxRow input {
+  accent-color: #8e2446;
+  width: 14px;
+  height: 14px;
+}
+
 .reviewFormFooter {
   display: flex;
   align-items: center;
@@ -182,6 +198,19 @@
   color: #333;
   line-height: 1.6;
   margin: 0;
+}
+
+.reviewTextSpoiler {
+  border-radius: 4px;
+  padding: 0.16rem 0.36rem;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.reviewTextSpoilerHidden {
+  background: rgb(51, 51, 51);
+  color: #ffffff !important;
+  opacity: 1;
 }
 
 .reviewCardActions {
