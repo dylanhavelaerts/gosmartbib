@@ -30,6 +30,9 @@ public class ReviewEntity {
     @Column(columnDefinition = "TEXT")
     private String text;
 
+    @Column(name = "is_spoiler")
+    private boolean spoiler;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private ReviewStatus status = ReviewStatus.AWAITING_MODERATION;

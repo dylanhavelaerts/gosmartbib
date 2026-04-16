@@ -447,3 +447,84 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+@media (max-width: 750px) {
+  .reviewSectionHeader {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.55rem;
+  }
+
+  .placeReview {
+    margin-left: auto;
+  }
+
+  .reviewForm {
+    padding: 0.8rem;
+  }
+
+  .reviewFormFooter {
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+  }
+
+  .charCount {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .submitReviewBtn {
+    margin-left: auto;
+  }
+
+  .reviewCard {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .reviewCardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .reviewCardActions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-top: 0.6rem;
+  }
+
+  .deleteConfirmRow {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .deleteConfirmText {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .reportModalBox {
+    max-width: 320px;
+    padding: 0.85rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .reviewSectionTitle {
+    font-size: 0.95rem;
+  }
+
+  .placeReview {
+    width: 100%;
+    text-align: center;
+  }
+
+  .reviewText {
+    font-size: 12px;
+  }
+
+  .submitReviewBtn {
+    width: 100%;
+    margin-left: 0;
+  }
+}

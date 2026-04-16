@@ -112,6 +112,7 @@ public class ReviewService {
                 throw new OutOfBoundsException("Rating moet tussen 0 en 5 liggen");
 
             review.setRating(request.rating());
+            review.setSpoiler(request.spoiler());
 
             review.setReviewDate(LocalDate.now());
             review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
@@ -156,6 +157,7 @@ public class ReviewService {
 
 
             review.setRating(request.rating());
+            review.setSpoiler(request.spoiler());
             review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
 
             reviewRepository.save(review);
@@ -299,7 +301,8 @@ public class ReviewService {
                 review.getUser().getRole(),
                 review.getText(),
                 review.getReviewDate(),
-                review.getRating()
+            review.getRating(),
+            review.isSpoiler()
         );
     }
 //endregion

@@ -3,5 +3,6 @@ package edu.ap.gosmartlib.dto.reviews;
 public record ReviewRequestDTO(
         String bookIsbn,
         String text,
-        float rating
+        float rating,
+        boolean spoiler
 ){}

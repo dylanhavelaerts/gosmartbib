@@ -99,7 +99,7 @@ class ReviewControllerTest {
 
     @Test
     void givenValidPrincipal_whenSubmitReview_thenReturnsCreatedAndDelegatesToService() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f, false);
         ReviewSummaryDTO expected = buildSummary(5L, "Nice", 4.0f);
         when(principal.getAttribute("userID")).thenReturn("smart-uid-1");
         when(reviewService.submitReview(request, "smart-uid-1")).thenReturn(expected);
@@ -113,7 +113,7 @@ class ReviewControllerTest {
 
     @Test
     void givenMissingPrincipal_whenSubmitReview_thenThrowsUnauthorizedAndDoesNotCallService() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f, false);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> reviewController.submitReview(request, null));
@@ -124,7 +124,7 @@ class ReviewControllerTest {
 
     @Test
     void givenPrincipalWithoutUserId_whenSubmitReview_thenThrowsUnauthorizedAndDoesNotCallService() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f, false);
         when(principal.getAttribute("userID")).thenReturn(" ");
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
@@ -136,7 +136,7 @@ class ReviewControllerTest {
 
     @Test
     void givenValidPrincipal_whenEditReview_thenReturnsNoContentAndDelegatesToService() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000006", "Updated text", 3.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000006", "Updated text", 3.0f, false);
         when(principal.getAttribute("userID")).thenReturn("smart-uid-2");
 
         ResponseEntity<Void> response = reviewController.editReview(42L, request, principal);
@@ -217,7 +217,7 @@ class ReviewControllerTest {
     }
 
     private ReviewSummaryDTO buildSummary(Long id, String text, float rating) {
-        return new ReviewSummaryDTO(id, 11L, UserRoles.STUDENT, text, LocalDate.of(2026, 1, 1), rating);
+        return new ReviewSummaryDTO(id, 11L, UserRoles.STUDENT, text, LocalDate.of(2026, 1, 1), rating, false);
     }
 
     private ReviewDetailDTO buildDetail(Long id, String isbn, String bookTitle, ReviewStatus status) {
