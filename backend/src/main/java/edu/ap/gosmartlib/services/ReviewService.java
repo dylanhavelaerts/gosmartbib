@@ -20,10 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -159,6 +156,8 @@ public class ReviewService {
             review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
 
             reviewRepository.save(review);
+            // Herberekent de boekrating op basis van enkel goedgekeurde reviews, zodat filters en toplijsten altijd correcte scores tonen.
+            refreshBookRating(review.getBook());
         } catch (OutOfBoundsException e) {
             throw e;
         } catch (SecurityException e) {
@@ -181,7 +180,10 @@ public class ReviewService {
             if (!ownsReview && !canModerateDelete)
                 throw new SecurityException("Je kan enkel je eigen reviews verwijderen");
 
+            BookEntity book = review.getBook();
             reviewRepository.delete(review);
+            // Herberekent de boekrating op basis van enkel goedgekeurde reviews, zodat filters en toplijsten altijd correcte scores tonen.
+            refreshBookRating(book);
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e){
@@ -193,8 +195,10 @@ public class ReviewService {
         try {
             ReviewEntity review = reviewRepository.findById(reviewId)
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
-
+            BookEntity book = review.getBook();
             reviewRepository.delete(review);
+            // Herberekent de boekrating op basis van enkel goedgekeurde reviews, zodat filters en toplijsten altijd correcte scores tonen.
+            refreshBookRating(book);
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -254,6 +258,8 @@ public class ReviewService {
 
             review.setReviewStatus(ReviewStatus.APPROVED);
             reviewRepository.save(review);
+            // Herberekent de boekrating op basis van enkel goedgekeurde reviews, zodat filters en toplijsten altijd correcte scores tonen.
+            refreshBookRating(review.getBook());
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -268,10 +274,32 @@ public class ReviewService {
 
             review.setReviewStatus(ReviewStatus.REJECTED);
             reviewRepository.save(review);
+            // Herberekent de boekrating op basis van enkel goedgekeurde reviews, zodat filters en toplijsten altijd correcte scores tonen.
+            refreshBookRating(review.getBook());
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Er is iets fout gegaan tijdens het afkeuren van de review", e);
+        }
+    }
+    private void refreshBookRating(BookEntity book) {
+        try {
+            if (book == null || book.getIsbn() == null || book.getIsbn().isBlank()) {
+                return;
+            }
+
+            List<ReviewEntity> approvedReviews =
+                    reviewRepository.findByBook_IsbnAndReviewStatus(book.getIsbn(), ReviewStatus.APPROVED);
+
+            double average = approvedReviews.stream()
+                    .mapToDouble(ReviewEntity::getRating)
+                    .average()
+                    .orElse(0.0);
+
+            book.setRating(average);
+            bookRepository.save(book);
+        } catch (Exception e) {
+            throw new RuntimeException("Er is iets fout gegaan tijdens het vernieuwen van de boekrating", e);
         }
     }
 //endregion

@@ -16,6 +16,8 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
 
     List<ReviewEntity> findByStatus(ReviewStatus status);
 
+    List<ReviewEntity> findByBook_IsbnAndReviewStatus(String isbn, ReviewStatus reviewStatus);
+
     boolean existsByUser_SmartschoolUidAndBook_Isbn(String smartschoolUid, String isbn);
 
     @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM ReviewEntity r WHERE r.id = :reviewId AND LOCATE(CONCAT(',', :uid, ','), CONCAT(',', COALESCE(r.flaggedByUids, ''), ',')) > 0")

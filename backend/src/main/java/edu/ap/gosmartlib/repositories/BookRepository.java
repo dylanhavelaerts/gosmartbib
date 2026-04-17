@@ -103,6 +103,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
             AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
             AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
             AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
+            AND (:minRating IS NULL OR COALESCE(b.rating, 0) >= :minRating)
+            AND (:maxRating IS NULL OR COALESCE(b.rating, 0) <= :maxRating)
             """)
     Page<BookEntity> filterBooks(
             @Param("includeDidactic") boolean includeDidactic,
@@ -113,5 +115,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
             @Param("maxPageCount") Integer maxPageCount,
             @Param("minPubYear") Integer minPubYear,
             @Param("maxPubYear") Integer maxPubYear,
+            @Param("minRating") Double minRating,
+            @Param("maxRating") Double maxRating,
             Pageable pageable);
 }

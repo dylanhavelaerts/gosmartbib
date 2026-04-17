@@ -198,15 +198,24 @@ public class BookService {
 
     public Page<BookDTO> filterBooks(String language, List<String> categories, List<String> labels,
                                      Integer minPageCount,
-                                     Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size,UserRoles callerRoles) {
+                                     Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size, Double minRating, Double maxRating,UserRoles callerRoles) {
         if (page < 0 || size <= 0)
-            throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
+            throw new NegativeValueException("Paginanummer mag niet negatief zijn en de grootte moet groter zijn dan 0");
 
         if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
-            throw new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount");
+            throw new IllegalArgumentException("minPageCount mag niet groter zijn dan maxPageCount");
         }
         if (minPubYear != null && maxPubYear != null && minPubYear > maxPubYear) {
-            throw new IllegalArgumentException("minPubYear cannot be bigger than maxPubYear");
+            throw new IllegalArgumentException("minPubYear mag niet groter zijn dan maxPubYear");
+        }
+        if (minRating != null && (minRating < 1 || minRating > 5)) {
+            throw new IllegalArgumentException("minRating moet tussen 1 en 5 liggen");
+        }
+        if (maxRating != null && (maxRating < 1 || maxRating > 5)) {
+            throw new IllegalArgumentException("maxRating moet tussen 1 en 5 liggen");
+        }
+        if (minRating != null && maxRating != null && minRating > maxRating) {
+            throw new IllegalArgumentException("minRating mag niet groter zijn dan maxRating");
         }
 
         Pageable pageable = PageRequest.of(page, size);
