@@ -10,7 +10,7 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "STUDENT", label: "STUDENT" },
   { value: "TEACHER", label: "LEERKRACHT" },
   { value: "BIBLIOTHEEKBEHEERDER", label: "BEHEERDER" },
-  {value: "ADMIN", label: "ADMIN"}
+  { value: "ADMIN", label: "ADMIN" },
 ];
 
 type DisplayNamesResponse = {
@@ -22,30 +22,32 @@ type DisplayNamesResponse = {
   message: string;
 };
 
-const replaceRoleName = (role: string):string => {
-    switch(role){
-        case "BIBLIOTHEEKBEHEERDER":
-            return "BEHEERDER";
-        case "TEACHER":
-            return "LEERKRACHT";
-        case "STUDENT":
-            return "STUDENT";
-        case "ADMIN":
-            return "ADMIN"
-        default:
-            return "-";
-    }
-}
+const replaceRoleName = (role: string): string => {
+  switch (role) {
+    case "BIBLIOTHEEKBEHEERDER":
+      return "BEHEERDER";
+    case "TEACHER":
+      return "LEERKRACHT";
+    case "STUDENT":
+      return "STUDENT";
+    case "ADMIN":
+      return "ADMIN";
+    default:
+      return "-";
+  }
+};
 
 export default function AdminUserPage() {
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-    const [me, setMe] = useState<MeResponse | null>(null);
-    const [users, setUsers] = useState<AdminUser[]>([]);
-    const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
-    const [selectedRoles, setSelectedRoles] = useState<Record<number, UserRole>>({});
-    const [savingUserId, setSavingUserId] = useState<number | null>(null);
-    const [succes, setSucces] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
+  const [selectedRoles, setSelectedRoles] = useState<Record<number, UserRole>>(
+    {},
+  );
+  const [savingUserId, setSavingUserId] = useState<number | null>(null);
+  const [succes, setSucces] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -69,11 +71,11 @@ export default function AdminUserPage() {
         const meData: MeResponse = await meResponse.json();
         setMe(meData);
 
-                if(meData.role != "ADMIN") {
-                    setError("Je hebt geen toegang tot deze pagina");
-                    setLoading(false);
-                    return;
-                }
+        if (meData.role !== "ADMIN") {
+          setError("Je hebt geen toegang tot deze pagina");
+          setLoading(false);
+          return;
+        }
 
         const userResponse = await fetch(`${API_URL}/admin/users`, {
           credentials: "include",
@@ -85,51 +87,52 @@ export default function AdminUserPage() {
           return;
         }
 
-                const userData: AdminUser[] = await userResponse.json();
-                setUsers(userData);
+        const userData: AdminUser[] = await userResponse.json();
+        setUsers(userData);
 
-                
-                const nextSelectedRoles: Record<number, UserRole> = {};
-                userData.forEach((user) => {
-                    nextSelectedRoles[user.id] = user.role;
-                });
-                setSelectedRoles(nextSelectedRoles);
+        const nextSelectedRoles: Record<number, UserRole> = {};
+        userData.forEach((user) => {
+          nextSelectedRoles[user.id] = user.role;
+        });
+        setSelectedRoles(nextSelectedRoles);
 
-                const uniqueUids = Array.from(
-                    new Set(
-                        userData
-                        .map((user) => user.smartschoolUid?.trim())
-                        .filter((uid): uid is string => !!uid && uid !== "")
-                    )
-                    );
+        const uniqueUids = Array.from(
+          new Set(
+            userData
+              .map((user) => user.smartschoolUid?.trim())
+              .filter((uid): uid is string => !!uid && uid !== ""),
+          ),
+        );
 
-                    if (uniqueUids.length > 0) {
-                    try {
-                        const displayNamesResponse = await fetch(`${API_URL}/users/display-names`, {
-                        method: "POST",
-                        credentials: "include",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ uids: uniqueUids }),
-                        });
+        if (uniqueUids.length > 0) {
+          try {
+            const displayNamesResponse = await fetch(
+              `${API_URL}/users/display-names`,
+              {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ uids: uniqueUids }),
+              },
+            );
 
-                        if (displayNamesResponse.ok) {
-                        const displayNamesData: DisplayNamesResponse = await displayNamesResponse.json();
-                        setDisplayNames(displayNamesData.displayNames ?? {});
-                        }
-                    } catch (e) {
-                        console.error("Display names ophalen mislukt", e);
-                    }
-                }
+            if (displayNamesResponse.ok) {
+              const displayNamesData: DisplayNamesResponse =
+                await displayNamesResponse.json();
+              setDisplayNames(displayNamesData.displayNames ?? {});
             }
-            catch {
-                setError("Er ging iets mis met het laden");
-            }
-            finally {
-                setLoading(false);
-            }
-        };
+          } catch (e) {
+            console.error("Display names ophalen mislukt", e);
+          }
+        }
+      } catch {
+        setError("Er ging iets mis met het laden");
+      } finally {
+        setLoading(false);
+      }
+    };
 
     load();
   }, []);
@@ -170,23 +173,25 @@ export default function AdminUserPage() {
         [updatedUser.id]: updatedUser.role,
       }));
 
-            setSucces(`Rol van ${displayNames[updatedUser.smartschoolUid] ? displayNames[updatedUser.smartschoolUid] : updatedUser.smartschoolUid} aangepast`);
-        }
-        catch(e) {
-            setError("Er ging iets mis bij het opslaan");
-            console.error(e);
-        }
-        finally{
-            setSavingUserId(null);
-        }
+      setSucces(
+        `Rol van ${
+          displayNames[updatedUser.smartschoolUid]
+            ? displayNames[updatedUser.smartschoolUid]
+            : updatedUser.smartschoolUid
+        } aangepast`,
+      );
+    } catch (e) {
+      setError("Er ging iets mis bij het opslaan");
+      console.error(e);
+    } finally {
+      setSavingUserId(null);
     }
   };
 
-    if (loading) {
-        return (
-                <div>Gebruikers laden...</div>
-        );
-    }
+  if (loading) {
+    return <div>Gebruikers laden...</div>;
+  }
+
   return (
     <main>
       {error && <p>{error}</p>}
@@ -195,6 +200,7 @@ export default function AdminUserPage() {
       {!error && me?.role === "ADMIN" && (
         <div>
           <h1>Gebruikersbeheer {me?.school?.name}</h1>
+
           <table className="adminTable">
             <thead>
               <tr>
@@ -205,6 +211,7 @@ export default function AdminUserPage() {
                 <th className="adminHeader"></th>
               </tr>
             </thead>
+
             <tbody>
               {users.map((user) => {
                 const selectedRole = selectedRoles[user.id] ?? user.role;
@@ -223,7 +230,10 @@ export default function AdminUserPage() {
                       )}
                     </td>
 
-                    <td className="fullScreen adminCell">{replaceRoleName(user.role)}</td>
+                    <td className="fullScreen adminCell">
+                      {replaceRoleName(user.role)}
+                    </td>
+
                     <td className="fullScreen adminCell">
                       {user.classes.length === 0
                         ? "-"
