@@ -1,0 +1,166 @@
+.page {
+  color: #8e2446;
+  padding: 1rem;
+}
+
+.page h1 {
+  font-size: clamp(24px, 2vw, 32px);
+  color: #c0392b;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.card {
+  border: 1px solid #d7bfd0;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #fff;
+}
+
+.card h2 {
+  margin: 0 0 1rem 0;
+  color: #8e2446;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.stat {
+  border: 1px dashed #c9a9bb;
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #fcf8fa;
+}
+
+.label {
+  display: block;
+  font-size: 0.85rem;
+  color: #7c5a6a;
+  margin-bottom: 0.25rem;
+}
+
+.alert {
+  margin-top: 1rem;
+  border-left: 4px solid #c0392b;
+  background: #fff5f5;
+  padding: 0.75rem 1rem;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.field span {
+  font-weight: 500;
+}
+
+.field input {
+  border: 1px solid #c9a9bb;
+  border-radius: 8px;
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.button {
+  border: 1px solid #8e2446;
+  background: transparent;
+  color: #8e2446;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.button:hover:not(:disabled) {
+  background: #f8eff4;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.primaryButton {
+  background: #8e2446;
+  color: white;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: #7a1f3d;
+}
+
+.message {
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.error {
+  background: #fff1f1;
+  color: #b42318;
+}
+
+.success {
+  background: #f0fff4;
+  color: #067647;
+}
+
+.help {
+  margin: 0 0 1rem 0;
+  color: #6f4d5d;
+}
+
+.debugBlock {
+  margin-top: 1rem;
+  border-top: 1px dashed #d7bfd0;
+  padding-top: 1rem;
+}
+
+.debugBlock h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.debugBlock pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  background: #faf6f8;
+  border: 1px solid #ead9e3;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+@media (min-width: 800px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
