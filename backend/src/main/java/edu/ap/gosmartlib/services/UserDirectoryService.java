@@ -2,6 +2,8 @@ package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
+import edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO;
+import edu.ap.gosmartlib.entities.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
@@ -159,6 +161,100 @@ public class UserDirectoryService {
                     requestedUids,
                     "Ophalen van display names mislukt: " + ex.getMessage());
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<SmartschoolUserDTO> searchUsersForLoan(String actorUid, String query) {
+        String normalizedQuery = readString(query).toLowerCase(Locale.ROOT);
+        if (normalizedQuery.isBlank()) {
+            return List.of();
+        }
+
+        UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Ingelogde gebruiker niet gevonden"));
+
+        Long schoolId = actor.getSchool().getId();
+
+        List<UserEntity> knownUsers = userRepository
+                .findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(schoolId);
+        if (knownUsers.isEmpty()) {
+            return List.of();
+        }
+
+        LinkedHashMap<String, UserEntity> knownUsersByNormalizedUid = new LinkedHashMap<>();
+        for (UserEntity user : knownUsers) {
+            knownUsersByNormalizedUid.put(normalizeUid(user.getSmartschoolUid()), user);
+        }
+
+        LinkedHashMap<String, String> liveDisplayNamesByNormalizedUid = new LinkedHashMap<>();
+
+        Optional<SchoolIntegrationEntity> integrationOptional = schoolIntegrationRepository.findBySchool_Id(schoolId);
+        if (integrationOptional.isPresent() && integrationOptional.get().isOnerosterEnabled()) {
+            try {
+                SchoolIntegrationEntity integration = integrationOptional.get();
+                String accessToken = authService.getAccessToken(integration);
+                List<Map<String, Object>> liveUsers = oneRosterClient.getUsers(integration, accessToken);
+
+                for (Map<String, Object> liveUser : liveUsers) {
+                    String displayName = buildDisplayName(liveUser);
+                    if (displayName.isBlank()) {
+                        continue;
+                    }
+
+                    for (String candidateUid : extractCandidateUids(liveUser)) {
+                        String normalizedCandidateUid = normalizeUid(candidateUid);
+
+                        if (!knownUsersByNormalizedUid.containsKey(normalizedCandidateUid)) {
+                            continue;
+                        }
+
+                        liveDisplayNamesByNormalizedUid.putIfAbsent(normalizedCandidateUid, displayName);
+                    }
+                }
+            } catch (Exception ignored) {
+                // Als live ophalen mislukt, vallen we terug op de gekende UID-zoeking.
+            }
+        }
+
+        return knownUsers.stream()
+                .map(user -> {
+                    String normalizedUid = normalizeUid(user.getSmartschoolUid());
+
+                    String displayName = liveDisplayNamesByNormalizedUid.getOrDefault(
+                            normalizedUid,
+                            user.getSmartschoolUid());
+
+                    String classGroup = user.getClasses().stream()
+                            .findFirst()
+                            .map(SchoolClassEntity::getName)
+                            .orElse("Onbekend");
+
+                    String schoolName = user.getSchool() != null && user.getSchool().getName() != null
+                            ? user.getSchool().getName()
+                            : "Onbekend";
+
+                    String schoolIdValue = user.getSchool() != null && user.getSchool().getId() != null
+                            ? String.valueOf(user.getSchool().getId())
+                            : "";
+
+                    String photoUrl = "https://ui-avatars.com/api/?name="
+                            + displayName.replace(" ", "+")
+                            + "&background=random";
+
+                    return new SmartschoolUserDTO(
+                            user.getSmartschoolUid(),
+                            displayName,
+                            classGroup,
+                            schoolName,
+                            schoolIdValue, photoUrl);
+                })
+                .filter(user -> readString(user.name()).toLowerCase(Locale.ROOT).contains(normalizedQuery)
+                        || readString(user.smartschoolUserId()).toLowerCase(Locale.ROOT).contains(normalizedQuery)
+                        || readString(user.classGroup()).toLowerCase(Locale.ROOT).contains(normalizedQuery))
+                .limit(20)
+                .toList();
     }
 
     private List<String> normalizeRequestedUids(List<String> rawUids) {
