@@ -5,6 +5,7 @@ import edu.ap.gosmartlib.dto.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
+import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
@@ -26,24 +27,33 @@ public class ReadingListService {
     private final ReadingListRepository readingListRepository;
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
-
+    private final UserDirectoryService userDirectoryService;
 
     @Transactional(readOnly = true)
-        public List<ReadingListOverviewDTO> getVisibleLists(String smartschoolUid) {
-            UserEntity currentUser = requireCurrentUser(smartschoolUid);
+    public List<ReadingListOverviewDTO> getVisibleLists(String smartschoolUid) {
+        UserEntity currentUser = requireCurrentUser(smartschoolUid);
 
+        Map<Long, ReadingListEntity> deduped = new LinkedHashMap<>();
 
-            Map<Long, ReadingListEntity> deduped = new LinkedHashMap<>();
+        readingListRepository.findAllByCreator_IdOrderByIdDesc(currentUser.getId())
+                .forEach(list -> deduped.put(list.getId(), list));
 
-            readingListRepository.findAllByCreator_IdOrderByIdDesc(currentUser.getId())
-                    .forEach(list -> deduped.put(list.getId(), list));
+        readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS)
+                .forEach(list -> deduped.putIfAbsent(list.getId(), list));
 
-            readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS)
-                    .forEach(list -> deduped.putIfAbsent(list.getId(), list));
+        List<String> creatorUids = deduped.values().stream()
+                .map(list -> list.getCreator().getSmartschoolUid())
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(uid -> !uid.isBlank())
+                .distinct()
+                .toList();
 
-            return deduped.values().stream()
-                    .map(list -> toOverview(list, currentUser.getId()))
-                    .toList();
+        Map<String, String> displayNames = resolveDisplayNamesMap(smartschoolUid, creatorUids);
+
+        return deduped.values().stream()
+                .map(list -> toOverview(list, currentUser.getId(), displayNames))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -62,7 +72,12 @@ public class ReadingListService {
             throw new AccessDeniedException("Toegang geweigerd: deze leeslijst is niet zichtbaar voor jou");
         }
 
-        return toDetail(list, currentUser.getId());
+        String creatorUid = list.getCreator().getSmartschoolUid();
+        Map<String, String> displayNames = resolveDisplayNamesMap(
+                smartschoolUid,
+                creatorUid == null ? List.of() : List.of(creatorUid));
+
+        return toDetail(list, currentUser.getId(), displayNames);
     }
 
     @Transactional
@@ -135,6 +150,7 @@ public class ReadingListService {
 
         readingListRepository.delete(list);
     }
+
     @Transactional
     public void deleteClassList(Long id, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -153,6 +169,7 @@ public class ReadingListService {
 
         readingListRepository.delete(list);
     }
+
     @Transactional
     public ReadingListEntity updateClassList(Long id, CreateReadingListDTO dto, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -162,7 +179,7 @@ public class ReadingListService {
         if (list.getListType() != ReadingListType.CLASS) {
             throw new AccessDeniedException("Alleen klaslijsten kunnen hier worden aangepast");
         }
-        if(!Objects.equals(list.getCreator().getId(), currentUser.getId())){
+        if (!Objects.equals(list.getCreator().getId(), currentUser.getId())) {
             throw new AccessDeniedException("Je kan alleen klaslijsten aanpassen die je zelf hebt aangemaakt");
         }
         validateTitle(dto.getTitle());
@@ -174,7 +191,7 @@ public class ReadingListService {
         return readingListRepository.save(list);
     }
 
-//  HELPER METHODS HIERONDER
+    // HELPER METHODS HIERONDER
 
     private UserEntity requireCurrentUser(String smartschoolUid) {
         return userRepository.findBySmartschoolUid(smartschoolUid)
@@ -223,11 +240,40 @@ public class ReadingListService {
         return bookRepository.findAllById(sanitizedIds);
     }
 
-    private ReadingListOverviewDTO toOverview(ReadingListEntity list, Long currentUserId) {
+    private Map<String, String> resolveDisplayNamesMap(String actorUid, List<String> uids) {
+        if (uids == null || uids.isEmpty()) {
+            return Map.of();
+        }
+
+        try {
+            var response = userDirectoryService.resolveDisplayNames(
+                    actorUid,
+                    new ResolveDisplayNamesRequest(uids));
+
+            if (!response.success() || response.displayNames() == null) {
+                return Map.of();
+            }
+
+            return response.displayNames();
+        } catch (Exception ex) {
+            return Map.of();
+        }
+    }
+
+    private String resolveCreatorName(ReadingListEntity list, Map<String, String> displayNames) {
+        String creatorUid = list.getCreator().getSmartschoolUid();
+        if (creatorUid == null || creatorUid.isBlank()) {
+            return null;
+        }
+
+        return displayNames.getOrDefault(creatorUid, creatorUid);
+    }
+
+    private ReadingListOverviewDTO toOverview(ReadingListEntity list, Long currentUserId,
+            Map<String, String> displayNames) {
         List<Long> ids = list.getBooks().stream().map(BookEntity::getId).toList();
 
-//      voorlopig smartschooluid als creatorName, later misschien nog een aparte naam veld toevoegen aan de user entity
-        String creatorName = list.getCreator().getSmartschoolUid();
+        String creatorName = resolveCreatorName(list, displayNames);
         return new ReadingListOverviewDTO(
                 list.getId(),
                 list.getTitle(),
@@ -237,11 +283,12 @@ public class ReadingListService {
                 Objects.equals(list.getCreator().getId(), currentUserId),
                 creatorName,
                 ids,
-                ids.size()
-        );
+                ids.size());
     }
-    private ReadingListDetailDTO toDetail(ReadingListEntity list, Long currentUserId) {
-        String creatorName = list.getCreator().getSmartschoolUid();
+
+    private ReadingListDetailDTO toDetail(ReadingListEntity list, Long currentUserId,
+            Map<String, String> displayNames) {
+        String creatorName = resolveCreatorName(list, displayNames);
 
         List<ReadingListDetailDTO.BookItem> books = list.getBooks().stream()
                 .map(book -> {
@@ -254,8 +301,7 @@ public class ReadingListService {
                             book.getTitle(),
                             authors,
                             book.getThumbnail(),
-                            book.getIsbn()
-                    );
+                            book.getIsbn());
                 })
                 .toList();
 
@@ -267,8 +313,7 @@ public class ReadingListService {
                 list.getListType(),
                 Objects.equals(list.getCreator().getId(), currentUserId),
                 creatorName,
-                books
-        );
+                books);
     }
 
 }
