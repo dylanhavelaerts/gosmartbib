@@ -1,7 +1,6 @@
 "use client"
 
-import { UserRole } from "@/app/interfaces/User";
-import type { MeResponse, AdminUser } from "@/app/interfaces/User";
+import type { MeResponse, AdminUser, UserRole } from "@/app/interfaces/user";
 import { useEffect, useState } from "react";
 import "./userAdmin.css";
 
@@ -11,7 +10,17 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "STUDENT", label: "STUDENT" },
   { value: "TEACHER", label: "LEERKRACHT" },
   { value: "BIBLIOTHEEKBEHEERDER", label: "BEHEERDER" },
+  {value: "ADMIN", label: "ADMIN"}
 ];
+
+type DisplayNamesResponse = {
+  success: boolean;
+  requestedCount: number;
+  resolvedCount: number;
+  displayNames: Record<string, string>;
+  unresolvedUids: string[];
+  message: string;
+};
 
 const replaceRoleName = (role: string):string => {
     switch(role){
@@ -21,6 +30,8 @@ const replaceRoleName = (role: string):string => {
             return "LEERKRACHT";
         case "STUDENT":
             return "STUDENT";
+        case "ADMIN":
+            return "ADMIN"
         default:
             return "-";
     }
@@ -31,6 +42,7 @@ export default function AdminUserPage() {
     const [error, setError] = useState("");
     const [me, setMe] = useState<MeResponse | null>(null);
     const [users, setUsers] = useState<AdminUser[]>([]);
+    const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
     const [selectedRoles, setSelectedRoles] = useState<Record<number, UserRole>>({});
     const [savingUserId, setSavingUserId] = useState<number | null>(null);
     const [succes, setSucces] = useState("");
@@ -57,7 +69,7 @@ export default function AdminUserPage() {
                 const meData: MeResponse = await meResponse.json();
                 setMe(meData);
 
-                if(meData.role != "BIBLIOTHEEKBEHEERDER") {
+                if(meData.role != "ADMIN") {
                     setError("Je hebt geen toegang tot deze pagina");
                     setLoading(false);
                     return;
@@ -77,11 +89,39 @@ export default function AdminUserPage() {
                 setUsers(userData);
 
                 
-            const nextSelectedRoles: Record<number, UserRole> = {};
-            userData.forEach((user) => {
-                nextSelectedRoles[user.id] = user.role;
-            });
-            setSelectedRoles(nextSelectedRoles);
+                const nextSelectedRoles: Record<number, UserRole> = {};
+                userData.forEach((user) => {
+                    nextSelectedRoles[user.id] = user.role;
+                });
+                setSelectedRoles(nextSelectedRoles);
+
+                const uniqueUids = Array.from(
+                    new Set(
+                        userData
+                        .map((user) => user.smartschoolUid?.trim())
+                        .filter((uid): uid is string => !!uid && uid !== "")
+                    )
+                    );
+
+                    if (uniqueUids.length > 0) {
+                    try {
+                        const displayNamesResponse = await fetch(`${API_URL}/users/display-names`, {
+                        method: "POST",
+                        credentials: "include",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ uids: uniqueUids }),
+                        });
+
+                        if (displayNamesResponse.ok) {
+                        const displayNamesData: DisplayNamesResponse = await displayNamesResponse.json();
+                        setDisplayNames(displayNamesData.displayNames ?? {});
+                        }
+                    } catch (e) {
+                        console.error("Display names ophalen mislukt", e);
+                    }
+                }
             }
             catch {
                 setError("Er ging iets mis met het laden");
@@ -130,7 +170,7 @@ export default function AdminUserPage() {
                 [updatedUser.id]: updatedUser.role,
             }));
 
-            setSucces(`Rol van ${updatedUser.smartschoolUid} aangepast`);
+            setSucces(`Rol van ${displayNames[updatedUser.smartschoolUid] ? displayNames[updatedUser.smartschoolUid] : updatedUser.smartschoolUid} aangepast`);
         }
         catch(e) {
             setError("Er ging iets mis bij het opslaan");
@@ -147,62 +187,88 @@ export default function AdminUserPage() {
                 <div>Gebruikers laden...</div>
         );
     }
+  return (
+    <main>
+      {error && <p>{error}</p>}
+      {succes && <p>{succes}</p>}
 
-    return (
-        <main>
-            {error && <p>{error}</p>}
+      {!error && me?.role === "ADMIN" && (
+        <div>
+          <h1>Gebruikersbeheer {me?.school?.name}</h1>
+          <table className="adminTable">
+            <thead>
+              <tr>
+                <th className="adminHeader">Gebruiker</th>
+                <th className="fullScreen adminHeader">Rol</th>
+                <th className="fullScreen adminHeader">Klassen</th>
+                <th className="adminHeader">Nieuwe rol</th>
+                <th className="adminHeader"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => {
+                const selectedRole = selectedRoles[user.id] ?? user.role;
+                const changed = selectedRole !== user.role;
+                const resolvedName = displayNames[user.smartschoolUid];
 
-            {!error && me?.role === "BIBLIOTHEEKBEHEERDER" && (
-                <div>
-                    <h1>Gebruikersbeheer {me?.school?.name}</h1>
-                    <table className="adminTable">
-                        <thead>
-                            <tr>
-                                <th className="adminHeader">UID</th>
-                                <th className="fullScreen adminHeader">Rol</th>
-                                <th className="fullScreen adminHeader">Klassen</th>
-                                <th className="adminHeader">Nieuwe rol</th>
-                                <th className="adminHeader"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.map((user) => {
-                                const selectedRole = selectedRoles[user.id] ?? user.role;
-                                const changed = selectedRole !== user.role;
+                return (
+                  <tr key={user.id}>
+                    <td className="adminCell uidCell">
+                      {resolvedName ? (
+                        <div>
+                          <div>{resolvedName}</div>
+                        </div>
+                      ) : (
+                        user.smartschoolUid
+                      )}
+                    </td>
 
-                                return (
-                                    <tr key={user.id}>
-                                        <td className="adminCell uidCell">{user.smartschoolUid}</td>
-                                        <td className="fullScreen adminCell">{replaceRoleName(user.role)}</td>
-                                        <td className="fullScreen adminCell">{user.classes.length === 0 ? "-" : user.classes.map((c) => c.name).join(", ")}</td>
-                                        <td className="adminCell"><select 
-                                            value={selectedRole}
-                                            onChange={(e) => {
-                                                setSelectedRoles((prev) => ({
-                                                    ...prev,
-                                                    [user.id]: e.target.value as UserRole,
-                                                }))
-                                            }}
-                                        >{ROLE_OPTIONS.map((role) => (
-                                            <option key={role.value} value={role.value}>
-                                                {role.label}
-                                            </option>
-                                        )) }
-                                            </select>
-                                            </td>
-                                            {!changed && (
-                                                <td className="adminCell"></td>
-                                            )}{changed && (
-                                                <td className="saveButton adminCell">
-                                                    <button className="adminTableButton" onClick={() => {handleSave(user.id)}}>{savingUserId === user.id ? "Opslaan..." : "Opslaan"}</button>
-                                                </td>
-                                        )}
-                                    </tr>
-                                )
-                            })}
-                        </tbody>
-                    </table>
-                </div>)}
-        </main>
-    )
+                    <td className="fullScreen adminCell">{replaceRoleName(user.role)}</td>
+                    <td className="fullScreen adminCell">
+                      {user.classes.length === 0
+                        ? "-"
+                        : user.classes.map((c) => c.name).join(", ")}
+                    </td>
+
+                    <td className="adminCell">
+                      <select
+                        value={selectedRole}
+                        onChange={(e) => {
+                          setSelectedRoles((prev) => ({
+                            ...prev,
+                            [user.id]: e.target.value as UserRole,
+                          }));
+                        }}
+                      >
+                        {ROLE_OPTIONS.map((role) => (
+                          <option key={role.value} value={role.value}>
+                            {role.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {!changed && <td className="adminCell"></td>}
+
+                    {changed && (
+                      <td className="saveButton adminCell">
+                        <button
+                          className="adminTableButton"
+                          onClick={() => {
+                            handleSave(user.id);
+                          }}
+                        >
+                          {savingUserId === user.id ? "Opslaan..." : "Opslaan"}
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </main>
+  );
 }

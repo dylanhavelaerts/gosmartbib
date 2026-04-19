@@ -1,4 +1,4 @@
-export type UserRole = "STUDENT" | "TEACHER" | "BIBLIOTHEEKBEHEERDER";
+export type UserRole = "STUDENT" | "TEACHER" | "BIBLIOTHEEKBEHEERDER" | "ADMIN";
 
 export interface MeResponse {
   id: number;

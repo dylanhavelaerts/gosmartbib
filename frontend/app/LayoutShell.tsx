@@ -44,7 +44,7 @@ export default function LayoutShell({
           <button>Mijn leeslijst & favorieten</button>
         </Link>
 
-        {user?.role === "BIBLIOTHEEKBEHEERDER" && (
+        {user?.role === "ADMIN" && (
           <Link href="/admin/users">
             <button>Gebruikersbeheer</button>
           </Link>

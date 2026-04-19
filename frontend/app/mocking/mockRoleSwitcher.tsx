@@ -3,7 +3,7 @@
 import { useState } from "react";
 import "./mockRoleSwitcher.css";
 
-const roles = ["Leerling", "Leerkracht", "Bibliotheekbeheerder"];
+const roles = ["Leerling", "Leerkracht", "Bibliotheekbeheerder", "admin"];
 
 export default function MockRoleSwitcher() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";

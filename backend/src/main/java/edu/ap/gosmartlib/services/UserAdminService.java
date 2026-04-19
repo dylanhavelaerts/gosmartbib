@@ -37,10 +37,8 @@ public class UserAdminService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieuwe rol ontbreekt");
         }
 
-        // Gebruiker
         UserEntity actor = getCurrentAdmin(actorUid);
 
-        // Aan te passen gebruiker
         UserEntity target = userRepository.findByIdAndSchool_Id(targerUserId, actor.getSchool().getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gebruiker niet gevonden"));
 
@@ -59,7 +57,7 @@ public class UserAdminService {
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
 
-        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER) {
+        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER && actor.getRole() != UserRoles.ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
         }
 
