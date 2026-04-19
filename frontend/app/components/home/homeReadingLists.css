@@ -1,0 +1,157 @@
+.homeReadingLists {
+  margin: 1rem auto 0;
+  max-width: 1400px;
+  border-top: 1px solid #ddd;
+  padding: 1rem 0 0;
+}
+
+.homeReadingListsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.homeReadingListsHeader h2 {
+  margin: 0;
+  color: #8e1f42;
+}
+
+.homeReadingListsHeader p {
+  margin: 0.3rem 0 0;
+  color: #5a5a5a;
+}
+
+.homeReadingListsActions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.homeRlBtn {
+  padding: 0.5rem 1.2rem;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.homeRlBtnGhost {
+  background: transparent;
+  color: #8e1f42;
+  border-color: #8e1f42;
+  opacity: 1;
+}
+
+.homeRlBtn:hover {
+  background-color: #7f203d;
+  border-color: #7f203d;
+}
+
+.homeRlBtnGhost:hover {
+  background: #f4ebee;
+  color: #7f203d;
+  border-color: #7f203d;
+}
+
+.homeRlBtn:focus-visible,
+.homeListOpenBtn:focus-visible {
+  outline: 2px solid #4f8ed8;
+  outline-offset: 2px;
+}
+
+.homeReadingListsState {
+  background: #f7f5f6;
+  border: 1px dashed #d8c4cb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.homeReadingListsGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.homeReadingListCard {
+  border: 1px solid #e4d9dc;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: #fff;
+  display: grid;
+  gap: 0.55rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.homeReadingListCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(53, 33, 40, 0.08);
+  border-color: #d8c4cb;
+}
+
+.homeReadingListCard h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.homeReadingListCard p {
+  margin: 0;
+  color: #4e4e4e;
+  line-height: 1.4;
+}
+
+.homeReadingListCard span {
+  color: #8e1f42;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.homeListOpenBtn {
+  justify-self: start;
+  border: none;
+  background: #8e1f42;
+  color: #fff;
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.homeListOpenBtn:hover {
+  background: #7a1838;
+}
+
+@media (max-width: 640px) {
+  .homeReadingListsHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .homeReadingListsActions {
+    width: 100%;
+  }
+
+  .homeRlBtn {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+@media (min-width: 768px) {
+  .homeReadingListsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .homeReadingListsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2.5rem;
+  }
+}

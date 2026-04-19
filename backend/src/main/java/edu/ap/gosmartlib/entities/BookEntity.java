@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -25,7 +27,8 @@ public class BookEntity {
     @Column(nullable = false)
     private String title;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     @CollectionTable(name = "book_authors", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "author")
     private List<String> authors;
@@ -38,7 +41,8 @@ public class BookEntity {
     @Column(name = "page_count")
     private Integer pageCount;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     @CollectionTable(name = "book_categories", joinColumns = @JoinColumn(name = "book_id"))
     private List<String> categories;
 
@@ -52,7 +56,7 @@ public class BookEntity {
 
     @Column(name = "published_year")
     private Integer publishedYear;
-@Column(nullable = false)
+    @Column(nullable = false)
     private boolean spotlight = false;
 
     @Column(name = "didactic_tag", nullable = false)
@@ -61,7 +65,8 @@ public class BookEntity {
     @Column(name = "reading_level")
     private String readingLevel;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     @CollectionTable(name = "book_labels", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "label")
     private List<String> labels;
@@ -74,6 +79,9 @@ public class BookEntity {
 
     @Column(nullable = true)
     private String ageRange;
+
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true, fetch =  FetchType.LAZY)
+    private List<ReviewEntity> reviews = new ArrayList<>();
 
     public BookEntity(String title, List<String> authors, String publisher, String description, int pageCount,
             List<String> categories, String thumbnail, String language, double rating, String isbn,

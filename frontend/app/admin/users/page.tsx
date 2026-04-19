@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import type { MeResponse, AdminUser, UserRole } from "@/app/interfaces/user";
 import { useEffect, useState } from "react";
@@ -47,27 +47,27 @@ export default function AdminUserPage() {
     const [savingUserId, setSavingUserId] = useState<number | null>(null);
     const [succes, setSucces] = useState("");
 
-    useEffect(() => {
-        const load = async() => {
-            if(!API_URL) {
-                setError("NEXT_PUBLIC_API_URL ontbreekt")
-                setLoading(false);
-                return
-            }
+  useEffect(() => {
+    const load = async () => {
+      if (!API_URL) {
+        setError("NEXT_PUBLIC_API_URL ontbreekt");
+        setLoading(false);
+        return;
+      }
 
-            try {
-                const meResponse = await fetch(`${API_URL}/auth/me`, {
-                    credentials: "include"
-                });
+      try {
+        const meResponse = await fetch(`${API_URL}/auth/me`, {
+          credentials: "include",
+        });
 
-                if(!meResponse.ok) {
-                    setError("Je bent niet ingelogd");
-                    setLoading(false);
-                    return;
-                }
+        if (!meResponse.ok) {
+          setError("Je bent niet ingelogd");
+          setLoading(false);
+          return;
+        }
 
-                const meData: MeResponse = await meResponse.json();
-                setMe(meData);
+        const meData: MeResponse = await meResponse.json();
+        setMe(meData);
 
                 if(meData.role != "ADMIN") {
                     setError("Je hebt geen toegang tot deze pagina");
@@ -75,15 +75,15 @@ export default function AdminUserPage() {
                     return;
                 }
 
-                const userResponse = await fetch(`${API_URL}/admin/users`, {
-                    credentials: "include"
-                });
+        const userResponse = await fetch(`${API_URL}/admin/users`, {
+          credentials: "include",
+        });
 
-                if(!userResponse.ok) {
-                    setError("Kon gebruikers niet ophalen");
-                    setLoading(false);
-                    return;
-                }
+        if (!userResponse.ok) {
+          setError("Kon gebruikers niet ophalen");
+          setLoading(false);
+          return;
+        }
 
                 const userData: AdminUser[] = await userResponse.json();
                 setUsers(userData);
@@ -131,44 +131,44 @@ export default function AdminUserPage() {
             }
         };
 
-        load();
-    }, []);
+    load();
+  }, []);
 
-        const handleSave = async (userId: number) => {
-        if(!API_URL) return;
+  const handleSave = async (userId: number) => {
+    if (!API_URL) return;
 
-        const role = selectedRoles[userId];
-        if(!role) return;
+    const role = selectedRoles[userId];
+    if (!role) return;
 
-        try {
-            setSavingUserId(userId);
-            setError("");
-            setSucces("");
+    try {
+      setSavingUserId(userId);
+      setError("");
+      setSucces("");
 
-            const response = await fetch(`${API_URL}/admin/users/${userId}/role`, {
-                method: "PATCH",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({role})
-            });
-            
-            if(!response.ok) {
-                setError("Rol aanpassen mislukt");
-                return;
-            }
+      const response = await fetch(`${API_URL}/admin/users/${userId}/role`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ role }),
+      });
 
-            const updatedUser: AdminUser = await response.json();
+      if (!response.ok) {
+        setError("Rol aanpassen mislukt");
+        return;
+      }
 
-            setUsers((prev) => 
-                prev.map((user) => (user.id === updatedUser.id ? updatedUser : user))
-            );
+      const updatedUser: AdminUser = await response.json();
 
-            setSelectedRoles((prev) => ({
-                ...prev,
-                [updatedUser.id]: updatedUser.role,
-            }));
+      setUsers((prev) =>
+        prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)),
+      );
+
+      setSelectedRoles((prev) => ({
+        ...prev,
+        [updatedUser.id]: updatedUser.role,
+      }));
 
             setSucces(`Rol van ${displayNames[updatedUser.smartschoolUid] ? displayNames[updatedUser.smartschoolUid] : updatedUser.smartschoolUid} aangepast`);
         }
@@ -180,7 +180,7 @@ export default function AdminUserPage() {
             setSavingUserId(null);
         }
     }
-
+  };
 
     if (loading) {
         return (

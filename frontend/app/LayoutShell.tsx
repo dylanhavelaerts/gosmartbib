@@ -40,7 +40,7 @@ export default function LayoutShell({
           <button>Mijn uitleningen</button>
         </Link>
 
-        <Link href="/">
+        <Link href="/reading-lists">
           <button>Mijn leeslijst & favorieten</button>
         </Link>
 

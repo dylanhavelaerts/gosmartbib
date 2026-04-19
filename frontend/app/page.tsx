@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import HomeReadingLists from "./components/home/HomeReadingLists";
+import { ReadingListOverview } from "./interfaces/ReadingList";
 import { Book } from "./interfaces/Book";
 import BookCard from "./catalog/bookCard";
 import "./dashboard.css";
@@ -14,27 +16,70 @@ export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [search, setSearch] = useState("");
   const router = useRouter();
+  const [personalLists, setPersonalLists] = useState<ReadingListOverview[]>([]);
+  const [listsLoading, setListsLoading] = useState(true);
+  const [listsError, setListsError] = useState<string | null>(null);
+
+  const { user, loading: authLoading } = useAuth();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   const cls = (id: TabId) =>
     `tabBtn ${selected === id ? "selectedCategory" : ""}`;
 
-useEffect(() => {
-  const endpoint =
-    selected === "spotlight" ? "/books/spotlight" : "/books/latest";
-    
-  fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`)
-    .then((res) => res.json())
-    .then((data: Book[]) => {
-      if (data.length > 0) {
-        setBooks(data);
-      } else {
-        return fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/top-rated`, {credentials: "include"})
-          .then((res) => res.json())
-          .then((fallbackData: Book[]) => setBooks(fallbackData));
-      }
+  useEffect(() => {
+    const endpoint =
+      selected === "spotlight" ? "/books/spotlight" : "/books/latest";
+
+    fetch(`${apiUrl}${endpoint}`, {
+      credentials: "include",
     })
-    .catch((error) => console.error(error));
-}, [selected]);
+      .then((res) => res.json())
+      .then((data: Book[]) => {
+        if (data.length > 0) {
+          setBooks(data);
+        } else {
+          return fetch(`${apiUrl}/books/top-rated`, {
+            credentials: "include",
+          })
+            .then((res) => res.json())
+            .then((fallbackData: Book[]) => setBooks(fallbackData));
+        }
+      })
+      .catch((error) => console.error(error));
+  }, [selected, apiUrl]);
+  const fetchPersonalLists = useCallback(() => {
+    setListsLoading(true);
+    setListsError(null);
+
+    fetch(`${apiUrl}/reading-lists`, { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Kon leeslijsten niet laden.");
+        return res.json();
+      })
+      .then((data: ReadingListOverview[]) => {
+        const ownPersonalLists = (Array.isArray(data) ? data : []).filter(
+          (list) => list.listType === "PERSONAL" && list.ownList,
+        );
+        setPersonalLists(ownPersonalLists);
+      })
+      .catch((err) => {
+        console.error(err);
+        setListsError("Je leeslijsten konden niet geladen worden.");
+      })
+      .finally(() => setListsLoading(false));
+  }, [apiUrl]);
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      setPersonalLists([]);
+      setListsError(null);
+      setListsLoading(false);
+      return;
+    }
+
+    fetchPersonalLists();
+  }, [authLoading, user, fetchPersonalLists]);
 
   const handleSearch = (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -94,6 +139,15 @@ useEffect(() => {
             ))}
           </div>
         </div>
+        <HomeReadingLists
+          lists={personalLists}
+          loading={listsLoading}
+          error={listsError}
+          onOpenList={(id) => router.push(`/reading-lists/${id}`)}
+          onOpenPersonal={() => router.push("/reading-lists/personal")}
+          onOpenAll={() => router.push("/reading-lists")}
+          onRetry={fetchPersonalLists}
+        />
       </main>
     </>
   );
