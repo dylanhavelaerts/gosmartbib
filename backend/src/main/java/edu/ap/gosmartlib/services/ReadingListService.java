@@ -263,10 +263,12 @@ public class ReadingListService {
     private String resolveCreatorName(ReadingListEntity list, Map<String, String> displayNames) {
         String creatorUid = list.getCreator().getSmartschoolUid();
         if (creatorUid == null || creatorUid.isBlank()) {
-            return null;
+            return formatRoleLabel(list.getCreator().getRole());
         }
 
-        return displayNames.getOrDefault(creatorUid, creatorUid);
+        return displayNames.getOrDefault(
+                creatorUid,
+                formatRoleLabel(list.getCreator().getRole()));
     }
 
     private ReadingListOverviewDTO toOverview(ReadingListEntity list, Long currentUserId,
@@ -284,6 +286,20 @@ public class ReadingListService {
                 creatorName,
                 ids,
                 ids.size());
+    }
+
+    private String formatRoleLabel(UserRoles role) {
+        if (role == null) {
+            return "Gebruiker";
+        }
+
+        return switch (role) {
+            case STUDENT -> "Leerling";
+            case TEACHER -> "Leerkracht";
+            case BIBLIOTHEEKBEHEERDER -> "Bibliothecaris";
+            case ADMIN -> "Admin";
+            case OTHER -> "Gebruiker";
+        };
     }
 
     private ReadingListDetailDTO toDetail(ReadingListEntity list, Long currentUserId,

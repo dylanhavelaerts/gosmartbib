@@ -75,7 +75,7 @@ export default function ReviewSection({
 
   function fetchReviews() {
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`, {credentials: "include"})
       .then((res) => res.json())
       .then((data: ReviewSummary[]) => {
         setReviews(data);

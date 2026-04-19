@@ -173,11 +173,13 @@
 
 .reviewCardMeta {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
 }
 
-.reviewRole {
+.reviewRole,
+.reviewAuthor {
   font-size: 12px;
   font-weight: 600;
   color: #8e2446;
@@ -188,6 +190,7 @@
 }
 
 .reviewDate {
+  flex-basis: 100%;
   font-size: 11px;
   color: #aaa;
   padding-left: 0.1rem;

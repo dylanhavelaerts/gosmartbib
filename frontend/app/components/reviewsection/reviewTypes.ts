@@ -1,6 +1,7 @@
 export interface ReviewSummary {
   id: number;
   userId: number;
+  reviewerName: string | null;
   userRole: string;
   text: string;
   reviewDate: string;

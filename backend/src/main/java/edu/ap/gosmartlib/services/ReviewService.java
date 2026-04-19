@@ -5,6 +5,7 @@ import edu.ap.gosmartlib.dto.reviews.ReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReviewEntity;
+import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.AlreadyReviewedException;
 import edu.ap.gosmartlib.exceptions.OutOfBoundsException;
@@ -21,8 +22,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -36,61 +39,74 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
+    private final UserDirectoryService userDirectoryService;
 
     private final int REVIEW_MAX_CHAR_COUNT = 255;
 
+    // region General find methods
 
-//region General find methods
+    public List<ReviewDetailDTO> findAllReviews(String actorUid) {
+        List<ReviewEntity> reviews = reviewRepository.findAll();
+        Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, reviews);
 
-    public List<ReviewDetailDTO> findAllReviews() {
-        return reviewRepository.findAll()
-                .stream()
-                .map(this::toDetailDTO)
+        return reviews.stream()
+                .map(review -> toDetailDTO(review, displayNames))
                 .toList();
     }
 
-    public List<ReviewDetailDTO> findAllReviewsByStatus(ReviewStatus status) {
-        return reviewRepository.findByStatus(status)
-                .stream()
-                .map(this::toDetailDTO)
+    public List<ReviewDetailDTO> findAllReviewsByStatus(ReviewStatus status, String actorUid) {
+        List<ReviewEntity> reviews = reviewRepository.findByStatus(status);
+        Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, reviews);
+
+        return reviews.stream()
+                .map(review -> toDetailDTO(review, displayNames))
                 .toList();
     }
 
     // Voor bij de boekDetail pagina, toont alle reviews van een boek
-    public List<ReviewSummaryDTO> findAllSummaryReviewsByBook(String isbn) {
-        return reviewRepository.findByBook_Isbn(isbn)
-                .stream()
-                .map(this::toSummaryDTO)
+    public List<ReviewSummaryDTO> findAllSummaryReviewsByBook(String isbn, String actorUid) {
+        List<ReviewEntity> reviews = reviewRepository.findByBook_Isbn(isbn);
+        Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, reviews);
+
+        return reviews.stream()
+                .map(review -> toSummaryDTO(review, displayNames))
                 .toList();
     }
 
-    // Voor bij de bibliotheekbeheerder, toont alle volledige reviews met detail informatie
-    public List<ReviewDetailDTO> findAllDetailReviewsByBook(String isbn) {
-        return reviewRepository.findByBook_Isbn(isbn)
-                .stream()
-                .map(this::toDetailDTO)
+    // Voor bij de bibliotheekbeheerder, toont alle volledige reviews met detail
+    // informatie
+    public List<ReviewDetailDTO> findAllDetailReviewsByBook(String isbn, String actorUid) {
+        List<ReviewEntity> reviews = reviewRepository.findByBook_Isbn(isbn);
+        Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, reviews);
+
+        return reviews.stream()
+                .map(review -> toDetailDTO(review, displayNames))
                 .toList();
     }
 
-    public List<ReviewDetailDTO> findAllDetailReviewsByUserId(String smartschoolUid) {
-        return reviewRepository.findByUser_SmartschoolUid(smartschoolUid)
-                .stream()
-                .map(this::toDetailDTO)
+    public List<ReviewDetailDTO> findAllDetailReviewsByUserId(String smartschoolUid, String actorUid) {
+        List<ReviewEntity> reviews = reviewRepository.findByUser_SmartschoolUid(smartschoolUid);
+        Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, reviews);
+
+        return reviews.stream()
+                .map(review -> toDetailDTO(review, displayNames))
                 .toList();
     }
 
-//endregion
+    // endregion
 
-//region Post methods
+    // region Post methods
     public ReviewSummaryDTO submitReview(ReviewRequestDTO request, String smartschoolUid) {
         try {
             UserEntity user = userRepository.findBySmartschoolUid(smartschoolUid)
                     .orElseThrow(() -> new EntityNotFoundException("Gebruiker niet gevonden"));
 
             BookEntity book = bookRepository.findByIsbn(request.bookIsbn())
-                    .orElseThrow(() -> new EntityNotFoundException("Geen boek gelinkt aan ISBN: " + request.bookIsbn()));
+                    .orElseThrow(
+                            () -> new EntityNotFoundException("Geen boek gelinkt aan ISBN: " + request.bookIsbn()));
 
-            boolean alreadyReviewed = reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn(smartschoolUid, request.bookIsbn());
+            boolean alreadyReviewed = reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn(smartschoolUid,
+                    request.bookIsbn());
 
             if (alreadyReviewed)
                 throw new AlreadyReviewedException("Je hebt dit boek al beoordeeld");
@@ -119,7 +135,8 @@ public class ReviewService {
             review.setFlagCount(0);
 
             ReviewEntity toSave = reviewRepository.save(review);
-            return toSummaryDTO(toSave);
+            Map<String, String> displayNames = resolveDisplayNamesMap(smartschoolUid, List.of(toSave));
+            return toSummaryDTO(toSave, displayNames);
 
         } catch (OutOfBoundsException e) {
             throw e;
@@ -132,10 +149,12 @@ public class ReviewService {
         }
     }
 
-//endregion
+    // endregion
 
-//region Patch methods
-    public void editReview(Long reviewId, ReviewRequestDTO request, String smartschoolUid) { // <--FIX: smartschoolUid toegevoegd voor ownership check
+    // region Patch methods
+    public void editReview(Long reviewId, ReviewRequestDTO request, String smartschoolUid) { // <--FIX: smartschoolUid
+                                                                                             // toegevoegd voor
+                                                                                             // ownership check
         try {
             ReviewEntity review = reviewRepository.findById(reviewId)
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
@@ -152,9 +171,8 @@ public class ReviewService {
                 review.setText(request.text());
             }
 
-            if(request.rating() > 5 || request.rating() < 0)
+            if (request.rating() > 5 || request.rating() < 0)
                 throw new OutOfBoundsException("Rating moet tussen 0 en 5 liggen");
-
 
             review.setRating(request.rating());
             review.setSpoiler(request.spoiler());
@@ -171,10 +189,10 @@ public class ReviewService {
             throw new RuntimeException("Er is iets fout gegaan tijdens het bewerken van de review", e);
         }
     }
-//endregion
+    // endregion
 
-//region Delete methods
-    public void userDeleteReview(Long reviewId, String smartschoolUid, boolean canModerateDelete){
+    // region Delete methods
+    public void userDeleteReview(Long reviewId, String smartschoolUid, boolean canModerateDelete) {
         try {
             ReviewEntity review = reviewRepository.findById(reviewId)
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
@@ -186,7 +204,7 @@ public class ReviewService {
             reviewRepository.delete(review);
         } catch (EntityNotFoundException e) {
             throw e;
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Er is iets fout gegaan tijdens het verwijderen van de review", e);
         }
     }
@@ -203,9 +221,9 @@ public class ReviewService {
             throw new RuntimeException("Er is iets fout gegaan tijdens het verwijderen van de review", e);
         }
     }
-//endregion
+    // endregion
 
-//region Helper methods
+    // region Helper methods
     public void increaseFlagCount(Long reviewId) {
         try {
             reviewRepository.incrementFlagCount(reviewId);
@@ -276,13 +294,53 @@ public class ReviewService {
             throw new RuntimeException("Er is iets fout gegaan tijdens het afkeuren van de review", e);
         }
     }
-//endregion
 
-//region toDTO methods
-    public ReviewDetailDTO toDetailDTO(ReviewEntity review) {
+    private Map<String, String> resolveDisplayNamesMap(String actorUid, List<ReviewEntity> reviews) {
+        if (actorUid == null || actorUid.isBlank() || reviews == null || reviews.isEmpty()) {
+            return Map.of();
+        }
+
+        List<String> reviewerUids = reviews.stream()
+                .map(review -> review.getUser().getSmartschoolUid())
+                .filter(uid -> uid != null && !uid.isBlank())
+                .distinct()
+                .toList();
+
+        if (reviewerUids.isEmpty()) {
+            return Map.of();
+        }
+
+        try {
+            var response = userDirectoryService.resolveDisplayNames(
+                    actorUid,
+                    new ResolveDisplayNamesRequest(reviewerUids));
+
+            if (!response.success() || response.displayNames() == null) {
+                return Map.of();
+            }
+
+            return response.displayNames();
+        } catch (Exception ex) {
+            return Map.of();
+        }
+    }
+
+    private String resolveReviewerName(ReviewEntity review, Map<String, String> displayNames) {
+        String reviewerUid = review.getUser().getSmartschoolUid();
+        if (reviewerUid == null || reviewerUid.isBlank()) {
+            return null;
+        }
+
+        return displayNames.get(reviewerUid);
+    }
+    // endregion
+
+    // region toDTO methods
+    public ReviewDetailDTO toDetailDTO(ReviewEntity review, Map<String, String> displayNames) {
         return new ReviewDetailDTO(
                 review.getId(),
                 review.getUser().getId(),
+                resolveReviewerName(review, displayNames),
                 review.getUser().getRole(),
                 review.getBook().getIsbn(),
                 review.getBook().getTitle(),
@@ -290,20 +348,19 @@ public class ReviewService {
                 review.getReviewDate(),
                 review.getReviewStatus(),
                 review.getRating(),
-                review.getFlagCount()
-        );
+                review.getFlagCount());
     }
 
-    public ReviewSummaryDTO toSummaryDTO(ReviewEntity review) {
+    public ReviewSummaryDTO toSummaryDTO(ReviewEntity review, Map<String, String> displayNames) {
         return new ReviewSummaryDTO(
                 review.getId(),
                 review.getUser().getId(),
+                resolveReviewerName(review, displayNames),
                 review.getUser().getRole(),
                 review.getText(),
                 review.getReviewDate(),
-            review.getRating(),
-            review.isSpoiler()
-        );
+                review.getRating(),
+                review.isSpoiler());
     }
-//endregion
+    // endregion
 }

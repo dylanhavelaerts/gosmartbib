@@ -27,37 +27,46 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @GetMapping("/book/{isbn}")
-    public ResponseEntity<List<ReviewSummaryDTO>> getReviewsByBook(@PathVariable String isbn) {
-        return ResponseEntity.ok(reviewService.findAllSummaryReviewsByBook(isbn));
+    public ResponseEntity<List<ReviewSummaryDTO>> getReviewsByBook(@PathVariable String isbn,
+            @AuthenticationPrincipal OAuth2User principal) {
+        String actorUid = extractUidOrNull(principal);
+        return ResponseEntity.ok(reviewService.findAllSummaryReviewsByBook(isbn, actorUid));
     }
 
     @GetMapping("/user/{smartschoolUid}")
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
-    public ResponseEntity<List<ReviewDetailDTO>> getReviewsByUser(@PathVariable String smartschoolUid) {
-        return ResponseEntity.ok(reviewService.findAllDetailReviewsByUserId(smartschoolUid));
+    public ResponseEntity<List<ReviewDetailDTO>> getReviewsByUser(@PathVariable String smartschoolUid,
+            @AuthenticationPrincipal OAuth2User principal) {
+        String actorUid = extractUid(principal);
+        return ResponseEntity.ok(reviewService.findAllDetailReviewsByUserId(smartschoolUid, actorUid));
     }
 
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
-    public ResponseEntity<List<ReviewDetailDTO>> getReviewsByStatus(@PathVariable ReviewStatus status) {
-        return ResponseEntity.ok(reviewService.findAllReviewsByStatus(status));
+    public ResponseEntity<List<ReviewDetailDTO>> getReviewsByStatus(@PathVariable ReviewStatus status,
+            @AuthenticationPrincipal OAuth2User principal) {
+        String actorUid = extractUid(principal);
+        return ResponseEntity.ok(reviewService.findAllReviewsByStatus(status, actorUid));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
-    public ResponseEntity<List<ReviewDetailDTO>> getAllReviews() {
-        return ResponseEntity.ok(reviewService.findAllReviews());
+    public ResponseEntity<List<ReviewDetailDTO>> getAllReviews(@AuthenticationPrincipal OAuth2User principal) {
+        String actorUid = extractUid(principal);
+        return ResponseEntity.ok(reviewService.findAllReviews(actorUid));
     }
 
     @PostMapping
-    public ResponseEntity<ReviewSummaryDTO> submitReview(@RequestBody ReviewRequestDTO request, @AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<ReviewSummaryDTO> submitReview(@RequestBody ReviewRequestDTO request,
+            @AuthenticationPrincipal OAuth2User principal) {
         String smartschoolUid = extractUid(principal);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(reviewService.submitReview(request, smartschoolUid));
     }
 
     @PatchMapping("/{reviewId}")
-    public ResponseEntity<Void> editReview(@PathVariable Long reviewId,  @RequestBody ReviewRequestDTO request, @AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<Void> editReview(@PathVariable Long reviewId, @RequestBody ReviewRequestDTO request,
+            @AuthenticationPrincipal OAuth2User principal) {
         String smartschoolUid = extractUid(principal);
         reviewService.editReview(reviewId, request, smartschoolUid);
         return ResponseEntity.noContent().build();
@@ -78,7 +87,8 @@ public class ReviewController {
     }
 
     @PatchMapping("/{reviewId}/flag")
-    public ResponseEntity<Void> flagReview(@PathVariable Long reviewId, @RequestBody ReviewFlagRequestDTO request, @AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<Void> flagReview(@PathVariable Long reviewId, @RequestBody ReviewFlagRequestDTO request,
+            @AuthenticationPrincipal OAuth2User principal) {
         String smartschoolUid = extractUid(principal);
         reviewService.flagReview(reviewId, smartschoolUid, request.reason());
         return ResponseEntity.noContent().build();
@@ -86,8 +96,8 @@ public class ReviewController {
 
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> userDeleteReview(@PathVariable Long reviewId,
-                                                 @AuthenticationPrincipal OAuth2User principal,
-                                                 Authentication authentication) {
+            @AuthenticationPrincipal OAuth2User principal,
+            Authentication authentication) {
         String smartschoolUid = extractUid(principal);
         boolean canModerateDelete = hasModeratorDeleteAccess(authentication);
         reviewService.userDeleteReview(reviewId, smartschoolUid, canModerateDelete);
@@ -115,6 +125,15 @@ public class ReviewController {
         }
 
         return uid;
+    }
+
+    private String extractUidOrNull(OAuth2User principal) {
+        if (principal == null) {
+            return null;
+        }
+
+        String uid = principal.getAttribute("userID");
+        return (uid == null || uid.isBlank()) ? null : uid;
     }
 
     @DeleteMapping("/{reviewId}/librarian")

@@ -51,56 +51,79 @@ class ReviewControllerTest {
 
     @Test
     void givenReviewsForBookExist_whenGetReviewsByBook_thenReturnsOkWithBody() {
-        List<ReviewSummaryDTO> expected = List.of(buildSummary(1L, "Great read", 4.5f));
-        when(reviewService.findAllSummaryReviewsByBook("9780000000001")).thenReturn(expected);
+        when(principal.getAttribute("userID")).thenReturn("viewer-uid");
+        List<ReviewSummaryDTO> expected = List.of(buildSummary(1L, "Reviewer Name", "Great read", 4.5f));
+        when(reviewService.findAllSummaryReviewsByBook("9780000000001", "viewer-uid")).thenReturn(expected);
 
-        ResponseEntity<List<ReviewSummaryDTO>> response = reviewController.getReviewsByBook("9780000000001");
+        ResponseEntity<List<ReviewSummaryDTO>> response = reviewController.getReviewsByBook("9780000000001", principal);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expected, response.getBody());
-        verify(reviewService, times(1)).findAllSummaryReviewsByBook("9780000000001");
+        verify(reviewService, times(1)).findAllSummaryReviewsByBook("9780000000001", "viewer-uid");
+    }
+
+    @Test
+    void givenNoPrincipal_whenGetReviewsByBook_thenReturnsOkWithBodyAndUsesNullActorUid() {
+        List<ReviewSummaryDTO> expected = List.of(
+                buildSummary(1L, null, "Great read", 4.5f));
+        when(reviewService.findAllSummaryReviewsByBook("9780000000001", null))
+                .thenReturn(expected);
+
+        ResponseEntity<List<ReviewSummaryDTO>> response = reviewController.getReviewsByBook("9780000000001", null);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expected, response.getBody());
+        verify(reviewService, times(1))
+                .findAllSummaryReviewsByBook("9780000000001", null);
     }
 
     @Test
     void givenReviewsForUserExist_whenGetReviewsByUser_thenReturnsOkWithBody() {
-        List<ReviewDetailDTO> expected = List.of(buildDetail(2L, "9780000000002", "Book B", ReviewStatus.APPROVED));
-        when(reviewService.findAllDetailReviewsByUserId("u-123")).thenReturn(expected);
+        when(principal.getAttribute("userID")).thenReturn("admin-uid");
+        List<ReviewDetailDTO> expected = List
+                .of(buildDetail(2L, "9780000000002", "Reviewer Name", "Book B", ReviewStatus.APPROVED));
+        when(reviewService.findAllDetailReviewsByUserId("u-123", "admin-uid")).thenReturn(expected);
 
-        ResponseEntity<List<ReviewDetailDTO>> response = reviewController.getReviewsByUser("u-123");
+        ResponseEntity<List<ReviewDetailDTO>> response = reviewController.getReviewsByUser("u-123", principal);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expected, response.getBody());
-        verify(reviewService, times(1)).findAllDetailReviewsByUserId("u-123");
+        verify(reviewService, times(1)).findAllDetailReviewsByUserId("u-123", "admin-uid");
     }
 
     @Test
     void givenStatusFilter_whenGetReviewsByStatus_thenReturnsOkWithBody() {
-        List<ReviewDetailDTO> expected = List.of(buildDetail(3L, "9780000000003", "Book C", ReviewStatus.REJECTED));
-        when(reviewService.findAllReviewsByStatus(ReviewStatus.REJECTED)).thenReturn(expected);
+        when(principal.getAttribute("userID")).thenReturn("admin-uid");
+        List<ReviewDetailDTO> expected = List
+                .of(buildDetail(3L, "9780000000003", "Reviewer Name", "Book C", ReviewStatus.REJECTED));
+        when(reviewService.findAllReviewsByStatus(ReviewStatus.REJECTED, "admin-uid")).thenReturn(expected);
 
-        ResponseEntity<List<ReviewDetailDTO>> response = reviewController.getReviewsByStatus(ReviewStatus.REJECTED);
+        ResponseEntity<List<ReviewDetailDTO>> response = reviewController.getReviewsByStatus(ReviewStatus.REJECTED,
+                principal);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expected, response.getBody());
-        verify(reviewService, times(1)).findAllReviewsByStatus(ReviewStatus.REJECTED);
+        verify(reviewService, times(1)).findAllReviewsByStatus(ReviewStatus.REJECTED, "admin-uid");
     }
 
     @Test
     void givenReviewsExist_whenGetAllReviews_thenReturnsOkWithBody() {
-        List<ReviewDetailDTO> expected = List.of(buildDetail(4L, "9780000000004", "Book D", ReviewStatus.AWAITING_MODERATION));
-        when(reviewService.findAllReviews()).thenReturn(expected);
+        when(principal.getAttribute("userID")).thenReturn("admin-uid");
+        List<ReviewDetailDTO> expected = List
+                .of(buildDetail(4L, "Reviewer Name", "9780000000004", "Book D", ReviewStatus.AWAITING_MODERATION));
+        when(reviewService.findAllReviews("admin-uid")).thenReturn(expected);
 
-        ResponseEntity<List<ReviewDetailDTO>> response = reviewController.getAllReviews();
+        ResponseEntity<List<ReviewDetailDTO>> response = reviewController.getAllReviews(principal);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expected, response.getBody());
-        verify(reviewService, times(1)).findAllReviews();
+        verify(reviewService, times(1)).findAllReviews("admin-uid");
     }
 
     @Test
     void givenValidPrincipal_whenSubmitReview_thenReturnsCreatedAndDelegatesToService() {
         ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f, false);
-        ReviewSummaryDTO expected = buildSummary(5L, "Nice", 4.0f);
+        ReviewSummaryDTO expected = buildSummary(5L, "Reviewer Name", "Nice", 4.0f);
         when(principal.getAttribute("userID")).thenReturn("smart-uid-1");
         when(reviewService.submitReview(request, "smart-uid-1")).thenReturn(expected);
 
@@ -150,7 +173,7 @@ class ReviewControllerTest {
         when(principal.getAttribute("userID")).thenReturn(null);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> reviewController.userDeleteReview(10L, principal, authentication));
+                () -> reviewController.userDeleteReview(10L, principal, authentication));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
         verify(reviewService, never()).userDeleteReview(10L, null, false);
@@ -216,14 +239,17 @@ class ReviewControllerTest {
         verify(reviewService, times(1)).librarianDeleteReview(103L);
     }
 
-    private ReviewSummaryDTO buildSummary(Long id, String text, float rating) {
-        return new ReviewSummaryDTO(id, 11L, UserRoles.STUDENT, text, LocalDate.of(2026, 1, 1), rating, false);
+    private ReviewSummaryDTO buildSummary(Long id, String reviewerName, String text, float rating) {
+        return new ReviewSummaryDTO(id, 11L, reviewerName, UserRoles.STUDENT, text, LocalDate.of(2026, 1, 1), rating,
+                false);
     }
 
-    private ReviewDetailDTO buildDetail(Long id, String isbn, String bookTitle, ReviewStatus status) {
+    private ReviewDetailDTO buildDetail(Long id, String reviewerName, String isbn, String bookTitle,
+            ReviewStatus status) {
         return new ReviewDetailDTO(
                 id,
                 11L,
+                reviewerName,
                 UserRoles.STUDENT,
                 isbn,
                 bookTitle,
@@ -234,4 +260,3 @@ class ReviewControllerTest {
                 0);
     }
 }
-

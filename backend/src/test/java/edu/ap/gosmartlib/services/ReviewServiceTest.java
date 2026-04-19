@@ -3,6 +3,7 @@ package edu.ap.gosmartlib.services;
 import edu.ap.gosmartlib.dto.reviews.ReviewDetailDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
+import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReviewEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -23,12 +24,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -45,6 +48,9 @@ class ReviewServiceTest {
 
     @Mock
     private BookRepository bookRepository;
+
+    @Mock
+    private UserDirectoryService userDirectoryService;
 
     @InjectMocks
     private ReviewService reviewService;
@@ -64,12 +70,21 @@ class ReviewServiceTest {
                     toSave.setId(99L);
                     return toSave;
                 });
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-1", "Reviewer Name"),
+                        List.of(),
+                        "ok"));
 
         ReviewSummaryDTO result = reviewService.submitReview(request, "uid-1");
 
         assertNotNull(result);
         assertEquals(99L, result.id());
         assertEquals(1L, result.userId());
+        assertEquals("Reviewer Name", result.reviewerName());
         assertEquals(UserRoles.STUDENT, result.userRole());
         assertEquals("Strong recommendation", result.text());
         assertEquals(4.5f, result.rating());
@@ -97,6 +112,14 @@ class ReviewServiceTest {
         when(reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn("uid-1", "9780000000001")).thenReturn(false);
         when(reviewRepository.save(org.mockito.ArgumentMatchers.any(ReviewEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-1", "Reviewer Name"),
+                        List.of(),
+                        "ok"));
 
         ReviewSummaryDTO result = reviewService.submitReview(request, "uid-1");
 
@@ -109,7 +132,8 @@ class ReviewServiceTest {
         ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", tooLongText, 3.0f, false);
 
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(buildUser(1L, "uid-1")));
-        when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
+        when(bookRepository.findByIsbn("9780000000001"))
+                .thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
         when(reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn("uid-1", "9780000000001")).thenReturn(false);
 
         assertThrows(OutOfBoundsException.class, () -> reviewService.submitReview(request, "uid-1"));
@@ -121,7 +145,8 @@ class ReviewServiceTest {
         ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 6.0f, false);
 
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(buildUser(1L, "uid-1")));
-        when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
+        when(bookRepository.findByIsbn("9780000000001"))
+                .thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
         when(reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn("uid-1", "9780000000001")).thenReturn(false);
 
         assertThrows(OutOfBoundsException.class, () -> reviewService.submitReview(request, "uid-1"));
@@ -133,7 +158,8 @@ class ReviewServiceTest {
         ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f, false);
 
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(buildUser(1L, "uid-1")));
-        when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
+        when(bookRepository.findByIsbn("9780000000001"))
+                .thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
         when(reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn("uid-1", "9780000000001")).thenReturn(true);
 
         assertThrows(AlreadyReviewedException.class, () -> reviewService.submitReview(request, "uid-1"));
@@ -228,7 +254,7 @@ class ReviewServiceTest {
         when(reviewRepository.findById(71L)).thenReturn(Optional.of(existing));
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> reviewService.userDeleteReview(71L, "other-uid", false));
+                () -> reviewService.userDeleteReview(71L, "other-uid", false));
 
         assertInstanceOf(SecurityException.class, exception.getCause());
         verify(reviewRepository, never()).delete(existing);
@@ -308,12 +334,21 @@ class ReviewServiceTest {
         review.setReviewDate(LocalDate.of(2026, 2, 1));
 
         when(reviewRepository.findByBook_Isbn("9780000000091")).thenReturn(List.of(review));
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-7", "Reviewer Name"),
+                        List.of(),
+                        "ok"));
 
-        List<ReviewSummaryDTO> result = reviewService.findAllSummaryReviewsByBook("9780000000091");
+        List<ReviewSummaryDTO> result = reviewService.findAllSummaryReviewsByBook("9780000000091", "viewer-uid");
 
         assertEquals(1, result.size());
         assertEquals(91L, result.get(0).id());
         assertEquals(7L, result.get(0).userId());
+        assertEquals("Reviewer Name", result.get(0).reviewerName());
         assertEquals("Compact review", result.get(0).text());
         verify(reviewRepository, times(1)).findByBook_Isbn("9780000000091");
     }
@@ -329,12 +364,21 @@ class ReviewServiceTest {
         review.setFlagCount(2);
 
         when(reviewRepository.findByStatus(ReviewStatus.APPROVED)).thenReturn(List.of(review));
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-8", "Reviewer Name"),
+                        List.of(),
+                        "ok"));
 
-        List<ReviewDetailDTO> result = reviewService.findAllReviewsByStatus(ReviewStatus.APPROVED);
+        List<ReviewDetailDTO> result = reviewService.findAllReviewsByStatus(ReviewStatus.APPROVED, "admin-uid");
 
         assertEquals(1, result.size());
         ReviewDetailDTO dto = result.get(0);
         assertEquals(92L, dto.id());
+        assertEquals("Reviewer Name", dto.reviewerName());
         assertEquals("9780000000092", dto.bookISBN());
         assertEquals("Book 92", dto.bookTitle());
         assertEquals(ReviewStatus.APPROVED, dto.reviewStatus());
@@ -372,4 +416,3 @@ class ReviewServiceTest {
         return review;
     }
 }
-
