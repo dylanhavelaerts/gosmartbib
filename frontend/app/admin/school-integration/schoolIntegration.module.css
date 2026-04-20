@@ -31,6 +31,7 @@
 
 .stat {
   border: 1px dashed #c9a9bb;
+  font-size: 13px;
   border-radius: 10px;
   padding: 0.75rem;
   background: #fcf8fa;

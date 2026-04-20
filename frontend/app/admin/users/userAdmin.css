@@ -2,9 +2,9 @@ main {
   color: #8e2446;
 }
 main h1 {
-  font-size: clamp(20px, 1.5vw, 16px);
+  font-size: clamp(16px, 1.5vw, 16px);
   color: #c0392b;
-  font-weight: 500;
+  font-weight: 600;
   padding: clamp(8px, 2vw, 16px);
   margin: 0 0 2rem 0;
 }
