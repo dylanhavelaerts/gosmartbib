@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.BookDTO;
+import edu.ap.gosmartlib.dto.BookFilterRequest;
 import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -71,35 +72,23 @@ public class BookController {
     }
 
     /**
-     * Filtert boeken op taal, categorie, pagina's en publicatiejaar met server-side
-     * paginatie.
-     * 
-     * @param page de pagina (0-based)
-     * @param size aantal boeken per pagina
+     * Filtert boeken op basis van verschillende criteria met server-side paginatie.
+     * Alle filterparameters zijn optioneel.
+     * Ongeldige combinaties (bv. minRating > maxRating) geven een 400 terug.
+     *
+     * @param filter        de filtercriteria (taal, categorieën, labels, pagina's, publicatiejaar, beoordeling)
+     * @param authentication de ingelogde gebruiker
      */
     @GetMapping("/filter")
     public ResponseEntity<?> filterBooks(
-            @RequestParam(required = false) String language,
-            @RequestParam(required = false) List<String> categories,
-            @RequestParam(required = false) List<String> labels,
-            @RequestParam(required = false) Integer minPageCount,
-            @RequestParam(required = false) Integer maxPageCount,
-            @RequestParam(required = false) Integer minPubYear,
-            @RequestParam(required = false) Integer maxPubYear,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) Double minRating,
-            @RequestParam(required = false) Double maxRating,
+            @ModelAttribute BookFilterRequest filter,
             Authentication authentication) {
         try {
-            Page<BookDTO> filteredBooks = bookService.filterBooks(
-                    language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, page, size,minRating,maxRating,callerRole(authentication));
+            Page<BookDTO> filteredBooks = bookService.filterBooks(filter, callerRole(authentication));
             return ResponseEntity.ok(filteredBooks);
         } catch (IllegalArgumentException e) {
-            // 400 als de filter combinatie Fongeldig is
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (DataAccessException e) {
-            // 500 als de error op database niveau is
             return new ResponseEntity<>("An error occurred during filtering.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

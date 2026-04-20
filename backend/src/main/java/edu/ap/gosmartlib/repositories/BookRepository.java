@@ -90,6 +90,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
             AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
             AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
             AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
+            AND (:minRating IS NULL OR COALESCE(b.rating, 0) >= :minRating)
+            AND (:maxRating IS NULL OR COALESCE(b.rating, 0) <= :maxRating)
             AND (:includeDidactic = true OR b.didacticTag = false)
             """, countQuery = """
             SELECT COUNT(DISTINCT b) FROM BookEntity b
