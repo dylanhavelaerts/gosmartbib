@@ -11,15 +11,9 @@
 
 /* ── Sidebar ── */
 .filterSidebar {
-  width: 0;
-  overflow: hidden;
-  transition: width 0.25s ease;
-  background: white;
-  flex-shrink: 0;
-}
-
-.filterSidebar.open {
   width: 260px;
+  overflow-y: auto;
+  flex-shrink: 0;
   border-right: 1px solid #ddd;
 }
 
@@ -360,26 +354,86 @@ main ul li.active {
   border-radius: 4px;
   padding: 0.5rem;
 }
+.filterRatingGroup {
+  margin: 0.6rem 0 0.8rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgba(142, 36, 70, 0.25);
+  border-radius: 6px;
+  background: #fff;
+}
 
+.filterRatingTitle {
+  margin: 0 0 0.35rem;
+  font-size: 13px;
+  color: #8e2446;
+  font-weight: 600;
+}
+
+.filterRatingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.filterRatingValue {
+  display: inline-block;
+  margin-top: 0.3rem;
+  font-size: 12px;
+  color: #666;
+}
+
+.filterRatingClear {
+  border: 1px solid #8e2446;
+  background: white;
+  color: #8e2446;
+  border-radius: 4px;
+  padding: 0.2rem 0.45rem;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filterRatingClear:hover {
+  background: rgba(142, 36, 70, 0.08);
+}
+
+.filterRatingGroup .stars {
+  display: flex;
+  gap: 2px;
+}
+
+.filterRatingGroup .star {
+  font-size: 20px;
+  color: #ddd;
+  line-height: 1;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.filterRatingGroup .star.filled {
+  color: #8e2446;
+}
+
+.filterRatingGroup .star.interactive {
+  cursor: pointer;
+}
+
+.filterRatingGroup .star.interactive:hover {
+  transform: scale(1.1);
+}
 /* ── Mobile sidebar ── */
 @media (max-width: 768px) {
-  .filterSidebar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: 0;
-    border-right: none;
-    border-top: 1px solid #ddd;
-    border-radius: 12px 12px 0 0;
-    z-index: 100;
-    transition: height 0.25s ease;
-    overflow-y: auto;
+  .pageLayout {
+    flex-direction: column;
   }
 
-  .filterSidebar.open {
-    height: 75vh;
+  .filterSidebar {
     width: 100%;
+    max-height: none;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0;
+    position: static;
+    overflow: visible;
   }
 }

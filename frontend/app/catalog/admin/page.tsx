@@ -31,6 +31,8 @@ export default function Home() {
   const [maxPages, setMaxPages] = useState("");
   const [minYear, setMinYear] = useState("");
   const [maxYear, setMaxYear] = useState("");
+  const [minRating, setMinRating] = useState<number | null>(null);
+  const [maxRating, setMaxRating] = useState<number | null>(null);
 
   // UI state
   const [activeTab, setActiveTab] = useState("Boeken selecteren");
@@ -77,7 +79,9 @@ export default function Home() {
       minPages ||
       maxPages ||
       minYear ||
-      maxYear;
+      maxYear ||
+      minRating !== null ||
+      maxRating !== null;
 
     let url: string;
 
@@ -92,6 +96,8 @@ export default function Home() {
       if (maxPages) params.append("maxPageCount", maxPages);
       if (minYear) params.append("minPubYear", minYear);
       if (maxYear) params.append("maxPubYear", maxYear);
+      if (minRating !== null) params.append("minRating", minRating.toString());
+      if (maxRating !== null) params.append("maxRating", maxRating.toString());
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/filter?${params}`;
     } else {
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/all?${params}`;
@@ -120,6 +126,8 @@ export default function Home() {
     query,
     currentPage,
     pageSize,
+    minRating,
+    maxRating,
   ]);
 
   // -- Helper methods --------------------------------------------------------------------------------------------------------------

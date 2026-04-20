@@ -7,6 +7,7 @@ import BookCard from "./bookCard";
 import Pagination from "./pagination";
 import "./bookList.css";
 import { useAuth } from "../context/AuthContext";
+import StarRating from "../components/reviewsection/StarRating";
 
 export default function Home() {
   // -- States ------------------------------------------------------------------------------------------------------------------------------
@@ -29,11 +30,12 @@ export default function Home() {
   const [maxPages, setMaxPages] = useState("");
   const [minYear, setMinYear] = useState("");
   const [maxYear, setMaxYear] = useState("");
+  const [minRating, setMinRating] = useState<number | null>(null);
+  const [maxRating, setMaxRating] = useState<number | null>(null);
 
   // UI state
   const [activeTab, setActiveTab] = useState("Catalogus");
   const [categoryOpen, setCategoryOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [labelOpen, setLabelOpen] = useState(false);
 
   const searchParams = useSearchParams();
@@ -75,7 +77,9 @@ export default function Home() {
       minPages ||
       maxPages ||
       minYear ||
-      maxYear;
+      maxYear ||
+      minRating !== null ||
+      maxRating !== null;
 
     let url: string;
 
@@ -90,6 +94,8 @@ export default function Home() {
       if (maxPages) params.append("maxPageCount", maxPages);
       if (minYear) params.append("minPubYear", minYear);
       if (maxYear) params.append("maxPubYear", maxYear);
+      if (minRating !== null) params.append("minRating", minRating.toString());
+      if (maxRating !== null) params.append("maxRating", maxRating.toString());
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/filter?${params}`;
     } else {
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/all?${params}`;
@@ -118,6 +124,8 @@ export default function Home() {
     query,
     currentPage,
     pageSize,
+    minRating,
+    maxRating,
   ]);
 
   // -- Helper methods --------------------------------------------------------------------------------------------------------------
@@ -154,16 +162,10 @@ export default function Home() {
 
   return (
     <main className="pageLayout">
-      {/* Sidebar overlay (gsm) */}
-      {sidebarOpen && (
-        <div className="sidebarOverlay" onClick={() => setSidebarOpen(false)} />
-      )}
-
       {/* Filter bar */}
-      <aside className={`filterSidebar ${sidebarOpen ? "open" : ""}`}>
+      <aside className="filterSidebar">
         <div className="sidebarHeader">
           <span>Filters</span>
-          <button onClick={() => setSidebarOpen(false)}>✕</button>
         </div>
 
         <div className="filterBar">
@@ -271,6 +273,57 @@ export default function Home() {
             }}
             className="filterInput"
           />
+          <div className="filterRatingGroup">
+            <p className="filterRatingTitle">Minimum score</p>
+            <div className="filterRatingRow">
+              <StarRating
+                value={minRating ?? 0}
+                onChange={(v) => {
+                  setMinRating(v);
+                  setCurrentPage(1);
+                }}
+              />
+              <button
+                type="button"
+                className="filterRatingClear"
+                onClick={() => {
+                  setMinRating(null);
+                  setCurrentPage(1);
+                }}
+              >
+                Reset
+              </button>
+            </div>
+            <span className="filterRatingValue">
+              {minRating !== null ? `${minRating}/5` : "Geen minimum"}
+            </span>
+          </div>
+
+          <div className="filterRatingGroup">
+            <p className="filterRatingTitle">Maximum score</p>
+            <div className="filterRatingRow">
+              <StarRating
+                value={maxRating ?? 0}
+                onChange={(v) => {
+                  setMaxRating(v);
+                  setCurrentPage(1);
+                }}
+              />
+              <button
+                type="button"
+                className="filterRatingClear"
+                onClick={() => {
+                  setMaxRating(null);
+                  setCurrentPage(1);
+                }}
+              >
+                Reset
+              </button>
+            </div>
+            <span className="filterRatingValue">
+              {maxRating !== null ? `${maxRating}/5` : "Geen maximum"}
+            </span>
+          </div>
         </div>
       </aside>
 
@@ -294,7 +347,6 @@ export default function Home() {
 
         {/* Tab bar */}
         <ul>
-          <li onClick={() => setSidebarOpen(true)}>☰</li>
           <li
             className={activeTab === "Catalogus" ? "active" : ""}
             onClick={() => setActiveTab("Catalogus")}
