@@ -46,6 +46,46 @@ main h1 {
 .saveButton {
   padding: 0;
 }
+.adminPageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.adminPrimaryLink {
+  text-decoration: none;
+}
+
+.adminPrimaryButton {
+  background-color: #8e2446;
+  color: white;
+  border: 1.5px solid #8e2446;
+  border-radius: 10px;
+  padding: 0.85rem 1.4rem;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+  box-shadow: 0 4px 10px rgba(142, 36, 70, 0.16);
+}
+
+.adminPrimaryButton:hover {
+  background-color: #6e1a35;
+  border-color: #6e1a35;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(142, 36, 70, 0.22);
+}
+
+.adminPrimaryButton:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(142, 36, 70, 0.16);
+}
 
 @media (min-width: 770px) {
   .fullScreen {

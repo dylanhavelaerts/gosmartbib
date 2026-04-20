@@ -2,6 +2,7 @@
 
 import type { MeResponse, AdminUser, UserRole } from "@/app/interfaces/user";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import "./userAdmin.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -199,7 +200,13 @@ export default function AdminUserPage() {
 
       {!error && me?.role === "ADMIN" && (
         <div>
-          <h1>Gebruikersbeheer {me?.school?.name}</h1>
+          <div className="adminPageHeader">
+            <h1>Gebruikersbeheer {me?.school?.name}</h1>
+
+            <Link href="/admin/school-integration" className="adminPrimaryLink">
+              <button className="adminPrimaryButton">Schoolintegratie</button>
+            </Link>
+          </div>
 
           <table className="adminTable">
             <thead>
