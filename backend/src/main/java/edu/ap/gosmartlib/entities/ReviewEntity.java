@@ -50,4 +50,13 @@ public class ReviewEntity {
 
     @Column(name = "flagged_by_uids", columnDefinition = "TEXT")
     private String flaggedByUids;
+
+    @Column(name = "flag_details", columnDefinition = "TEXT")
+    private String flagDetails;
+
+    @Column(name = "admin_delete_note", columnDefinition = "TEXT")
+    private String adminDeleteNote;
+
+    @Column(name = "is_admin_deleted", nullable = false)
+    private boolean adminDeleted = false;
 }

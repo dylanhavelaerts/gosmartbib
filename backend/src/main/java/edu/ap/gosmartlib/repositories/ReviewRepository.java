@@ -14,6 +14,8 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
 
     List<ReviewEntity> findByUser_SmartschoolUid(String smartschoolUid);
 
+    List<ReviewEntity> findByUser_School_Id(Long schoolId);
+
     List<ReviewEntity> findByStatus(ReviewStatus status);
 
     boolean existsByUser_SmartschoolUidAndBook_Isbn(String smartschoolUid, String isbn);
