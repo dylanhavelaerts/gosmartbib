@@ -347,12 +347,6 @@ export default function Home() {
 
         {/* Tab bar */}
         <ul>
-          <li
-            className={activeTab === "Catalogus" ? "active" : ""}
-            onClick={() => setActiveTab("Catalogus")}
-          >
-            Catalogus
-          </li>
           {(user?.role === "TEACHER" ||
             user?.role === "BIBLIOTHEEKBEHEERDER" ||
             user?.role === "ADMIN") && (
