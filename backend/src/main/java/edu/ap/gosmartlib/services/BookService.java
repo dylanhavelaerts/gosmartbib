@@ -205,6 +205,7 @@ public class BookService {
         return bookRepository
                 .filterBooks(
                         canSeeDidactic(callerRoles),
+                        request.query(),
                         request.language(),
                         request.categories(),
                         request.labels(),

@@ -83,10 +83,8 @@ export default function Home() {
 
     let url: string;
 
-    if (isSearching) {
-      params.append("query", query.trim());
-      url = `${process.env.NEXT_PUBLIC_API_URL}/books/search?${params}`;
-    } else if (hasFilters) {
+    if (isSearching || hasFilters) {
+      if (isSearching) params.append("query", query.trim());
       if (language) params.append("language", language);
       categories.forEach((cat) => params.append("categories", cat));
       labels.forEach((label) => params.append("labels", label));

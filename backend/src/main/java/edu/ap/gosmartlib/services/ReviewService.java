@@ -145,6 +145,7 @@ public class ReviewService {
             applyAutomaticModeration(review);
 
             ReviewEntity toSave = reviewRepository.save(review);
+            refreshBookRating(book);
             return toSummaryDTO(toSave);
 
         } catch (OutOfBoundsException e) {
@@ -191,6 +192,7 @@ public class ReviewService {
             applyAutomaticModeration(review);
 
             ReviewEntity savedReview = reviewRepository.save(review);
+            refreshBookRating(review.getBook());
             return toSummaryDTO(savedReview);
         } catch (OutOfBoundsException e) {
             throw e;
@@ -216,7 +218,6 @@ public class ReviewService {
 
             BookEntity book = review.getBook();
             reviewRepository.delete(review);
-            // Herberekent de boekrating op basis van enkel goedgekeurde reviews, zodat filters en toplijsten altijd correcte scores tonen.
             refreshBookRating(book);
         } catch (EntityNotFoundException e) {
             throw e;
@@ -231,8 +232,8 @@ public class ReviewService {
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
             BookEntity book = review.getBook();
             reviewRepository.delete(review);
-            // Herberekent de boekrating op basis van enkel goedgekeurde reviews, zodat filters en toplijsten altijd correcte scores tonen.
             refreshBookRating(book);
+
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -293,6 +294,7 @@ public class ReviewService {
             }
 
             reviewRepository.save(review);
+            refreshBookRating(review.getBook());
         } catch (Exception e) {
             if (e instanceof EntityNotFoundException || e instanceof ResponseStatusException) {
                 throw e;
@@ -310,8 +312,8 @@ public class ReviewService {
             review.setAdminDeleteNote(null);
             review.setAdminDeleted(false);
             reviewRepository.save(review);
-            // Herberekent de boekrating op basis van enkel goedgekeurde reviews, zodat filters en toplijsten altijd correcte scores tonen.
             refreshBookRating(review.getBook());
+
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -328,7 +330,6 @@ public class ReviewService {
             review.setAdminDeleteNote(null);
             review.setAdminDeleted(false);
             reviewRepository.save(review);
-            // Herberekent de boekrating op basis van enkel goedgekeurde reviews, zodat filters en toplijsten altijd correcte scores tonen.
             refreshBookRating(review.getBook());
         } catch (EntityNotFoundException e) {
             throw e;
@@ -348,12 +349,22 @@ public class ReviewService {
             review.setAdminDeleteNote(cleanedReason.isBlank() ? null : cleanedReason);
             review.setAdminDeleted(true);
             reviewRepository.save(review);
+            refreshBookRating(review.getBook());
         } catch (Exception e) {
             if (e instanceof EntityNotFoundException || e instanceof ResponseStatusException) {
                 throw e;
             }
             throw new RuntimeException("Er is iets fout gegaan tijdens admin delete", e);
         }
+    }
+    private void refreshBookRating(BookEntity book) {
+        if (book == null || book.getId() == null) {
+            return;
+        }
+
+        Double averageRating = reviewRepository.findAverageApprovedRatingByBookId(book.getId());
+        book.setRating(averageRating != null ? averageRating : 0.0);
+        bookRepository.save(book);
     }
 //endregion
 

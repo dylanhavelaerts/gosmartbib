@@ -2,7 +2,8 @@ package edu.ap.gosmartlib.dto;
 
 import java.util.List;
 
-public record BookFilterRequest(String language,
+public record BookFilterRequest(String query,
+                                String language,
                                 List<String> categories,
                                 List<String> labels,
                                 Integer minPageCount,

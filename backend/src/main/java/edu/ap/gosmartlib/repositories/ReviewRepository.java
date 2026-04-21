@@ -18,7 +18,14 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
 
     List<ReviewEntity> findByStatus(ReviewStatus status);
 
-    List<ReviewEntity> findByBook_IsbnAndReviewStatus(String isbn, ReviewStatus reviewStatus);
+    @Query("""
+    SELECT COALESCE(AVG(r.rating), 0)
+    FROM ReviewEntity r
+    WHERE r.book.id = :bookId
+      AND r.reviewStatus = edu.ap.gosmartlib.util.ReviewStatus.APPROVED
+      AND r.adminDeleted = false
+    """)
+    Double findAverageApprovedRatingByBookId(@Param("bookId") Long bookId);
 
     boolean existsByUser_SmartschoolUidAndBook_Isbn(String smartschoolUid, String isbn);
 
