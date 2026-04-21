@@ -14,6 +14,8 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
 
     List<ReviewEntity> findByUser_SmartschoolUid(String smartschoolUid);
 
+    List<ReviewEntity> findByUser_School_Id(Long schoolId);
+
     List<ReviewEntity> findByStatus(ReviewStatus status);
 
     List<ReviewEntity> findByBook_IsbnAndReviewStatus(String isbn, ReviewStatus reviewStatus);

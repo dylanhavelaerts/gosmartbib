@@ -1,5 +1,6 @@
 "use client";
 
+import { type KeyboardEvent, useState } from "react";
 import StarRating from "./StarRating";
 import type { ReviewSummary } from "./reviewTypes";
 
@@ -30,6 +31,8 @@ export default function ReviewCard({
   isDeleteConfirmOpen,
   isDeleting,
 }: ReviewCardProps) {
+  const [isSpoilerRevealed, setIsSpoilerRevealed] = useState(false);
+
   const formattedDate = new Date(review.reviewDate).toLocaleDateString(
     "nl-BE",
     {
@@ -45,6 +48,25 @@ export default function ReviewCard({
     LIBRARIAN: "Bibliothecaris",
   };
 
+  const isSpoilerHidden = review.spoiler && !isSpoilerRevealed;
+
+  function toggleSpoilerText() {
+    if (!review.spoiler) {
+      return;
+    }
+    setIsSpoilerRevealed((current) => !current);
+  }
+
+  function handleSpoilerKeyDown(event: KeyboardEvent<HTMLParagraphElement>) {
+    if (!review.spoiler) {
+      return;
+    }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleSpoilerText();
+    }
+  }
+
   return (
     <div className="reviewCard">
       <div className="reviewCardHeader">
@@ -56,7 +78,26 @@ export default function ReviewCard({
         </div>
         <StarRating value={review.rating} />
       </div>
-      {review.text && <p className="reviewText">{review.text}</p>}
+      {review.text && (
+        <p
+          className={`reviewText ${review.spoiler ? "reviewTextSpoiler" : ""} ${
+            isSpoilerHidden ? "reviewTextSpoilerHidden" : ""
+          }`}
+          onClick={toggleSpoilerText}
+          onKeyDown={handleSpoilerKeyDown}
+          role={review.spoiler ? "button" : undefined}
+          tabIndex={review.spoiler ? 0 : undefined}
+          aria-label={
+            review.spoiler
+              ? isSpoilerHidden
+                ? "Toon spoiler review"
+                : "Verberg spoiler review"
+              : undefined
+          }
+        >
+          {isSpoilerHidden ? "Spoiler! klik om te tonen" : review.text}
+        </p>
+      )}
       <div className="reviewCardActions">
         {canEdit && (
           <button

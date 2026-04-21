@@ -10,6 +10,8 @@ public record ReviewSummaryDTO(
         UserRoles userRole,
         String text,
         LocalDate reviewDate,
-        float rating
+        float rating,
+        boolean spoiler,
+        String moderationNotice
 ) {
 }

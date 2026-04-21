@@ -5,11 +5,16 @@ import StarRating from "./StarRating";
 
 interface ReviewFormProps {
   isbn: string;
-  onSubmitted: () => void;
+  onSubmitted: (moderationNotice?: string) => void;
   mode?: "create" | "edit";
   reviewId?: number;
   initialText?: string;
   initialRating?: number;
+  initialSpoiler?: boolean;
+}
+
+interface SubmitReviewResponse {
+  moderationNotice?: string | null;
 }
 
 export default function ReviewForm({
@@ -19,17 +24,20 @@ export default function ReviewForm({
   reviewId,
   initialText = "",
   initialRating = 0,
+  initialSpoiler = false,
 }: ReviewFormProps) {
   const [rating, setRating] = useState(initialRating);
   const [text, setText] = useState(initialText);
+  const [spoiler, setSpoiler] = useState(initialSpoiler);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setText(initialText);
     setRating(initialRating);
+    setSpoiler(initialSpoiler);
     setError("");
-  }, [initialText, initialRating, mode, reviewId]);
+  }, [initialText, initialRating, initialSpoiler, mode, reviewId]);
 
   async function extractErrorMessage(res: Response): Promise<string> {
     try {
@@ -81,7 +89,7 @@ export default function ReviewForm({
         method: mode === "edit" ? "PATCH" : "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookIsbn: isbn, text, rating }),
+        body: JSON.stringify({ bookIsbn: isbn, text, rating, spoiler }),
       });
 
       if (!res.ok) {
@@ -89,9 +97,19 @@ export default function ReviewForm({
         return;
       }
 
+      let moderationNotice: string | undefined;
+      try {
+        const payload = (await res.json()) as SubmitReviewResponse;
+        const serverNotice = payload?.moderationNotice?.trim();
+        moderationNotice = serverNotice ? serverNotice : undefined;
+      } catch {
+        moderationNotice = undefined;
+      }
+
       setText("");
       setRating(0);
-      onSubmitted();
+      setSpoiler(false);
+      onSubmitted(moderationNotice);
     } catch {
       setError("Er liep iets fout. Probeer opnieuw.");
     } finally {
@@ -113,6 +131,14 @@ export default function ReviewForm({
         maxLength={255}
         rows={4}
       />
+      <label className="spoilerCheckboxRow">
+        <input
+          type="checkbox"
+          checked={spoiler}
+          onChange={(e) => setSpoiler(e.target.checked)}
+        />
+        <span>Markeer als spoiler</span>
+      </label>
       <div className="reviewFormFooter">
         <span className="charCount">{text.length}/255</span>
         {error && <span className="reviewError">{error}</span>}

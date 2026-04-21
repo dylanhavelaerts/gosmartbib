@@ -44,6 +44,17 @@
   gap: 0.75rem;
 }
 
+.reviewInfoNotice {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid rgba(142, 36, 70, 0.35);
+  background: rgba(142, 36, 70, 0.08);
+  color: #5c1d34;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
 .reviewFormTitle {
   font-size: 14px;
   font-weight: 600;
@@ -67,6 +78,22 @@
 
 .reviewTextArea:focus {
   border-color: #8e2446;
+}
+
+.spoilerCheckboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  font-size: 12px;
+  color: #5c1d34;
+  cursor: pointer;
+}
+
+.spoilerCheckboxRow input {
+  accent-color: #8e2446;
+  width: 14px;
+  height: 14px;
 }
 
 .reviewFormFooter {
@@ -182,6 +209,19 @@
   color: #333;
   line-height: 1.6;
   margin: 0;
+}
+
+.reviewTextSpoiler {
+  border-radius: 4px;
+  padding: 0.16rem 0.36rem;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.reviewTextSpoilerHidden {
+  background: rgb(51, 51, 51);
+  color: #ffffff !important;
+  opacity: 1;
 }
 
 .reviewCardActions {
@@ -417,4 +457,85 @@
 .reportSubmitBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 750px) {
+  .reviewSectionHeader {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.55rem;
+  }
+
+  .placeReview {
+    margin-left: auto;
+  }
+
+  .reviewForm {
+    padding: 0.8rem;
+  }
+
+  .reviewFormFooter {
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+  }
+
+  .charCount {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .submitReviewBtn {
+    margin-left: auto;
+  }
+
+  .reviewCard {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .reviewCardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .reviewCardActions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-top: 0.6rem;
+  }
+
+  .deleteConfirmRow {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .deleteConfirmText {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .reportModalBox {
+    max-width: 320px;
+    padding: 0.85rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .reviewSectionTitle {
+    font-size: 0.95rem;
+  }
+
+  .placeReview {
+    width: 100%;
+    text-align: center;
+  }
+
+  .reviewText {
+    font-size: 12px;
+  }
+
+  .submitReviewBtn {
+    width: 100%;
+    margin-left: 0;
+  }
 }

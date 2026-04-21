@@ -51,7 +51,7 @@ class ReviewServiceTest {
 
     @Test
     void givenValidRequest_whenSubmitReview_thenCreatesReviewWithDefaultState() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Strong recommendation", 4.5f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Strong recommendation", 4.5f, true);
         UserEntity user = buildUser(1L, "uid-1");
         BookEntity book = buildBook(10L, "9780000000001", "Domain-Driven Design");
 
@@ -73,6 +73,7 @@ class ReviewServiceTest {
         assertEquals(UserRoles.STUDENT, result.userRole());
         assertEquals("Strong recommendation", result.text());
         assertEquals(4.5f, result.rating());
+        assertEquals(true, result.spoiler());
 
         ArgumentCaptor<ReviewEntity> reviewCaptor = ArgumentCaptor.forClass(ReviewEntity.class);
         verify(reviewRepository, times(1)).save(reviewCaptor.capture());
@@ -82,11 +83,12 @@ class ReviewServiceTest {
         assertEquals(LocalDate.now(), saved.getReviewDate());
         assertEquals(ReviewStatus.AWAITING_MODERATION, saved.getReviewStatus());
         assertEquals(0, saved.getFlagCount());
+        assertEquals(true, saved.isSpoiler());
     }
 
     @Test
     void givenNullText_whenSubmitReview_thenStoresEmptyText() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", null, 3.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", null, 3.0f, false);
         UserEntity user = buildUser(1L, "uid-1");
         BookEntity book = buildBook(10L, "9780000000001", "Book");
 
@@ -104,7 +106,7 @@ class ReviewServiceTest {
     @Test
     void givenTooLongText_whenSubmitReview_thenThrowsOutOfBoundsException() {
         String tooLongText = "x".repeat(256);
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", tooLongText, 3.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", tooLongText, 3.0f, false);
 
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(buildUser(1L, "uid-1")));
         when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
@@ -116,7 +118,7 @@ class ReviewServiceTest {
 
     @Test
     void givenInvalidRating_whenSubmitReview_thenThrowsOutOfBoundsException() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 6.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 6.0f, false);
 
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(buildUser(1L, "uid-1")));
         when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
@@ -128,7 +130,7 @@ class ReviewServiceTest {
 
     @Test
     void givenAlreadyReviewedBook_whenSubmitReview_thenThrowsAlreadyReviewedException() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f, false);
 
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(buildUser(1L, "uid-1")));
         when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
@@ -140,7 +142,7 @@ class ReviewServiceTest {
 
     @Test
     void givenUserNotFound_whenSubmitReview_thenThrowsEntityNotFoundException() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f, false);
         when(userRepository.findBySmartschoolUid("uid-404")).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> reviewService.submitReview(request, "uid-404"));
@@ -149,7 +151,7 @@ class ReviewServiceTest {
 
     @Test
     void givenOwnerAndValidUpdate_whenEditReview_thenUpdatesAndSavesReview() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Updated review", 2.5f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Updated review", 2.5f, true);
         ReviewEntity existing = buildReview(50L, buildUser(1L, "uid-1"), buildBook(10L, "9780000000001", "Book"));
         existing.setReviewStatus(ReviewStatus.APPROVED);
 
@@ -159,13 +161,14 @@ class ReviewServiceTest {
 
         assertEquals("Updated review", existing.getText());
         assertEquals(2.5f, existing.getRating());
+        assertEquals(true, existing.isSpoiler());
         assertEquals(ReviewStatus.AWAITING_MODERATION, existing.getReviewStatus());
         verify(reviewRepository, times(1)).save(existing);
     }
 
     @Test
     void givenNullText_whenEditReview_thenStoresEmptyText() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", null, 4.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", null, 4.0f, false);
         ReviewEntity existing = buildReview(51L, buildUser(1L, "uid-1"), buildBook(10L, "9780000000001", "Book"));
 
         when(reviewRepository.findById(51L)).thenReturn(Optional.of(existing));
@@ -178,7 +181,7 @@ class ReviewServiceTest {
 
     @Test
     void givenReviewNotFound_whenEditReview_thenThrowsEntityNotFoundException() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f, false);
         when(reviewRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> reviewService.editReview(999L, request, "uid-1"));
@@ -187,7 +190,7 @@ class ReviewServiceTest {
 
     @Test
     void givenDifferentOwner_whenEditReview_thenThrowsSecurityException() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f, false);
         ReviewEntity existing = buildReview(60L, buildUser(1L, "owner-uid"), buildBook(10L, "9780000000001", "Book"));
 
         when(reviewRepository.findById(60L)).thenReturn(Optional.of(existing));
@@ -200,7 +203,7 @@ class ReviewServiceTest {
 
     @Test
     void givenInvalidRating_whenEditReview_thenThrowsOutOfBoundsException() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Updated", 6.0f);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Updated", 6.0f, false);
         ReviewEntity existing = buildReview(61L, buildUser(1L, "uid-1"), buildBook(10L, "9780000000001", "Book"));
 
         when(reviewRepository.findById(61L)).thenReturn(Optional.of(existing));

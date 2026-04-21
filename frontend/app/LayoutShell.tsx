@@ -50,6 +50,12 @@ export default function LayoutShell({
           </Link>
         )}
 
+        {user?.role === "BIBLIOTHEEKBEHEERDER" && (
+          <Link href="/admin/reviews">
+            <button>Reviewbeheer</button>
+          </Link>
+        )}
+
         <MockRoleSwitcher />
       </nav>
 
