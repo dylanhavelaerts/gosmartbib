@@ -137,7 +137,7 @@ public class ReviewService {
             review.setSpoiler(request.spoiler());
 
             review.setReviewDate(LocalDate.now());
-            review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
+            review.setReviewStatus(ReviewStatus.APPROVED);
             review.setFlagCount(0);
             review.setAdminDeleteNote(null);
             review.setAdminDeleted(false);
@@ -184,7 +184,7 @@ public class ReviewService {
 
             review.setRating(request.rating());
             review.setSpoiler(request.spoiler());
-            review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
+            review.setReviewStatus(ReviewStatus.APPROVED);
             review.setAdminDeleteNote(null);
             review.setAdminDeleted(false);
 
