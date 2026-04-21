@@ -20,8 +20,10 @@ export function proxy(request: NextRequest) {
   }
 
   const hasSession = request.cookies.has("JSESSIONID");
+  const isAuthenticated =
+    request.cookies.get("AUTHENTICATED")?.value === "true";
 
-  if (!hasSession) {
+  if (!hasSession || !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
