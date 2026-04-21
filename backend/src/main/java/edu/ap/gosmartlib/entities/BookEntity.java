@@ -80,7 +80,10 @@ public class BookEntity {
     @Column(nullable = true)
     private String ageRange;
 
-    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true, fetch =  FetchType.LAZY)
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<BookInventoryEntity> inventories = new ArrayList<>();
+
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ReviewEntity> reviews = new ArrayList<>();
 
     public BookEntity(String title, List<String> authors, String publisher, String description, int pageCount,
