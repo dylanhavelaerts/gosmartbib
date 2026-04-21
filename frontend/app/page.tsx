@@ -112,7 +112,7 @@ export default function Home() {
               )
             }
           >
-            Bekijk Catalogus →
+            Bekijk catalogus →
           </button>
         </div>
         <div id="dashboard">

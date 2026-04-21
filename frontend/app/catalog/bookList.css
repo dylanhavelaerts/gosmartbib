@@ -111,7 +111,7 @@
 /* ── Tab bar ── */
 .catalogHeader h1 {
   font-size: clamp(20px, 1.5vw, 24px);
-  color: #c0392b;
+  color: #8e2446;
   font-weight: 600;
   padding: clamp(8px, 2vw, 16px);
   margin: 0;
@@ -135,7 +135,7 @@
 }
 .catalogAdminPage h1 {
   font-size: clamp(20px, 1.5vw, 24px);
-  color: #c0392b;
+  color: #8e2446;
   font-weight: 600;
   padding: clamp(8px, 2vw, 16px);
   margin: 0;

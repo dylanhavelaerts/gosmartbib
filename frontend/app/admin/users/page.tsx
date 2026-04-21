@@ -8,10 +8,10 @@ import "./userAdmin.css";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
-  { value: "STUDENT", label: "STUDENT" },
+  { value: "STUDENT", label: "LEERLING" },
   { value: "TEACHER", label: "LEERKRACHT" },
   { value: "BIBLIOTHEEKBEHEERDER", label: "BEHEERDER" },
-  { value: "ADMIN", label: "ADMIN" },
+  { value: "ADMIN", label: "ADMINISTRATOR" },
 ];
 
 type DisplayNamesResponse = {
@@ -30,9 +30,9 @@ const replaceRoleName = (role: string): string => {
     case "TEACHER":
       return "LEERKRACHT";
     case "STUDENT":
-      return "STUDENT";
+      return "LEERLING";
     case "ADMIN":
-      return "ADMIN";
+      return "ADMINISTRATOR";
     default:
       return "-";
   }
