@@ -523,6 +523,48 @@ class ReviewServiceTest {
         assertEquals(0, result.size());
     }
 
+    @Test
+    void givenOwnAwaitingReview_whenFindAllSummaryReviewsByBook_thenIncludesOwnReview() {
+        ReviewEntity ownReview = buildReview(107L, buildUser(2L, "viewer-uid"), buildBook(12L, "978002", "Book"));
+        ownReview.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
+        ownReview.setText("Mijn wachtende review");
+
+        when(reviewRepository.findByBook_Isbn("978002")).thenReturn(List.of(ownReview));
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("viewer-uid", "Ikzelf"),
+                        List.of(),
+                        "ok"));
+
+        List<ReviewSummaryDTO> result = reviewService.findAllSummaryReviewsByBook("978002", "viewer-uid");
+
+        assertEquals(1, result.size());
+        assertEquals(107L, result.get(0).id());
+    }
+
+    @Test
+    void givenOtherUsersAwaitingReview_whenFindAllSummaryReviewsByBook_thenKeepsHiddenForViewer() {
+        ReviewEntity otherReview = buildReview(108L, buildUser(3L, "other-uid"), buildBook(13L, "978003", "Book"));
+        otherReview.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
+
+        when(reviewRepository.findByBook_Isbn("978003")).thenReturn(List.of(otherReview));
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("other-uid", "Andere gebruiker"),
+                        List.of(),
+                        "ok"));
+
+        List<ReviewSummaryDTO> result = reviewService.findAllSummaryReviewsByBook("978003", "viewer-uid");
+
+        assertEquals(0, result.size());
+    }
+
     private UserEntity buildUser(Long id, String smartschoolUid) {
         UserEntity user = new UserEntity();
         user.setId(id);

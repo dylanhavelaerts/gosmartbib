@@ -45,8 +45,8 @@ export default function ReviewCard({
   const roleLabel: Record<string, string> = {
     STUDENT: "leerling",
     TEACHER: "Leerkracht",
-    LIBRARIAN: "Bibliothecaris",
-    ADMIN: "admin"
+    BIBLIOTHEEKBEHEERDER: "Bibliothecaris",
+    ADMIN: "admin",
   };
 
   const isSpoilerHidden = review.spoiler && !isSpoilerRevealed;

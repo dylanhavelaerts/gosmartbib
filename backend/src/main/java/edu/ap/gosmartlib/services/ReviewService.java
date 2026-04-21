@@ -79,7 +79,9 @@ public class ReviewService {
 
         return reviews.stream()
                 .filter(review -> !isAdminDeleted(review))
-                .filter(review -> review.getReviewStatus() == ReviewStatus.APPROVED)
+            .filter(review -> review.getReviewStatus() == ReviewStatus.APPROVED
+                || (actorUid != null
+                    && actorUid.equals(review.getUser().getSmartschoolUid())))
                 .map(review -> toSummaryDTO(review, displayNames))
                 .toList();
     }
