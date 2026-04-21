@@ -1,9 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.dto.reviews.ReviewDetailDTO;
-import edu.ap.gosmartlib.dto.reviews.ReviewFlagRequestDTO;
-import edu.ap.gosmartlib.dto.reviews.ReviewRequestDTO;
-import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
+import edu.ap.gosmartlib.dto.reviews.*;
 import edu.ap.gosmartlib.services.ReviewService;
 import edu.ap.gosmartlib.util.ReviewFlagReason;
 import edu.ap.gosmartlib.util.ReviewStatus;
@@ -240,6 +237,81 @@ class ReviewControllerTest {
         assertNotNull(response);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(reviewService, times(1)).librarianDeleteReview(103L);
+    }
+
+    @Test
+    void givenModeratorPrincipal_whenGetModerationReviews_thenReturnsOkWithBody() {
+        when(principal.getAttribute("userID")).thenReturn("moderator-uid");
+        List<ReviewDetailDTO> expected = List.of(buildDetail(10L, "Student", "97801", "Book X", ReviewStatus.AWAITING_MODERATION));
+        when(reviewService.findAllSchoolReviewsForModerator("moderator-uid")).thenReturn(expected);
+
+        ResponseEntity<List<ReviewDetailDTO>> response = reviewController.getModerationReviews(principal);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expected, response.getBody());
+        verify(reviewService).findAllSchoolReviewsForModerator("moderator-uid");
+    }
+
+    @Test
+    void givenReviewIdAndReason_whenAdminDeleteReview_thenReturnsNoContent() {
+        AdminDeleteReviewRequestDTO request = new AdminDeleteReviewRequestDTO("Ongepaste taal");
+
+        ResponseEntity<Void> response = reviewController.adminDeleteReview(50L, request);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(reviewService).adminDeleteReview(50L, "Ongepaste taal");
+    }
+
+    @Test
+    void givenLibrarianPrincipal_whenUserDeleteReview_thenDelegatesWithModeratorDeleteAccess() {
+        when(principal.getAttribute("userID")).thenReturn("bib-uid");
+        Collection<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"));
+        doReturn(authorities).when(authentication).getAuthorities();
+
+        ResponseEntity<Void> response = reviewController.userDeleteReview(12L, principal, authentication);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(reviewService).userDeleteReview(12L, "bib-uid", true);
+    }
+
+    @Test
+    void givenNullAuthentication_whenUserDeleteReview_thenCallsServiceWithFalseModeratorAccess() {
+        when(principal.getAttribute("userID")).thenReturn("user-uid");
+
+        ResponseEntity<Void> response = reviewController.userDeleteReview(13L, principal, null);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(reviewService).userDeleteReview(13L, "user-uid", false);
+    }
+
+    @Test
+    void givenPrincipalWithEmptyUserId_whenExtractUid_thenThrowsUnauthorized() {
+        when(principal.getAttribute("userID")).thenReturn("   ");
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> reviewController.getAllReviews(principal));
+
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
+        assertEquals("Geen geldige gebruiker", exception.getReason());
+    }
+
+    @Test
+    void givenNullPrincipal_whenExtractUidOrNull_thenReturnsNull() {
+        ResponseEntity<List<ReviewSummaryDTO>> response = reviewController.getReviewsByBook("97801", null);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(reviewService).findAllSummaryReviewsByBook("97801", null);
+    }
+
+    @Test
+    void givenAuthenticationWithoutAuthorities_whenUserDeleteReview_thenCallsServiceWithFalseModeratorAccess() {
+        when(principal.getAttribute("userID")).thenReturn("user-uid");
+        when(authentication.getAuthorities()).thenReturn(null);
+
+        ResponseEntity<Void> response = reviewController.userDeleteReview(14L, principal, authentication);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(reviewService).userDeleteReview(14L, "user-uid", false);
     }
 
     private ReviewSummaryDTO buildSummary(Long id, String reviewerName, String text, float rating) {
