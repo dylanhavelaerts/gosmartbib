@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.security.mocksecurity;
 
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -65,6 +66,12 @@ public class LocalAuthController {
 
         // Slaag de security contet in de sessie zodat het blijft na een reload
         securityContextRepository.saveContext(SecurityContextHolder.getContext(), request, response);
+
+        Cookie authenticatedCookie = new Cookie("AUTHENTICATED", "true");
+        authenticatedCookie.setPath("/");
+        authenticatedCookie.setHttpOnly(true);
+        authenticatedCookie.setSecure(request.isSecure());
+        response.addCookie(authenticatedCookie);
 
         userService.syncUser(mockUser);
 
