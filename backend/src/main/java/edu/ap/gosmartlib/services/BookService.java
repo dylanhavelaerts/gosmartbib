@@ -1,16 +1,21 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.BookDTO;
+import edu.ap.gosmartlib.dto.BookInventoryDTO;
+import edu.ap.gosmartlib.dto.CreateBookInventoryRequestDTO;
 import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
 import edu.ap.gosmartlib.entities.BookEntity;
+import edu.ap.gosmartlib.entities.BookInventoryEntity;
 import edu.ap.gosmartlib.entities.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.exceptions.NegativeValueException;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
 
@@ -37,7 +42,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.time.Year;
 import java.util.ArrayList;
-
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -47,6 +52,7 @@ public class BookService {
     private final BookRepository bookRepository;
     private final RestTemplate restTemplate;
     private final UserRepository userRepository;
+    private final SchoolRepository schoolRepository;
 
     @Value("${google.books.api.url}")
     private String googleBooksApiUrl;
@@ -64,7 +70,7 @@ public class BookService {
                 .map(this::toDTO);
     }
 
-    public List<BookDTO> getAllBooksUnpaged(UserRoles  callerRoles) {
+    public List<BookDTO> getAllBooksUnpaged(UserRoles callerRoles) {
         boolean includeDidactic = canSeeDidactic(callerRoles);
         return bookRepository.findAll()
                 .stream()
@@ -75,11 +81,16 @@ public class BookService {
 
     public BookDTO searchBookByIsbn(String isbn) {
         BookEntity previewBook = buildBookEntityFromGoogle(isbn);
+        previewBook.setInventories(new ArrayList<>());
+        previewBook.setTotalCopies(0);
+        previewBook.setAvailableCopies(0);
         return toDTO(previewBook);
     }
 
-    public BookDTO addBookByIsbn(String isbn) {
+    public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus) {
         BookEntity newBook = buildBookEntityFromGoogle(isbn);
+        applySingleInventoryForCurrentUser(newBook, smartschoolUid, campus, 1, 1);
+        recomputeBookCopyTotals(newBook);
         BookEntity savedBook = bookRepository.save(newBook);
         return toDTO(savedBook);
     }
@@ -132,8 +143,11 @@ public class BookService {
     /**
      * Zoekt boeken op basis van een zoekterm. Er wordt gezocht in zowel de titel
      * als de auteurs van het boek.
-     * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle boeken teruggegeven.
-     * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar DTO's.
+     * 
+     * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle
+     *              boeken teruggegeven.
+     * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar
+     *         DTO's.
      */
     public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size, UserRoles callerRoles) {
         if (page < 0 || size <= 0)
@@ -145,7 +159,8 @@ public class BookService {
             return bookRepository.findAllFiltered(canSeeDidactic(callerRoles), pageable).map(this::toDTO);
         }
 
-        return bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), canSeeDidactic(callerRoles), pageable).map(this::toDTO);
+        return bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), canSeeDidactic(callerRoles), pageable)
+                .map(this::toDTO);
     }
 
     public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole) {
@@ -197,8 +212,8 @@ public class BookService {
     }
 
     public Page<BookDTO> filterBooks(String language, List<String> categories, List<String> labels,
-                                     Integer minPageCount,
-                                     Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size,UserRoles callerRoles) {
+            Integer minPageCount,
+            Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size, UserRoles callerRoles) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
@@ -211,11 +226,12 @@ public class BookService {
 
         Pageable pageable = PageRequest.of(page, size);
         return bookRepository
-                .filterBooks(canSeeDidactic(callerRoles),language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, pageable)
+                .filterBooks(canSeeDidactic(callerRoles), language, categories, labels, minPageCount, maxPageCount,
+                        minPubYear, maxPubYear, pageable)
                 .map(this::toDTO);
     }
 
-    public BulkImportResponseDTO importBooksFromExcel(MultipartFile file) {
+    public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid, String campus) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Upload een excel file die niet leeg is");
         }
@@ -266,6 +282,8 @@ public class BookService {
 
                 try {
                     BookEntity fetchedBook = buildBookEntityFromGoogle(isbn);
+                    applySingleInventoryForCurrentUser(fetchedBook, smartschoolUid, campus, 1, 1);
+                    recomputeBookCopyTotals(fetchedBook);
 
                     if (!titlesMatch(excelTitle, fetchedBook.getTitle())) {
                         mismatches.add(new ImportMismatchDTO(
@@ -321,19 +339,6 @@ public class BookService {
 
         if (updatedBook.publishedYear() != null && updatedBook.publishedYear() > Year.now().getValue())
             throw new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen");
-        if (updatedBook.totalCopies() != null && updatedBook.totalCopies() < 0)
-            throw new IllegalArgumentException("Totaal aantal exemplaren mag niet negatief zijn");
-
-        if (updatedBook.availableCopies() != null && updatedBook.availableCopies() < 0)
-            throw new IllegalArgumentException("Beschikbare exemplaren mogen niet negatief zijn");
-
-        int finalTotal = updatedBook.totalCopies() != null ? updatedBook.totalCopies() : book.getTotalCopies();
-        int finalAvailable = updatedBook.availableCopies() != null ? updatedBook.availableCopies()
-                : book.getAvailableCopies();
-
-        if (finalAvailable > finalTotal)
-            throw new IllegalArgumentException(
-                    "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren");
 
         if (updatedBook.isbn() != null && !updatedBook.isbn().equals(book.getIsbn())
                 && bookRepository.existsByIsbn(updatedBook.isbn())) {
@@ -369,19 +374,21 @@ public class BookService {
             book.setPublishedYear(updatedBook.publishedYear());
         if (updatedBook.didacticTag() != null)
             book.setDidacticTag(updatedBook.didacticTag());
-        if (updatedBook.availableCopies() != null)
-            book.setAvailableCopies(updatedBook.availableCopies());
-        if (updatedBook.totalCopies() != null)
-            book.setTotalCopies(updatedBook.totalCopies());
         if (updatedBook.readingLevel() != null)
             book.setReadingLevel(safeTrim(updatedBook.readingLevel()));
         if (updatedBook.ageRange() != null)
             book.setAgeRange(safeTrim(updatedBook.ageRange()));
 
+        if (updatedBook.inventories() != null) {
+            replaceInventoriesFromDto(book, updatedBook.inventories());
+        }
+
+        recomputeBookCopyTotals(book);
+
         return toDTO(bookRepository.save(book));
     }
 
-    public BookDTO addManualBook(CreateBookRequestDTO request) {
+    public BookDTO addManualBook(CreateBookRequestDTO request, String smartschoolUid) {
         if (request.title() == null || request.title().isBlank()) {
             throw new IllegalArgumentException("Titel is verplicht");
         }
@@ -407,6 +414,16 @@ public class BookService {
         // In dat geval, gewoon opnieuw indienen
         book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
 
+        if (request.inventories() != null && !request.inventories().isEmpty()) {
+            replaceInventoriesFromRequest(book, request.inventories(), smartschoolUid);
+        } else {
+            int totalCopies = request.totalCopies() != null ? request.totalCopies() : 1;
+            int availableCopies = request.availableCopies() != null ? request.availableCopies() : totalCopies;
+            applySingleInventoryForCurrentUser(book, smartschoolUid, null, totalCopies, availableCopies);
+        }
+
+        recomputeBookCopyTotals(book);
+
         BookEntity saved = bookRepository.saveAndFlush(book);
 
         // Reload zo dat de DB-gegenereerde ISBN in de response DTO zit
@@ -430,6 +447,19 @@ public class BookService {
                 ? new ArrayList<>()
                 : new ArrayList<>(book.getLabels());
 
+        List<BookInventoryDTO> inventories = book.getInventories() == null
+                ? new ArrayList<>()
+                : book.getInventories().stream()
+                        .sorted(Comparator
+                                .comparing(
+                                        (BookInventoryEntity inventory) -> inventory.getSchool().getName(),
+                                        Comparator.nullsLast(String::compareToIgnoreCase))
+                                .thenComparing(
+                                        BookInventoryEntity::getCampus,
+                                        Comparator.nullsLast(String::compareToIgnoreCase)))
+                        .map(this::toInventoryDTO)
+                        .toList();
+
         return new BookDTO(
                 book.getId(),
                 book.getTitle(),
@@ -448,7 +478,122 @@ public class BookService {
                 book.getReadingLevel(),
                 book.getTotalCopies(),
                 book.getAvailableCopies(),
-                book.getAgeRange());
+                book.getAgeRange(),
+                inventories);
+    }
+
+    private BookInventoryDTO toInventoryDTO(BookInventoryEntity inventory) {
+        return new BookInventoryDTO(
+                inventory.getId(),
+                inventory.getSchool().getId(),
+                inventory.getSchool().getName(),
+                normalizeCampus(inventory.getCampus()),
+                inventory.getTotalCopies(),
+                inventory.getAvailableCopies());
+    }
+
+    private void replaceInventoriesFromRequest(BookEntity book,
+            List<CreateBookInventoryRequestDTO> requestInventories,
+            String smartschoolUid) {
+        book.getInventories().clear();
+
+        for (CreateBookInventoryRequestDTO requestInventory : requestInventories) {
+            if (requestInventory == null) {
+                continue;
+            }
+
+            SchoolEntity school = requestInventory.schoolId() != null
+                    ? resolveSchoolById(requestInventory.schoolId())
+                    : resolveSchoolForUser(smartschoolUid);
+
+            String campus = normalizeCampus(requestInventory.campus());
+            int totalCopies = requestInventory.totalCopies() != null ? requestInventory.totalCopies() : 0;
+            int availableCopies = requestInventory.availableCopies() != null
+                    ? requestInventory.availableCopies()
+                    : totalCopies;
+
+            validateInventoryCounts(totalCopies, availableCopies);
+            addInventory(book, school, campus, totalCopies, availableCopies);
+        }
+    }
+
+    private void replaceInventoriesFromDto(BookEntity book, List<BookInventoryDTO> inventoryDTOs) {
+        book.getInventories().clear();
+
+        for (BookInventoryDTO inventoryDTO : inventoryDTOs) {
+            if (inventoryDTO == null) {
+                continue;
+            }
+
+            if (inventoryDTO.schoolId() == null) {
+                throw new IllegalArgumentException("Elke inventarisregel moet een schoolId hebben");
+            }
+
+            int totalCopies = inventoryDTO.totalCopies() != null ? inventoryDTO.totalCopies() : 0;
+            int availableCopies = inventoryDTO.availableCopies() != null ? inventoryDTO.availableCopies() : totalCopies;
+
+            validateInventoryCounts(totalCopies, availableCopies);
+            addInventory(book, resolveSchoolById(inventoryDTO.schoolId()), normalizeCampus(inventoryDTO.campus()),
+                    totalCopies, availableCopies);
+        }
+    }
+
+    private void applySingleInventoryForCurrentUser(BookEntity book,
+            String smartschoolUid,
+            String campus,
+            int totalCopies,
+            int availableCopies) {
+        validateInventoryCounts(totalCopies, availableCopies);
+        book.getInventories().clear();
+        addInventory(book, resolveSchoolForUser(smartschoolUid), normalizeCampus(campus), totalCopies, availableCopies);
+    }
+
+    private void addInventory(BookEntity book,
+            SchoolEntity school,
+            String campus,
+            int totalCopies,
+            int availableCopies) {
+        BookInventoryEntity inventory = new BookInventoryEntity();
+        inventory.setBook(book);
+        inventory.setSchool(school);
+        inventory.setCampus(campus);
+        inventory.setTotalCopies(totalCopies);
+        inventory.setAvailableCopies(availableCopies);
+        book.getInventories().add(inventory);
+    }
+
+    private void recomputeBookCopyTotals(BookEntity book) {
+        int totalCopies = book.getInventories() == null
+                ? 0
+                : book.getInventories().stream()
+                        .map(BookInventoryEntity::getTotalCopies)
+                        .filter(value -> value != null)
+                        .mapToInt(Integer::intValue)
+                        .sum();
+
+        int availableCopies = book.getInventories() == null
+                ? 0
+                : book.getInventories().stream()
+                        .map(BookInventoryEntity::getAvailableCopies)
+                        .filter(value -> value != null)
+                        .mapToInt(Integer::intValue)
+                        .sum();
+
+        book.setTotalCopies(totalCopies);
+        book.setAvailableCopies(availableCopies);
+    }
+
+    private void validateInventoryCounts(int totalCopies, int availableCopies) {
+        if (totalCopies < 0) {
+            throw new IllegalArgumentException("Totaal aantal exemplaren mag niet negatief zijn");
+        }
+        if (availableCopies < 0) {
+            throw new IllegalArgumentException("Beschikbare exemplaren mogen niet negatief zijn");
+        }
+        if (availableCopies > totalCopies) {
+            throw new IllegalArgumentException(
+                    "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren");
+        }
     }
 
     // Helper functies
@@ -492,6 +637,9 @@ public class BookService {
         book.setIsbn(isbn);
         book.setPublishedYear(extractYear(volumeInfo.getPublishedDate()));
         book.setSpotlight(false);
+        book.setInventories(new ArrayList<>());
+        book.setTotalCopies(0);
+        book.setAvailableCopies(0);
 
         return book;
     }
@@ -525,6 +673,31 @@ public class BookService {
 
     private String safeTrim(String value) {
         return value == null ? null : value.trim();
+    }
+
+    private String normalizeCampus(String campus) {
+        String trimmed = safeTrim(campus);
+        return trimmed == null ? "" : trimmed;
+    }
+
+    private SchoolEntity resolveSchoolForUser(String smartschoolUid) {
+        if (smartschoolUid == null || smartschoolUid.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "Je moet ingelogd zijn om een boek toe te voegen");
+        }
+
+        return userRepository.findBySmartschoolUid(smartschoolUid)
+                .map(UserEntity::getSchool)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Geen school gevonden voor de ingelogde gebruiker"));
+    }
+
+    private SchoolEntity resolveSchoolById(Long schoolId) {
+        return schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "School niet gevonden voor id: " + schoolId));
     }
 
     private String determineAgeRangeFromStudentClass(UserEntity user) {
