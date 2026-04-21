@@ -1,248 +1,65 @@
 "use client";
 
+import ReviewCard from "./components/ReviewCard";
+import RejectReviewModal from "./components/RejectReviewModal";
 import ProtectedRoute from "@/app/components/ProtectedRoute";
 import Pagination from "@/app/catalog/pagination";
 import { useEffect, useMemo, useState } from "react";
+import { ModerationReview, useReviewModeration } from "./useReviewModeration";
 import "./adminReview.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const REVIEWS_PER_PAGE = 10;
 
-type ReviewStatus = "AWAITING_MODERATION" | "APPROVED" | "REJECTED";
 type SortOption = "newest" | "oldest";
-type FilterStatus = "all" | "flagged" | "adminDeleted";
-type ReportReason = "FOUT_TAALGEBRUIK" | "SPAM" | "ANDERE";
-
-interface MeResponse {
-  role: "STUDENT" | "TEACHER" | "BIBLIOTHEEKBEHEERDER" | "ADMIN" | "OTHER";
-  school: {
-    id: number;
-    name: string;
-  } | null;
-}
-
-interface ReviewFlagDetail {
-  flaggerUid: string;
-  reason: ReportReason;
-}
-
-interface ModerationReview {
-  id: number;
-  userId: number;
-  userSmartschoolUid: string;
-  userRole: string;
-  schoolId: number;
-  schoolName: string;
-  bookISBN: string;
-  bookTitle: string;
-  text: string;
-  reviewDate: string;
-  reviewStatus: ReviewStatus;
-  rating: number;
-  flagCount: number;
-  flagDetails: ReviewFlagDetail[];
-  adminDeleted: boolean;
-  adminDeleteNote: string | null;
-}
-
-function reasonLabel(reason: ReportReason): string {
-  switch (reason) {
-    case "FOUT_TAALGEBRUIK":
-      return "Fout taalgebruik";
-    case "SPAM":
-      return "Spam";
-    case "ANDERE":
-      return "Andere";
-    default:
-      return "Onbekend";
-  }
-}
-
-function statusChip(review: ModerationReview): FilterStatus {
-  if (review.adminDeleted) {
-    return "adminDeleted";
-  }
-
-  if (review.flagCount > 0) {
-    return "flagged";
-  }
-
-  return "all";
-}
-
-function statusLabel(status: FilterStatus): string {
-  switch (status) {
-    case "flagged":
-      return "Flagged";
-    case "adminDeleted":
-      return "Verwijderd";
-    default:
-      return "Goedgekeurd";
-  }
-}
-
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString("nl-BE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-function renderStars(rating: number): string {
-  const full = Math.max(0, Math.min(5, Math.round(rating)));
-  return `${"★".repeat(full)}${"☆".repeat(5 - full)}`;
-}
-
-function formatSchoolLabel(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return "Onbekende school";
-  }
-
-  let hostOrName = trimmed;
-
-  try {
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-      hostOrName = new URL(trimmed).hostname;
-    } else if (!trimmed.includes(" ") && trimmed.includes(".")) {
-      hostOrName = new URL(`https://${trimmed}`).hostname;
-    }
-  } catch {
-    // Als parsing niet lukt -> gebruik originele waarde
-  }
-
-  const normalized = hostOrName.toLowerCase();
-  if (normalized.endsWith(".smartschool.be")) {
-    return normalized.replace(/\.smartschool\.be$/, "");
-  }
-
-  return hostOrName;
-}
+type FilterStatus = "all" | "awaitingModeration" | "approved" | "rejected";
 
 export default function AdminReviewsPage() {
-  const [me, setMe] = useState<MeResponse | null>(null);
-  const [reviews, setReviews] = useState<ModerationReview[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [actionError, setActionError] = useState("");
+  const {
+    me,
+    reviews,
+    loading,
+    error,
+    actionError,
+    deleteReasonError,
+    isDeleting,
+    approvingReviewId,
+    hardDeletingReviewId,
+    setActionError,
+    setDeleteReasonError,
+    approveReview,
+    softRejectReview,
+    hardDeleteReview,
+  } = useReviewModeration(API_URL);
 
   const [deleteReviewId, setDeleteReviewId] = useState<number | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
-  const [deleteReasonError, setDeleteReasonError] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [currentPage, setCurrentPage] = useState(1);
 
-  async function fetchModerationReviews() {
-    if (!API_URL) {
-      setError("NEXT_PUBLIC_API_URL ontbreekt");
-      setLoading(false);
+  async function submitAdminDelete() {
+    const wasSuccessful = await softRejectReview(deleteReviewId, deleteReason);
+    if (!wasSuccessful) {
       return;
     }
 
-    const response = await fetch(`${API_URL}/reviews/moderation`, {
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      throw new Error("Kon reviewmeldingen niet ophalen");
-    }
-
-    const data: ModerationReview[] = await response.json();
-    setReviews(data);
+    setDeleteReviewId(null);
+    setDeleteReason("");
   }
 
-  useEffect(() => {
-    async function load() {
-      if (!API_URL) {
-        setError("NEXT_PUBLIC_API_URL ontbreekt");
-        setLoading(false);
-        return;
-      }
+  async function handleHardDeleteReview(reviewId: number) {
+    const confirmed = window.confirm(
+      "Deze review wordt permanent verwijderd. Deze actie kan je niet ongedaan maken. Verdergaan?",
+    );
 
-      try {
-        setLoading(true);
-        setError("");
-
-        const meResponse = await fetch(`${API_URL}/auth/me`, {
-          credentials: "include",
-        });
-
-        if (!meResponse.ok) {
-          setError("Je bent niet ingelogd");
-          return;
-        }
-
-        const meData: MeResponse = await meResponse.json();
-        setMe(meData);
-
-        await fetchModerationReviews();
-      } catch {
-        setError("Er ging iets mis tijdens het laden van reviewmoderatie");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, []);
-
-  async function submitAdminDelete() {
-    if (!API_URL || deleteReviewId === null || isDeleting) {
+    if (!confirmed) {
       return;
     }
 
-    const trimmedReason = deleteReason.trim();
-
-    try {
-      setIsDeleting(true);
-      setDeleteReasonError("");
-      setActionError("");
-
-      const response = await fetch(
-        `${API_URL}/reviews/${deleteReviewId}/admin-delete`,
-        {
-          method: "PATCH",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ reason: trimmedReason || null }),
-        },
-      );
-
-      if (!response.ok) {
-        let serverMessage = "";
-        try {
-          const contentType = response.headers.get("content-type") ?? "";
-          if (contentType.includes("application/json")) {
-            const payload = await response.json();
-            serverMessage =
-              payload?.message ?? payload?.error ?? payload?.details ?? "";
-          } else {
-            serverMessage = (await response.text()).trim();
-          }
-        } catch {
-          // Ignore parsing errors and fall back to status text.
-        }
-
-        const fallback = `Kon review niet verwijderen (HTTP ${response.status}).`;
-        setDeleteReasonError(serverMessage || fallback);
-        return;
-      }
-
-      await fetchModerationReviews();
-      setDeleteReviewId(null);
-      setDeleteReason("");
-    } catch {
-      setActionError("Er ging iets mis tijdens admin delete.");
-    } finally {
-      setIsDeleting(false);
-    }
+    await hardDeleteReview(reviewId);
   }
 
   function openDeleteModal(reviewId: number) {
@@ -264,10 +81,21 @@ export default function AdminReviewsPage() {
   }
 
   const filteredAndSorted = useMemo(() => {
-    const byStatus =
-      filterStatus === "all"
-        ? reviews.filter((review) => !review.adminDeleted)
-        : reviews.filter((review) => statusChip(review) === filterStatus);
+    const byStatus = reviews.filter((review) => {
+      if (filterStatus === "all") {
+        return true;
+      }
+
+      if (filterStatus === "awaitingModeration") {
+        return review.reviewStatus === "AWAITING_MODERATION";
+      }
+
+      if (filterStatus === "approved") {
+        return review.reviewStatus === "APPROVED";
+      }
+
+      return review.reviewStatus === "REJECTED" || review.adminDeleted;
+    });
 
     return [...byStatus].sort((a, b) => {
       const left = new Date(a.reviewDate).getTime();
@@ -294,12 +122,13 @@ export default function AdminReviewsPage() {
 
   const filters: { key: FilterStatus; label: string }[] = [
     { key: "all", label: "Alle" },
-    { key: "flagged", label: "Flagged" },
-    { key: "adminDeleted", label: "Verwijderd" },
+    { key: "awaitingModeration", label: "In afwachting" },
+    { key: "approved", label: "Goedgekeurd" },
+    { key: "rejected", label: "Afgekeurd" },
   ];
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
+    <ProtectedRoute allowedRoles={["TEACHER", "BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
       <main className="adminReviewPage">
         <h1 className="adminReviewTitle">Reviewmoderatie</h1>
         <p className="adminReviewSubtitle">
@@ -357,101 +186,22 @@ export default function AdminReviewsPage() {
         {!loading && !error && filteredAndSorted.length > 0 && (
           <>
             <div className="adminReviewList">
-              {paginatedReviews.map((review) => {
-                const cardStatus = statusChip(review);
-
-                return (
-                  <article
-                    key={review.id}
-                    className={`adminReviewCard ${review.adminDeleted ? "adminDeletedCard" : ""}`}
-                  >
-                    <div className="reviewUserBlock">
-                      <p className="reviewUid">{review.userSmartschoolUid}</p>
-                      <p className="reviewMeta">{review.userRole}</p>
-                      <p className="reviewMeta">
-                        {formatSchoolLabel(review.schoolName)}
-                      </p>
-                    </div>
-
-                    <div className="reviewBody">
-                      <div className="reviewCardTopRow">
-                        <h2 className="reviewBookTitle">{review.bookTitle}</h2>
-                        <div className="reviewTopActions">
-                          <div className="reviewActions">
-                            <button
-                              className="adminDeleteBtn"
-                              onClick={() => openDeleteModal(review.id)}
-                              disabled={review.adminDeleted}
-                            >
-                              {review.adminDeleted
-                                ? "Reeds verwijderd"
-                                : "Verwijder review"}
-                            </button>
-                          </div>
-                          <span className={`statusBadge status-${cardStatus}`}>
-                            {statusLabel(cardStatus)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="reviewRatingRow">
-                        <span className="reviewStars">
-                          {renderStars(review.rating)}
-                        </span>
-                        <span className="reviewRatingValue">
-                          {review.rating.toFixed(1)}/5
-                        </span>
-                        <span className="reviewDate">
-                          {formatDate(review.reviewDate)}
-                        </span>
-                      </div>
-
-                      <p className="reviewText">
-                        {review.text || "(Geen tekst)"}
-                      </p>
-
-                      <div className="reviewFlagBlock">
-                        {review.adminDeleted && review.adminDeleteNote && (
-                          <p className="adminDeleteNote">
-                            Admin delete reden: {review.adminDeleteNote}
-                          </p>
-                        )}
-
-                        <p className="flagHeader">
-                          Gemeld: {review.flagCount}{" "}
-                          {review.flagCount === 1 ? "keer" : "keer"}
-                        </p>
-
-                        {review.flagCount > 0 &&
-                          review.flagDetails.length > 0 && (
-                            <ul className="flagList">
-                              {review.flagDetails.map((detail, index) => (
-                                <li
-                                  key={`${review.id}-${detail.flaggerUid}-${index}`}
-                                >
-                                  <span className="flagUid">
-                                    {detail.flaggerUid}
-                                  </span>
-                                  <span className="flagReason">
-                                    {reasonLabel(detail.reason)}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-
-                        {review.flagCount > 0 &&
-                          review.flagDetails.length === 0 && (
-                            <p className="flagFallback">
-                              Deze review is gemeld, maar er is geen detail
-                              beschikbaar.
-                            </p>
-                          )}
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+              {paginatedReviews.map((review: ModerationReview) => (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  approving={approvingReviewId === review.id}
+                  rejecting={
+                    isDeleting &&
+                    deleteReviewId === review.id &&
+                    deleteReviewId !== null
+                  }
+                  hardDeleting={hardDeletingReviewId === review.id}
+                  onApprove={approveReview}
+                  onOpenReject={openDeleteModal}
+                  onHardDelete={handleHardDeleteReview}
+                />
+              ))}
             </div>
 
             {filteredAndSorted.length > REVIEWS_PER_PAGE && (
@@ -466,53 +216,15 @@ export default function AdminReviewsPage() {
           </>
         )}
 
-        {deleteReviewId !== null && (
-          <div
-            className="adminDeleteModalOverlay"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="adminDeleteModalBox">
-              <h3 className="adminDeleteModalTitle">
-                Review admin verwijderen
-              </h3>
-              <p className="adminDeleteModalText">
-                Je kan optioneel een nota meegeven waarom deze review admin
-                deleted wordt.
-              </p>
-
-              <textarea
-                className="adminDeleteModalInput"
-                value={deleteReason}
-                onChange={(event) => setDeleteReason(event.target.value)}
-                placeholder="Bijv. ongepaste inhoud of niet conform richtlijnen"
-                rows={4}
-                disabled={isDeleting}
-              />
-
-              {deleteReasonError && (
-                <p className="adminDeleteModalError">{deleteReasonError}</p>
-              )}
-
-              <div className="adminDeleteModalActions">
-                <button
-                  className="adminDeleteCancelBtn"
-                  onClick={closeDeleteModal}
-                  disabled={isDeleting}
-                >
-                  Annuleren
-                </button>
-                <button
-                  className="adminDeleteSubmitBtn"
-                  onClick={submitAdminDelete}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? "Bezig..." : "Verwijder met nota"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <RejectReviewModal
+          isOpen={deleteReviewId !== null}
+          reason={deleteReason}
+          reasonError={deleteReasonError}
+          isSubmitting={isDeleting}
+          onReasonChange={setDeleteReason}
+          onCancel={closeDeleteModal}
+          onSubmit={submitAdminDelete}
+        />
       </main>
     </ProtectedRoute>
   );

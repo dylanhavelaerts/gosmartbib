@@ -39,7 +39,6 @@ public class ReviewService {
 
     private static final String FLAG_ENTRY_SEPARATOR = ";";
     private static final String FLAG_FIELD_SEPARATOR = "|";
-    private static final String AUTOMATIC_DELETE_NOTE = "Automatic review deletion";
     private static final String AUTO_MODERATION_UID = "AUTO_MODERATOR";
     private static final String AUTOMATIC_REVIEW_NOTICE = "Je review is automatisch gerapporteerd door ons systeem. Er is een melding naar de beheerder verstuurd.";
 
@@ -72,6 +71,7 @@ public class ReviewService {
         return reviewRepository.findByBook_Isbn(isbn)
                 .stream()
                 .filter(review -> !isAdminDeleted(review))
+                .filter(review -> review.getReviewStatus() == ReviewStatus.APPROVED)
                 .map(this::toSummaryDTO)
                 .toList();
     }
@@ -254,6 +254,10 @@ public class ReviewService {
             ReviewEntity review = reviewRepository.findById(reviewId)
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
 
+            if (isAdminDeleted(review)) {
+                throw new ResponseStatusException(BAD_REQUEST, "Deze review kan niet meer gerapporteerd worden");
+            }
+
             boolean alreadyFlagged = reviewRepository.existsFlagByReviewIdAndUid(reviewId, smartschoolUid);
             if (alreadyFlagged) {
                 throw new ResponseStatusException(CONFLICT, "Je hebt deze review al gerapporteerd");
@@ -276,6 +280,13 @@ public class ReviewService {
             review.setFlagDetails(serializeFlagDetails(flagDetails));
 
             review.setFlagCount(review.getFlagCount() + 1);
+
+            if (review.getFlagCount() >= 3) {
+                review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
+                review.setAdminDeleted(false);
+                review.setAdminDeleteNote(null);
+            }
+
             reviewRepository.save(review);
         } catch (Exception e) {
             if (e instanceof EntityNotFoundException || e instanceof ResponseStatusException) {
@@ -373,8 +384,10 @@ public class ReviewService {
     }
 
     private String buildModerationNotice(ReviewEntity review) {
-        String note = review.getAdminDeleteNote();
-        if (review.isAdminDeleted() && AUTOMATIC_DELETE_NOTE.equals(note)) {
+        boolean autoFlagged = parseFlagDetails(review.getFlagDetails()).stream()
+                .anyMatch(detail -> AUTO_MODERATION_UID.equals(detail.flaggerUid()));
+
+        if (autoFlagged && review.getReviewStatus() == ReviewStatus.AWAITING_MODERATION) {
             return AUTOMATIC_REVIEW_NOTICE;
         }
 
@@ -434,9 +447,9 @@ public class ReviewService {
             return;
         }
 
-        review.setReviewStatus(ReviewStatus.REJECTED);
-        review.setAdminDeleted(true);
-        review.setAdminDeleteNote(AUTOMATIC_DELETE_NOTE);
+        review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
+        review.setAdminDeleted(false);
+        review.setAdminDeleteNote(null);
 
         Set<String> flaggedUids = parseFlaggedUids(review.getFlaggedByUids());
         flaggedUids.add(AUTO_MODERATION_UID);

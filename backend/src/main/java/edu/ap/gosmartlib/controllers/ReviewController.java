@@ -51,7 +51,7 @@ public class ReviewController {
     }
 
     @GetMapping("/moderation")
-    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     public ResponseEntity<List<ReviewDetailDTO>> getModerationReviews(@AuthenticationPrincipal OAuth2User principal) {
         String smartschoolUid = extractUid(principal);
         return ResponseEntity.ok(reviewService.findAllSchoolReviewsForModerator(smartschoolUid));
@@ -71,21 +71,21 @@ public class ReviewController {
     }
 
     @PatchMapping("/{reviewId}/approve")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     public ResponseEntity<Void> approveReview(@PathVariable Long reviewId) {
         reviewService.approveReview(reviewId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{reviewId}/reject")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     public ResponseEntity<Void> rejectReview(@PathVariable Long reviewId) {
         reviewService.rejectReview(reviewId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{reviewId}/admin-delete")
-    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     public ResponseEntity<Void> adminDeleteReview(@PathVariable Long reviewId,
                                                   @RequestBody AdminDeleteReviewRequestDTO request) {
         reviewService.adminDeleteReview(reviewId, request.reason());
@@ -133,7 +133,7 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{reviewId}/librarian")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     public ResponseEntity<Void> librarianDeleteReview(@PathVariable Long reviewId) {
         reviewService.librarianDeleteReview(reviewId);
         return ResponseEntity.noContent().build();
