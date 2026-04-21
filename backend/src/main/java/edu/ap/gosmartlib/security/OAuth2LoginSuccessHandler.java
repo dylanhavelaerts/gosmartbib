@@ -3,6 +3,7 @@ package edu.ap.gosmartlib.security;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.services.UserService;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,12 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
             HttpSession session = request.getSession(true);
             session.setAttribute("authenticated", true);
+
+            Cookie authenticatedCookie = new Cookie("AUTHENTICATED", "true");
+            authenticatedCookie.setPath("/");
+            authenticatedCookie.setHttpOnly(true);
+            authenticatedCookie.setSecure(request.isSecure());
+            response.addCookie(authenticatedCookie);
 
             List<GrantedAuthority> authorities = List.of(
                     new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
