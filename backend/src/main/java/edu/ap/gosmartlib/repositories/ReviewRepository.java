@@ -16,7 +16,7 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
 
     List<ReviewEntity> findByUser_School_Id(Long schoolId);
 
-    List<ReviewEntity> findByStatus(ReviewStatus status);
+    List<ReviewEntity> findByReviewStatus(ReviewStatus status);
 
     @Query("""
     SELECT COALESCE(AVG(r.rating), 0)

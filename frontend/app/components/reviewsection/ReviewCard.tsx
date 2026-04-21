@@ -43,9 +43,10 @@ export default function ReviewCard({
   );
 
   const roleLabel: Record<string, string> = {
-    STUDENT: "Student",
+    STUDENT: "leerling",
     TEACHER: "Leerkracht",
     LIBRARIAN: "Bibliothecaris",
+    ADMIN: "admin"
   };
 
   const isSpoilerHidden = review.spoiler && !isSpoilerRevealed;
@@ -71,6 +72,9 @@ export default function ReviewCard({
     <div className="reviewCard">
       <div className="reviewCardHeader">
         <div className="reviewCardMeta">
+          {review.reviewerName && (
+            <span className="reviewAuthor">{review.reviewerName}</span>
+          )}
           <span className="reviewRole">
             {roleLabel[review.userRole] ?? review.userRole}
           </span>

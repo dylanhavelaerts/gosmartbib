@@ -32,8 +32,15 @@ export default function LendingPage() {
 
     try {
       // Call our backend proxy which communicates with the Smartschool API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/smartschool/users?query=${encodeURIComponent(userQuery.trim())}`);
-      
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/smartschool/users?query=${encodeURIComponent(
+          userQuery.trim(),
+        )}`,
+        {
+          credentials: "include",
+        },
+      );
+
       if (!response.ok) {
         throw new Error("Failed to fetch Smartschool users");
       }
@@ -49,8 +56,8 @@ export default function LendingPage() {
   const handleSelectUser = (user: SmartschoolUser) => {
     // This replaces the currently selected user with the new one
     setSelectedUser(user);
-    setUserSearchResults([]); 
-    setUserQuery(""); 
+    setUserSearchResults([]);
+    setUserQuery("");
   };
 
   const handleRemoveUser = () => setSelectedUser(null);
@@ -65,8 +72,8 @@ export default function LendingPage() {
     const timer = setTimeout(() => {
       const params = new URLSearchParams();
       params.append("page", "0");
-      params.append("size", "10"); 
-      params.append("query", bookQuery.trim()); 
+      params.append("size", "10");
+      params.append("query", bookQuery.trim());
 
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/search?${params}`)
         .then((res) => res.json())
@@ -79,7 +86,7 @@ export default function LendingPage() {
 
   // --- Cart Handlers ---
   const handleAddToCart = (book: Book) => {
-    const available = book.availableCopies !== undefined ? book.availableCopies : 5; 
+    const available = book.availableCopies !== undefined ? book.availableCopies : 5;
 
     if (available <= 0) {
       alert("Dit boek is momenteel helaas niet beschikbaar.");
@@ -89,7 +96,7 @@ export default function LendingPage() {
     setCart((prev) => {
       const existingItem = prev.find((item) => item.book.id === book.id);
       if (existingItem) {
-        return prev; 
+        return prev;
       } else {
         return [...prev, { book, quantity: 1 }];
       }
@@ -101,7 +108,7 @@ export default function LendingPage() {
       if (item.book.id === bookId) {
         const available = item.book.availableCopies !== undefined ? item.book.availableCopies : 5;
         const newQuantity = item.quantity + delta;
-        
+
         if (newQuantity >= 1 && newQuantity <= available) {
           return { ...item, quantity: newQuantity };
         }
@@ -126,7 +133,7 @@ export default function LendingPage() {
 
   const handleRegisterLoan = async () => {
     if (cart.length === 0 || !selectedUser) return;
-    
+
     // The payload sends the required user info. 
     // The backend LoanService extracts ONLY the smartschoolUserId to save into the DB.
     const payload = cart.map(item => ({
@@ -153,7 +160,7 @@ export default function LendingPage() {
 
       alert(`Succes! Uitlening correct geregistreerd aan ${selectedUser.name}.`);
       handleCancel();
-      
+
     } catch (err) {
       console.error(err);
       alert("Er ging iets mis bij het uitlenen van de boeken. Controleer de verbinding en de voorraad.");
@@ -168,11 +175,11 @@ export default function LendingPage() {
       </div>
 
       <div className="uitleenGrid driekolomsGrid">
-        
+
         {/* --- COLUMN 1: BORROWER --- */}
         <div className="gridColumn borderRight">
           <div className="sectieHeader"><h2>Geselecteerde Lener</h2></div>
-          
+
           <div className="userProfileCard">
             {selectedUser ? (
               <>
@@ -195,19 +202,19 @@ export default function LendingPage() {
 
           <div className="sectieHeader margined"><h2>Lener zoeken</h2></div>
           <div className="searchbar">
-            <input 
-              type="text" 
-              placeholder="Naam of ID..." 
-              value={userQuery} 
-              onChange={(e) => setUserQuery(e.target.value)} 
-              onKeyDown={(e) => e.key === 'Enter' && handleSearchSmartschoolUser()} 
+            <input
+              type="text"
+              placeholder="Naam of ID..."
+              value={userQuery}
+              onChange={(e) => setUserQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearchSmartschoolUser()}
             />
             <button id="searchButton" onClick={handleSearchSmartschoolUser}>🔎︎</button>
           </div>
 
           <div className="resultsFrame">
             {userSearchResults.length === 0 ? (
-               <p className="placeholderText centered">Typ een deel van de naam in.</p>
+              <p className="placeholderText centered">Typ een deel van de naam in.</p>
             ) : (
               userSearchResults.map((user, idx) => (
                 <div key={idx} className="listItem">
@@ -233,7 +240,7 @@ export default function LendingPage() {
         {/* --- COLUMN 2: SEARCH BOOKS --- */}
         <div className="gridColumn borderRight">
           <div className="sectieHeader"><h2>Boek zoeken</h2></div>
-          
+
           <div className="searchbar">
             <input type="text" placeholder="Titel, auteur, ISBN..." value={bookQuery} onChange={(e) => setBookQuery(e.target.value)} />
             <button id="searchButton">🔎︎</button>
@@ -246,7 +253,7 @@ export default function LendingPage() {
               <p className="placeholderText centered">Typ een zoekterm.</p>
             ) : (
               searchResults.map((book) => {
-                const available = book.availableCopies !== undefined ? book.availableCopies : 5; 
+                const available = book.availableCopies !== undefined ? book.availableCopies : 5;
                 const cartItem = cart.find(item => item.book.id === book.id);
 
                 return (
@@ -273,9 +280,9 @@ export default function LendingPage() {
                         <span className={available > 0 ? "stock-ok" : "stock-empty"}>
                           {available > 0 ? `${available} vrij` : "Op"}
                         </span>
-                        <button 
-                          className="actionBtn addBtn" 
-                          disabled={available <= 0} 
+                        <button
+                          className="actionBtn addBtn"
+                          disabled={available <= 0}
                           onClick={() => handleAddToCart(book)}
                           title="Voeg eerste exemplaar toe"
                         >
@@ -296,7 +303,7 @@ export default function LendingPage() {
             <div className="sectieHeader">
               <h2>Geselecteerde boeken ({cart.reduce((total, item) => total + item.quantity, 0)})</h2>
             </div>
-            
+
             <div className="resultsFrame">
               {cart.length === 0 ? (
                 <p className="placeholderText centered">Nog geen boeken.</p>
@@ -304,10 +311,10 @@ export default function LendingPage() {
                 cart.map((item) => (
                   <div key={item.book.id} className="listItem selectedItem">
                     <img src={item.book.thumbnail || "/book-closed.png"} alt="cover" className="itemThumbnail" />
-                    
+
                     <div className="itemDetails">
                       <strong>{item.book.title}</strong>
-                      
+
                       <div className="quantityControl">
                         <button className="qtyBtn" onClick={() => updateQuantity(item.book.id, -1)}>-</button>
                         <span className="qtyDisplay">{item.quantity}</span>
@@ -322,15 +329,15 @@ export default function LendingPage() {
           </div>
 
           <div className="actionFooter">
-            <button 
-              className="primaryBtn" 
-              onClick={handleRegisterLoan} 
+            <button
+              className="primaryBtn"
+              onClick={handleRegisterLoan}
               disabled={cart.length === 0 || !selectedUser}
             >
               Boeken uitlenen
             </button>
-            <button 
-              className="secondaryBtn" 
+            <button
+              className="secondaryBtn"
               onClick={handleCancel}
               disabled={cart.length === 0 && !selectedUser && bookQuery === "" && userQuery === ""}
             >
