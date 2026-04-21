@@ -6,16 +6,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import edu.ap.gosmartlib.entities.BookInventoryEntity;
+import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class DataSeeding implements CommandLineRunner {
         private final BookRepository bookRepository;
+        private final SchoolRepository schoolRepository;
         private static final Logger logger = LoggerFactory.getLogger(DataSeeding.class);
 
-        public DataSeeding(BookRepository bookRepository) {
+        private SchoolEntity seedSchoolPrimary;
+        private SchoolEntity seedSchoolSecondary;
+
+        public DataSeeding(BookRepository bookRepository, SchoolRepository schoolRepository) {
                 this.bookRepository = bookRepository;
+                this.schoolRepository = schoolRepository;
         }
 
         private String mapAgeRange(String readingLevel) {
@@ -63,15 +72,64 @@ public class DataSeeding implements CommandLineRunner {
                                 readingLevel,
                                 totalCopies,
                                 availableCopies,
-                                ageRange
-                                );
+                                ageRange);
                 b.setSpotlight(spotlight);
+                List<BookInventoryEntity> inventories = createSeedInventories(b, totalCopies, availableCopies);
+                b.setInventories(inventories);
                 return b;
+        }
+
+        private SchoolEntity ensureSchool(String name, String domain) {
+                return schoolRepository.findByDomain(domain)
+                                .orElseGet(() -> {
+                                        SchoolEntity school = new SchoolEntity();
+                                        school.setName(name);
+                                        school.setDomain(domain);
+                                        return schoolRepository.save(school);
+                                });
+        }
+
+        private List<BookInventoryEntity> createSeedInventories(BookEntity book, int totalCopies, int availableCopies) {
+                List<BookInventoryEntity> inventories = new ArrayList<>();
+
+                int primaryTotal = Math.max(1, (int) Math.ceil(totalCopies / 2.0));
+                int secondaryTotal = Math.max(0, totalCopies - primaryTotal);
+
+                int primaryAvailable = Math.min(availableCopies, primaryTotal);
+                int secondaryAvailable = Math.max(0, availableCopies - primaryAvailable);
+
+                addInventory(inventories, book, seedSchoolPrimary, "", primaryTotal, primaryAvailable);
+
+                if (secondaryTotal > 0) {
+                        addInventory(inventories, book, seedSchoolSecondary, "Campus Zuid", secondaryTotal,
+                                        secondaryAvailable);
+                }
+
+                return inventories;
+        }
+
+        private void addInventory(List<BookInventoryEntity> inventories,
+                        BookEntity book,
+                        SchoolEntity school,
+                        String campus,
+                        int totalCopies,
+                        int availableCopies) {
+                BookInventoryEntity inventory = new BookInventoryEntity();
+                inventory.setBook(book);
+                inventory.setSchool(school);
+                inventory.setCampus(campus);
+                inventory.setTotalCopies(totalCopies);
+                inventory.setAvailableCopies(availableCopies);
+                inventories.add(inventory);
         }
 
         @Override
         public void run(String... args) {
                 if (bookRepository.count() == 0) {
+
+                        seedSchoolPrimary = ensureSchool("https://aphogeschool.smartschool.be",
+                                        "https://aphogeschool.smartschool.be");
+                        seedSchoolSecondary = ensureSchool("GO! Smartbib Antwerpen", "seed-go-antwerpen.local");
 
                         List<BookEntity> books = List.of(
                                         book("Harry Potter and the Philosopher's Stone", List.of("J.K. Rowling"),
