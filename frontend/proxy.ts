@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, hostname } = request.nextUrl;
 
   if (
@@ -20,10 +20,33 @@ export function proxy(request: NextRequest) {
   }
 
   const hasSession = request.cookies.has("JSESSIONID");
-  const isAuthenticated =
+  const isAuthenticatedCookie =
     request.cookies.get("AUTHENTICATED")?.value === "true";
 
-  if (!hasSession || !isAuthenticated) {
+  if (!hasSession || !isAuthenticatedCookie) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!apiUrl) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  try {
+    const meResponse = await fetch(`${apiUrl}/auth/me`, {
+      method: "GET",
+      headers: {
+        cookie: request.headers.get("cookie") ?? "",
+      },
+      cache: "no-store",
+      redirect: "manual",
+    });
+
+    if (!meResponse.ok) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  } catch {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
