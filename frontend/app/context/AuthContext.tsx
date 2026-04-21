@@ -33,6 +33,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isLocalHost =
       window.location.hostname === "localhost" ||
       window.location.hostname === "127.0.0.1";
+    const pathname = window.location.pathname;
+    const isPublicRoute =
+      pathname === "/login" ||
+      pathname.startsWith("/smartschool") ||
+      pathname.startsWith("/public");
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
       credentials: "include",
@@ -41,14 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((data) => {
         setUser(data);
 
-        if (!data && !isLocalHost) {
+        if (!data && !isLocalHost && !isPublicRoute) {
           window.location.replace("/login");
         }
       })
       .catch(() => {
         setUser(null);
 
-        if (!isLocalHost) {
+        if (!isLocalHost && !isPublicRoute) {
           window.location.replace("/login");
         }
       })
