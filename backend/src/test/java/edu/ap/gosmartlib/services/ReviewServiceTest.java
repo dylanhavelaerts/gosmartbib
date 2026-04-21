@@ -117,6 +117,58 @@ class ReviewServiceTest {
     }
 
     @Test
+    void givenApprovedAverageExists_whenSubmitReview_thenRefreshesBookRatingWithAverage() {
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Strong recommendation", 4.5f, true);
+        UserEntity user = buildUser(1L, "uid-1");
+        BookEntity book = buildBook(10L, "9780000000001", "Domain-Driven Design");
+
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
+        when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(book));
+        when(reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn("uid-1", "9780000000001")).thenReturn(false);
+        when(reviewRepository.findAverageApprovedRatingByBookId(10L)).thenReturn(4.2);
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-1", "Reviewer Name"),
+                        List.of(),
+                        "ok"));
+
+        reviewService.submitReview(request, "uid-1");
+
+        assertEquals(4.2, book.getRating());
+        verify(reviewRepository, times(1)).findAverageApprovedRatingByBookId(10L);
+        verify(bookRepository, times(1)).save(book);
+    }
+
+    @Test
+    void givenNoApprovedAverage_whenSubmitReview_thenRefreshesBookRatingToZero() {
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Strong recommendation", 4.5f, true);
+        UserEntity user = buildUser(1L, "uid-1");
+        BookEntity book = buildBook(10L, "9780000000001", "Domain-Driven Design");
+
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
+        when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(book));
+        when(reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn("uid-1", "9780000000001")).thenReturn(false);
+        when(reviewRepository.findAverageApprovedRatingByBookId(10L)).thenReturn(null);
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-1", "Reviewer Name"),
+                        List.of(),
+                        "ok"));
+
+        reviewService.submitReview(request, "uid-1");
+
+        assertEquals(0.0, book.getRating());
+        verify(reviewRepository, times(1)).findAverageApprovedRatingByBookId(10L);
+        verify(bookRepository, times(1)).save(book);
+    }
+
+    @Test
     void givenNullText_whenSubmitReview_thenStoresEmptyText() {
         ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", null, 3.0f, false);
         UserEntity user = buildUser(1L, "uid-1");
@@ -261,6 +313,31 @@ class ReviewServiceTest {
         reviewService.userDeleteReview(70L, "uid-1", false);
 
         verify(reviewRepository, times(1)).delete(existing);
+    }
+
+    @Test
+    void givenOwnedReviewWithoutBook_whenUserDeleteReview_thenSkipsBookRefresh() {
+        ReviewEntity existing = buildReview(76L, buildUser(1L, "uid-1"), null);
+        when(reviewRepository.findById(76L)).thenReturn(Optional.of(existing));
+
+        reviewService.userDeleteReview(76L, "uid-1", false);
+
+        verify(reviewRepository, times(1)).delete(existing);
+        verify(reviewRepository, never()).findAverageApprovedRatingByBookId(any());
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
+
+    @Test
+    void givenOwnedReviewWithBookWithoutId_whenUserDeleteReview_thenSkipsBookRefresh() {
+        BookEntity bookWithoutId = buildBook(null, "9780000000001", "Book");
+        ReviewEntity existing = buildReview(77L, buildUser(1L, "uid-1"), bookWithoutId);
+        when(reviewRepository.findById(77L)).thenReturn(Optional.of(existing));
+
+        reviewService.userDeleteReview(77L, "uid-1", false);
+
+        verify(reviewRepository, times(1)).delete(existing);
+        verify(reviewRepository, never()).findAverageApprovedRatingByBookId(any());
+        verify(bookRepository, never()).save(any(BookEntity.class));
     }
 
     @Test

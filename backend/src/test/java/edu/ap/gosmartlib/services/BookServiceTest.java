@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.BookDTO;
+import edu.ap.gosmartlib.dto.BookFilterRequest;
 import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBookItem;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
@@ -57,6 +58,9 @@ class BookServiceTest {
 
     @Mock
     private RestTemplate restTemplate; // We faken de Google API
+
+    @Mock
+    private BookFilterValidator bookFilterValidator;
 
     @InjectMocks
     private BookService bookService; // Dit is de service die we écht testen
@@ -520,107 +524,170 @@ class BookServiceTest {
 
     @Test
     void givenValidFilters_whenFilterBooks_thenReturnsMappedDTOs() {
+        BookFilterRequest request = new BookFilterRequest(
+                null, "en", List.of("Programming"), List.of("Toekomst & technologie"),
+                100, 500, 2000, 2023, 3.0, 5.0, 0, 20);
         Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook()), PageRequest.of(0, 20), 1);
-        when(bookRepository.filterBooks(eq(false), eq("en"), eq(List.of("Programming")),
-                eq(List.of("Toekomst & technologie")), eq(100), eq(500), eq(2000), eq(2023), any(Pageable.class)))
+        when(bookRepository.filterBooks(eq(false), isNull(), eq("en"), eq(List.of("Programming")),
+                eq(List.of("Toekomst & technologie")), eq(100), eq(500), eq(2000), eq(2023), eq(3.0), eq(5.0),
+                any(Pageable.class)))
                 .thenReturn(entityPage);
 
-        Page<BookDTO> result = bookService.filterBooks("en", List.of("Programming"),
-                List.of("Toekomst & technologie"), 100, 500, 2000, 2023, 0, 20, UserRoles.STUDENT);
+        Page<BookDTO> result = bookService.filterBooks(request, UserRoles.STUDENT);
 
         assertEquals(1, result.getTotalElements());
         assertEquals("Clean Code", result.getContent().get(0).title());
-        verify(bookRepository, times(1)).filterBooks(eq(false), eq("en"), eq(List.of("Programming")),
-                eq(List.of("Toekomst & technologie")), eq(100), eq(500), eq(2000), eq(2023), any(Pageable.class));
+        verify(bookFilterValidator, times(1)).validate(request);
+        verify(bookRepository, times(1)).filterBooks(eq(false), isNull(), eq("en"), eq(List.of("Programming")),
+                eq(List.of("Toekomst & technologie")), eq(100), eq(500), eq(2000), eq(2023), eq(3.0), eq(5.0),
+                any(Pageable.class));
     }
 
     @Test
     void givenNullFilters_whenFilterBooks_thenReturnsAllBooks() {
+        BookFilterRequest request = new BookFilterRequest(
+                null, null, null, null,
+                null, null, null, null, null, null, 0, 20);
         Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook(), buildBook()), PageRequest.of(0, 20), 2);
         when(bookRepository.filterBooks(eq(false), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
-                isNull(), any(Pageable.class)))
+                isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
                 .thenReturn(entityPage);
 
-        Page<BookDTO> result = bookService.filterBooks(null, null, null, null, null, null, null, 0, 20,
-                UserRoles.STUDENT);
+        Page<BookDTO> result = bookService.filterBooks(request, UserRoles.STUDENT);
 
         assertEquals(2, result.getTotalElements());
+        verify(bookFilterValidator, times(1)).validate(request);
         verify(bookRepository, times(1)).filterBooks(eq(false), isNull(), isNull(), isNull(), isNull(), isNull(),
-                isNull(), isNull(), any(Pageable.class));
+                isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
     }
 
     @Test
     void givenOnlyLabels_whenFilterBooks_thenReturnsMatchingBooks() {
+        BookFilterRequest request = new BookFilterRequest(
+                null, null, null, List.of("Toekomst & technologie"),
+                null, null, null, null, null, null, 0, 20);
         Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook()), PageRequest.of(0, 20), 1);
-        when(bookRepository.filterBooks(eq(false), isNull(), isNull(), eq(List.of("Toekomst & technologie")),
-                isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+        when(bookRepository.filterBooks(eq(false), isNull(), isNull(), isNull(), eq(List.of("Toekomst & technologie")),
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
                 .thenReturn(entityPage);
 
-        Page<BookDTO> result = bookService.filterBooks(null, null, List.of("Toekomst & technologie"),
-                null, null, null, null, 0, 20, UserRoles.STUDENT);
+        Page<BookDTO> result = bookService.filterBooks(request, UserRoles.STUDENT);
 
         assertEquals(1, result.getTotalElements());
         assertEquals("Clean Code", result.getContent().get(0).title());
-        verify(bookRepository, times(1)).filterBooks(eq(false), isNull(), isNull(),
-                eq(List.of("Toekomst & technologie")), isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
+        verify(bookFilterValidator, times(1)).validate(request);
+        verify(bookRepository, times(1)).filterBooks(eq(false), isNull(), isNull(), isNull(),
+                eq(List.of("Toekomst & technologie")), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                any(Pageable.class));
     }
 
     @Test
     void givenNoMatchingBooks_whenFilterBooks_thenReturnsEmptyPage() {
+        BookFilterRequest request = new BookFilterRequest(
+                null, "nl", null, null,
+                null, null, null, null, null, null, 0, 20);
         Page<BookEntity> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
-        when(bookRepository.filterBooks(eq(false), eq("nl"), isNull(), isNull(), isNull(), isNull(), isNull(),
-                isNull(), any(Pageable.class)))
+        when(bookRepository.filterBooks(eq(false), isNull(), eq("nl"), isNull(), isNull(), isNull(), isNull(),
+                isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
                 .thenReturn(emptyPage);
 
-        Page<BookDTO> result = bookService.filterBooks("nl", null, null, null, null, null, null, 0, 20,
-                UserRoles.STUDENT);
+        Page<BookDTO> result = bookService.filterBooks(request, UserRoles.STUDENT);
 
         assertEquals(0, result.getTotalElements());
-        verify(bookRepository, times(1)).filterBooks(eq(false), eq("nl"), isNull(), isNull(), isNull(), isNull(),
-                isNull(), isNull(), any(Pageable.class));
+        verify(bookFilterValidator, times(1)).validate(request);
+        verify(bookRepository, times(1)).filterBooks(eq(false), isNull(), eq("nl"), isNull(), isNull(), isNull(),
+                isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
     }
 
     @Test
     void givenTeacherRole_whenFilterBooks_thenPassesTrueToRepo() {
+        BookFilterRequest request = new BookFilterRequest(
+                null, null, null, null,
+                null, null, null, null, null, null, 0, 20);
         Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook()), PageRequest.of(0, 20), 1);
         when(bookRepository.filterBooks(eq(true), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
-                isNull(), any(Pageable.class)))
+                isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
                 .thenReturn(entityPage);
 
-        Page<BookDTO> result = bookService.filterBooks(null, null, null, null, null, null, null, 0, 20,
-                UserRoles.TEACHER);
+        Page<BookDTO> result = bookService.filterBooks(request, UserRoles.TEACHER);
 
         assertEquals(1, result.getTotalElements());
+        verify(bookFilterValidator, times(1)).validate(request);
         verify(bookRepository, times(1)).filterBooks(eq(true), isNull(), isNull(), isNull(), isNull(), isNull(),
-                isNull(), isNull(), any(Pageable.class));
+                isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
     }
 
     @Test
     void givenMinPageCountGreaterThanMaxPageCount_whenFilterBooks_thenThrowsIllegalArgumentException() {
+        BookFilterRequest request = new BookFilterRequest(
+                null, null, null, null,
+                500, 100, null, null, null, null, 0, 20);
+        doThrow(new IllegalArgumentException("minPageCount mag niet groter zijn dan maxPageCount"))
+                .when(bookFilterValidator).validate(request);
+
         assertThrows(IllegalArgumentException.class,
-                () -> bookService.filterBooks(null, null, null, 500, 100, null, null, 0, 20, UserRoles.STUDENT));
+                () -> bookService.filterBooks(request, UserRoles.STUDENT));
 
         verify(bookRepository, never()).filterBooks(anyBoolean(), any(), any(), any(), any(), any(), any(), any(),
-                any(Pageable.class));
+                any(), any(), any(), any(Pageable.class));
     }
 
     @Test
     void givenMinYearGreaterThanMaxYear_whenFilterBooks_thenThrowsIllegalArgumentException() {
+        BookFilterRequest request = new BookFilterRequest(
+                null, null, null, null,
+                null, null, 2023, 2000, null, null, 0, 20);
+        doThrow(new IllegalArgumentException("minPubYear mag niet groter zijn dan maxPubYear"))
+                .when(bookFilterValidator).validate(request);
+
         assertThrows(IllegalArgumentException.class,
-                () -> bookService.filterBooks(null, null, null, null, null, 2023, 2000, 0, 20, UserRoles.STUDENT));
+                () -> bookService.filterBooks(request, UserRoles.STUDENT));
 
         verify(bookRepository, never()).filterBooks(anyBoolean(), any(), any(), any(), any(), any(), any(), any(),
-                any(Pageable.class));
+                any(), any(), any(), any(Pageable.class));
+    }
+
+    @Test
+    void givenMinRatingGreaterThanMaxRating_whenFilterBooks_thenThrowsIllegalArgumentException() {
+        BookFilterRequest request = new BookFilterRequest(
+                null, null, null, null,
+                null, null, null, null, 5.0, 3.0, 0, 20);
+        doThrow(new IllegalArgumentException("minRating mag niet groter zijn dan maxRating"))
+                .when(bookFilterValidator).validate(request);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> bookService.filterBooks(request, UserRoles.STUDENT));
+
+        verify(bookRepository, never()).filterBooks(anyBoolean(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(Pageable.class));
+    }
+
+    @Test
+    void givenRatingOutOfBounds_whenFilterBooks_thenThrowsIllegalArgumentException() {
+        BookFilterRequest request = new BookFilterRequest(
+                null, null, null, null,
+                null, null, null, null, 0.5, null, 0, 20);
+        doThrow(new IllegalArgumentException("minRating moet tussen 1 en 5 liggen"))
+                .when(bookFilterValidator).validate(request);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> bookService.filterBooks(request, UserRoles.STUDENT));
+
+        verify(bookRepository, never()).filterBooks(anyBoolean(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(Pageable.class));
     }
 
     @Test
     void givenRepositoryFails_whenFilterBooks_thenThrowsException() {
-        when(bookRepository.filterBooks(anyBoolean(), any(), any(), any(), any(), any(), any(), any(),
-                any(Pageable.class)))
+        BookFilterRequest request = new BookFilterRequest(
+                null, null, null, null,
+                null, null, null, null, null, null, 0, 20);
+        when(bookRepository.filterBooks(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(Pageable.class)))
                 .thenThrow(new RuntimeException("Database unavailable"));
 
         assertThrows(RuntimeException.class,
-                () -> bookService.filterBooks(null, null, null, null, null, null, null, 0, 20, UserRoles.STUDENT));
+                () -> bookService.filterBooks(request, UserRoles.STUDENT));
     }
 
     // --- getAllBooksUnpaged Tests ---
