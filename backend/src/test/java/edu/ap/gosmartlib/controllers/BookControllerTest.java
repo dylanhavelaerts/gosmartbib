@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.BookDTO;
+import edu.ap.gosmartlib.dto.BookFilterRequest;
 import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
@@ -27,7 +28,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -200,73 +200,97 @@ class BookControllerTest {
 
     @Test
     void givenValidFilters_whenFilterBooks_thenReturnsOk() {
+        BookFilterRequest filter = new BookFilterRequest(
+            null, "en", List.of("Programming"), List.of("Toekomst & technologie"),
+            100, 500, 2000, 2023, 3.0, 5.0, 0, 20);
         Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
-        when(bookService.filterBooks("en", List.of("Programming"), List.of("Toekomst & technologie"), 100, 500, 2000,
-                2023, 0, 20, UserRoles.STUDENT))
+        when(bookService.filterBooks(filter, UserRoles.STUDENT))
                 .thenReturn(expected);
 
-        ResponseEntity<?> result = bookController.filterBooks("en", List.of("Programming"),
-                List.of("Toekomst & technologie"), 100, 500, 2000, 2023, 0, 20, null);
+        ResponseEntity<?> result = bookController.filterBooks(filter, null);
 
         assertEquals(200, result.getStatusCode().value());
         assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).filterBooks("en", List.of("Programming"), List.of("Toekomst & technologie"), 100,
-                500, 2000, 2023, 0, 20, UserRoles.STUDENT);
+        verify(bookService, times(1)).filterBooks(filter, UserRoles.STUDENT);
     }
 
     @Test
     void givenOnlyLabels_whenFilterBooks_thenReturnsOk() {
+        BookFilterRequest filter = new BookFilterRequest(
+            null, null, null, List.of("Toekomst & technologie"),
+            null, null, null, null, null, null, 0, 20);
         Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
-        when(bookService.filterBooks(null, null, List.of("Toekomst & technologie"), null, null, null, null, 0, 20,
-                UserRoles.STUDENT))
+        when(bookService.filterBooks(filter, UserRoles.STUDENT))
                 .thenReturn(expected);
 
-        ResponseEntity<?> result = bookController.filterBooks(null, null, List.of("Toekomst & technologie"),
-                null, null, null, null, 0, 20, null);
+        ResponseEntity<?> result = bookController.filterBooks(filter, null);
 
         assertEquals(200, result.getStatusCode().value());
         assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).filterBooks(null, null, List.of("Toekomst & technologie"),
-                null, null, null, null, 0, 20, UserRoles.STUDENT);
+        verify(bookService, times(1)).filterBooks(filter, UserRoles.STUDENT);
     }
 
     @Test
     void givenNullFilters_whenFilterBooks_thenReturnsOk() {
-        when(bookService.filterBooks(null, null, null, null, null, null, null, 0, 20, UserRoles.STUDENT))
+        BookFilterRequest filter = new BookFilterRequest(
+            null, null, null, null,
+            null, null, null, null, null, null, 0, 20);
+        when(bookService.filterBooks(filter, UserRoles.STUDENT))
                 .thenReturn(toPage(List.of(buildDTO(1L, "Clean Code"))));
 
-        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null, null, 0, 20, null);
+        ResponseEntity<?> result = bookController.filterBooks(filter, null);
 
         assertEquals(200, result.getStatusCode().value());
     }
 
     @Test
     void givenMinGreaterThanMax_whenFilterBooks_thenReturnsBadRequest() {
-        when(bookService.filterBooks(null, null, null, 500, 100, null, null, 0, 20, UserRoles.STUDENT))
+        BookFilterRequest filter = new BookFilterRequest(
+            null, null, null, null,
+            500, 100, null, null, null, null, 0, 20);
+        when(bookService.filterBooks(filter, UserRoles.STUDENT))
                 .thenThrow(new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount"));
 
-        ResponseEntity<?> result = bookController.filterBooks(null, null, null, 500, 100, null, null, 0, 20, null);
+        ResponseEntity<?> result = bookController.filterBooks(filter, null);
 
         assertEquals(400, result.getStatusCode().value());
         assertEquals("minPageCount cannot be bigger than maxPageCount", result.getBody());
     }
 
+        @Test
+        void givenMinRatingGreaterThanMaxRating_whenFilterBooks_thenReturnsBadRequest() {
+        BookFilterRequest filter = new BookFilterRequest(
+            null, null, null, null,
+            null, null, null, null, 5.0, 3.0, 0, 20);
+        when(bookService.filterBooks(filter, UserRoles.STUDENT))
+            .thenThrow(new IllegalArgumentException("minRating mag niet groter zijn dan maxRating"));
+
+        ResponseEntity<?> result = bookController.filterBooks(filter, null);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("minRating mag niet groter zijn dan maxRating", result.getBody());
+        }
+
     @Test
     void givenDatabaseFails_whenFilterBooks_thenReturnsInternalServerError() {
-        when(bookService.filterBooks(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyInt(), any()))
+        when(bookService.filterBooks(any(BookFilterRequest.class), any()))
                 .thenThrow(new DataAccessException("DB down") {});
 
-        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null, null, 0, 20, null);
+        ResponseEntity<?> result = bookController.filterBooks(new BookFilterRequest(
+            null, null, null, null,
+            null, null, null, null, null, null, 0, 20), null);
 
         assertEquals(500, result.getStatusCode().value());
     }
 
     @Test
     void givenNoResults_whenFilterBooks_thenReturnsEmptyPage() {
-        when(bookService.filterBooks(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyInt(), any()))
+        when(bookService.filterBooks(any(BookFilterRequest.class), any()))
                 .thenReturn(toPage(List.of()));
 
-        ResponseEntity<?> result = bookController.filterBooks(null, null, null, null, null, null, null, 0, 20, null);
+        ResponseEntity<?> result = bookController.filterBooks(new BookFilterRequest(
+            null, null, null, null,
+            null, null, null, null, null, null, 0, 20), null);
 
         assertEquals(200, result.getStatusCode().value());
         Page<?> body = (Page<?>) result.getBody();

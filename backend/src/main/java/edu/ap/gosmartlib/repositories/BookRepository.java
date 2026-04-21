@@ -80,32 +80,51 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
     Optional<BookEntity> findByIsbn(String isbn);
 
     @Query(value = """
-            SELECT DISTINCT b FROM BookEntity b
-            LEFT JOIN b.categories c
-            LEFT JOIN b.labels l
-            WHERE (:language IS NULL OR LOWER(b.language) = LOWER(:language))
-            AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
-            AND (:#{#labels == null || #labels.isEmpty()} = true OR l IN :labels)
-            AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
-            AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
-            AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
-            AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
-            AND (:includeDidactic = true OR b.didacticTag = false)
-            """, countQuery = """
-            SELECT COUNT(DISTINCT b) FROM BookEntity b
-            LEFT JOIN b.categories c
-            LEFT JOIN b.labels l
-            WHERE (:includeDidactic = true OR b.didacticTag = false)
-            AND (:language IS NULL OR LOWER(b.language) = LOWER(:language))
-            AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
-            AND (:#{#labels == null || #labels.isEmpty()} = true OR l IN :labels)
-            AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
-            AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
-            AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
-            AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
-            """)
+        SELECT DISTINCT b FROM BookEntity b
+        LEFT JOIN b.authors a
+        LEFT JOIN b.categories c
+        LEFT JOIN b.labels l
+        WHERE (:includeDidactic = true OR b.didacticTag = false)
+        AND (
+            :query IS NULL OR TRIM(:query) = '' OR
+            LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR
+            LOWER(a) LIKE LOWER(CONCAT('%', :query, '%')) OR
+            LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))
+        )
+        AND (:language IS NULL OR LOWER(b.language) = LOWER(:language))
+        AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
+        AND (:#{#labels == null || #labels.isEmpty()} = true OR l IN :labels)
+        AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
+        AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
+        AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
+        AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
+        AND (:minRating IS NULL OR COALESCE(b.rating, 0) >= :minRating)
+        AND (:maxRating IS NULL OR COALESCE(b.rating, 0) <= :maxRating)
+        """, countQuery = """
+        SELECT COUNT(DISTINCT b) FROM BookEntity b
+        LEFT JOIN b.authors a
+        LEFT JOIN b.categories c
+        LEFT JOIN b.labels l
+        WHERE (:includeDidactic = true OR b.didacticTag = false)
+        AND (
+            :query IS NULL OR TRIM(:query) = '' OR
+            LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR
+            LOWER(a) LIKE LOWER(CONCAT('%', :query, '%')) OR
+            LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))
+        )
+        AND (:language IS NULL OR LOWER(b.language) = LOWER(:language))
+        AND (:#{#categories == null || #categories.isEmpty()} = true OR c IN :categories)
+        AND (:#{#labels == null || #labels.isEmpty()} = true OR l IN :labels)
+        AND (:minPageCount IS NULL OR b.pageCount >= :minPageCount)
+        AND (:maxPageCount IS NULL OR b.pageCount <= :maxPageCount)
+        AND (:minPubYear IS NULL OR b.publishedYear >= :minPubYear)
+        AND (:maxPubYear IS NULL OR b.publishedYear <= :maxPubYear)
+        AND (:minRating IS NULL OR COALESCE(b.rating, 0) >= :minRating)
+        AND (:maxRating IS NULL OR COALESCE(b.rating, 0) <= :maxRating)
+        """)
     Page<BookEntity> filterBooks(
             @Param("includeDidactic") boolean includeDidactic,
+            @Param("query") String query,
             @Param("language") String language,
             @Param("categories") List<String> categories,
             @Param("labels") List<String> labels,
@@ -113,5 +132,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
             @Param("maxPageCount") Integer maxPageCount,
             @Param("minPubYear") Integer minPubYear,
             @Param("maxPubYear") Integer maxPubYear,
+            @Param("minRating") Double minRating,
+            @Param("maxRating") Double maxRating,
             Pageable pageable);
 }
