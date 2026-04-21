@@ -28,7 +28,8 @@ import java.util.List;
 public class BookController {
     private final BookService bookService;
     private final UserRepository userRepository;
-    public BookController(BookService bookService,  UserRepository userRepository) {
+
+    public BookController(BookService bookService, UserRepository userRepository) {
         this.bookService = bookService;
         this.userRepository = userRepository;
     }
@@ -43,8 +44,7 @@ public class BookController {
     public Page<BookDTO> getBooks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            Authentication authentication)
-    {
+            Authentication authentication) {
         return bookService.getAllBooks(page, size, callerRole(authentication));
     }
 
@@ -67,7 +67,8 @@ public class BookController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             Authentication authentication) {
-        return ResponseEntity.ok(bookService.searchByTitleOrAuthorOrCategory(query, page, size,callerRole(authentication)));
+        return ResponseEntity
+                .ok(bookService.searchByTitleOrAuthorOrCategory(query, page, size, callerRole(authentication)));
     }
 
     /**
@@ -91,7 +92,8 @@ public class BookController {
             Authentication authentication) {
         try {
             Page<BookDTO> filteredBooks = bookService.filterBooks(
-                    language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, page, size,callerRole(authentication));
+                    language, categories, labels, minPageCount, maxPageCount, minPubYear, maxPubYear, page, size,
+                    callerRole(authentication));
             return ResponseEntity.ok(filteredBooks);
         } catch (IllegalArgumentException e) {
             // 400 als de filter combinatie Fongeldig is
@@ -143,8 +145,11 @@ public class BookController {
     @GetMapping("/top-rated")
     public ResponseEntity<List<BookDTO>> getRecommendedBooks(
             Authentication authentication) {
-        OAuth2User principal = (OAuth2User) authentication.getPrincipal();
-        String uid = principal.getAttribute("userID");
+        String uid = currentUserUid(authentication);
+
+        if (uid == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         return ResponseEntity.ok(bookService.getRecommendedBooksForUser(uid));
     }
 
@@ -152,12 +157,15 @@ public class BookController {
      * Voegt een boek toe aan de database via ISBN (opgehaald van Google Books).
      */
     @PostMapping("/add/{isbn}")
-    public ResponseEntity<?> addBookByIsbn(@PathVariable String isbn) {
+    public ResponseEntity<?> addBookByIsbn(@PathVariable String isbn, @RequestParam(required = false) String campus,
+            Authentication authentication) {
         try {
-            BookDTO addedBook = bookService.addBookByIsbn(isbn);
+            BookDTO addedBook = bookService.addBookByIsbn(isbn, currentUserUid(authentication), campus);
             return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (ResponseStatusException e) {
+            return new ResponseEntity<>(e.getReason(), e.getStatusCode());
         } catch (Exception e) {
             return new ResponseEntity<>("An error occurred while fetching the book.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -205,12 +213,16 @@ public class BookController {
      * Importeert boeken vanuit een Excel-bestand.
      */
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> importBooks(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> importBooks(@RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) String campus, Authentication authentication) {
         try {
-            BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+            BulkImportResponseDTO result = bookService.importBooksFromExcel(file, currentUserUid(authentication),
+                    campus);
             return new ResponseEntity<>(result, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (ResponseStatusException e) {
+            return new ResponseEntity<>(e.getReason(), e.getStatusCode());
         } catch (Exception e) {
             return new ResponseEntity<>("An error occurred while importing the Excel file.",
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -234,28 +246,39 @@ public class BookController {
      * Voegt boek toe aan database
      */
     @PostMapping("/add")
-    public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request) {
+    public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request, Authentication authentication) {
         try {
-            BookDTO addedBook = bookService.addManualBook(request);
+            BookDTO addedBook = bookService.addManualBook(request, currentUserUid(authentication));
             return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (ResponseStatusException e) {
+            return new ResponseEntity<>(e.getReason(), e.getStatusCode());
         } catch (Exception e) {
             return new ResponseEntity<>("An error occurred while saving the book.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     /**
      * helper methods
      */
     private UserRoles callerRole(Authentication authentication) {
-        if (authentication == null) return UserRoles.STUDENT;
+        if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User principal))
+            return UserRoles.STUDENT;
 
-        OAuth2User principal = (OAuth2User) authentication.getPrincipal();
         String uid = principal.getAttribute("userID");
 
         return userRepository.findBySmartschoolUid(uid)
                 .map(UserEntity::getRole)
                 .orElse(UserRoles.STUDENT);
+    }
+
+    private String currentUserUid(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User principal)) {
+            return null;
+        }
+
+        return principal.getAttribute("userID");
     }
 
 }
