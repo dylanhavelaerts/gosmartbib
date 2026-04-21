@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +31,15 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      */
     @EntityGraph(attributePaths = { "school", "classes" })
     Optional<UserEntity> findByIdAndSchool_Id(Long id, Long schoolId);
+
+    /**
+     * Vindt actieve users van een school op basis van hun smartschoolUid.
+     * Dit gebruiken we om display names alleen op te lossen voor users die
+     * al in onze eigen database en in dezelfde school gekend zijn.
+     */
+    List<UserEntity> findAllBySchool_IdAndSmartschoolUidInAndActiveIsTrue(
+            Long schoolId,
+            Collection<String> smartschoolUids);
 
     List<UserEntity> findAllByActiveIsFalseAndScheduledDeletionAtBefore(LocalDateTime cutoff);
 }

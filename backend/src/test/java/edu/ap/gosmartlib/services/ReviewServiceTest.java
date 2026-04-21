@@ -3,17 +3,21 @@ package edu.ap.gosmartlib.services;
 import edu.ap.gosmartlib.dto.reviews.ReviewDetailDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
+import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReviewEntity;
+import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.AlreadyReviewedException;
 import edu.ap.gosmartlib.exceptions.OutOfBoundsException;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReviewRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.util.AutomaticModerationDecision;
 import edu.ap.gosmartlib.util.ReviewStatus;
 import edu.ap.gosmartlib.util.UserRoles;
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -23,12 +27,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -46,8 +53,22 @@ class ReviewServiceTest {
     @Mock
     private BookRepository bookRepository;
 
+    @Mock
+    private UserDirectoryService userDirectoryService;
+
+    @Mock
+    private ReviewAutoModerationService reviewAutoModerationService;
+
     @InjectMocks
     private ReviewService reviewService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(reviewAutoModerationService.moderate(anyString()))
+                .thenReturn(AutomaticModerationDecision.clean());
+        lenient().when(reviewRepository.save(any(ReviewEntity.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+    }
 
     @Test
     void givenValidRequest_whenSubmitReview_thenCreatesReviewWithDefaultState() {
@@ -64,12 +85,21 @@ class ReviewServiceTest {
                     toSave.setId(99L);
                     return toSave;
                 });
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-1", "Reviewer Name"),
+                        List.of(),
+                        "ok"));
 
         ReviewSummaryDTO result = reviewService.submitReview(request, "uid-1");
 
         assertNotNull(result);
         assertEquals(99L, result.id());
         assertEquals(1L, result.userId());
+        assertEquals("Reviewer Name", result.reviewerName());
         assertEquals(UserRoles.STUDENT, result.userRole());
         assertEquals("Strong recommendation", result.text());
         assertEquals(4.5f, result.rating());
@@ -81,7 +111,7 @@ class ReviewServiceTest {
         assertEquals(user, saved.getUser());
         assertEquals(book, saved.getBook());
         assertEquals(LocalDate.now(), saved.getReviewDate());
-        assertEquals(ReviewStatus.AWAITING_MODERATION, saved.getReviewStatus());
+        assertEquals(ReviewStatus.APPROVED, saved.getReviewStatus());
         assertEquals(0, saved.getFlagCount());
         assertEquals(true, saved.isSpoiler());
     }
@@ -97,6 +127,14 @@ class ReviewServiceTest {
         when(reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn("uid-1", "9780000000001")).thenReturn(false);
         when(reviewRepository.save(org.mockito.ArgumentMatchers.any(ReviewEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-1", "Reviewer Name"),
+                        List.of(),
+                        "ok"));
 
         ReviewSummaryDTO result = reviewService.submitReview(request, "uid-1");
 
@@ -109,7 +147,8 @@ class ReviewServiceTest {
         ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", tooLongText, 3.0f, false);
 
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(buildUser(1L, "uid-1")));
-        when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
+        when(bookRepository.findByIsbn("9780000000001"))
+                .thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
         when(reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn("uid-1", "9780000000001")).thenReturn(false);
 
         assertThrows(OutOfBoundsException.class, () -> reviewService.submitReview(request, "uid-1"));
@@ -121,7 +160,8 @@ class ReviewServiceTest {
         ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 6.0f, false);
 
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(buildUser(1L, "uid-1")));
-        when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
+        when(bookRepository.findByIsbn("9780000000001"))
+                .thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
         when(reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn("uid-1", "9780000000001")).thenReturn(false);
 
         assertThrows(OutOfBoundsException.class, () -> reviewService.submitReview(request, "uid-1"));
@@ -133,7 +173,8 @@ class ReviewServiceTest {
         ReviewRequestDTO request = new ReviewRequestDTO("9780000000001", "Text", 4.0f, false);
 
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(buildUser(1L, "uid-1")));
-        when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
+        when(bookRepository.findByIsbn("9780000000001"))
+                .thenReturn(Optional.of(buildBook(10L, "9780000000001", "Book")));
         when(reviewRepository.existsByUser_SmartschoolUidAndBook_Isbn("uid-1", "9780000000001")).thenReturn(true);
 
         assertThrows(AlreadyReviewedException.class, () -> reviewService.submitReview(request, "uid-1"));
@@ -162,7 +203,7 @@ class ReviewServiceTest {
         assertEquals("Updated review", existing.getText());
         assertEquals(2.5f, existing.getRating());
         assertEquals(true, existing.isSpoiler());
-        assertEquals(ReviewStatus.AWAITING_MODERATION, existing.getReviewStatus());
+        assertEquals(ReviewStatus.APPROVED, existing.getReviewStatus());
         verify(reviewRepository, times(1)).save(existing);
     }
 
@@ -223,14 +264,12 @@ class ReviewServiceTest {
     }
 
     @Test
-    void givenDifferentOwner_whenUserDeleteReview_thenThrowsRuntimeExceptionWrappingSecurityException() {
+    void givenDifferentOwner_whenUserDeleteReview_thenThrowsSecurityException() {
         ReviewEntity existing = buildReview(71L, buildUser(1L, "owner-uid"), buildBook(10L, "9780000000001", "Book"));
         when(reviewRepository.findById(71L)).thenReturn(Optional.of(existing));
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> reviewService.userDeleteReview(71L, "other-uid", false));
-
-        assertInstanceOf(SecurityException.class, exception.getCause());
+        assertThrows(SecurityException.class,
+                () -> reviewService.userDeleteReview(71L, "other-uid", false));
         verify(reviewRepository, never()).delete(existing);
     }
 
@@ -306,14 +345,24 @@ class ReviewServiceTest {
         review.setText("Compact review");
         review.setRating(3.5f);
         review.setReviewDate(LocalDate.of(2026, 2, 1));
+        review.setReviewStatus(ReviewStatus.APPROVED);
 
         when(reviewRepository.findByBook_Isbn("9780000000091")).thenReturn(List.of(review));
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-7", "Reviewer Name"),
+                        List.of(),
+                        "ok"));
 
-        List<ReviewSummaryDTO> result = reviewService.findAllSummaryReviewsByBook("9780000000091");
+        List<ReviewSummaryDTO> result = reviewService.findAllSummaryReviewsByBook("9780000000091", "viewer-uid");
 
         assertEquals(1, result.size());
         assertEquals(91L, result.get(0).id());
         assertEquals(7L, result.get(0).userId());
+        assertEquals("Reviewer Name", result.get(0).reviewerName());
         assertEquals("Compact review", result.get(0).text());
         verify(reviewRepository, times(1)).findByBook_Isbn("9780000000091");
     }
@@ -325,21 +374,29 @@ class ReviewServiceTest {
         review.setRating(4.0f);
         review.setReviewDate(LocalDate.of(2026, 2, 2));
         review.setReviewStatus(ReviewStatus.APPROVED);
-        review.setStatus(ReviewStatus.APPROVED);
         review.setFlagCount(2);
 
-        when(reviewRepository.findByStatus(ReviewStatus.APPROVED)).thenReturn(List.of(review));
+        when(reviewRepository.findByReviewStatus(ReviewStatus.APPROVED)).thenReturn(List.of(review));
+        when(userDirectoryService.resolveDisplayNames(any(), any()))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-8", "Reviewer Name"),
+                        List.of(),
+                        "ok"));
 
-        List<ReviewDetailDTO> result = reviewService.findAllReviewsByStatus(ReviewStatus.APPROVED);
+        List<ReviewDetailDTO> result = reviewService.findAllReviewsByStatus(ReviewStatus.APPROVED, "admin-uid");
 
         assertEquals(1, result.size());
         ReviewDetailDTO dto = result.get(0);
         assertEquals(92L, dto.id());
+        assertEquals("Reviewer Name", dto.reviewerName());
         assertEquals("9780000000092", dto.bookISBN());
         assertEquals("Book 92", dto.bookTitle());
         assertEquals(ReviewStatus.APPROVED, dto.reviewStatus());
         assertEquals(2, dto.flagCount());
-        verify(reviewRepository, times(1)).findByStatus(ReviewStatus.APPROVED);
+        verify(reviewRepository, times(1)).findByReviewStatus(ReviewStatus.APPROVED);
     }
 
     private UserEntity buildUser(Long id, String smartschoolUid) {
@@ -347,6 +404,12 @@ class ReviewServiceTest {
         user.setId(id);
         user.setSmartschoolUid(smartschoolUid);
         user.setRole(UserRoles.STUDENT);
+
+        SchoolEntity school = new SchoolEntity();
+        school.setId(1L);
+        school.setName("Test School");
+        user.setSchool(school);
+
         return user;
     }
 
@@ -367,9 +430,7 @@ class ReviewServiceTest {
         review.setRating(3.0f);
         review.setReviewDate(LocalDate.of(2026, 1, 1));
         review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
-        review.setStatus(ReviewStatus.AWAITING_MODERATION);
         review.setFlagCount(0);
         return review;
     }
 }
-

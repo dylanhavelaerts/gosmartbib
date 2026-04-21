@@ -43,6 +43,10 @@ export default function ReviewSection({
       : null;
 
   async function extractErrorMessage(res: Response): Promise<string> {
+    if (res.status === 409) {
+      return "Je hebt deze review al gerapporteerd.";
+    }
+
     try {
       const payload = await res.clone().json();
       if (typeof payload?.message === "string" && payload.message.trim()) {
@@ -76,13 +80,24 @@ export default function ReviewSection({
 
   function fetchReviews() {
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`)
-      .then((res) => res.json())
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`, {
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Kon reviews niet laden (HTTP ${res.status})`);
+        }
+
+        return res.json();
+      })
       .then((data: ReviewSummary[]) => {
         setReviews(data);
         setCurrentPage(1);
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setReviews([]);
+      })
       .finally(() => setLoading(false));
   }
 

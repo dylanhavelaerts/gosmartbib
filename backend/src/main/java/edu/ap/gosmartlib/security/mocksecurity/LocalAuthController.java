@@ -75,6 +75,13 @@ public class LocalAuthController {
                         userRepository.save(user);
                     });
         }
+        if (role.equalsIgnoreCase("admin")) {
+            userRepository.findBySmartschoolUid("mock-admin-local")
+                    .ifPresent(user -> {
+                        user.setRole(UserRoles.ADMIN);
+                        userRepository.save(user);
+                    });
+        }
 
         return ResponseEntity.ok("Switched to role: " + role);
     }
@@ -130,6 +137,23 @@ public class LocalAuthController {
                 attrs.put("username", "lemmensL");
                 attrs.put("email", "lieve.lemmens@ap.be");
                 attrs.put("basisrol", "Bibliotheekbeheerder");
+                attrs.put("status", "actief");
+                attrs.put("platform", "https://aphogeschool.smartschool.be");
+                attrs.put("isMainAccount", 1);
+                attrs.put("isCoAccount", 0);
+                attrs.put("groups", List.of());
+                attrs.put("parentGroups", List.of());
+                yield attrs;
+            }
+            case "admin" -> {
+                Map<String, Object> attrs = new HashMap<>();
+                attrs.put("userID", "mock-admin-local");
+                attrs.put("name", "Admin");
+                attrs.put("surname", "Local");
+                attrs.put("fullname", "Local Admin");
+                attrs.put("username", "adminlocal");
+                attrs.put("email", "admin.local@ap.be");
+                attrs.put("basisrol", "Directie");
                 attrs.put("status", "actief");
                 attrs.put("platform", "https://aphogeschool.smartschool.be");
                 attrs.put("isMainAccount", 1);

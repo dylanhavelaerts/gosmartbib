@@ -6,7 +6,8 @@ import java.time.LocalDate;
 
 public record ReviewSummaryDTO(
         Long id,
-        Long userId, // Nog nadenken hoe met naam (GDRP)
+        Long userId,
+        String reviewerName,
         UserRoles userRole,
         String text,
         LocalDate reviewDate,

@@ -17,7 +17,16 @@ public class RoleGuard {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
+    public boolean isAdmin(Authentication authentication) {
+        return hasAnyRole(authentication, UserRoles.ADMIN);
+    }
+
+    @Transactional(readOnly = true)
     public boolean isBibbeheerder(Authentication authentication) {
+        return hasAnyRole(authentication, UserRoles.BIBLIOTHEEKBEHEERDER, UserRoles.ADMIN);
+    }
+
+    private boolean hasAnyRole(Authentication authentication, UserRoles... allowedRoles) {
         if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User oAuth2User)) {
             return false;
         }
@@ -29,7 +38,14 @@ public class RoleGuard {
 
         return userRepository.findBySmartschoolUid(uid)
                 .map(UserEntity::getRole)
-                .filter(role -> role == UserRoles.BIBLIOTHEEKBEHEERDER)
-                .isPresent();
+                .map(role -> {
+                    for (UserRoles allowedRole : allowedRoles) {
+                        if (role == allowedRole) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })
+                .orElse(false);
     }
 }

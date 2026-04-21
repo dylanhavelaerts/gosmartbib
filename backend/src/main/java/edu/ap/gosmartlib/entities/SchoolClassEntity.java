@@ -34,7 +34,7 @@ public class SchoolClassEntity {
     private String grade; // 1ste jaar
 
     public SchoolClassEntity(SchoolEntity school, String smartschoolGroupId,
-                             String name, String schoolYear, String grade) {
+            String name, String schoolYear, String grade) {
         this.school = school;
         this.smartschoolGroupId = smartschoolGroupId;
         this.name = name;

@@ -10,6 +10,7 @@ public record ReviewDetailDTO(
         Long id,
         Long userId,
         String userSmartschoolUid,
+        String reviewerName,
         UserRoles userRole,
         Long schoolId,
         String schoolName,
