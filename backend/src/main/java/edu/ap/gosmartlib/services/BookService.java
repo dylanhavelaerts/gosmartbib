@@ -113,7 +113,7 @@ public class BookService {
      */
     public BookDTO getBookById(Long id, UserRoles callerRole) throws BookNotFoundException {
 
-        BookEntity book = bookRepository.findById(id)
+        BookEntity book = bookRepository.findDetailedById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));
         if (book.isDidacticTag() && !canSeeDidactic(callerRole)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
@@ -327,7 +327,7 @@ public class BookService {
     }
 
     public BookDTO updateBook(Long id, BookDTO updatedBook) {
-        BookEntity book = bookRepository.findById(id)
+        BookEntity book = bookRepository.findDetailedById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));
         if (updatedBook.title() != null && updatedBook.title().isBlank())
             throw new IllegalArgumentException("Titel mag niet leeg zijn");
@@ -427,7 +427,7 @@ public class BookService {
         BookEntity saved = bookRepository.saveAndFlush(book);
 
         // Reload zo dat de DB-gegenereerde ISBN in de response DTO zit
-        BookEntity reloaded = bookRepository.findById(saved.getId())
+        BookEntity reloaded = bookRepository.findDetailedById(saved.getId())
                 .orElseThrow(() -> new IllegalStateException(
                         "Boek werd opgeslagen maar kon niet opnieuw geladen worden"));
 
