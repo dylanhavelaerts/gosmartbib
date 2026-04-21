@@ -135,13 +135,16 @@ class ReviewControllerTest {
     }
 
     @Test
-    void givenValidPrincipal_whenEditReview_thenReturnsNoContentAndDelegatesToService() {
+    void givenValidPrincipal_whenEditReview_thenReturnsOkAndDelegatesToService() {
         ReviewRequestDTO request = new ReviewRequestDTO("9780000000006", "Updated text", 3.0f, false);
+        ReviewSummaryDTO expected = buildSummary(42L, "Updated text", 3.0f);
         when(principal.getAttribute("userID")).thenReturn("smart-uid-2");
+        when(reviewService.editReview(42L, request, "smart-uid-2")).thenReturn(expected);
 
-        ResponseEntity<Void> response = reviewController.editReview(42L, request, principal);
+        ResponseEntity<ReviewSummaryDTO> response = reviewController.editReview(42L, request, principal);
 
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expected, response.getBody());
         verify(reviewService, times(1)).editReview(42L, request, "smart-uid-2");
     }
 
@@ -217,7 +220,7 @@ class ReviewControllerTest {
     }
 
     private ReviewSummaryDTO buildSummary(Long id, String text, float rating) {
-        return new ReviewSummaryDTO(id, 11L, UserRoles.STUDENT, text, LocalDate.of(2026, 1, 1), rating, false);
+        return new ReviewSummaryDTO(id, 11L, UserRoles.STUDENT, text, LocalDate.of(2026, 1, 1), rating, false, null);
     }
 
     private ReviewDetailDTO buildDetail(Long id, String isbn, String bookTitle, ReviewStatus status) {

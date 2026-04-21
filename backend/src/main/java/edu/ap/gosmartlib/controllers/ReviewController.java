@@ -65,10 +65,9 @@ public class ReviewController {
     }
 
     @PatchMapping("/{reviewId}")
-    public ResponseEntity<Void> editReview(@PathVariable Long reviewId,  @RequestBody ReviewRequestDTO request, @AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<ReviewSummaryDTO> editReview(@PathVariable Long reviewId,  @RequestBody ReviewRequestDTO request, @AuthenticationPrincipal OAuth2User principal) {
         String smartschoolUid = extractUid(principal);
-        reviewService.editReview(reviewId, request, smartschoolUid);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(reviewService.editReview(reviewId, request, smartschoolUid));
     }
 
     @PatchMapping("/{reviewId}/approve")

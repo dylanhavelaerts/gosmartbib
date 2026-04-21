@@ -26,6 +26,7 @@ export default function ReviewSection({
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [submissionNotice, setSubmissionNotice] = useState("");
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [flaggingReviewId, setFlaggingReviewId] = useState<number | null>(null);
   const [deleteReviewId, setDeleteReviewId] = useState<number | null>(null);
@@ -89,9 +90,10 @@ export default function ReviewSection({
     fetchReviews();
   }, [isbn]);
 
-  function handleSubmitted() {
+  function handleSubmitted(moderationNotice?: string) {
     setEditingReviewId(null);
     setShowForm(false);
+    setSubmissionNotice(moderationNotice ?? "");
     fetchReviews();
     onReviewSubmitted?.();
   }
@@ -234,6 +236,10 @@ export default function ReviewSection({
           initialRating={editingReview?.rating ?? 0}
           initialSpoiler={editingReview?.spoiler ?? false}
         />
+      )}
+
+      {submissionNotice && (
+        <p className="reviewInfoNotice">{submissionNotice}</p>
       )}
 
       {loading ? (

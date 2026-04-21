@@ -44,6 +44,17 @@
   gap: 0.75rem;
 }
 
+.reviewInfoNotice {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid rgba(142, 36, 70, 0.35);
+  background: rgba(142, 36, 70, 0.08);
+  color: #5c1d34;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
 .reviewFormTitle {
   font-size: 14px;
   font-weight: 600;
