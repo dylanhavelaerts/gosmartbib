@@ -7,6 +7,7 @@ import edu.ap.gosmartlib.dto.BookInventoryDTO;
 import edu.ap.gosmartlib.dto.CreateBookInventoryRequestDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
+import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.BookService;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import static org.mockito.ArgumentMatchers.isNull;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -32,7 +34,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -60,24 +61,24 @@ class BookControllerTest {
     void givenBooksExist_whenGetBooks_thenReturnsExpectedDTOs() {
         List<BookDTO> books = List.of(buildDTO(1L, "Clean Code"));
         Page<BookDTO> expected = toPage(books);
-        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT)).thenReturn(expected);
+        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, null)).thenReturn(expected);
 
         Page<BookDTO> result = bookController.getBooks(0, 20, null);
 
         assertEquals(expected, result);
-        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT, null);
     }
 
     @Test
     void givenNoBooksExist_whenGetBooks_thenReturnsEmptyPage() {
         Page<BookDTO> expected = toPage(List.of());
-        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT)).thenReturn(expected);
+        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, null)).thenReturn(expected);
 
         Page<BookDTO> result = bookController.getBooks(0, 20, null);
 
         assertNotNull(result);
         assertEquals(0, result.getTotalElements());
-        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT, null);
     }
 
     @Test
@@ -87,7 +88,7 @@ class BookControllerTest {
                 buildDTO(2L, "Effective Java"),
                 buildDTO(3L, "Refactoring"));
         Page<BookDTO> expected = toPage(books);
-        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT)).thenReturn(expected);
+        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, null)).thenReturn(expected);
 
         Page<BookDTO> result = bookController.getBooks(0, 20, null);
 
@@ -95,47 +96,48 @@ class BookControllerTest {
         assertEquals("Clean Code", result.getContent().get(0).title());
         assertEquals("Effective Java", result.getContent().get(1).title());
         assertEquals("Refactoring", result.getContent().get(2).title());
-        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT, null);
     }
 
     @Test
     void givenServiceFails_whenGetBooks_thenThrowsException() {
-        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT)).thenThrow(new RuntimeException("Service unavailable"));
+        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, null))
+                .thenThrow(new RuntimeException("Service unavailable"));
 
         assertThrows(RuntimeException.class, () -> bookController.getBooks(0, 20, null));
-        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT, null);
     }
 
     @Test
     void givenServiceIsCalled_whenGetBooks_thenDelegatesOnlyToService() {
-        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT)).thenReturn(toPage(List.of()));
+        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, null)).thenReturn(toPage(List.of()));
 
         bookController.getBooks(0, 20, null);
 
-        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT, null);
         verifyNoMoreInteractions(bookService);
     }
 
     @Test
     void givenBookExists_whenGetBookById_thenReturnsCorrectDTO() throws BookNotFoundException {
         BookDTO expected = buildDTO(1L, "Clean Code");
-        when(bookService.getBookById(1L, UserRoles.STUDENT)).thenReturn(expected);
+        when(bookService.getBookById(1L, UserRoles.STUDENT, null)).thenReturn(expected);
 
         ResponseEntity<?> result = bookController.getBookById(1L, null);
 
         assertEquals(200, result.getStatusCode().value());
         assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).getBookById(1L, UserRoles.STUDENT);
+        verify(bookService, times(1)).getBookById(1L, UserRoles.STUDENT, null);
     }
 
     @Test
     void givenBookDoesNotExist_whenGetBookById_thenReturnsNotFound() throws BookNotFoundException {
-        when(bookService.getBookById(99L, UserRoles.STUDENT)).thenThrow(new BookNotFoundException(99L));
+        when(bookService.getBookById(99L, UserRoles.STUDENT, null)).thenThrow(new BookNotFoundException(99L));
 
         ResponseEntity<?> result = bookController.getBookById(99L, null);
 
         assertEquals(404, result.getStatusCode().value());
-        verify(bookService, times(1)).getBookById(99L, UserRoles.STUDENT);
+        verify(bookService, times(1)).getBookById(99L, UserRoles.STUDENT, null);
     }
 
     @Test
@@ -159,23 +161,23 @@ class BookControllerTest {
         List<BookDTO> expected = List.of(
                 buildDTO(1L, "Spotlight Book 1"),
                 buildDTO(2L, "Spotlight Book 2"));
-        when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT)).thenReturn(expected);
+        when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null)).thenReturn(expected);
 
         List<BookDTO> result = bookController.getBooksInSpotlight(null);
 
         assertEquals(expected, result);
-        verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT);
+        verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
     }
 
     @Test
     void givenNoSpotlightBooksExist_whenGetBooksInSpotlight_thenReturnsEmptyList() {
-        when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT)).thenReturn(List.of());
+        when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null)).thenReturn(List.of());
 
         List<BookDTO> result = bookController.getBooksInSpotlight(null);
 
         assertNotNull(result);
         assertEquals(0, result.size());
-        verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT);
+        verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
     }
 
     @Test
@@ -184,23 +186,23 @@ class BookControllerTest {
                 buildDTO(10L, "Latest Book 1"),
                 buildDTO(11L, "Latest Book 2"),
                 buildDTO(12L, "Latest Book 3"));
-        when(bookService.getLatestBooks(UserRoles.STUDENT)).thenReturn(expected);
+        when(bookService.getLatestBooks(UserRoles.STUDENT, null)).thenReturn(expected);
 
         List<BookDTO> result = bookController.getLatestBooks(null);
 
         assertEquals(expected, result);
-        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT);
+        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
     }
 
     @Test
     void givenNoLatestBooksExist_whenGetLatestBooks_thenReturnsEmptyList() {
-        when(bookService.getLatestBooks(UserRoles.STUDENT)).thenReturn(List.of());
+        when(bookService.getLatestBooks(UserRoles.STUDENT, null)).thenReturn(List.of());
 
         List<BookDTO> result = bookController.getLatestBooks(null);
 
         assertNotNull(result);
         assertEquals(0, result.size());
-        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT);
+        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
     }
 
     // --- filterBooks Controller Tests ---
@@ -211,14 +213,14 @@ class BookControllerTest {
                 null, "en", List.of("Programming"), List.of("Toekomst & technologie"),
                 100, 500, 2000, 2023, 3.0, 5.0, 0, 20);
         Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
-        when(bookService.filterBooks(filter, UserRoles.STUDENT))
+        when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenReturn(expected);
 
         ResponseEntity<?> result = bookController.filterBooks(filter, null);
 
         assertEquals(200, result.getStatusCode().value());
         assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).filterBooks(filter, UserRoles.STUDENT);
+        verify(bookService, times(1)).filterBooks(filter, UserRoles.STUDENT, null);
     }
 
     @Test
@@ -227,14 +229,14 @@ class BookControllerTest {
                 null, null, null, List.of("Toekomst & technologie"),
                 null, null, null, null, null, null, 0, 20);
         Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
-        when(bookService.filterBooks(filter, UserRoles.STUDENT))
+        when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenReturn(expected);
 
         ResponseEntity<?> result = bookController.filterBooks(filter, null);
 
         assertEquals(200, result.getStatusCode().value());
         assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).filterBooks(filter, UserRoles.STUDENT);
+        verify(bookService, times(1)).filterBooks(filter, UserRoles.STUDENT, null);
     }
 
     @Test
@@ -242,7 +244,7 @@ class BookControllerTest {
         BookFilterRequest filter = new BookFilterRequest(
                 null, null, null, null,
                 null, null, null, null, null, null, 0, 20);
-        when(bookService.filterBooks(filter, UserRoles.STUDENT))
+        when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenReturn(toPage(List.of(buildDTO(1L, "Clean Code"))));
 
         ResponseEntity<?> result = bookController.filterBooks(filter, null);
@@ -255,7 +257,7 @@ class BookControllerTest {
         BookFilterRequest filter = new BookFilterRequest(
                 null, null, null, null,
                 500, 100, null, null, null, null, 0, 20);
-        when(bookService.filterBooks(filter, UserRoles.STUDENT))
+        when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenThrow(new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount"));
 
         ResponseEntity<?> result = bookController.filterBooks(filter, null);
@@ -269,7 +271,7 @@ class BookControllerTest {
         BookFilterRequest filter = new BookFilterRequest(
                 null, null, null, null,
                 null, null, null, null, 5.0, 3.0, 0, 20);
-        when(bookService.filterBooks(filter, UserRoles.STUDENT))
+        when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenThrow(new IllegalArgumentException("minRating mag niet groter zijn dan maxRating"));
 
         ResponseEntity<?> result = bookController.filterBooks(filter, null);
@@ -280,7 +282,7 @@ class BookControllerTest {
 
     @Test
     void givenDatabaseFails_whenFilterBooks_thenReturnsInternalServerError() {
-        when(bookService.filterBooks(any(BookFilterRequest.class), any()))
+        when(bookService.filterBooks(any(BookFilterRequest.class), any(), isNull()))
                 .thenThrow(new DataAccessException("DB down") {
                 });
 
@@ -293,7 +295,7 @@ class BookControllerTest {
 
     @Test
     void givenNoResults_whenFilterBooks_thenReturnsEmptyPage() {
-        when(bookService.filterBooks(any(BookFilterRequest.class), any()))
+        when(bookService.filterBooks(any(BookFilterRequest.class), any(), isNull()))
                 .thenReturn(toPage(List.of()));
 
         ResponseEntity<?> result = bookController.filterBooks(new BookFilterRequest(
@@ -315,23 +317,23 @@ class BookControllerTest {
                 buildDTO(2L, "Spotlight Book 2"),
                 buildDTO(3L, "Spotlight Book 3"));
 
-        when(bookService.getAllBooksInSpotlight(UserRoles.STUDENT)).thenReturn(expected);
+        when(bookService.getAllBooksInSpotlight(UserRoles.STUDENT, null)).thenReturn(expected);
 
         List<BookDTO> result = bookController.getAllBooksInSpotlight(null);
 
         assertEquals(expected, result);
-        verify(bookService, times(1)).getAllBooksInSpotlight(UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooksInSpotlight(UserRoles.STUDENT, null);
     }
 
     @Test
     void givenNoSpotlightBooksExist_whenGetAllBooksInSpotlight_thenReturnsEmptyList() {
-        when(bookService.getAllBooksInSpotlight(UserRoles.STUDENT)).thenReturn(List.of());
+        when(bookService.getAllBooksInSpotlight(UserRoles.STUDENT, null)).thenReturn(List.of());
 
         List<BookDTO> result = bookController.getAllBooksInSpotlight(null);
 
         assertNotNull(result);
         assertEquals(0, result.size());
-        verify(bookService, times(1)).getAllBooksInSpotlight(UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooksInSpotlight(UserRoles.STUDENT, null);
     }
 
     @Test
@@ -353,13 +355,13 @@ class BookControllerTest {
     @Test
     void givenQuery_whenSearchByTitleOrAuthor_thenReturnsOkWithResults() {
         Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
-        when(bookService.searchByTitleOrAuthorOrCategory("Clean", 0, 20, UserRoles.STUDENT)).thenReturn(expected);
+        when(bookService.searchByTitleOrAuthorOrCategory("Clean", 0, 20, UserRoles.STUDENT, null)).thenReturn(expected);
 
         ResponseEntity<Page<BookDTO>> result = bookController.searchByTitleOrAuthorOrCategory("Clean", 0, 20, null);
 
         assertEquals(200, result.getStatusCode().value());
         assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).searchByTitleOrAuthorOrCategory("Clean", 0, 20, UserRoles.STUDENT);
+        verify(bookService, times(1)).searchByTitleOrAuthorOrCategory("Clean", 0, 20, UserRoles.STUDENT, null);
     }
 
     @Test
@@ -519,40 +521,41 @@ class BookControllerTest {
     @Test
     void givenBooksExist_whenGetAllBooksUnpaged_thenReturnsAllDTOs() {
         List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"), buildDTO(2L, "Effective Java"));
-        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT)).thenReturn(expected);
+        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT, null)).thenReturn(expected);
 
         List<BookDTO> result = bookController.getAllBooksUnpaged(null);
 
         assertEquals(expected, result);
-        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT, null);
     }
 
     @Test
     void givenNoBooksExist_whenGetAllBooksUnpaged_thenReturnsEmptyList() {
-        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT)).thenReturn(List.of());
+        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT, null)).thenReturn(List.of());
 
         List<BookDTO> result = bookController.getAllBooksUnpaged(null);
 
         assertNotNull(result);
         assertEquals(0, result.size());
-        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT, null);
     }
 
     @Test
     void givenServiceFails_whenGetAllBooksUnpaged_thenThrowsException() {
-        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT)).thenThrow(new RuntimeException("Database unavailable"));
+        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT, null))
+                .thenThrow(new RuntimeException("Database unavailable"));
 
         assertThrows(RuntimeException.class, () -> bookController.getAllBooksUnpaged(null));
-        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT, null);
     }
 
     @Test
     void givenServiceIsCalled_whenGetAllBooksUnpaged_thenDelegatesOnlyToService() {
-        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT)).thenReturn(List.of());
+        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT, null)).thenReturn(List.of());
 
         bookController.getAllBooksUnpaged(null);
 
-        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT);
+        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT, null);
         verifyNoMoreInteractions(bookService);
     }
 
@@ -728,7 +731,7 @@ class BookControllerTest {
                         buildInventoryDTO(11L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
                         buildInventoryDTO(12L, 2L, "GO! School", "Campus Zuid", 3, 2)));
 
-        when(bookService.getBookById(1L, UserRoles.STUDENT)).thenReturn(expected);
+        when(bookService.getBookById(1L, UserRoles.STUDENT, null)).thenReturn(expected);
 
         ResponseEntity<?> result = bookController.getBookById(1L, null);
 
@@ -746,7 +749,7 @@ class BookControllerTest {
         assertEquals("GO! School", body.inventories().get(1).schoolName());
         assertEquals(2, body.inventories().get(1).availableCopies());
 
-        verify(bookService).getBookById(1L, UserRoles.STUDENT);
+        verify(bookService).getBookById(1L, UserRoles.STUDENT, null);
     }
 
     @Test
@@ -891,12 +894,14 @@ class BookControllerTest {
         org.springframework.security.oauth2.core.user.OAuth2User principal = mock(
                 org.springframework.security.oauth2.core.user.OAuth2User.class);
 
-        edu.ap.gosmartlib.entities.UserEntity user = new edu.ap.gosmartlib.entities.UserEntity();
+        UserEntity user = new UserEntity();
         user.setSmartschoolUid(uid);
         user.setRole(role);
 
         when(authentication.getPrincipal()).thenReturn(principal);
         when(principal.getAttribute("userID")).thenReturn(uid);
+        when(userRepository.findBySmartschoolUid(uid)).thenReturn(Optional.of(user));
+
         return authentication;
     }
 
