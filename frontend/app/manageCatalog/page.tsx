@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Book, BOOK_CATEGORIES, BOOK_LABELS } from "../interfaces/Book";
+import { Book, BookInventory, BOOK_CATEGORIES, BOOK_LABELS } from "../interfaces/Book";
+import type { MeResponse } from "../interfaces/user";
 import { useRouter, useSearchParams } from "next/navigation";
 import "../catalog/bookList.css";
 import "./editbook.css";
@@ -20,6 +21,7 @@ export default function ManageCatalogPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [query, setQuery] = useState("");
+  const [me, setMe] = useState<MeResponse | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function ManageCatalogPage() {
 
   function openModal() {
     if (!selectedBook) return;
-    setFormData({ ...selectedBook });
+    setFormData({ ...selectedBook, inventories: buildFallbackInventories(selectedBook) });
     setModalOpen(true);
     setError(null);
   }
@@ -116,12 +118,55 @@ function handleChange(
       }
     }
 
+    const inventories = formData.inventories ?? [];
+
+for (const inventory of inventories) {
+  if (!inventory.schoolId) {
+    setError("Elke inventarisregel moet een schoolId hebben.");
+    return;
+  }
+
+  if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
+    setError("Aantallen mogen niet negatief zijn.");
+    return;
+  }
+
+  if (inventory.availableCopies > inventory.totalCopies) {
+    setError("Beschikbare exemplaren mogen niet groter zijn dan totaal.");
+    return;
+  }
+}
+
+const computedTotalCopies = inventories.reduce(
+    (sum, inventory) => sum + (inventory.totalCopies || 0),
+    0,
+  );
+
+  const computedAvailableCopies = inventories.reduce(
+    (sum, inventory) => sum + (inventory.availableCopies || 0),
+    0,
+  );
+
+  const payload = {
+    ...formData,
+    totalCopies: computedTotalCopies,
+    availableCopies: computedAvailableCopies,
+    inventories: inventories.map((inventory) => ({
+      id: inventory.id ?? null,
+      schoolId: inventory.schoolId,
+      schoolName: inventory.schoolName ?? "",
+      campus: inventory.campus,
+      totalCopies: inventory.totalCopies,
+      availableCopies: inventory.availableCopies,
+    })),
+  };
+
     try {
       const res = await fetch(`${apiUrl}/books/${selectedBook.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error("Save failed");
@@ -156,6 +201,74 @@ function handleChange(
       setDeleting(false);
     }
   }
+
+  const buildFallbackInventories = (book: Book): BookInventory[] => {
+  if (book.inventories && book.inventories.length > 0) {
+    return book.inventories;
+  }
+
+  if (!me?.school) {
+    return [];
+  }
+
+  return [
+    {
+      id: null,
+      schoolId: me.school.id,
+      schoolName: me.school.name,
+      campus: "",
+      totalCopies: book.totalCopies ?? 0,
+      availableCopies: book.availableCopies ?? 0,
+    },
+  ];
+};
+
+function handleInventoryChange(
+  index: number,
+  field: keyof BookInventory,
+  value: string | number | null,
+) {
+  setFormData((prev) => ({
+    ...prev,
+    inventories: (prev.inventories ?? []).map((inventory, i) =>
+      i === index ? { ...inventory, [field]: value } : inventory,
+    ),
+  }));
+}
+
+function addInventoryRow() {
+  setFormData((prev) => ({
+    ...prev,
+    inventories: [
+      ...(prev.inventories ?? []),
+      {
+        id: null,
+        schoolId: me?.school?.id ?? null,
+        schoolName: me?.school?.name ?? "",
+        campus: "",
+        totalCopies: 1,
+        availableCopies: 1,
+      },
+    ],
+  }));
+}
+
+function removeInventoryRow(index: number) {
+  setFormData((prev) => ({
+    ...prev,
+    inventories: (prev.inventories ?? []).filter((_, i) => i !== index),
+  }));
+}
+
+useEffect(() => {
+  fetch(`${apiUrl}/auth/me`, { credentials: "include" })
+    .then((res) => {
+      if (!res.ok) throw new Error("Kon auth/me niet ophalen");
+      return res.json();
+    })
+    .then((data: MeResponse) => setMe(data))
+    .catch((err) => console.error("Fout bij ophalen gebruiker:", err));
+}, [apiUrl]);
 
   return (
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
@@ -316,6 +429,34 @@ function handleChange(
                         <p>
                           {selectedBook.description || "Geen samenvatting beschikbaar voor dit boek."}
                         </p>
+                      </div>
+                      <div className="details-summary">
+                        <h3>Inventaris</h3>
+
+                        {selectedBook.inventories && selectedBook.inventories.length > 0 ? (
+                          <table className="details-table">
+                            <thead>
+                              <tr>
+                                <th>School</th>
+                                <th>Campus</th>
+                                <th>Totaal</th>
+                                <th>Beschikbaar</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {selectedBook.inventories.map((inventory, index) => (
+                                <tr key={inventory.id ?? `${inventory.schoolId}-${inventory.campus}-${index}`}>
+                                  <td>{inventory.schoolName || inventory.schoolId || "-"}</td>
+                                  <td>{inventory.campus || "-"}</td>
+                                  <td>{inventory.totalCopies}</td>
+                                  <td>{inventory.availableCopies}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p>Geen inventarisgegevens beschikbaar.</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -633,8 +774,104 @@ function handleChange(
                     <option value="false">Nee</option>
                       </select>
                   </div>
-                </div>
+                                  <div className="modal-row">
+                  <label className="modal-label">Inventaris per school/campus</label>
 
+                  {(formData.inventories ?? []).map((inventory, index) => (
+                    <div key={inventory.id ?? index} className="inventory-editor-card">
+                      <div className="inventory-editor-grid">
+                        <div>
+                          <label className="modal-label">School ID</label>
+                          <input
+                            className="modal-input"
+                            type="number"
+                            value={inventory.schoolId ?? ""}
+                            onChange={(e) =>
+                              handleInventoryChange(
+                                index,
+                                "schoolId",
+                                e.target.value === "" ? null : Number(e.target.value),
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <label className="modal-label">School</label>
+                          <input
+                            className="modal-input"
+                            type="text"
+                            value={inventory.schoolName ?? ""}
+                            onChange={(e) =>
+                              handleInventoryChange(index, "schoolName", e.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <label className="modal-label">Campus</label>
+                          <input
+                            className="modal-input"
+                            type="text"
+                            value={inventory.campus}
+                            onChange={(e) =>
+                              handleInventoryChange(index, "campus", e.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <label className="modal-label">Totaal</label>
+                          <input
+                            className="modal-input"
+                            type="number"
+                            min="0"
+                            value={inventory.totalCopies}
+                            onChange={(e) =>
+                              handleInventoryChange(
+                                index,
+                                "totalCopies",
+                                Number(e.target.value) || 0,
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <label className="modal-label">Beschikbaar</label>
+                          <input
+                            className="modal-input"
+                            type="number"
+                            min="0"
+                            value={inventory.availableCopies}
+                            onChange={(e) =>
+                              handleInventoryChange(
+                                index,
+                                "availableCopies",
+                                Number(e.target.value) || 0,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {(formData.inventories?.length ?? 0) > 1 && (
+                        <button
+                          type="button"
+                          className="modal-btn-cancel"
+                          onClick={() => removeInventoryRow(index)}
+                        >
+                          Regel verwijderen
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  <button type="button" className="modal-btn-save" onClick={addInventoryRow}>
+                    + Campus toevoegen
+                  </button>
+                </div>
+                </div>
                 <div className="modal-footer">
                   <button
                     className="modal-btn-cancel"
