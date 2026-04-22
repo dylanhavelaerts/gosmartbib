@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.reviews.ReviewDetailDTO;
+import edu.ap.gosmartlib.dto.reviews.AdminDeleteReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewFlagRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
@@ -56,6 +57,13 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.findAllReviews(actorUid));
     }
 
+    @GetMapping("/moderation")
+    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    public ResponseEntity<List<ReviewDetailDTO>> getModerationReviews(@AuthenticationPrincipal OAuth2User principal) {
+        String smartschoolUid = extractUid(principal);
+        return ResponseEntity.ok(reviewService.findAllSchoolReviewsForModerator(smartschoolUid));
+    }
+
     @PostMapping
     public ResponseEntity<ReviewSummaryDTO> submitReview(@RequestBody ReviewRequestDTO request,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -65,24 +73,31 @@ public class ReviewController {
     }
 
     @PatchMapping("/{reviewId}")
-    public ResponseEntity<Void> editReview(@PathVariable Long reviewId, @RequestBody ReviewRequestDTO request,
+    public ResponseEntity<ReviewSummaryDTO> editReview(@PathVariable Long reviewId, @RequestBody ReviewRequestDTO request,
             @AuthenticationPrincipal OAuth2User principal) {
         String smartschoolUid = extractUid(principal);
-        reviewService.editReview(reviewId, request, smartschoolUid);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(reviewService.editReview(reviewId, request, smartschoolUid));
     }
 
     @PatchMapping("/{reviewId}/approve")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     public ResponseEntity<Void> approveReview(@PathVariable Long reviewId) {
         reviewService.approveReview(reviewId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{reviewId}/reject")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     public ResponseEntity<Void> rejectReview(@PathVariable Long reviewId) {
         reviewService.rejectReview(reviewId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{reviewId}/admin-delete")
+    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    public ResponseEntity<Void> adminDeleteReview(@PathVariable Long reviewId,
+                                                  @RequestBody AdminDeleteReviewRequestDTO request) {
+        reviewService.adminDeleteReview(reviewId, request.reason());
         return ResponseEntity.noContent().build();
     }
 
@@ -137,7 +152,7 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{reviewId}/librarian")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     public ResponseEntity<Void> librarianDeleteReview(@PathVariable Long reviewId) {
         reviewService.librarianDeleteReview(reviewId);
         return ResponseEntity.noContent().build();

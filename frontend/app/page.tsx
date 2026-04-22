@@ -27,6 +27,8 @@ export default function Home() {
     `tabBtn ${selected === id ? "selectedCategory" : ""}`;
 
   useEffect(() => {
+    if (authLoading || !user) return;
+
     const endpoint =
       selected === "spotlight" ? "/books/spotlight" : "/books/latest";
 
@@ -46,7 +48,7 @@ export default function Home() {
         }
       })
       .catch((error) => console.error(error));
-  }, [selected, apiUrl]);
+  }, [selected, apiUrl, authLoading, user]);
   const fetchPersonalLists = useCallback(() => {
     setListsLoading(true);
     setListsError(null);
@@ -112,7 +114,7 @@ export default function Home() {
               )
             }
           >
-            Bekijk Catalogus →
+            Bekijk catalogus →
           </button>
         </div>
         <div id="dashboard">

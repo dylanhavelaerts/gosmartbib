@@ -7,6 +7,7 @@ export interface ReviewSummary {
   reviewDate: string;
   rating: number;
   spoiler: boolean;
+  moderationNotice?: string | null;
 }
 
 export interface ReviewSectionProps {

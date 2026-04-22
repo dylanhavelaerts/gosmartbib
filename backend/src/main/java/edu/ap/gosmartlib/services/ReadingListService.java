@@ -191,7 +191,7 @@ public class ReadingListService {
         return readingListRepository.save(list);
     }
 
-    // HELPER METHODS HIERONDER
+// region Helper methods
 
     private UserEntity requireCurrentUser(String smartschoolUid) {
         return userRepository.findBySmartschoolUid(smartschoolUid)
@@ -331,5 +331,6 @@ public class ReadingListService {
                 creatorName,
                 books);
     }
+    // endregion
 
 }

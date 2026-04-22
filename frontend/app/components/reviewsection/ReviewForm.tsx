@@ -5,12 +5,16 @@ import StarRating from "./StarRating";
 
 interface ReviewFormProps {
   isbn: string;
-  onSubmitted: () => void;
+  onSubmitted: (moderationNotice?: string) => void;
   mode?: "create" | "edit";
   reviewId?: number;
   initialText?: string;
   initialRating?: number;
   initialSpoiler?: boolean;
+}
+
+interface SubmitReviewResponse {
+  moderationNotice?: string | null;
 }
 
 export default function ReviewForm({
@@ -93,10 +97,19 @@ export default function ReviewForm({
         return;
       }
 
+      let moderationNotice: string | undefined;
+      try {
+        const payload = (await res.json()) as SubmitReviewResponse;
+        const serverNotice = payload?.moderationNotice?.trim();
+        moderationNotice = serverNotice ? serverNotice : undefined;
+      } catch {
+        moderationNotice = undefined;
+      }
+
       setText("");
       setRating(0);
       setSpoiler(false);
-      onSubmitted();
+      onSubmitted(moderationNotice);
     } catch {
       setError("Er liep iets fout. Probeer opnieuw.");
     } finally {

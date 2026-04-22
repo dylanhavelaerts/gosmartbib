@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.reviews.ReviewDetailDTO;
+import edu.ap.gosmartlib.dto.reviews.ReviewFlagDetailDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
@@ -12,6 +13,7 @@ import edu.ap.gosmartlib.exceptions.OutOfBoundsException;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReviewRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.util.AutomaticModerationDecision;
 import edu.ap.gosmartlib.util.ReviewFlagReason;
 import edu.ap.gosmartlib.util.ReviewStatus;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,12 +23,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -36,9 +39,15 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 @Transactional
 public class ReviewService {
 
+    private static final String FLAG_ENTRY_SEPARATOR = ";";
+    private static final String FLAG_FIELD_SEPARATOR = "|";
+    private static final String AUTO_MODERATION_UID = "AUTO_MODERATOR";
+    private static final String AUTOMATIC_REVIEW_NOTICE = "Je review is automatisch gerapporteerd door ons systeem. Er is een melding naar de beheerder verstuurd.";
+
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
+    private final ReviewAutoModerationService reviewAutoModerationService;
     private final UserDirectoryService userDirectoryService;
 
     private final int REVIEW_MAX_CHAR_COUNT = 255;
@@ -55,7 +64,7 @@ public class ReviewService {
     }
 
     public List<ReviewDetailDTO> findAllReviewsByStatus(ReviewStatus status, String actorUid) {
-        List<ReviewEntity> reviews = reviewRepository.findByStatus(status);
+        List<ReviewEntity> reviews = reviewRepository.findByReviewStatus(status);
         Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, reviews);
 
         return reviews.stream()
@@ -69,6 +78,10 @@ public class ReviewService {
         Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, reviews);
 
         return reviews.stream()
+                .filter(review -> !isAdminDeleted(review))
+            .filter(review -> review.getReviewStatus() == ReviewStatus.APPROVED
+                || (actorUid != null
+                    && actorUid.equals(review.getUser().getSmartschoolUid())))
                 .map(review -> toSummaryDTO(review, displayNames))
                 .toList();
     }
@@ -87,6 +100,18 @@ public class ReviewService {
     public List<ReviewDetailDTO> findAllDetailReviewsByUserId(String smartschoolUid, String actorUid) {
         List<ReviewEntity> reviews = reviewRepository.findByUser_SmartschoolUid(smartschoolUid);
         Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, reviews);
+
+        return reviews.stream()
+                .map(review -> toDetailDTO(review, displayNames))
+                .toList();
+    }
+
+    public List<ReviewDetailDTO> findAllSchoolReviewsForModerator(String smartschoolUid) {
+        UserEntity moderator = userRepository.findBySmartschoolUid(smartschoolUid)
+                .orElseThrow(() -> new EntityNotFoundException("Gebruiker niet gevonden"));
+
+        List<ReviewEntity> reviews = reviewRepository.findByUser_School_Id(moderator.getSchool().getId());
+        Map<String, String> displayNames = resolveDisplayNamesMap(smartschoolUid, reviews);
 
         return reviews.stream()
                 .map(review -> toDetailDTO(review, displayNames))
@@ -131,10 +156,15 @@ public class ReviewService {
             review.setSpoiler(request.spoiler());
 
             review.setReviewDate(LocalDate.now());
-            review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
+            review.setReviewStatus(ReviewStatus.APPROVED);
             review.setFlagCount(0);
+            review.setAdminDeleteNote(null);
+            review.setAdminDeleted(false);
+
+            applyAutomaticModeration(review);
 
             ReviewEntity toSave = reviewRepository.save(review);
+            refreshBookRating(book);
             Map<String, String> displayNames = resolveDisplayNamesMap(smartschoolUid, List.of(toSave));
             return toSummaryDTO(toSave, displayNames);
 
@@ -152,9 +182,7 @@ public class ReviewService {
     // endregion
 
     // region Patch methods
-    public void editReview(Long reviewId, ReviewRequestDTO request, String smartschoolUid) { // <--FIX: smartschoolUid
-                                                                                             // toegevoegd voor
-                                                                                             // ownership check
+    public ReviewSummaryDTO editReview(Long reviewId, ReviewRequestDTO request, String smartschoolUid) { // <--FIX: smartschoolUid toegevoegd voor ownership check
         try {
             ReviewEntity review = reviewRepository.findById(reviewId)
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
@@ -176,9 +204,16 @@ public class ReviewService {
 
             review.setRating(request.rating());
             review.setSpoiler(request.spoiler());
-            review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
+            review.setReviewStatus(ReviewStatus.APPROVED);
+            review.setAdminDeleteNote(null);
+            review.setAdminDeleted(false);
 
-            reviewRepository.save(review);
+            applyAutomaticModeration(review);
+
+            ReviewEntity savedReview = reviewRepository.save(review);
+            refreshBookRating(review.getBook());
+            Map<String, String> displayNames = resolveDisplayNamesMap(smartschoolUid, List.of(savedReview));
+            return toSummaryDTO(savedReview, displayNames);
         } catch (OutOfBoundsException e) {
             throw e;
         } catch (SecurityException e) {
@@ -201,7 +236,11 @@ public class ReviewService {
             if (!ownsReview && !canModerateDelete)
                 throw new SecurityException("Je kan enkel je eigen reviews verwijderen");
 
+            BookEntity book = review.getBook();
             reviewRepository.delete(review);
+            refreshBookRating(book);
+        } catch (SecurityException e) {
+            throw e;
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -213,8 +252,10 @@ public class ReviewService {
         try {
             ReviewEntity review = reviewRepository.findById(reviewId)
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
-
+            BookEntity book = review.getBook();
             reviewRepository.delete(review);
+            refreshBookRating(book);
+
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -241,6 +282,10 @@ public class ReviewService {
             ReviewEntity review = reviewRepository.findById(reviewId)
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
 
+            if (isAdminDeleted(review)) {
+                throw new ResponseStatusException(BAD_REQUEST, "Deze review kan niet meer gerapporteerd worden");
+            }
+
             boolean alreadyFlagged = reviewRepository.existsFlagByReviewIdAndUid(reviewId, smartschoolUid);
             if (alreadyFlagged) {
                 throw new ResponseStatusException(CONFLICT, "Je hebt deze review al gerapporteerd");
@@ -257,8 +302,21 @@ public class ReviewService {
 
             flaggedUids.add(smartschoolUid);
             review.setFlaggedByUids(String.join(",", flaggedUids));
+
+            List<ReviewFlagDetailDTO> flagDetails = parseFlagDetails(review.getFlagDetails());
+            flagDetails.add(new ReviewFlagDetailDTO(smartschoolUid, reason));
+            review.setFlagDetails(serializeFlagDetails(flagDetails));
+
             review.setFlagCount(review.getFlagCount() + 1);
+
+            if (review.getFlagCount() >= 3) {
+                review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
+                review.setAdminDeleted(false);
+                review.setAdminDeleteNote(null);
+            }
+
             reviewRepository.save(review);
+            refreshBookRating(review.getBook());
         } catch (Exception e) {
             if (e instanceof EntityNotFoundException || e instanceof ResponseStatusException) {
                 throw e;
@@ -273,7 +331,11 @@ public class ReviewService {
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
 
             review.setReviewStatus(ReviewStatus.APPROVED);
+            review.setAdminDeleteNote(null);
+            review.setAdminDeleted(false);
             reviewRepository.save(review);
+            refreshBookRating(review.getBook());
+
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -287,12 +349,43 @@ public class ReviewService {
                     .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
 
             review.setReviewStatus(ReviewStatus.REJECTED);
+            review.setAdminDeleteNote(null);
+            review.setAdminDeleted(false);
             reviewRepository.save(review);
+            refreshBookRating(review.getBook());
         } catch (EntityNotFoundException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Er is iets fout gegaan tijdens het afkeuren van de review", e);
         }
+    }
+    public void adminDeleteReview(Long reviewId, String reason) {
+        try {
+            ReviewEntity review = reviewRepository.findById(reviewId)
+                    .orElseThrow(() -> new EntityNotFoundException("Review niet gevonden"));
+
+            String cleanedReason = reason == null ? "" : reason.trim();
+
+            review.setReviewStatus(ReviewStatus.REJECTED);
+            review.setAdminDeleteNote(cleanedReason.isBlank() ? null : cleanedReason);
+            review.setAdminDeleted(true);
+            reviewRepository.save(review);
+            refreshBookRating(review.getBook());
+        } catch (Exception e) {
+            if (e instanceof EntityNotFoundException || e instanceof ResponseStatusException) {
+                throw e;
+            }
+            throw new RuntimeException("Er is iets fout gegaan tijdens admin delete", e);
+        }
+    }
+    private void refreshBookRating(BookEntity book) {
+        if (book == null || book.getId() == null) {
+            return;
+        }
+
+        Double averageRating = reviewRepository.findAverageApprovedRatingByBookId(book.getId());
+        book.setRating(averageRating != null ? averageRating : 0.0);
+        bookRepository.save(book);
     }
 
     private Map<String, String> resolveDisplayNamesMap(String actorUid, List<ReviewEntity> reviews) {
@@ -331,7 +424,12 @@ public class ReviewService {
             return null;
         }
 
-        return displayNames.get(reviewerUid);
+        String resolvedName = displayNames.get(reviewerUid);
+        if (resolvedName != null && !resolvedName.isBlank()) {
+            return resolvedName;
+        }
+
+        return null;
     }
     // endregion
 
@@ -340,15 +438,22 @@ public class ReviewService {
         return new ReviewDetailDTO(
                 review.getId(),
                 review.getUser().getId(),
+                review.getUser().getSmartschoolUid(),
                 resolveReviewerName(review, displayNames),
                 review.getUser().getRole(),
+                review.getUser().getSchool().getId(),
+                review.getUser().getSchool().getName(),
                 review.getBook().getIsbn(),
                 review.getBook().getTitle(),
                 review.getText(),
                 review.getReviewDate(),
                 review.getReviewStatus(),
                 review.getRating(),
-                review.getFlagCount());
+                review.getFlagCount(),
+                parseFlagDetails(review.getFlagDetails()),
+                isAdminDeleted(review),
+                review.getAdminDeleteNote()
+        );
     }
 
     public ReviewSummaryDTO toSummaryDTO(ReviewEntity review, Map<String, String> displayNames) {
@@ -360,7 +465,121 @@ public class ReviewService {
                 review.getText(),
                 review.getReviewDate(),
                 review.getRating(),
-                review.isSpoiler());
+                review.isSpoiler(),
+                buildModerationNotice(review)
+        );
+    }
+
+    private String buildModerationNotice(ReviewEntity review) {
+        boolean autoFlagged = parseFlagDetails(review.getFlagDetails()).stream()
+                .anyMatch(detail -> AUTO_MODERATION_UID.equals(detail.flaggerUid()));
+
+        if (autoFlagged && review.getReviewStatus() == ReviewStatus.AWAITING_MODERATION) {
+            return AUTOMATIC_REVIEW_NOTICE;
+        }
+
+        return null;
+    }
+
+    private List<ReviewFlagDetailDTO> parseFlagDetails(String rawFlagDetails) {
+        if (rawFlagDetails == null || rawFlagDetails.isBlank()) {
+            return new ArrayList<>();
+        }
+
+        List<ReviewFlagDetailDTO> parsed = new ArrayList<>();
+        String[] entries = rawFlagDetails.split(FLAG_ENTRY_SEPARATOR);
+
+        for (String entry : entries) {
+            String trimmedEntry = entry.trim();
+            if (trimmedEntry.isBlank()) {
+                continue;
+            }
+
+            String[] fields = trimmedEntry.split("\\|", 2);
+            if (fields.length != 2) {
+                continue;
+            }
+
+            String uid = fields[0].trim();
+            String reasonValue = fields[1].trim();
+            if (uid.isBlank() || reasonValue.isBlank()) {
+                continue;
+            }
+
+            try {
+                ReviewFlagReason reason = ReviewFlagReason.valueOf(reasonValue);
+                parsed.add(new ReviewFlagDetailDTO(uid, reason));
+            } catch (IllegalArgumentException ignored) {
+                // Ongeldige enum waarde / negeer
+            }
+        }
+
+        return parsed;
+    }
+
+    private String serializeFlagDetails(List<ReviewFlagDetailDTO> flagDetails) {
+        if (flagDetails == null || flagDetails.isEmpty()) {
+            return "";
+        }
+
+        return flagDetails.stream()
+                .filter(detail -> detail != null && detail.flaggerUid() != null && detail.reason() != null)
+                .map(detail -> detail.flaggerUid().trim() + FLAG_FIELD_SEPARATOR + detail.reason().name())
+                .collect(Collectors.joining(FLAG_ENTRY_SEPARATOR));
+    }
+
+    private void applyAutomaticModeration(ReviewEntity review) {
+        AutomaticModerationDecision decision = reviewAutoModerationService.moderate(review.getText());
+        if (!decision.flagged()) {
+            return;
+        }
+
+        review.setReviewStatus(ReviewStatus.AWAITING_MODERATION);
+        review.setAdminDeleted(false);
+        review.setAdminDeleteNote(null);
+
+        Set<String> flaggedUids = parseFlaggedUids(review.getFlaggedByUids());
+        flaggedUids.add(AUTO_MODERATION_UID);
+        review.setFlaggedByUids(String.join(",", flaggedUids));
+
+        List<ReviewFlagDetailDTO> flagDetails = parseFlagDetails(review.getFlagDetails());
+        boolean hasAutomaticDetail = flagDetails.stream()
+                .anyMatch(detail -> AUTO_MODERATION_UID.equals(detail.flaggerUid()));
+
+        if (!hasAutomaticDetail) {
+            flagDetails.add(new ReviewFlagDetailDTO(AUTO_MODERATION_UID, decision.reason()));
+        }
+
+        review.setFlagDetails(serializeFlagDetails(flagDetails));
+        review.setFlagCount(Math.max(review.getFlagCount(), 1));
+    }
+
+    private Set<String> parseFlaggedUids(String rawUids) {
+        Set<String> uids = new LinkedHashSet<>();
+        if (rawUids == null || rawUids.isBlank()) {
+            return uids;
+        }
+
+        Arrays.stream(rawUids.split(","))
+                .map(String::trim)
+                .filter(uid -> !uid.isBlank())
+                .forEach(uids::add);
+
+        return uids;
+    }
+
+    private boolean isAdminDeleted(ReviewEntity review) {
+        if (review.isAdminDeleted()) {
+            return true;
+        }
+
+        // Backward compatibility: existing rows before is_admin_deleted column.
+        if (review.getReviewStatus() != ReviewStatus.REJECTED) {
+            return false;
+        }
+
+        String note = review.getAdminDeleteNote();
+        return note != null && !note.isBlank();
     }
     // endregion
 }

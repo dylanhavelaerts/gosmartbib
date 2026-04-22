@@ -9,7 +9,6 @@ type UserRole =
   | "ADMIN"
   | "OTHER";
 
-
 interface AuthUser {
   id: number;
   smartschoolUid: string;
@@ -31,11 +30,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const isLocalHost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    const pathname = window.location.pathname;
+    const isPublicRoute =
+      pathname === "/login" ||
+      pathname.startsWith("/smartschool") ||
+      pathname.startsWith("/public");
+
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
       credentials: "include",
     })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setUser(data))
+      .then((data) => {
+        setUser(data);
+
+        if (!data && !isLocalHost && !isPublicRoute) {
+          window.location.replace("/login");
+        }
+      })
+      .catch(() => {
+        setUser(null);
+
+        if (!isLocalHost && !isPublicRoute) {
+          window.location.replace("/login");
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 

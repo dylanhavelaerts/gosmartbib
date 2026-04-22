@@ -8,6 +8,7 @@ import Pagination from "../pagination";
 import "../bookList.css";
 import { useAuth } from "../../context/AuthContext";
 import ProtectedRoute from "../../components/ProtectedRoute";
+import StarRating from "../../components/reviewsection/StarRating";
 
 export default function Home() {
   // -- States ------------------------------------------------------------------------------------------------------------------------------
@@ -31,9 +32,10 @@ export default function Home() {
   const [maxPages, setMaxPages] = useState("");
   const [minYear, setMinYear] = useState("");
   const [maxYear, setMaxYear] = useState("");
+  const [minRating, setMinRating] = useState<number | null>(null);
+  const [maxRating, setMaxRating] = useState<number | null>(null);
 
   // UI state
-  const [activeTab, setActiveTab] = useState("Boeken selecteren");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [labelOpen, setLabelOpen] = useState(false);
@@ -77,7 +79,9 @@ export default function Home() {
       minPages ||
       maxPages ||
       minYear ||
-      maxYear;
+      maxYear ||
+      minRating !== null ||
+      maxRating !== null;
 
     let url: string;
 
@@ -92,6 +96,8 @@ export default function Home() {
       if (maxPages) params.append("maxPageCount", maxPages);
       if (minYear) params.append("minPubYear", minYear);
       if (maxYear) params.append("maxPubYear", maxYear);
+      if (minRating !== null) params.append("minRating", minRating.toString());
+      if (maxRating !== null) params.append("maxRating", maxRating.toString());
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/filter?${params}`;
     } else {
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/all?${params}`;
@@ -120,6 +126,8 @@ export default function Home() {
     query,
     currentPage,
     pageSize,
+    minRating,
+    maxRating,
   ]);
 
   // -- Helper methods --------------------------------------------------------------------------------------------------------------
@@ -187,131 +195,8 @@ export default function Home() {
 
   return (
     <ProtectedRoute allowedRoles={["TEACHER", "BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
-      <main className="pageLayout">
-        {/* Sidebar overlay (gsm) */}
-        {sidebarOpen && (
-          <div
-            className="sidebarOverlay"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        {/* Filter bar */}
-        <aside className={`filterSidebar ${sidebarOpen ? "open" : ""}`}>
-          <div className="sidebarHeader">
-            <span>Filters</span>
-            <button onClick={() => setSidebarOpen(false)}>✕</button>
-          </div>
-
-          <div className="filterBar">
-            <select
-              value={language}
-              onChange={(e) => {
-                setLanguage(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filterSelect"
-            >
-              <option value="">Alle talen</option>
-              <option value="en">EN</option>
-            </select>
-
-            <div className="filterDropdown">
-              <button
-                className="filterDropdownToggle"
-                onClick={() => {
-                  setCategoryOpen(!categoryOpen);
-                  if (labelOpen) {
-                    setLabelOpen(false);
-                  }
-                }}
-              >
-                Genre {categories.size > 0 ? `(${categories.size})` : ""} ▼
-              </button>
-              {categoryOpen && (
-                <div className="filterDropdownPanel">
-                  {BOOK_CATEGORIES.map((cat) => (
-                    <label key={cat} className="filterCheckboxLabel">
-                      <input
-                        type="checkbox"
-                        checked={categories.has(cat)}
-                        onChange={() => toggleCategory(cat)}
-                      />
-                      {cat}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="filterDropdown">
-              <button
-                className="filterDropdownToggle"
-                onClick={() => setLabelOpen(!labelOpen)}
-              >
-                label {labels.size > 0 ? `(${labels.size})` : ""} ▼
-              </button>
-              {labelOpen && (
-                <div className="filterDropdownPanel">
-                  {BOOK_LABELS.map((label) => (
-                    <label key={label} className="filterCheckboxLabel">
-                      <input
-                        type="checkbox"
-                        checked={labels.has(label)}
-                        onChange={() => toggleLabel(label)}
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <input
-              type="number"
-              placeholder="Min pagina's"
-              value={minPages}
-              onChange={(e) => {
-                setMinPages(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filterInput"
-            />
-            <input
-              type="number"
-              placeholder="Max pagina's"
-              value={maxPages}
-              onChange={(e) => {
-                setMaxPages(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filterInput"
-            />
-
-            <input
-              type="number"
-              placeholder="Min jaar"
-              value={minYear}
-              onChange={(e) => {
-                setMinYear(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filterInput"
-            />
-            <input
-              type="number"
-              placeholder="Max jaar"
-              value={maxYear}
-              onChange={(e) => {
-                setMaxYear(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filterInput"
-            />
-          </div>
-        </aside>
-
-        <div className="mainContent">
+      <main className="catalogPage">
+        <section className="catalogHeader">
           {/* Search bar */}
           <div className="filterSection">
             <div className="catalogSearchbar">
@@ -331,20 +216,9 @@ export default function Home() {
 
           {/* Tab bar */}
           <ul>
-            <li onClick={() => setSidebarOpen(true)}>☰</li>
             <li
-              className={activeTab === "Catalogus" ? "active" : ""}
+              className="active"
               onClick={() => {
-                setActiveTab("Catalogus");
-                router.push("/catalog");
-              }}
-            >
-              Catalogus
-            </li>
-            <li
-              className={activeTab === "Boeken selecteren" ? "active" : ""}
-              onClick={() => {
-                setActiveTab("Boeken selecteren");
                 router.push("/catalog/admin");
               }}
             >
@@ -353,65 +227,238 @@ export default function Home() {
             {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
               user?.role === "ADMIN") && (
               <li
-                className={activeTab === "Beheer catalogus" ? "active" : ""}
                 onClick={() => {
-                  setActiveTab("Beheer catalogus");
                   router.push("/manageCatalog");
                 }}
               >
                 Beheer catalogus
               </li>
             )}
-            {selectedIds.size > 0 && (
-              <li onClick={() => setSpotlight()}>
-                Voeg {selectedIds.size} boek(en) toe aan kijker
-              </li>
-            )}
           </ul>
+        </section>
 
-          {/* Toolbar - totaal paginas en aantal boeken kiezen*/}
-          <div className="bookListToolbar">
-            <span className="resultCount">{totalElements} boeken</span>
-            <div className="pageSizeSelector">
-              <span className="pageSizeLabel">Per pagina:</span>
+        <section className="pageLayout">
+          {/* Sidebar overlay (gsm) */}
+          {sidebarOpen && (
+            <div
+              className="sidebarOverlay"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+
+          {/* Filter bar */}
+          <aside className={`filterSidebar ${sidebarOpen ? "open" : ""}`}>
+            <div className="sidebarHeader">
+              <span>Filters</span>
+            </div>
+
+            <div className="filterBar">
               <select
-                value={pageSize}
+                value={language}
                 onChange={(e) => {
-                  setPageSize(Number(e.target.value));
+                  setLanguage(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="pageSizeSelect"
+                className="filterSelect"
               >
-                <option value={20}>20</option>
-                <option value={30}>30</option>
-                <option value={50}>50</option>
+                <option value="">Alle talen</option>
+                <option value="en">EN</option>
+                <option value="nl">NL</option>
               </select>
-            </div>
-          </div>
 
-          {/* Boeken lijst */}
-          <div id="bookList">
-            {books.map((book) => (
-              <BookCard
-                withCheckbox={true}
-                key={book.id}
-                book={book}
-                isSelected={selectedIds.has(book.id)}
-                onToggle={() => toggleSelect(book.id)}
+              <div className="filterDropdown">
+                <button
+                  className="filterDropdownToggle"
+                  onClick={() => {
+                    setCategoryOpen(!categoryOpen);
+                    if (labelOpen) setLabelOpen(false);
+                  }}
+                >
+                  Genre {categories.size > 0 ? `(${categories.size})` : ""}
+                </button>
+                {categoryOpen && (
+                  <div className="filterDropdownPanel">
+                    {BOOK_CATEGORIES.map((cat) => (
+                      <label key={cat} className="filterCheckboxLabel">
+                        <input
+                          type="checkbox"
+                          checked={categories.has(cat)}
+                          onChange={() => toggleCategory(cat)}
+                        />
+                        {cat}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="filterDropdown">
+                <button
+                  className="filterDropdownToggle"
+                  onClick={() => setLabelOpen(!labelOpen)}
+                >
+                  Label {labels.size > 0 ? `(${labels.size})` : ""}
+                </button>
+                {labelOpen && (
+                  <div className="filterDropdownPanel">
+                    {BOOK_LABELS.map((label) => (
+                      <label key={label} className="filterCheckboxLabel">
+                        <input
+                          type="checkbox"
+                          checked={labels.has(label)}
+                          onChange={() => toggleLabel(label)}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <input
+                type="number"
+                placeholder="Min pagina's"
+                value={minPages}
+                onChange={(e) => {
+                  setMinPages(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="filterInput"
               />
-            ))}
-          </div>
+              <input
+                type="number"
+                placeholder="Max pagina's"
+                value={maxPages}
+                onChange={(e) => {
+                  setMaxPages(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="filterInput"
+              />
 
-          {/* Paging sectie */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={(page) => {
-              setCurrentPage(page);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-          />
-        </div>
+              <input
+                type="number"
+                placeholder="Min jaar"
+                value={minYear}
+                onChange={(e) => {
+                  setMinYear(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="filterInput"
+              />
+              <input
+                type="number"
+                placeholder="Max jaar"
+                value={maxYear}
+                onChange={(e) => {
+                  setMaxYear(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="filterInput"
+              />
+
+              <div className="filterRatingGroup">
+                <p className="filterRatingTitle">Minimum beoordeling</p>
+                <div className="filterRatingRow">
+                  <StarRating
+                    value={minRating ?? 0}
+                    onChange={(v) => {
+                      setMinRating(v);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="filterRatingClear"
+                    onClick={() => {
+                      setMinRating(null);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    Reset
+                  </button>
+                </div>
+                <span className="filterRatingValue">
+                  {minRating !== null ? `${minRating}/5` : "Geen minimum"}
+                </span>
+              </div>
+
+              <div className="filterRatingGroup">
+                <p className="filterRatingTitle">Maximum beoordeling</p>
+                <div className="filterRatingRow">
+                  <StarRating
+                    value={maxRating ?? 0}
+                    onChange={(v) => {
+                      setMaxRating(v);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="filterRatingClear"
+                    onClick={() => {
+                      setMaxRating(null);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    Reset
+                  </button>
+                </div>
+                <span className="filterRatingValue">
+                  {maxRating !== null ? `${maxRating}/5` : "Geen maximum"}
+                </span>
+              </div>
+            </div>
+          </aside>
+
+          <div className="mainContent">
+            <div className="bookListToolbar">
+              <span className="resultCount">{totalElements} boeken</span>
+              <div className="pageSizeSelector">
+                <span className="pageSizeLabel">Per pagina:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="pageSizeSelect"
+                >
+                  <option value={20}>20</option>
+                  <option value={30}>30</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+
+              {selectedIds.size > 0 && (
+                <button className="spotlightActionBtn" onClick={setSpotlight}>
+                  Voeg {selectedIds.size} boek(en) toe aan kijker
+                </button>
+              )}
+            </div>
+
+            <div id="bookList">
+              {books.map((book) => (
+                <BookCard
+                  withCheckbox={true}
+                  key={book.id}
+                  book={book}
+                  isSelected={selectedIds.has(book.id)}
+                  onToggle={() => toggleSelect(book.id)}
+                />
+              ))}
+            </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => {
+                setCurrentPage(page);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
+          </div>
+        </section>
       </main>
     </ProtectedRoute>
   );

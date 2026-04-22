@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.BookDTO;
+import edu.ap.gosmartlib.dto.BookFilterRequest;
 import edu.ap.gosmartlib.dto.BookInventoryDTO;
 import edu.ap.gosmartlib.dto.CreateBookInventoryRequestDTO;
 import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
@@ -52,6 +53,7 @@ public class BookService {
     private final BookRepository bookRepository;
     private final RestTemplate restTemplate;
     private final UserRepository userRepository;
+    private final BookFilterValidator bookFilterValidator;
     private final SchoolRepository schoolRepository;
 
     @Value("${google.books.api.url}")
@@ -211,23 +213,24 @@ public class BookService {
                 .toList();
     }
 
-    public Page<BookDTO> filterBooks(String language, List<String> categories, List<String> labels,
-            Integer minPageCount,
-            Integer maxPageCount, Integer minPubYear, Integer maxPubYear, int page, int size, UserRoles callerRoles) {
-        if (page < 0 || size <= 0)
-            throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
+    public Page<BookDTO> filterBooks(BookFilterRequest request, UserRoles callerRoles) {
+        bookFilterValidator.validate(request);
 
-        if (minPageCount != null && maxPageCount != null && minPageCount > maxPageCount) {
-            throw new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount");
-        }
-        if (minPubYear != null && maxPubYear != null && minPubYear > maxPubYear) {
-            throw new IllegalArgumentException("minPubYear cannot be bigger than maxPubYear");
-        }
-
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(request.page(), request.size());
         return bookRepository
-                .filterBooks(canSeeDidactic(callerRoles), language, categories, labels, minPageCount, maxPageCount,
-                        minPubYear, maxPubYear, pageable)
+                .filterBooks(
+                        canSeeDidactic(callerRoles),
+                        request.query(),
+                        request.language(),
+                        request.categories(),
+                        request.labels(),
+                        request.minPageCount(),
+                        request.maxPageCount(),
+                        request.minPubYear(),
+                        request.maxPubYear(),
+                        request.minRating(),
+                        request.maxRating(),
+                        pageable)
                 .map(this::toDTO);
     }
 
@@ -596,7 +599,7 @@ public class BookService {
         }
     }
 
-    // Helper functies
+    // region Helper functies
     private BookEntity buildBookEntityFromGoogle(String isbn) {
         String url = UriComponentsBuilder
                 .fromUriString(googleBooksApiUrl)
@@ -726,5 +729,5 @@ public class BookService {
                 || role == UserRoles.BIBLIOTHEEKBEHEERDER
                 || role == UserRoles.ADMIN;
     }
-
+    // endregion
 }

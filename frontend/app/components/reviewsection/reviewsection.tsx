@@ -26,6 +26,7 @@ export default function ReviewSection({
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [submissionNotice, setSubmissionNotice] = useState("");
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [flaggingReviewId, setFlaggingReviewId] = useState<number | null>(null);
   const [deleteReviewId, setDeleteReviewId] = useState<number | null>(null);
@@ -42,6 +43,10 @@ export default function ReviewSection({
       : null;
 
   async function extractErrorMessage(res: Response): Promise<string> {
+    if (res.status === 409) {
+      return "Je hebt deze review al gerapporteerd.";
+    }
+
     try {
       const payload = await res.clone().json();
       if (typeof payload?.message === "string" && payload.message.trim()) {
@@ -75,13 +80,24 @@ export default function ReviewSection({
 
   function fetchReviews() {
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`, {credentials: "include"})
-      .then((res) => res.json())
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`, {
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Kon reviews niet laden (HTTP ${res.status})`);
+        }
+
+        return res.json();
+      })
       .then((data: ReviewSummary[]) => {
         setReviews(data);
         setCurrentPage(1);
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setReviews([]);
+      })
       .finally(() => setLoading(false));
   }
 
@@ -89,9 +105,10 @@ export default function ReviewSection({
     fetchReviews();
   }, [isbn]);
 
-  function handleSubmitted() {
+  function handleSubmitted(moderationNotice?: string) {
     setEditingReviewId(null);
     setShowForm(false);
+    setSubmissionNotice(moderationNotice ?? "");
     fetchReviews();
     onReviewSubmitted?.();
   }
@@ -234,6 +251,10 @@ export default function ReviewSection({
           initialRating={editingReview?.rating ?? 0}
           initialSpoiler={editingReview?.spoiler ?? false}
         />
+      )}
+
+      {submissionNotice && (
+        <p className="reviewInfoNotice">{submissionNotice}</p>
       )}
 
       {loading ? (

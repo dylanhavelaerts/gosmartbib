@@ -64,6 +64,8 @@ class OAuth2LoginSuccessHandlerTest {
         handler.onAuthenticationSuccess(request, response, authentication);
 
         assertEquals(Boolean.TRUE, request.getSession(false).getAttribute("authenticated"));
+        assertNotNull(response.getCookie("AUTHENTICATED"));
+        assertEquals("true", response.getCookie("AUTHENTICATED").getValue());
         assertEquals("http://localhost:3000/", response.getRedirectedUrl());
 
         Authentication enriched = SecurityContextHolder.getContext().getAuthentication();
