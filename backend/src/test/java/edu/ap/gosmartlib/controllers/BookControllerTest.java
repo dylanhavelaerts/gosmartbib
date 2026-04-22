@@ -30,6 +30,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -349,7 +350,8 @@ class BookControllerTest {
                 List.of(new ImportMismatchDTO(4, "9780132350884", "Wrong Title", "Clean Code",
                         "De titel komt niet overeen (Clean Code)")));
 
-        when(bookService.importBooksFromExcel(any(MultipartFile.class), "uid-123", "Campus Zuid")).thenReturn(expected);
+        when(bookService.importBooksFromExcel(any(MultipartFile.class), eq("uid-123"), eq("Campus Zuid")))
+                .thenReturn(expected);
 
         ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", authentication);
 
@@ -367,7 +369,7 @@ class BookControllerTest {
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 new byte[0]);
 
-        when(bookService.importBooksFromExcel(any(MultipartFile.class), "uid-123", "Campus Zuid"))
+        when(bookService.importBooksFromExcel(any(MultipartFile.class), eq("uid-123"), eq("Campus Zuid")))
                 .thenThrow(new IllegalArgumentException("Upload een excel file die niet leeg is"));
 
         ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", authentication);
@@ -386,7 +388,7 @@ class BookControllerTest {
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 "dummy".getBytes());
 
-        when(bookService.importBooksFromExcel(any(MultipartFile.class), "uid-123", "Campus Zuid"))
+        when(bookService.importBooksFromExcel(any(MultipartFile.class), eq("uid-123"), eq("Campus Zuid")))
                 .thenThrow(new RuntimeException("DB down"));
 
         ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", authentication);
@@ -707,8 +709,6 @@ class BookControllerTest {
 
         when(authentication.getPrincipal()).thenReturn(principal);
         when(principal.getAttribute("userID")).thenReturn(uid);
-        when(userRepository.findBySmartschoolUid(uid)).thenReturn(Optional.of(user));
-
         return authentication;
     }
 }
