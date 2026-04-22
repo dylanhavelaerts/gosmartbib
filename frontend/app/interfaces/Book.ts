@@ -18,6 +18,7 @@ export interface Book {
   readingLevel: string;
   labels: string[];
   ageRange: string;
+  inventories?: BookInventory[];
 }
 
 export const AGE_RANGE = ["Eerste graad", "Tweede graad", "Derde graad"];
@@ -60,3 +61,12 @@ export const BOOK_LABELS = [
   "Overleven",
   "Toekomst & technologie",
 ];
+
+export interface BookInventory {
+  id?: number | null;
+  schoolId: number | null;
+  schoolName?: string;
+  campus: string;
+  totalCopies: number;
+  availableCopies: number;
+}
