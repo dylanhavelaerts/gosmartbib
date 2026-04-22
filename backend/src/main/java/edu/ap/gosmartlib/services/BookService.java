@@ -440,6 +440,8 @@ public class BookService {
             book.setAgeRange(safeTrim(updatedBook.ageRange()));
 
         if (updatedBook.inventories() != null) {
+            book.getInventories().clear();
+            bookRepository.saveAndFlush(book);
             replaceInventoriesFromDto(book, updatedBook.inventories());
         }
 
@@ -578,8 +580,6 @@ public class BookService {
     }
 
     private void replaceInventoriesFromDto(BookEntity book, List<BookInventoryDTO> inventoryDTOs) {
-        book.getInventories().clear();
-
         for (BookInventoryDTO inventoryDTO : inventoryDTOs) {
             if (inventoryDTO == null) {
                 continue;
@@ -593,8 +593,12 @@ public class BookService {
             int availableCopies = inventoryDTO.availableCopies() != null ? inventoryDTO.availableCopies() : totalCopies;
 
             validateInventoryCounts(totalCopies, availableCopies);
-            addInventory(book, resolveSchoolById(inventoryDTO.schoolId()), normalizeCampus(inventoryDTO.campus()),
-                    totalCopies, availableCopies);
+            addInventory(
+                    book,
+                    resolveSchoolById(inventoryDTO.schoolId()),
+                    normalizeCampus(inventoryDTO.campus()),
+                    totalCopies,
+                    availableCopies);
         }
     }
 
