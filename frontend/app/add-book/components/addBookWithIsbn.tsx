@@ -10,6 +10,7 @@ export default function AddBookWithIsbn() {
   const [loading, setLoading] = useState(false);
   const [previewBook, setPreviewBook] = useState<Book | null>(null);
   const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
+  const [campus, setCampus] = useState("");
 
   const handleSearchBook = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,12 +49,18 @@ export default function AddBookWithIsbn() {
     setMessage("");
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/books/add/${isbn}`,
-        {
-          method: "POST",
-        },
-      );
+      const params = new URLSearchParams();
+        if (campus.trim()) {
+          params.set("campus", campus.trim());
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/books/add/${isbn}${params.toString() ? `?${params.toString()}` : ""}`,
+          {
+            method: "POST",
+            credentials: "include",
+          },
+        );
 
       if (response.ok) {
         const data = await response.json();
@@ -111,6 +118,22 @@ export default function AddBookWithIsbn() {
             value={isbn}
             onChange={(e) => setIsbn(e.target.value)}
             placeholder="Bijv. 9781473227989"
+            className={styles.input}
+            disabled={previewBook !== null}
+          />
+        </div>
+
+        <div className={styles.fieldGroup}>
+          <label htmlFor="campus" className={styles.label}>
+            Campus
+          </label>
+
+          <input
+            id="campus"
+            type="text"
+            value={campus}
+            onChange={(e) => setCampus(e.target.value)}
+            placeholder="Bijv. Campus Zuid"
             className={styles.input}
             disabled={previewBook !== null}
           />
