@@ -2,6 +2,8 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.BookDTO;
 import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
+import edu.ap.gosmartlib.dto.BookInventoryDTO;
+import edu.ap.gosmartlib.dto.CreateBookInventoryRequestDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
@@ -693,6 +695,167 @@ class BookControllerTest {
         verify(bookService, times(1)).searchBookByIsbn("9780132350884");
     }
 
+    @Test
+    void givenBookWithInventories_whenGetBookById_thenReturnsInventoryData() throws BookNotFoundException {
+        BookDTO expected = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
+                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
+                2023, false, List.of("STEM"), "A", 5, 3, "Eerste graad", List.of(
+                        buildInventoryDTO(11L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
+                        buildInventoryDTO(12L, 2L, "GO! School", "Campus Zuid", 3, 2)));
+
+        when(bookService.getBookById(1L, UserRoles.STUDENT)).thenReturn(expected);
+
+        ResponseEntity<?> result = bookController.getBookById(1L, null);
+
+        assertEquals(200, result.getStatusCode().value());
+        assertInstanceOf(BookDTO.class, result.getBody());
+
+        BookDTO body = (BookDTO) result.getBody();
+        assertNotNull(body);
+        assertEquals(5, body.totalCopies());
+        assertEquals(3, body.availableCopies());
+        assertNotNull(body.inventories());
+        assertEquals(2, body.inventories().size());
+        assertEquals("Campus Noord", body.inventories().get(0).campus());
+        assertEquals(2, body.inventories().get(0).totalCopies());
+        assertEquals("GO! School", body.inventories().get(1).schoolName());
+        assertEquals(2, body.inventories().get(1).availableCopies());
+
+        verify(bookService).getBookById(1L, UserRoles.STUDENT);
+    }
+
+    @Test
+    void givenBookWithInventories_whenUpdateBook_thenReturnsUpdatedInventoryData() {
+        BookDTO updatedDTO = new BookDTO(1L, "Updated Title", List.of("Author"), "Publisher", "Description",
+                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
+                2023, false, List.of("STEM"), "A", 10, 7, "Eerste graad", List.of(
+                        buildInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
+                        buildInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
+
+        when(bookService.updateBook(1L, updatedDTO)).thenReturn(updatedDTO);
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals(updatedDTO, result.getBody());
+
+        BookDTO body = (BookDTO) result.getBody();
+        assertNotNull(body);
+        assertEquals(10, body.totalCopies());
+        assertEquals(7, body.availableCopies());
+        assertNotNull(body.inventories());
+        assertEquals(2, body.inventories().size());
+        assertEquals(1L, body.inventories().get(0).schoolId());
+        assertEquals("Campus B", body.inventories().get(1).campus());
+
+        verify(bookService).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenInvalidInventoryCounts_whenUpdateBook_thenReturnsBadRequest() {
+        BookDTO updatedDTO = new BookDTO(1L, "Updated Title", List.of("Author"), "Publisher", "Description",
+                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
+                2023, false, List.of("STEM"), "A", 3, 5, "Eerste graad", List.of(
+                        buildInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 3, 5)));
+
+        when(bookService.updateBook(1L, updatedDTO))
+                .thenThrow(new IllegalArgumentException(
+                        "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren"));
+
+        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren", result.getBody());
+        verify(bookService).updateBook(1L, updatedDTO);
+    }
+
+    @Test
+    void givenManualBookRequestWithInventories_whenAddManualBook_thenReturnsCreatedBookWithInventories() {
+        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "Manual Book",
+                List.of("Author One", "Author Two"),
+                "Manual Publisher",
+                "Manual Description",
+                321,
+                List.of("Fantasy", "Young adult"),
+                "thumbnail-url",
+                "nl",
+                4.5,
+                2024,
+                false,
+                false,
+                List.of("STEM"),
+                "A",
+                5,
+                3,
+                "Eerste graad",
+                List.of(
+                        buildCreateInventoryRequest(1L, "Campus Noord", 2, 1),
+                        buildCreateInventoryRequest(2L, "Campus Zuid", 3, 2)));
+
+        BookDTO createdBook = new BookDTO(42L, "Manual Book", List.of("Author One", "Author Two"),
+                "Manual Publisher", "Manual Description", 321, List.of("Fantasy", "Young adult"),
+                "thumbnail-url", "nl", 4.5, "NOISBN-123e4567-e89b-12d3-a456-426614174000",
+                2024, false, List.of("STEM"), "A", 5, 3, "Eerste graad", List.of(
+                        buildInventoryDTO(21L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
+                        buildInventoryDTO(22L, 2L, "GO! School", "Campus Zuid", 3, 2)));
+
+        when(bookService.addManualBook(request, "uid-123")).thenReturn(createdBook);
+
+        ResponseEntity<?> result = bookController.addManualBook(request, authentication);
+
+        assertEquals(201, result.getStatusCode().value());
+        assertEquals(createdBook, result.getBody());
+
+        BookDTO body = (BookDTO) result.getBody();
+        assertNotNull(body);
+        assertEquals(5, body.totalCopies());
+        assertEquals(3, body.availableCopies());
+        assertNotNull(body.inventories());
+        assertEquals(2, body.inventories().size());
+        assertEquals("Campus Noord", body.inventories().get(0).campus());
+        assertEquals(3, body.inventories().get(1).totalCopies());
+
+        verify(bookService).addManualBook(request, "uid-123");
+    }
+
+    @Test
+    void givenInvalidInventoryCounts_whenAddManualBook_thenReturnsBadRequest() {
+        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "Manual Book",
+                List.of("Author One"),
+                "Publisher",
+                "Description",
+                100,
+                List.of("Fantasy"),
+                "thumbnail-url",
+                "nl",
+                4.0,
+                2024,
+                false,
+                false,
+                List.of("STEM"),
+                "A",
+                3,
+                5,
+                "Eerste graad",
+                List.of(buildCreateInventoryRequest(1L, "Campus Zuid", 3, 5)));
+
+        when(bookService.addManualBook(request, "uid-123"))
+                .thenThrow(new IllegalArgumentException(
+                        "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren"));
+
+        ResponseEntity<?> result = bookController.addManualBook(request, authentication);
+
+        assertEquals(400, result.getStatusCode().value());
+        assertEquals("Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren", result.getBody());
+        verify(bookService).addManualBook(request, "uid-123");
+    }
+
     // -- helper
     private Page<BookDTO> toPage(List<BookDTO> list) {
         return new PageImpl<>(list, PageRequest.of(0, 20), list.size());
@@ -710,5 +873,15 @@ class BookControllerTest {
         when(authentication.getPrincipal()).thenReturn(principal);
         when(principal.getAttribute("userID")).thenReturn(uid);
         return authentication;
+    }
+
+    private BookInventoryDTO buildInventoryDTO(Long id, Long schoolId, String schoolName, String campus,
+            Integer totalCopies, Integer availableCopies) {
+        return new BookInventoryDTO(id, schoolId, schoolName, campus, totalCopies, availableCopies);
+    }
+
+    private CreateBookInventoryRequestDTO buildCreateInventoryRequest(Long schoolId, String campus,
+            Integer totalCopies, Integer availableCopies) {
+        return new CreateBookInventoryRequestDTO(schoolId, campus, totalCopies, availableCopies);
     }
 }

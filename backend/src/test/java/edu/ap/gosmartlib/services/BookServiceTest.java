@@ -2,6 +2,9 @@ package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.BookDTO;
 import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
+import edu.ap.gosmartlib.dto.BookInventoryDTO;
+import edu.ap.gosmartlib.dto.CreateBookInventoryRequestDTO;
+import edu.ap.gosmartlib.entities.BookInventoryEntity;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBookItem;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
@@ -23,6 +26,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
@@ -1120,6 +1124,269 @@ class BookServiceTest {
         assertTrue(result.isbn().matches("^NOISBN-[0-9a-fA-F\\-]{36}$"));
     }
 
+    @Test
+    void givenExplicitSchoolInventories_whenAddManualBook_thenUsesThoseInventoriesAndRecomputesTotals() {
+        SchoolEntity school2 = new SchoolEntity();
+        school2.setId(2L);
+        school2.setName("GO! School");
+        school2.setDomain("https://go.smartschool.be");
+
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "Manual Book",
+                List.of("Author One"),
+                "Publisher",
+                "Description",
+                200,
+                List.of("Programming"),
+                "thumbnail-url",
+                "nl",
+                4.5,
+                2024,
+                false,
+                false,
+                List.of("Toekomst & technologie"),
+                "A",
+                null,
+                null,
+                "Eerste graad",
+                List.of(
+                        new CreateBookInventoryRequestDTO(1L, "Campus Noord", 2, 1),
+                        new CreateBookInventoryRequestDTO(2L, "Campus Zuid", 3, 2)));
+
+        BookEntity reloaded = new BookEntity();
+        reloaded.setId(42L);
+        reloaded.setTitle("Manual Book");
+        reloaded.setTotalCopies(5);
+        reloaded.setAvailableCopies(3);
+        reloaded.setInventories(new ArrayList<>(List.of(
+                buildInventory(school, "Campus Noord", 2, 1),
+                buildInventory(school2, "Campus Zuid", 3, 2))));
+
+        when(schoolRepository.findById(1L)).thenReturn(Optional.of(school));
+        when(schoolRepository.findById(2L)).thenReturn(Optional.of(school2));
+        when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
+            BookEntity entity = invocation.getArgument(0);
+            entity.setId(42L);
+            return entity;
+        });
+        when(bookRepository.findDetailedById(42L)).thenReturn(Optional.of(reloaded));
+
+        BookDTO result = bookService.addManualBook(request, "uid-123");
+
+        ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
+        verify(bookRepository).saveAndFlush(captor.capture());
+
+        BookEntity persisted = captor.getValue();
+        assertEquals(2, persisted.getInventories().size());
+        assertEquals(5, persisted.getTotalCopies());
+        assertEquals(3, persisted.getAvailableCopies());
+
+        assertEquals(1L, persisted.getInventories().get(0).getSchool().getId());
+        assertEquals("Campus Noord", persisted.getInventories().get(0).getCampus());
+        assertEquals(2, persisted.getInventories().get(0).getTotalCopies());
+        assertEquals(1, persisted.getInventories().get(0).getAvailableCopies());
+
+        assertEquals(2L, persisted.getInventories().get(1).getSchool().getId());
+        assertEquals("Campus Zuid", persisted.getInventories().get(1).getCampus());
+        assertEquals(3, persisted.getInventories().get(1).getTotalCopies());
+        assertEquals(2, persisted.getInventories().get(1).getAvailableCopies());
+
+        assertEquals(42L, result.id());
+        assertEquals(5, result.totalCopies());
+        assertEquals(3, result.availableCopies());
+        assertEquals(2, result.inventories().size());
+    }
+
+    @Test
+    void givenNoExplicitInventories_whenAddManualBook_thenCreatesInventoryForCurrentUsersSchool() {
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "Manual Book",
+                List.of("Author One"),
+                "Publisher",
+                "Description",
+                200,
+                List.of("Programming"),
+                "thumbnail-url",
+                "nl",
+                4.5,
+                2024,
+                false,
+                false,
+                List.of("Toekomst & technologie"),
+                "A",
+                4,
+                2,
+                "Eerste graad",
+                null);
+
+        BookEntity reloaded = new BookEntity();
+        reloaded.setId(7L);
+        reloaded.setTitle("Manual Book");
+        reloaded.setTotalCopies(4);
+        reloaded.setAvailableCopies(2);
+        reloaded.setInventories(new ArrayList<>(List.of(
+                buildInventory(school, null, 4, 2))));
+
+        when(userRepository.findBySmartschoolUid("uid-123")).thenReturn(Optional.of(user));
+        when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
+            BookEntity entity = invocation.getArgument(0);
+            entity.setId(7L);
+            return entity;
+        });
+        when(bookRepository.findDetailedById(7L)).thenReturn(Optional.of(reloaded));
+
+        BookDTO result = bookService.addManualBook(request, "uid-123");
+
+        ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
+        verify(bookRepository).saveAndFlush(captor.capture());
+
+        BookEntity persisted = captor.getValue();
+        assertEquals(1, persisted.getInventories().size());
+        assertEquals(1L, persisted.getInventories().get(0).getSchool().getId());
+        assertEquals("", persisted.getInventories().get(0).getCampus());
+        assertEquals(4, persisted.getInventories().get(0).getTotalCopies());
+        assertEquals(2, persisted.getInventories().get(0).getAvailableCopies());
+
+        assertEquals(4, persisted.getTotalCopies());
+        assertEquals(2, persisted.getAvailableCopies());
+
+        assertEquals(7L, result.id());
+        assertEquals(4, result.totalCopies());
+        assertEquals(2, result.availableCopies());
+        assertEquals(1, result.inventories().size());
+    }
+
+    @Test
+    void givenInventoryList_whenUpdateBook_thenReplacesInventoriesAndRecomputesTotals() {
+        SchoolEntity school2 = new SchoolEntity();
+        school2.setId(2L);
+        school2.setName("GO! School");
+        school2.setDomain("https://go.smartschool.be");
+
+        BookEntity book = buildBook();
+        book.setInventories(new ArrayList<>(List.of(
+                buildInventory(school, "Old Campus", 1, 1))));
+        book.setTotalCopies(1);
+        book.setAvailableCopies(1);
+
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
+        when(schoolRepository.findById(1L)).thenReturn(Optional.of(school));
+        when(schoolRepository.findById(2L)).thenReturn(Optional.of(school2));
+        when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BookDTO update = new BookDTO(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of(
+                        new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
+                        new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
+
+        BookDTO result = bookService.updateBook(10L, update);
+
+        assertEquals(2, book.getInventories().size());
+        assertEquals(10, book.getTotalCopies());
+        assertEquals(7, book.getAvailableCopies());
+
+        assertEquals(1L, book.getInventories().get(0).getSchool().getId());
+        assertEquals("Campus A", book.getInventories().get(0).getCampus());
+        assertEquals(4, book.getInventories().get(0).getTotalCopies());
+        assertEquals(3, book.getInventories().get(0).getAvailableCopies());
+
+        assertEquals(2L, book.getInventories().get(1).getSchool().getId());
+        assertEquals("Campus B", book.getInventories().get(1).getCampus());
+        assertEquals(6, book.getInventories().get(1).getTotalCopies());
+        assertEquals(4, book.getInventories().get(1).getAvailableCopies());
+
+        assertEquals(10, result.totalCopies());
+        assertEquals(7, result.availableCopies());
+        assertEquals(2, result.inventories().size());
+
+        verify(bookRepository).save(book);
+    }
+
+    @Test
+    void givenInventoryWithAvailableCopiesGreaterThanTotal_whenUpdateBook_thenThrowsIllegalArgumentException() {
+        BookEntity book = buildBook();
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
+
+        BookDTO update = new BookDTO(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of(
+                        new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 2, 3)));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> bookService.updateBook(10L, update));
+
+        assertEquals("Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren", ex.getMessage());
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
+
+    @Test
+    void givenUnknownSchoolInInventory_whenAddManualBook_thenThrowsIllegalArgumentException() {
+        CreateBookRequestDTO request = new CreateBookRequestDTO(
+                "Manual Book",
+                List.of("Author One"),
+                "Publisher",
+                "Description",
+                200,
+                List.of("Programming"),
+                "thumbnail-url",
+                "nl",
+                4.5,
+                2024,
+                false,
+                false,
+                List.of("Toekomst & technologie"),
+                "A",
+                null,
+                null,
+                "Eerste graad",
+                List.of(new CreateBookInventoryRequestDTO(999L, "Campus X", 2, 1)));
+
+        when(schoolRepository.findById(999L)).thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> bookService.addManualBook(request, "uid-123"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertEquals("School niet gevonden voor id: 999", ex.getReason());
+    }
+
     // --- Helpers ---
 
     private GoogleBooksResponse createMockGoogleResponse(String title, String author) {
@@ -1190,5 +1457,15 @@ class BookServiceTest {
 
     private Page<BookEntity> toEntityPage(List<BookEntity> list) {
         return new PageImpl<>(list, PageRequest.of(0, 20), list.size());
+    }
+
+    private BookInventoryEntity buildInventory(SchoolEntity school, String campus, int totalCopies,
+            int availableCopies) {
+        BookInventoryEntity inventory = new BookInventoryEntity();
+        inventory.setSchool(school);
+        inventory.setCampus(campus);
+        inventory.setTotalCopies(totalCopies);
+        inventory.setAvailableCopies(availableCopies);
+        return inventory;
     }
 }
