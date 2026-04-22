@@ -6,8 +6,12 @@ import edu.ap.gosmartlib.dto.googlebooks.GoogleBookItem;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
 import edu.ap.gosmartlib.entities.BookEntity;
+import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.repositories.BookRepository;
+import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +47,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -58,8 +63,17 @@ class BookServiceTest {
     @Mock
     private RestTemplate restTemplate; // We faken de Google API
 
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private SchoolRepository schoolRepository;
+
     @InjectMocks
     private BookService bookService; // Dit is de service die we écht testen
+
+    private SchoolEntity school;
+    private UserEntity user;
 
     @BeforeEach
     void setUp() {
@@ -68,6 +82,16 @@ class BookServiceTest {
         ReflectionTestUtils.setField(bookService, "googleBooksApiUrl",
                 "https://www.googleapis.com/books/v1/volumes");
         ReflectionTestUtils.setField(bookService, "googleBooksApiKey", "test-key");
+
+        school = new SchoolEntity();
+        school.setId(1L);
+        school.setName("AP Hogeschool");
+        school.setDomain("https://aphogeschool.smartschool.be");
+
+        user = new UserEntity();
+        user.setSmartschoolUid("uid-123");
+        user.setSchool(school);
+        user.setRole(UserRoles.STUDENT);
     }
 
     // --- Google API Tests ---
@@ -82,6 +106,12 @@ class BookServiceTest {
 
         assertNotNull(result);
         assertEquals("Test Boek", result.title());
+        assertNull(result.id());
+        assertEquals(0, result.totalCopies());
+        assertEquals(0, result.availableCopies());
+        assertTrue(result.inventories().isEmpty());
+
+        verifyNoInteractions(userRepository);
         verify(bookRepository, never()).save(any(BookEntity.class));
     }
 
@@ -90,17 +120,24 @@ class BookServiceTest {
         String isbn = "9798988421504";
         GoogleBooksResponse mockResponse = createMockGoogleResponse("Gekocht Boek", "Auteur X");
 
-        BookEntity mockSavedEntity = new BookEntity();
-        mockSavedEntity.setId(1L);
-        mockSavedEntity.setTitle("Gekocht Boek");
-
+        when(userRepository.findBySmartschoolUid("uid-123")).thenReturn(Optional.of(user));
         when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class))).thenReturn(mockResponse);
-        when(bookRepository.save(any(BookEntity.class))).thenReturn(mockSavedEntity);
+        when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> {
+            BookEntity saved = invocation.getArgument(0);
+            saved.setId(1L);
+            return saved;
+        });
 
-        BookDTO result = bookService.addBookByIsbn(isbn);
+        BookDTO result = bookService.addBookByIsbn(isbn, "uid-123", "Campus Zuid");
 
         assertNotNull(result);
         assertEquals(1L, result.id());
+        assertEquals("Gekocht Boek", result.title());
+        assertEquals(1, result.totalCopies());
+        assertEquals(1, result.availableCopies());
+        assertEquals(1, result.inventories().size());
+        assertEquals("Campus Zuid", result.inventories().get(0).campus());
+
         verify(bookRepository, times(1)).save(any(BookEntity.class));
     }
 
@@ -198,45 +235,45 @@ class BookServiceTest {
 
     @Test
     void givenBookExists_whenGetBookById_thenReturnsCorrectDTO() {
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(buildBook()));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(buildBook()));
 
         BookDTO result = bookService.getBookById(10L, UserRoles.TEACHER);
 
         assertNotNull(result);
         assertEquals(10L, result.id());
         assertEquals("Clean Code", result.title());
-        verify(bookRepository, times(1)).findById(10L);
+        verify(bookRepository, times(1)).findDetailedById(10L);
     }
 
     @Test
     void givenBookDoesNotExist_whenGetBookById_thenThrowsBookNotFoundException() {
-        when(bookRepository.findById(99L)).thenReturn(Optional.empty());
+        when(bookRepository.findDetailedById(99L)).thenReturn(Optional.empty());
 
         assertThrows(BookNotFoundException.class, () -> bookService.getBookById(99L, UserRoles.STUDENT));
-        verify(bookRepository, times(1)).findById(99L);
+        verify(bookRepository, times(1)).findDetailedById(99L);
     }
 
     @Test
     void givenDidacticBookAndStudentRole_whenGetBookById_thenThrowsForbidden() {
         BookEntity didacticBook = buildBook();
         didacticBook.setDidacticTag(true);
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(didacticBook));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(didacticBook));
 
         assertThrows(ResponseStatusException.class, () -> bookService.getBookById(10L, UserRoles.STUDENT));
-        verify(bookRepository, times(1)).findById(10L);
+        verify(bookRepository, times(1)).findDetailedById(10L);
     }
 
     @Test
     void givenDidacticBookAndTeacherRole_whenGetBookById_thenReturnsDTO() {
         BookEntity didacticBook = buildBook();
         didacticBook.setDidacticTag(true);
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(didacticBook));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(didacticBook));
 
         BookDTO result = bookService.getBookById(10L, UserRoles.TEACHER);
 
         assertNotNull(result);
         assertEquals(10L, result.id());
-        verify(bookRepository, times(1)).findById(10L);
+        verify(bookRepository, times(1)).findDetailedById(10L);
     }
 
     // --- deleteBook Tests ---
@@ -721,7 +758,7 @@ class BookServiceTest {
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> bookService.importBooksFromExcel(file));
+                () -> bookService.importBooksFromExcel(file, "uid-123", "Campus Zuid"));
 
         assertEquals("Upload een excel file die niet leeg is", ex.getMessage());
         verifyNoInteractions(bookRepository, restTemplate);
@@ -735,6 +772,7 @@ class BookServiceTest {
 
         GoogleBooksResponse googleResponse = createMockGoogleResponse("Clean Code", "Robert C. Martin");
 
+        when(userRepository.findBySmartschoolUid("uid-123")).thenReturn(Optional.of(user));
         when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
         when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class))).thenReturn(googleResponse);
         when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> {
@@ -743,7 +781,7 @@ class BookServiceTest {
             return saved;
         });
 
-        BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file, "uid-123", "Campus Zuid");
 
         assertEquals(1, result.totalRows());
         assertEquals(1, result.savedCount());
@@ -764,7 +802,7 @@ class BookServiceTest {
 
         when(bookRepository.existsByIsbn("9780132350884")).thenReturn(true);
 
-        BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file, "uid-123", "Campus Zuid");
 
         assertEquals(1, result.totalRows());
         assertEquals(0, result.savedCount());
@@ -781,10 +819,11 @@ class BookServiceTest {
         });
 
         when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
+        when(userRepository.findBySmartschoolUid("uid-123")).thenReturn(Optional.of(user));
         when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class)))
                 .thenReturn(createMockGoogleResponse("Refactoring", "Martin Fowler"));
 
-        BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file, "uid-123", "Campus Zuid");
 
         assertEquals(1, result.totalRows());
         assertEquals(0, result.savedCount());
@@ -802,7 +841,7 @@ class BookServiceTest {
         when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class)))
                 .thenReturn(new GoogleBooksResponse());
 
-        BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file, "uid-123", "Campus Zuid");
 
         assertEquals(1, result.totalRows());
         assertEquals(0, result.savedCount());
@@ -818,7 +857,7 @@ class BookServiceTest {
                 { "", "Clean Code" }
         });
 
-        BulkImportResponseDTO result = bookService.importBooksFromExcel(file);
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file, "uid-123", "Campus Zuid");
 
         assertEquals(2, result.totalRows());
         assertEquals(0, result.savedCount());
@@ -833,7 +872,8 @@ class BookServiceTest {
         when(file.isEmpty()).thenReturn(false);
         when(file.getInputStream()).thenThrow(new IOException("boom"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> bookService.importBooksFromExcel(file));
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> bookService.importBooksFromExcel(file, "uid-123", "Campus Zuid"));
         assertEquals("Kon de excel file niet lezen", ex.getMessage());
     }
 
@@ -842,11 +882,11 @@ class BookServiceTest {
     @Test
     void givenBookExists_whenUpdateBook_thenUpdatesFieldsAndReturnsMappedDTO() {
         BookEntity book = buildBook();
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
         when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         BookDTO update = new BookDTO(null, "Refactoring", List.of("Martin Fowler"), null, null,
-                null, null, null, null, null, null, null, false, null, null, null, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null, null, null);
 
         BookDTO result = bookService.updateBook(10L, update);
 
@@ -858,10 +898,10 @@ class BookServiceTest {
 
     @Test
     void givenBookDoesNotExist_whenUpdateBook_thenThrowsBookNotFoundException() {
-        when(bookRepository.findById(99L)).thenReturn(Optional.empty());
+        when(bookRepository.findDetailedById(99L)).thenReturn(Optional.empty());
 
         BookDTO update = new BookDTO(null, "New Title", null, null, null,
-                null, null, null, null, null, null, null, false, null, null, null, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null, null, null);
 
         assertThrows(BookNotFoundException.class, () -> bookService.updateBook(99L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -870,10 +910,10 @@ class BookServiceTest {
     @Test
     void givenBlankTitle_whenUpdateBook_thenThrowsIllegalArgumentException() {
         BookEntity book = buildBook();
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, "   ", null, null, null,
-                null, null, null, null, null, null, null, false, null, null, null, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -882,10 +922,10 @@ class BookServiceTest {
     @Test
     void givenEmptyTitle_whenUpdateBook_thenThrowsIllegalArgumentException() {
         BookEntity book = buildBook();
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, "", null, null, null,
-                null, null, null, null, null, null, null, false, null, null, null, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -894,10 +934,10 @@ class BookServiceTest {
     @Test
     void givenNegativePageCount_whenUpdateBook_thenThrowsIllegalArgumentException() {
         BookEntity book = buildBook();
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, null, null, null, null,
-                -1, null, null, null, null, null, null, false, null, null, null, null, null);
+                -1, null, null, null, null, null, null, false, null, null, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -906,11 +946,11 @@ class BookServiceTest {
     @Test
     void givenFuturePublishedYear_whenUpdateBook_thenThrowsIllegalArgumentException() {
         BookEntity book = buildBook();
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
 
         int futureYear = Year.now().getValue() + 1;
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, futureYear, false, null, null, null, null, null);
+                null, null, null, null, null, null, futureYear, false, null, null, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -919,12 +959,12 @@ class BookServiceTest {
     @Test
     void givenCurrentYear_whenUpdateBook_thenSavesSuccessfully() {
         BookEntity book = buildBook();
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
         when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         int currentYear = Year.now().getValue();
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, currentYear, false, null, null, null, null, null);
+                null, null, null, null, null, null, currentYear, false, null, null, null, null, null, null);
 
         assertDoesNotThrow(() -> bookService.updateBook(10L, update));
         verify(bookRepository, times(1)).save(book);
@@ -933,11 +973,11 @@ class BookServiceTest {
     @Test
     void givenNullFields_whenUpdateBook_thenNoFieldsAreOverwritten() {
         BookEntity book = buildBook();
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
         when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, null, false, null, null, null, null, null);
+                null, null, null, null, null, null, null, false, null, null, null, null, null, null);
 
         BookDTO result = bookService.updateBook(10L, update);
 
@@ -949,12 +989,12 @@ class BookServiceTest {
     @Test
     void givenAllFieldsProvided_whenUpdateBook_thenAllFieldsAreUpdated() {
         BookEntity book = buildBook();
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
         when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         BookDTO update = new BookDTO(null, "New Title", List.of("New Author"), "New Publisher",
                 "New Description", 200, List.of("Fiction"), "new-thumbnail", "fr", 3.5, "9780000000000", 2020, false,
-                List.of("Label"), "A", 1, 1, "Eerste graad");
+                List.of("Label"), "A", 1, 1, "Eerste graad", null);
 
         BookDTO result = bookService.updateBook(10L, update);
 
@@ -974,10 +1014,10 @@ class BookServiceTest {
     @Test
     void givenZeroOrNegativePublishedYear_whenUpdateBook_thenThrowsIllegalArgumentException() {
         BookEntity book = buildBook();
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
 
         BookDTO update = new BookDTO(null, null, null, null, null,
-                null, null, null, null, null, null, 0, false, null, null, null, null, null);
+                null, null, null, null, null, null, 0, false, null, null, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
         verify(bookRepository, never()).save(any(BookEntity.class));
@@ -990,7 +1030,7 @@ class BookServiceTest {
         CreateBookRequestDTO request = new CreateBookRequestDTO(
                 "  Manual Book  ", List.of(" Author One ", " ", "Author Two"), "  Publisher  ", "  Description  ",
                 250, List.of(" Fantasy ", "", "Young adult"), "  thumbnail-url  ", "  nl  ", 4.5, 2024,
-                true, false, null, "A", 1, 1, "Eerste graad");
+                true, false, null, "A", 1, 1, "Eerste graad", null);
 
         BookEntity savedEntity = new BookEntity();
         savedEntity.setId(42L);
@@ -1005,15 +1045,17 @@ class BookServiceTest {
         savedEntity.setRating(4.5);
         savedEntity.setPublishedYear(2024);
         savedEntity.setSpotlight(true);
+        savedEntity.setInventories(new ArrayList<>());
 
+        when(userRepository.findBySmartschoolUid("uid-123")).thenReturn(Optional.of(user));
         when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
             BookEntity entity = invocation.getArgument(0);
             savedEntity.setIsbn(entity.getIsbn());
             return savedEntity;
         });
-        when(bookRepository.findById(42L)).thenReturn(Optional.of(savedEntity));
+        when(bookRepository.findDetailedById(42L)).thenReturn(Optional.of(savedEntity));
 
-        BookDTO result = bookService.addManualBook(request);
+        BookDTO result = bookService.addManualBook(request, "uid-123");
 
         assertNotNull(result);
         assertEquals(42L, result.id());
@@ -1023,7 +1065,7 @@ class BookServiceTest {
 
         ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
         verify(bookRepository, times(1)).saveAndFlush(captor.capture());
-        verify(bookRepository, times(1)).findById(42L);
+        verify(bookRepository, times(1)).findDetailedById(42L);
         assertEquals("Manual Book", captor.getValue().getTitle());
         assertTrue(captor.getValue().getIsbn().matches("^NOISBN-[0-9a-fA-F\\-]{36}$"));
     }
@@ -1033,21 +1075,21 @@ class BookServiceTest {
         CreateBookRequestDTO request = new CreateBookRequestDTO(
                 "   ", List.of("Author"), "Publisher", "Description", 100,
                 List.of("Fantasy"), "thumbnail-url", "nl", 4.0, 2024,
-                false, false, null, "A", 1, 1, "Eerste graad");
+                false, false, null, "A", 1, 1, "Eerste graad", null);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> bookService.addManualBook(request));
+                () -> bookService.addManualBook(request, "uid-123"));
 
         assertEquals("Titel is verplicht", ex.getMessage());
         verify(bookRepository, never()).saveAndFlush(any(BookEntity.class));
-        verify(bookRepository, never()).findById(anyLong());
+        verify(bookRepository, never()).findDetailedById(anyLong());
     }
 
     @Test
     void givenNullOptionalFields_whenAddManualBook_thenUsesSafeDefaults() {
         CreateBookRequestDTO request = new CreateBookRequestDTO(
                 "Manual Book", null, null, null, null, null, null, null, null, null, null, false, null, null, null,
-                null, null);
+                null, null, null);
 
         BookEntity savedEntity = new BookEntity();
         savedEntity.setId(7L);
@@ -1057,15 +1099,17 @@ class BookServiceTest {
         savedEntity.setCategories(List.of());
         savedEntity.setRating(0.0);
         savedEntity.setSpotlight(false);
+        savedEntity.setInventories(new ArrayList<>());
 
+        when(userRepository.findBySmartschoolUid("uid-123")).thenReturn(Optional.of(user));
         when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
             BookEntity entity = invocation.getArgument(0);
             savedEntity.setIsbn(entity.getIsbn());
             return savedEntity;
         });
-        when(bookRepository.findById(7L)).thenReturn(Optional.of(savedEntity));
+        when(bookRepository.findDetailedById(7L)).thenReturn(Optional.of(savedEntity));
 
-        BookDTO result = bookService.addManualBook(request);
+        BookDTO result = bookService.addManualBook(request, "uid-123");
 
         assertEquals(7L, result.id());
         assertEquals("Manual Book", result.title());
@@ -1115,12 +1159,13 @@ class BookServiceTest {
         book.setSpotlight(true);
         book.setTotalCopies(5);
         book.setAvailableCopies(5);
+        book.setInventories(new ArrayList<>());
         return book;
     }
 
     private MockMultipartFile createExcelFile(String[][] rows) throws IOException {
         try (Workbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Sheet sheet = workbook.createSheet("Books");
 

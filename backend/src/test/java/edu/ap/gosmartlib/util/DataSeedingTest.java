@@ -8,12 +8,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import edu.ap.gosmartlib.entities.BookInventoryEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
 
 import java.util.List;
-import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
