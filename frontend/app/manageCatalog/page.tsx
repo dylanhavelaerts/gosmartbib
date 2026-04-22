@@ -447,7 +447,7 @@ useEffect(() => {
                               {selectedBook.inventories.map((inventory, index) => (
                                 <tr key={inventory.id ?? `${inventory.schoolId}-${inventory.campus}-${index}`}>
                                   <td>{inventory.schoolName || inventory.schoolId || "-"}</td>
-                                  <td>{inventory.campus || "-"}</td>
+                                  <td>{inventory.campus || ""}</td>
                                   <td>{inventory.totalCopies}</td>
                                   <td>{inventory.availableCopies}</td>
                                 </tr>

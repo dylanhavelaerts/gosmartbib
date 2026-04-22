@@ -334,3 +334,37 @@
     font-size: 1rem;
   }
 }
+
+.detailInventorySection {
+  margin-top: 1.5rem;
+}
+
+.detailInventorySection h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: #8e2446;
+}
+
+.detailInventoryTable {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e4d5de;
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+}
+
+.detailInventoryTable th,
+.detailInventoryTable td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.detailInventoryTable th {
+  background-color: #f7eef2;
+  color: #8e2446;
+  font-weight: 700;
+}

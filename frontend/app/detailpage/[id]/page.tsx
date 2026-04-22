@@ -187,6 +187,34 @@ export default function DetailPage({
                 <span className="infoBoxLabel">ISBN</span>
                 <span className="infoBoxValue">{book.isbn}</span>
               </div>
+              <div className="detailInventorySection">
+                <h2>Inventaris</h2>
+
+                {book.inventories && book.inventories.length > 0 ? (
+                  <table className="detailInventoryTable">
+                    <thead>
+                      <tr>
+                        <th>School</th>
+                        <th>Campus</th>
+                        <th>Totaal</th>
+                        <th>Beschikbaar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {book.inventories.map((inventory, index) => (
+                        <tr key={inventory.id ?? `${inventory.schoolId}-${inventory.campus}-${index}`}>
+                          <td>{inventory.schoolName || inventory.schoolId || "-"}</td>
+                          <td>{inventory.campus || "-"}</td>
+                          <td>{inventory.totalCopies}</td>
+                          <td>{inventory.availableCopies}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p>Geen inventarisgegevens beschikbaar.</p>
+                )}
+              </div>
             </div>
           ) : (
             <div className="tabContent">
