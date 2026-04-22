@@ -46,12 +46,12 @@ public class BookController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             Authentication authentication) {
-        return bookService.getAllBooks(page, size, callerRole(authentication));
+        return bookService.getAllBooks(page, size, callerRole(authentication), currentUserUid(authentication));
     }
 
     @GetMapping("/all/unpaged")
     public List<BookDTO> getAllBooksUnpaged(Authentication authentication) {
-        return bookService.getAllBooksUnpaged(callerRole(authentication));
+        return bookService.getAllBooksUnpaged(callerRole(authentication), currentUserUid(authentication));
     }
 
     /**
@@ -69,7 +69,8 @@ public class BookController {
             @RequestParam(defaultValue = "20") int size,
             Authentication authentication) {
         return ResponseEntity
-                .ok(bookService.searchByTitleOrAuthorOrCategory(query, page, size, callerRole(authentication)));
+                .ok(bookService.searchByTitleOrAuthorOrCategory(query, page, size, callerRole(authentication),
+                        currentUserUid(authentication)));
     }
 
     /**
@@ -86,7 +87,8 @@ public class BookController {
             @ModelAttribute BookFilterRequest filter,
             Authentication authentication) {
         try {
-            Page<BookDTO> filteredBooks = bookService.filterBooks(filter, callerRole(authentication));
+            Page<BookDTO> filteredBooks = bookService.filterBooks(filter, callerRole(authentication),
+                    currentUserUid(authentication));
             return ResponseEntity.ok(filteredBooks);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -101,7 +103,8 @@ public class BookController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookById(@PathVariable Long id, Authentication authentication) {
         try {
-            return ResponseEntity.ok(bookService.getBookById(id, callerRole(authentication)));
+            return ResponseEntity
+                    .ok(bookService.getBookById(id, callerRole(authentication), currentUserUid(authentication)));
         } catch (BookNotFoundException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (ResponseStatusException e) {
@@ -114,7 +117,7 @@ public class BookController {
      */
     @GetMapping("/spotlight")
     public List<BookDTO> getBooksInSpotlight(Authentication authentication) {
-        return bookService.getTop4BooksInSpotlight(callerRole(authentication));
+        return bookService.getTop4BooksInSpotlight(callerRole(authentication), currentUserUid(authentication));
     }
 
     /**
@@ -122,7 +125,7 @@ public class BookController {
      */
     @GetMapping("/spotlight/all")
     public List<BookDTO> getAllBooksInSpotlight(Authentication authentication) {
-        return bookService.getAllBooksInSpotlight(callerRole(authentication));
+        return bookService.getAllBooksInSpotlight(callerRole(authentication), currentUserUid(authentication));
     }
 
     /**
@@ -130,7 +133,7 @@ public class BookController {
      */
     @GetMapping("/latest")
     public List<BookDTO> getLatestBooks(Authentication authentication) {
-        return bookService.getLatestBooks(callerRole(authentication));
+        return bookService.getLatestBooks(callerRole(authentication), currentUserUid(authentication));
     }
 
     @GetMapping("/top-rated")

@@ -45,6 +45,7 @@ import java.time.Year;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -63,21 +64,30 @@ public class BookService {
     private String googleBooksApiKey;
 
     // Size = aantal items per pagina, page = welke pagina (0-based)
-    public Page<BookDTO> getAllBooks(int page, int size, UserRoles callerRoles) {
+    public Page<BookDTO> getAllBooks(int page, int size, UserRoles callerRole, String currentUserUid) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
         Pageable pageable = PageRequest.of(page, size);
-        return bookRepository.findAllFiltered(canSeeDidactic(callerRoles), pageable)
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        if (restrictToOwnSchool(callerRole)) {
+            Long schoolId = requireRequesterSchoolId(currentUserUid);
+
+            return bookRepository.findAllFilteredForSchool(includeDidactic, schoolId, pageable)
+                    .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid));
+        }
+
+        return bookRepository.findAllFiltered(includeDidactic, pageable)
                 .map(this::toDTO);
     }
 
-    public List<BookDTO> getAllBooksUnpaged(UserRoles callerRoles) {
-        boolean includeDidactic = canSeeDidactic(callerRoles);
+    public List<BookDTO> getAllBooksUnpaged(UserRoles callerRole, String currentUserUid) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findAll()
                 .stream()
                 .filter(b -> includeDidactic || !b.isDidacticTag())
-                .map(this::toDTO)
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
                 .toList();
     }
 
@@ -113,7 +123,7 @@ public class BookService {
      * Als het gevonden wordt, wordt het omgezet naar een DTO en teruggegeven.
      * Als het niet gevonden wordt, gooit het een BookNotFoundException met het id.
      */
-    public BookDTO getBookById(Long id, UserRoles callerRole) throws BookNotFoundException {
+    public BookDTO getBookById(Long id, UserRoles callerRole, String currentUserUid) throws BookNotFoundException {
 
         BookEntity book = bookRepository.findDetailedById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));
@@ -121,7 +131,12 @@ public class BookService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Je hebt geen toegang tot dit boek");
         }
-        return toDTO(book);
+        BookDTO visible = toVisibleBookDTO(book, callerRole, currentUserUid);
+        if (visible == null) {
+            throw new BookNotFoundException(id);
+        }
+
+        return visible;
     }
 
     /**
@@ -151,44 +166,65 @@ public class BookService {
      * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar
      *         DTO's.
      */
-    public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size, UserRoles callerRoles) {
+    public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size, UserRoles callerRole,
+            String currentUserUid) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
         Pageable pageable = PageRequest.of(page, size);
+        boolean includeDidactic = canSeeDidactic(callerRole);
 
-        if (query == null || query.isBlank()) {
-            return bookRepository.findAllFiltered(canSeeDidactic(callerRoles), pageable).map(this::toDTO);
+        if (restrictToOwnSchool(callerRole)) {
+            Long schoolId = requireRequesterSchoolId(currentUserUid);
+
+            if (query == null || query.isBlank()) {
+                return bookRepository.findAllFilteredForSchool(includeDidactic, schoolId, pageable)
+                        .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid));
+            }
+
+            return bookRepository.searchByTitleOrAuthorOrCategoryForSchool(
+                    query.trim(),
+                    includeDidactic,
+                    schoolId,
+                    pageable)
+                    .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid));
         }
 
-        return bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), canSeeDidactic(callerRoles), pageable)
+        if (query == null || query.isBlank()) {
+            return bookRepository.findAllFiltered(canSeeDidactic(callerRole), pageable).map(this::toDTO);
+        }
+
+        return bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), includeDidactic, pageable)
                 .map(this::toDTO);
     }
 
-    public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole) {
+    public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole, String currentUserUid) {
         boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findTop4BySpotlightTrueOrderByIdDesc()
                 .stream()
                 .filter(b -> includeDidactic || !b.isDidacticTag())
-                .map(this::toDTO)
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
                 .toList();
     }
 
-    public List<BookDTO> getAllBooksInSpotlight(UserRoles callerRole) {
+    public List<BookDTO> getAllBooksInSpotlight(UserRoles callerRole, String currentUserUid) {
         boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findBySpotlightTrueOrderByIdDesc()
                 .stream()
                 .filter(b -> includeDidactic || !b.isDidacticTag())
-                .map(this::toDTO)
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
                 .toList();
     }
 
-    public List<BookDTO> getLatestBooks(UserRoles callerRole) {
+    public List<BookDTO> getLatestBooks(UserRoles callerRole, String currentUserUid) {
         boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findTop4ByOrderByIdDesc()
                 .stream()
                 .filter(b -> includeDidactic || !b.isDidacticTag())
-                .map(this::toDTO)
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
                 .toList();
     }
 
@@ -209,17 +245,38 @@ public class BookService {
         }
 
         return books.stream()
-                .map(this::toDTO)
+                .map(book -> toVisibleBookDTO(book, user.getRole(), smartschoolUid))
+                .filter(Objects::nonNull)
                 .toList();
     }
 
-    public Page<BookDTO> filterBooks(BookFilterRequest request, UserRoles callerRoles) {
+    public Page<BookDTO> filterBooks(BookFilterRequest request, UserRoles callerRole, String currentUserUid) {
         bookFilterValidator.validate(request);
 
         Pageable pageable = PageRequest.of(request.page(), request.size());
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        if (restrictToOwnSchool(callerRole)) {
+            Long schoolId = requireRequesterSchoolId(currentUserUid);
+
+            return bookRepository.filterBooksForSchool(
+                    includeDidactic,
+                    request.query(),
+                    request.language(),
+                    request.categories(),
+                    request.labels(),
+                    request.minPageCount(),
+                    request.maxPageCount(),
+                    request.minPubYear(),
+                    request.maxPubYear(),
+                    request.minRating(),
+                    request.maxRating(),
+                    schoolId,
+                    pageable)
+                    .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid));
+        }
         return bookRepository
                 .filterBooks(
-                        canSeeDidactic(callerRoles),
+                        includeDidactic,
                         request.query(),
                         request.language(),
                         request.categories(),
@@ -728,6 +785,102 @@ public class BookService {
         return role == UserRoles.TEACHER
                 || role == UserRoles.BIBLIOTHEEKBEHEERDER
                 || role == UserRoles.ADMIN;
+    }
+
+    private boolean restrictToOwnSchool(UserRoles role) {
+        return role == UserRoles.STUDENT;
+    }
+
+    private Long getRequesterSchoolId(String currentUserUid) {
+        return userRepository.findDetailedBySmartschoolUid(currentUserUid)
+                .map(UserEntity::getSchool)
+                .map(SchoolEntity::getId)
+                .orElse(null);
+    }
+
+    private List<BookInventoryEntity> getVisibleInventories(
+            BookEntity book,
+            UserRoles role,
+            String currentUserUid) {
+        if (!restrictToOwnSchool(role)) {
+            return book.getInventories() == null ? List.of() : book.getInventories();
+        }
+
+        Long requesterSchoolId = getRequesterSchoolId(currentUserUid);
+        if (requesterSchoolId == null || book.getInventories() == null) {
+            return List.of();
+        }
+
+        return book.getInventories().stream()
+                .filter(inventory -> inventory.getSchool() != null &&
+                        Objects.equals(inventory.getSchool().getId(), requesterSchoolId))
+                .toList();
+    }
+
+    private BookDTO toVisibleBookDTO(
+            BookEntity book,
+            UserRoles role,
+            String currentUserUid) {
+
+        List<BookInventoryEntity> visibleInventories = getVisibleInventories(book, role, currentUserUid);
+
+        if (restrictToOwnSchool(role) && visibleInventories.isEmpty()) {
+            return null;
+        }
+
+        int totalCopies = visibleInventories.stream()
+                .map(BookInventoryEntity::getTotalCopies)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        int availableCopies = visibleInventories.stream()
+                .map(BookInventoryEntity::getAvailableCopies)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        List<BookInventoryDTO> inventoryDTOs = visibleInventories.stream()
+                .sorted(Comparator
+                        .comparing(
+                                (BookInventoryEntity inventory) -> inventory.getSchool().getName(),
+                                Comparator.nullsLast(String::compareToIgnoreCase))
+                        .thenComparing(
+                                BookInventoryEntity::getCampus,
+                                Comparator.nullsLast(String::compareToIgnoreCase)))
+                .map(this::toInventoryDTO)
+                .toList();
+
+        return new BookDTO(
+                book.getId(),
+                book.getTitle(),
+                book.getAuthors() == null ? new ArrayList<>() : new ArrayList<>(book.getAuthors()),
+                book.getPublisher(),
+                book.getDescription(),
+                book.getPageCount(),
+                book.getCategories() == null ? new ArrayList<>() : new ArrayList<>(book.getCategories()),
+                book.getThumbnail(),
+                book.getLanguage(),
+                book.getRating(),
+                book.getIsbn(),
+                book.getPublishedYear(),
+                book.isDidacticTag(),
+                book.getLabels() == null ? new ArrayList<>() : new ArrayList<>(book.getLabels()),
+                book.getReadingLevel(),
+                totalCopies,
+                availableCopies,
+                book.getAgeRange(),
+                inventoryDTOs);
+    }
+
+    private Long requireRequesterSchoolId(String currentUserUid) {
+        Long schoolId = getRequesterSchoolId(currentUserUid);
+        if (schoolId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Geen school gevonden voor de ingelogde gebruiker");
+        }
+        return schoolId;
     }
     // endregion
 }
