@@ -148,7 +148,7 @@ for (const inventory of inventories) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-        },
+        }, credentials: "include",
         body: JSON.stringify({
           title,
           authors: authors.filter((author) => author.trim() !== ""),

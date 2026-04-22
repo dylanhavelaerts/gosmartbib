@@ -22,7 +22,7 @@ export default function AddBookWithIsbn() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/books/search/${isbn}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/books/search/${isbn}`,{credentials: "include"}
       );
 
       if (response.ok) {

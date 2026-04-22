@@ -43,6 +43,7 @@ export default function BookListImport() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/import`, {
         method: "POST",
+        credentials:"include",
         body: formData,
       });
 
@@ -70,6 +71,7 @@ export default function BookListImport() {
         `${process.env.NEXT_PUBLIC_API_URL}/books/add/${isbn}`,
         {
           method: "POST",
+          credentials: "include"
         },
       );
 

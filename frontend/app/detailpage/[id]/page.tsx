@@ -39,7 +39,7 @@ export default function DetailPage({
   const fetchAverageReviewRating = useCallback(async (isbn: string) => {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`, {credentials: "include"}
       );
 
       if (!res.ok) {

@@ -79,7 +79,7 @@ export default function LendingPage() {
       params.append("size", "10");
       params.append("query", bookQuery.trim());
 
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/search?${params}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/search?${params}`, {credentials: "include"})
         .then((res) => res.json())
         .then((data) => setSearchResults(data.content || []))
         .catch((err) => console.error("Error fetching books:", err));
@@ -160,7 +160,7 @@ export default function LendingPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/loans`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" }, credentials: "include",
         body: JSON.stringify(payload),
       });
 

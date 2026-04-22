@@ -10,17 +10,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/loans")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class LoanController {
     private final LoanService loanService;
-    
+
     @PostMapping
     public ResponseEntity<Void> createLoans(@RequestBody List<LoanRequestDTO> requests) {
         loanService.createLoans(requests);
         return ResponseEntity.ok().build();
     }
-    
+
     @PostMapping("/{loanId}/return")
     public ResponseEntity<Void> returnBook(@PathVariable Long loanId, @RequestParam int quantity) {
         loanService.returnBook(loanId, quantity);
