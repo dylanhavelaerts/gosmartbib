@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AGE_RANGE, Book, BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
+import { AGE_RANGE, Book, BookInventory, BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
 import styles from "./addBookForm.module.css";
+import { MeResponse } from "@/app/interfaces/user";
 
 export default function AddBookWithoutIsbn() {
   const [message, setMessage] = useState("");
@@ -26,6 +27,10 @@ export default function AddBookWithoutIsbn() {
   const [readingLevel, setReadingLevel] = useState("");
   const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
   const [ageRange, setAgeRange] = useState("");
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [inventories, setInventories] = useState<BookInventory[]>([]);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const handleAuthorChange = (index: number, value: string) => {
     const updatedAuthors = [...authors];
@@ -62,9 +67,10 @@ export default function AddBookWithoutIsbn() {
       didacticTag: false,
       readingLevel: "",
       labels: [],
-      totalCopies: 0,
-      availableCopies: 0,
-      ageRange
+      totalCopies: totalCopiesFromInventories,
+      availableCopies: availableCopiesFromInventories,
+      ageRange,
+      inventories
     };
 
     setPreviewBook(book);
@@ -112,6 +118,28 @@ export default function AddBookWithoutIsbn() {
   const handleConfirmAdd = async () => {
     if (!previewBook) return;
 
+    if (inventories.length === 0) {
+  setMessage("Voeg minstens één inventarisregel toe.");
+  return;
+}
+
+for (const inventory of inventories) {
+  if (!inventory.schoolId) {
+    setMessage("Elke inventarisregel moet een school hebben.");
+    return;
+  }
+
+  if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
+    setMessage("Aantallen mogen niet negatief zijn.");
+    return;
+  }
+
+  if (inventory.availableCopies > inventory.totalCopies) {
+    setMessage("Beschikbare exemplaren mogen niet groter zijn dan totaal.");
+    return;
+  }
+}
+
     setLoading(true);
     setMessage("");
 
@@ -136,9 +164,15 @@ export default function AddBookWithoutIsbn() {
           didacticTag,
           labels,
           readingLevel,
-          totalCopies: 1,
-          availableCopies: 1,
-          ageRange
+          totalCopies: totalCopiesFromInventories,
+              availableCopies: availableCopiesFromInventories,
+              ageRange,
+              inventories: inventories.map((inventory) => ({
+                schoolId: inventory.schoolId,
+                campus: inventory.campus,
+                totalCopies: inventory.totalCopies,
+                availableCopies: inventory.availableCopies,
+              })),
         }),
       });
 
@@ -186,6 +220,74 @@ export default function AddBookWithoutIsbn() {
         ? styles.messageInfo
         : styles.messageError
   }`.trim();
+
+  const createEmptyInventory = (
+  school: MeResponse["school"] | null,
+): BookInventory => ({
+  id: null,
+  schoolId: school?.id ?? null,
+  schoolName: school?.name ?? "",
+  campus: "",
+  totalCopies: 1,
+  availableCopies: 1,
+});
+
+const totalCopiesFromInventories = inventories.reduce(
+  (sum, inventory) => sum + (inventory.totalCopies || 0),
+  0,
+);
+
+const availableCopiesFromInventories = inventories.reduce(
+  (sum, inventory) => sum + (inventory.availableCopies || 0),
+  0,
+);
+
+
+function updateInventory(
+  index: number,
+  field: keyof BookInventory,
+  value: string | number | null,
+) {
+  setInventories((prev) =>
+    prev.map((inventory, i) =>
+      i === index ? { ...inventory, [field]: value } : inventory,
+    ),
+  );
+}
+
+function addInventoryRow() {
+  setInventories((prev) => [...prev, createEmptyInventory(me?.school ?? null)]);
+}
+
+function removeInventoryRow(index: number) {
+  setInventories((prev) => prev.filter((_, i) => i !== index));
+}
+
+useEffect(() => {
+  async function loadMe() {
+    if (!API_URL) return;
+
+    try {
+      const response = await fetch(`${API_URL}/auth/me`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) return;
+
+      const data: MeResponse = await response.json();
+      setMe(data);
+
+      if (data.school) {
+        setInventories([createEmptyInventory(data.school)]);
+      }
+    } catch (error) {
+      console.error("Kon gebruiker niet ophalen:", error);
+    }
+  }
+
+  loadMe();
+}, [API_URL]);
+
 
   return (
     <>
@@ -447,6 +549,98 @@ export default function AddBookWithoutIsbn() {
             <option value="true">Ja</option>
             <option value="false">Nee</option>
           </select>
+        </div>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Inventaris per school/campus</label>
+
+          {inventories.map((inventory, index) => (
+            <div key={index} className={styles.inventoryCard}>
+              <div className={styles.inventoryGrid}>
+                <div className={styles.inventoryField}>
+                  <label className={styles.label}>School</label>
+                  <input
+                    type="text"
+                    value={inventory.schoolName || ""}
+                    className={styles.input}
+                    disabled
+                  />
+                </div>
+
+                <div className={styles.inventoryField}>
+                  <label className={styles.label}>Campus</label>
+                  <input
+                    type="text"
+                    value={inventory.campus}
+                    onChange={(e) => updateInventory(index, "campus", e.target.value)}
+                    className={styles.input}
+                    disabled={previewBook !== null}
+                    placeholder="Bijv. Campus Zuid"
+                  />
+                </div>
+
+                <div className={styles.inventoryField}>
+                  <label className={styles.label}>Totaal</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={inventory.totalCopies}
+                    onChange={(e) =>
+                      updateInventory(index, "totalCopies", Number(e.target.value) || 0)
+                    }
+                    className={styles.input}
+                    disabled={previewBook !== null}
+                  />
+                </div>
+
+                <div className={styles.inventoryField}>
+                  <label className={styles.label}>Beschikbaar</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={inventory.availableCopies}
+                    onChange={(e) =>
+                      updateInventory(
+                        index,
+                        "availableCopies",
+                        Number(e.target.value) || 0,
+                      )
+                    }
+                    className={styles.input}
+                    disabled={previewBook !== null}
+                  />
+                </div>
+              </div>
+
+              {!previewBook && inventories.length > 1 && (
+                <div className={styles.inventoryActions}>
+                  <button
+                    type="button"
+                    onClick={() => removeInventoryRow(index)}
+                    className={styles.smallButton}
+                  >
+                    Verwijder regel
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {!previewBook && (
+            <div className={styles.inventoryActions}>
+              <button
+                type="button"
+                onClick={addInventoryRow}
+                className={styles.smallButton}
+              >
+                Campus toevoegen
+              </button>
+            </div>
+          )}
+
+          <div className={styles.inventorySummary}>
+            <strong>Totaal:</strong> {totalCopiesFromInventories} |{" "}
+            <strong>Beschikbaar:</strong> {availableCopiesFromInventories}
+          </div>
         </div>
 
         {!previewBook && (

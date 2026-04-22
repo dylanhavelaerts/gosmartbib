@@ -191,3 +191,36 @@
 .select:disabled {
   cursor: not-allowed;
 }
+
+.inventoryField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inventoryActions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.inventoryCard {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #8e2446;
+  border-radius: 8px;
+  background: #faf7f9;
+}
+
+.inventoryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.inventorySummary {
+  margin-top: 1rem;
+  color: #8e2446;
+  font-weight: 600;
+}
