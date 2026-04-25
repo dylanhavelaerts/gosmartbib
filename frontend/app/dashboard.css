@@ -3,7 +3,7 @@
   margin: 0 auto;
 }
 
-main {
+.page-container > main {
   padding: 1rem 1.5rem;
 }
 
@@ -227,7 +227,7 @@ main {
 }
 
 @media (min-width: 768px) {
-  main {
+  .page-container > main {
     padding: 2rem 3rem;
   }
   #bookListDashboard {
