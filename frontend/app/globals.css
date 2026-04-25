@@ -1,4 +1,3 @@
-/* 1. Reset defaults for the whole page */
 html,
 body {
   margin: 0;
@@ -12,4 +11,23 @@ body {
   font-family: Verdana, Geneva, Tahoma, sans-serif;
   margin: 0; /* Ensures headers/paragraphs don't push the layout around */
   padding: 0;
+}
+
+/*  Hide Next.js Dev Tooling elements */
+next-route-announcer,
+#next-live-preview-root,
+.__next-toast-container,
+.next-dev-hint {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+nextjs-portal,
+#nextjs-portal {
+  display: none !important;
+}
+
+/* If it's the newer Dev Tooling */
+[data-nextjs-toast-wrapper] {
+  display: none !important;
 }

@@ -130,6 +130,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
+}
+
+.homeReadingListsState p {
+  flex: 1;
+  min-width: 125px; /* Adjust based on your text length */
 }
 
 .homeRlBtnGhost {
