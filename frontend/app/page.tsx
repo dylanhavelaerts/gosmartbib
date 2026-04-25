@@ -1,25 +1,44 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import HomeReadingLists from "./components/home/HomeReadingLists";
-import { ReadingListOverview } from "./interfaces/ReadingList";
-import { Book } from "./interfaces/Book";
-import BookCard from "./catalog/bookCard";
-import "./dashboard.css";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./context/AuthContext";
 
+// Componenten
+import HomeReadingLists from "./components/home/HomeReadingLists";
+import BookCard from "./catalog/bookCard";
+
+// Interfaces & Styling
+import { ReadingListOverview } from "./interfaces/ReadingList";
+import { Book } from "./interfaces/Book";
+import "./dashboard.css";
+
 type TabId = "spotlight" | "new";
+
+const GREETINGS = [
+  "Klaar om te lezen?",
+  "Veel leesplezier!",
+  "Wat ga je vandaag lezen?",
+  "Duik in een goed boek!",
+  "Ontdek je volgende favoriete boek!",
+  "Tijd voor een nieuw avontuur tussen de pagina's!",
+];
 
 export default function Home() {
   const [selected, setSelected] = useState<TabId>("spotlight");
   const [books, setBooks] = useState<Book[]>([]);
   const [search, setSearch] = useState("");
-  const router = useRouter();
+  const [greeting, setGreeting] = useState(GREETINGS[0]);
+
+  useEffect(() => {
+    setGreeting(GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
+  }, []);
+
   const [personalLists, setPersonalLists] = useState<ReadingListOverview[]>([]);
   const [listsLoading, setListsLoading] = useState(true);
   const [listsError, setListsError] = useState<string | null>(null);
 
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -40,6 +59,7 @@ export default function Home() {
         if (data.length > 0) {
           setBooks(data);
         } else {
+          // Fallback naar top-rated boeken als de lijst leeg is
           return fetch(`${apiUrl}/books/top-rated`, {
             credentials: "include",
           })
@@ -47,8 +67,10 @@ export default function Home() {
             .then((fallbackData: Book[]) => setBooks(fallbackData));
         }
       })
-      .catch((error) => console.error(error));
+      .catch((error) => console.error("Fout bij laden boeken:", error));
   }, [selected, apiUrl, authLoading, user]);
+
+  // --- Persoonlijke leeslijsten ophalen ---
   const fetchPersonalLists = useCallback(() => {
     setListsLoading(true);
     setListsError(null);
@@ -70,12 +92,12 @@ export default function Home() {
       })
       .finally(() => setListsLoading(false));
   }, [apiUrl]);
+
   useEffect(() => {
     if (authLoading) return;
 
     if (!user) {
       setPersonalLists([]);
-      setListsError(null);
       setListsLoading(false);
       return;
     }
@@ -83,74 +105,78 @@ export default function Home() {
     fetchPersonalLists();
   }, [authLoading, user, fetchPersonalLists]);
 
-  const handleSearch = (e: React.SubmitEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!search.trim()) return;
-
     router.push(`/catalog?search=${search}`);
   };
 
   return (
-    <>
+    <div className="page-container">
       <main>
+        <div id="greeting">
+          <h1 className="greetingName">Hey Naam! </h1>
+          <h2 className="greetingText">{greeting}</h2>
+        </div>
+
         <div id="searchBox">
           <form className="searchbar" onSubmit={handleSearch}>
             <input
               type="text"
-              placeholder="Titel, auteur, genre, onderwerp"
+              placeholder="🔎︎  Zoek op titel, auteur, genre, onderwerp"
               value={search}
-              onChange={(text) => setSearch(text.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            <button id="searchButton" type="submit">
-              🔎︎
+            <button type="submit" className="semitransparentButton">
+              Bekijk catalogus →
             </button>
           </form>
-          <button
-            className="semitransparentButton"
-            onClick={() =>
-              router.push(
-                search.trim() ? `/catalog?search=${search}` : "/catalog",
-              )
-            }
-          >
-            Bekijk catalogus →
-          </button>
         </div>
-        <div id="dashboard">
-          <nav>
-            <button
-              className={cls("spotlight")}
-              onClick={() => setSelected("spotlight")}
-            >
-              In de kijker
-            </button>
-            <button className={cls("new")} onClick={() => setSelected("new")}>
-              Nieuw in bibliotheek
-            </button>
-          </nav>
-          <div id="bookListDashboard">
-            {books.map((book) => (
-              <BookCard
-                key={book.id}
-                book={book}
-                isSelected={false}
-                onToggle={() => {}}
-                withCheckbox={false}
-              />
-            ))}
+
+        <div className="main-content-grid">
+          <div id="dashboard">
+            <nav className="tabs-nav">
+              <button
+                className={cls("spotlight")}
+                onClick={() => setSelected("spotlight")}
+              >
+                In de kijker
+              </button>
+              <button className={cls("new")} onClick={() => setSelected("new")}>
+                Nieuw in bibliotheek
+              </button>
+            </nav>
+
+            <div id="bookListDashboard">
+              {books.length > 0 ? (
+                books.map((book) => (
+                  <BookCard
+                    key={book.id}
+                    book={book}
+                    isSelected={false}
+                    onToggle={() => {}}
+                    withCheckbox={false}
+                  />
+                ))
+              ) : (
+                <p>Laden van boeken...</p>
+              )}
+            </div>
           </div>
+
+          <aside className="home-sidebar">
+            <HomeReadingLists
+              lists={personalLists}
+              loading={listsLoading}
+              error={listsError}
+              onOpenList={(id) => router.push(`/reading-lists/${id}`)}
+              onOpenPersonal={() => router.push("/reading-lists/personal")}
+              onOpenAll={() => router.push("/reading-lists")}
+              onRetry={fetchPersonalLists}
+            />
+          </aside>
         </div>
-        <HomeReadingLists
-          lists={personalLists}
-          loading={listsLoading}
-          error={listsError}
-          onOpenList={(id) => router.push(`/reading-lists/${id}`)}
-          onOpenPersonal={() => router.push("/reading-lists/personal")}
-          onOpenAll={() => router.push("/reading-lists")}
-          onRetry={fetchPersonalLists}
-        />
       </main>
-    </>
+    </div>
   );
 }
