@@ -79,7 +79,9 @@ export default function LendingPage() {
       params.append("size", "10");
       params.append("query", bookQuery.trim());
 
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/search?${params}`, {credentials: "include"})
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/search?${params}`, {
+        credentials: "include",
+      })
         .then((res) => res.json())
         .then((data) => setSearchResults(data.content || []))
         .catch((err) => console.error("Error fetching books:", err));
@@ -160,7 +162,8 @@ export default function LendingPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/loans`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" }, credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
@@ -381,7 +384,7 @@ export default function LendingPage() {
               </h2>
             </div>
 
-            <div className="resultsFrame">
+            <div className="resultsFrame extraMargin">
               {cart.length === 0 ? (
                 <p className="placeholderText centered">Nog geen boeken.</p>
               ) : (

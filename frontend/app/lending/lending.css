@@ -3,7 +3,10 @@
 /* Override any global .pageLayout (e.g. catalog's flex-row sidebar layout).
    padding-top accounts for the fixed navbar (4.5rem height + breathing room). */
 main.pageLayout {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
   padding: 5.5rem 2.5rem 2rem;
 }
 
@@ -38,6 +41,8 @@ main.pageLayout {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
+  flex: 1;
+  min-height: 0;
 }
 
 @media (min-width: 1000px) {
@@ -53,6 +58,7 @@ main.pageLayout {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-height: 0;
 }
 
 @media (min-width: 1000px) {
@@ -69,7 +75,7 @@ main.pageLayout {
 .flexBetween {
   justify-content: space-between;
   border-radius: 0.75rem;
-  padding: 1rem;
+  padding: 0 1rem 1rem;
 }
 
 .sectieHeader h2 {
@@ -156,7 +162,7 @@ main.pageLayout {
   border: 1px solid #d8cdd1;
   background-color: #fff;
   overflow: hidden;
-  padding: 3px;
+  padding: 5px;
   box-shadow: none;
 }
 
@@ -193,8 +199,8 @@ main.pageLayout {
 
 /* VAST KADER VOOR RESULTATEN */
 .resultsFrame {
-  min-height: 300px;
-  max-height: calc(100vh - 320px);
+  flex: 1;
+  min-height: 0;
   border: 1px solid #ece6f0;
   border-radius: 0.5rem;
   background-color: #fdfcfd;
@@ -203,7 +209,10 @@ main.pageLayout {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  flex-grow: 1;
+}
+
+.extraMargin {
+  margin-top: 1rem;
 }
 
 /* Subtiele styling voor scrollbar */
@@ -442,5 +451,6 @@ main.pageLayout {
 .flexColumnGrow {
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
+  flex: 1;
+  min-height: 0;
 }
