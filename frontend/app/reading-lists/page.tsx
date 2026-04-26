@@ -149,7 +149,7 @@ export default function ReadingListsPage() {
       </div>
 
       <div className="rl-toolbar">
-        <div className="rl-search-wrap">
+        <div className="rl-searchbar">
           <input
             type="text"
             className="rl-search"
@@ -157,6 +157,7 @@ export default function ReadingListsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <button className="rl-search-btn">🔎︎</button>
         </div>
       </div>
 

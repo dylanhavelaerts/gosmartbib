@@ -24,12 +24,11 @@ export default function HomeReadingLists({
 }: HomeReadingListsProps) {
   return (
     <section className="homeReadingLists">
-      <div className="homeReadingListsHeader">
-        <div>
-          <h2>Jouw leeslijsten</h2>
-          <p>Snel toegang tot je persoonlijke lijsten.</p>
-        </div>
+      <div className="tabs-nav">
+        <div className="tabBtn titleTab">Jouw leeslijsten</div>
+      </div>
 
+      <div className="homeReadingListsContent">
         <div className="homeReadingListsActions">
           <button
             className="semitransparentButton homeRlBtn"
@@ -44,53 +43,59 @@ export default function HomeReadingLists({
             Alle leeslijsten
           </button>
         </div>
+
+        {loading && (
+          <p className="homeReadingListsState">Leeslijsten laden...</p>
+        )}
+
+        {!loading && error && (
+          <div className="homeReadingListsState">
+            <p>{error}</p>
+            <button
+              className="semitransparentButton homeRlBtn"
+              onClick={onRetry}
+            >
+              Opnieuw proberen
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && lists.length === 0 && (
+          <div className="homeReadingListsState">
+            <p>Je hebt nog geen persoonlijke leeslijst.</p>
+            <button
+              className="semitransparentButton homeRlBtn"
+              onClick={onOpenPersonal}
+            >
+              Maak je eerste lijst
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && lists.length > 0 && (
+          <div className="homeReadingListsGrid">
+            {lists.map((list) => {
+              const count = list.bookIds?.length ?? list.bookCount ?? 0;
+              return (
+                <article key={list.id} className="homeReadingListCard">
+                  <div className="homeReadingListCardInfo">
+                    <h3>{list.title}</h3>
+                    <span>
+                      {count} {count === 1 ? "boek" : "boeken"}
+                    </span>
+                  </div>
+                  <button
+                    className="homeListOpenBtn"
+                    onClick={() => onOpenList(list.id)}
+                  >
+                    Open lijst
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
-
-      {loading && <p className="homeReadingListsState">Leeslijsten laden...</p>}
-
-      {!loading && error && (
-        <div className="homeReadingListsState">
-          <p>{error}</p>
-          <button className="semitransparentButton homeRlBtn" onClick={onRetry}>
-            Opnieuw proberen
-          </button>
-        </div>
-      )}
-
-      {!loading && !error && lists.length === 0 && (
-        <div className="homeReadingListsState">
-          <p>Je hebt nog geen persoonlijke leeslijst.</p>
-          <button
-            className="semitransparentButton homeRlBtn"
-            onClick={onOpenPersonal}
-          >
-            Maak je eerste lijst
-          </button>
-        </div>
-      )}
-
-      {!loading && !error && lists.length > 0 && (
-        <div className="homeReadingListsGrid">
-          {lists.slice(0, 3).map((list) => {
-            const count = list.bookIds?.length ?? list.bookCount ?? 0;
-            return (
-              <article key={list.id} className="homeReadingListCard">
-                <h3>{list.title}</h3>
-                {list.taskDescription && <p>{list.taskDescription}</p>}
-                <span>
-                  {count} {count === 1 ? "boek" : "boeken"}
-                </span>
-                <button
-                  className="homeListOpenBtn"
-                  onClick={() => onOpenList(list.id)}
-                >
-                  Open lijst
-                </button>
-              </article>
-            );
-          })}
-        </div>
-      )}
     </section>
   );
 }
