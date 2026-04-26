@@ -38,6 +38,19 @@ public class SmartschoolMessageService {
             log.warn("Geen username gevonden voor gebruiker {}", user.getId());
             return;
         }
+        sendSoapMessage(integration, username, title, body);
+    }
+
+    //Hardcode om te testen -> volledige methode gaat weg
+    @Async
+    public void sendTestMessage(String username) {
+        SchoolIntegrationEntity integration = schoolIntegrationRepository
+                .findAll()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Geen integratie gevonden"));
+
+        sendSoapMessage(integration, username, "Test bericht", "Dit is een testbericht vanuit GoSmartLib.");
     }
     private void sendSoapMessage(SchoolIntegrationEntity integration, String username, String title, String body){
 
@@ -53,7 +66,7 @@ public class SmartschoolMessageService {
                       <userIdentifier>%s</userIdentifier>
                       <title>%s</title>
                       <body>%s</body>
-                      <senderIdentifier></senderIdentifier>
+                      <senderIdentifier>sof2.benjamin.deloore</senderIdentifier>
                     </ss:sendMsg>
                   </soapenv:Body>
                 </soapenv:Envelope>

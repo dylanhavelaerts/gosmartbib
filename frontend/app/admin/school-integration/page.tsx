@@ -61,6 +61,7 @@ export default function SchoolIntegrationPage() {
   const schoolId = me?.school?.id ?? null;
   const schoolName = me?.school?.name ?? "";
   const schoolDomain = me?.school?.domain ?? "";
+  const [smartschoolAccesscode, setSmartschoolAccesscode] = useState("");
 
   const canUsePage = useMemo(() => {
     return me?.role === "ADMIN" && !!schoolId;
@@ -131,6 +132,7 @@ export default function SchoolIntegrationPage() {
         setBaseUrl("");
         setClientId("");
         setClientSecret("");
+        setSmartschoolAccesscode(""); //altijd leeg na het laden als successvol
         setEnabled(false);
         return;
       }
@@ -145,6 +147,7 @@ export default function SchoolIntegrationPage() {
       setBaseUrl(data.onerosterBaseUrl ?? "");
       setClientId(data.onerosterClientId ?? "");
       setClientSecret("");
+      setSmartschoolAccesscode(""); //altijd leeg na het laden als successvol
       setEnabled(Boolean(data.onerosterEnabled));
     } catch (err) {
       console.error(err);
@@ -165,6 +168,7 @@ export default function SchoolIntegrationPage() {
         onerosterClientId: clientId.trim(),
         onerosterClientSecret: clientSecret,
         onerosterEnabled: enabled,
+        smartschoolAccesscode: smartschoolAccesscode,
       };
 
       const response = await fetch(
@@ -190,13 +194,12 @@ export default function SchoolIntegrationPage() {
       setClientId(data.onerosterClientId ?? "");
       setEnabled(Boolean(data.onerosterEnabled));
       setClientSecret("");
+      setSmartschoolAccesscode("");
       setSuccess("Integratie succesvol opgeslagen");
     } catch (err) {
       console.error(err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Er ging iets mis bij het opslaan",
+        err instanceof Error ? err.message : "Er ging iets mis bij het opslaan",
       );
     } finally {
       setSaving(false);
@@ -416,6 +419,19 @@ export default function SchoolIntegrationPage() {
                   }
                 />
               </label>
+              <label className={styles.field}>
+                <span>Smartschool accesscode</span>
+                <input
+                  type="password"
+                  value={smartschoolAccesscode}
+                  onChange={(e) => setSmartschoolAccesscode(e.target.value)}
+                  placeholder={
+                    integration?.smartschoolAccesscodeConfigured
+                      ? "Laat leeg om de huidige accesscode te behouden"
+                      : "Smartschool accesscode"
+                  }
+                />
+              </label>
 
               <label className={styles.checkbox}>
                 <input
@@ -448,9 +464,7 @@ export default function SchoolIntegrationPage() {
 
           <section className={styles.card}>
             <h2>Debug</h2>
-            <p className={styles.help}>
-              Test of de live koppeling echt werkt.
-            </p>
+            <p className={styles.help}>Test of de live koppeling echt werkt.</p>
 
             <div className={styles.actions}>
               <button
@@ -475,7 +489,9 @@ export default function SchoolIntegrationPage() {
                 <h3>Testresultaat</h3>
                 <ul className={styles.list}>
                   <li>Succes: {testResult.success ? "Ja" : "Nee"}</li>
-                  <li>Token ontvangen: {testResult.tokenReceived ? "Ja" : "Nee"}</li>
+                  <li>
+                    Token ontvangen: {testResult.tokenReceived ? "Ja" : "Nee"}
+                  </li>
                   <li>
                     Schools endpoint bereikbaar:{" "}
                     {testResult.schoolsEndpointReachable ? "Ja" : "Nee"}
@@ -505,7 +521,9 @@ export default function SchoolIntegrationPage() {
 
                 <pre>
                   {JSON.stringify(
-                    showAllUsers ? liveUsers.users : liveUsers.users.slice(0, 5),
+                    showAllUsers
+                      ? liveUsers.users
+                      : liveUsers.users.slice(0, 5),
                     null,
                     2,
                   )}
