@@ -71,6 +71,9 @@ public class SchoolIntegrationService {
         if (request.onerosterEnabled() != null) {
             integration.setOnerosterEnabled(request.onerosterEnabled());
         }
+        if (request.smartschoolAccesscode() != null && !request.smartschoolAccesscode().isBlank()) {
+            integration.setSmartschoolAccesscode(request.smartschoolAccesscode().trim());
+        }
 
         integration = schoolIntegrationRepository.save(integration);
         return SchoolIntegrationDTO.from(integration);

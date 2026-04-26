@@ -28,6 +28,10 @@ public class SmartschoolOneRosterClient {
         return getCollection(integration, accessToken, "/ims/oneroster/v1p1/classes", "classes");
     }
 
+    public Map<String, Object> getUserBySourcedId(SchoolIntegrationEntity integration, String accessToken, String sourcedId) {
+        return getSingle(integration, accessToken, "/ims/oneroster/v1p1/users/" + sourcedId, "user");
+    }
+
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> getCollection(
             SchoolIntegrationEntity integration,
@@ -54,5 +58,28 @@ public class SmartschoolOneRosterClient {
         }
 
         return List.of();
+    }
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getSingle(
+            SchoolIntegrationEntity integration,
+            String accessToken,
+            String path,
+            String responseKey) {
+
+        ResponseEntity<Map> response = restClient.get()
+                .uri(integration.getOnerosterBaseUrl() + path)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .retrieve()
+                .toEntity(Map.class);
+
+        Map<String, Object> body = response.getBody();
+        if (body == null) return Map.of();
+
+        Object value = body.get(responseKey);
+        if (value instanceof Map<?, ?>) {
+            return (Map<String, Object>) value;
+        }
+
+        return Map.of();
     }
 }
