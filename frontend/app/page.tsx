@@ -114,23 +114,25 @@ export default function Home() {
   return (
     <div className="page-container">
       <main>
-        <div id="greeting">
-          <h1 className="greetingName">Hey Naam! </h1>
-          <h2 className="greetingText">{greeting}</h2>
-        </div>
+        <div id="top-content">
+          <div id="greeting">
+            <h1 className="greetingName">Hey Naam! </h1>
+            <h2 className="greetingText">{greeting}</h2>
+          </div>
 
-        <div id="searchBox">
-          <form className="searchbar" onSubmit={handleSearch}>
-            <input
-              type="text"
-              placeholder="🔎︎  Zoek op titel, auteur, genre, onderwerp"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button type="submit" className="semitransparentButton">
-              Bekijk catalogus →
-            </button>
-          </form>
+          <div id="searchBox">
+            <form className="searchbar" onSubmit={handleSearch}>
+              <input
+                type="text"
+                placeholder="🔎︎  Zoek op titel, auteur, genre, onderwerp"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button type="submit" className="semitransparentButton">
+                Bekijk catalogus →
+              </button>
+            </form>
+          </div>
         </div>
 
         <div className="main-content-grid">
