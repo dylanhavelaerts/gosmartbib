@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.dto;
+package edu.ap.gosmartlib.dto.readinglist;
 
 import edu.ap.gosmartlib.util.ReadingListType;
 import java.time.LocalDateTime;

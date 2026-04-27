@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.dto;
+package edu.ap.gosmartlib.dto.readinglist;
 
 import edu.ap.gosmartlib.util.ReadingListType;
 
@@ -20,6 +20,7 @@ public record ReadingListDetailDTO(
             String title,
             List<String> authors,
             String thumbnail,
-            String isbn
+            String isbn,
+            int availableCopies
     ) {}
 }
