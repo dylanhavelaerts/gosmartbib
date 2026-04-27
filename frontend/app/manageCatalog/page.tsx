@@ -75,7 +75,7 @@ function handleChange(
     e: React.ChangeEvent<HTMLInputElement>,
     field: keyof Book,
   ) {
-    const values = e.target.value.split(",").map((v) => v.trim());
+    const values = e.target.value.split(",");
     setFormData((prev) => ({ ...prev, [field]: values }));
   }
 
@@ -149,6 +149,9 @@ const computedTotalCopies = inventories.reduce(
 
   const payload = {
     ...formData,
+    authors: (formData.authors ?? [])
+      .map((author) => author.trim())
+      .filter((author) => author !== ""),
     totalCopies: computedTotalCopies,
     availableCopies: computedAvailableCopies,
     inventories: inventories.map((inventory) => ({
@@ -499,7 +502,7 @@ useEffect(() => {
                       name="authors"
                       className="modal-input"
                       type="text"
-                      value={formData.authors?.join(", ") || ""}
+                      value={formData.authors?.join(",") || ""}
                       onChange={(e) => handleArrayChange(e, "authors")}
                     />
                   </div>

@@ -291,7 +291,8 @@ public class BookService {
                 .map(this::toDTO);
     }
 
-    public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid, String campus) {
+    public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid,
+            String campus) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Upload een excel file die niet leeg is");
         }
@@ -313,8 +314,9 @@ public class BookService {
 
                 String isbn = formatter.formatCellValue(row.getCell(0)).trim();
                 String excelTitle = formatter.formatCellValue(row.getCell(1)).trim();
+                String amountText = formatter.formatCellValue(row.getCell(2)).trim();
 
-                if (isbn.isBlank() && excelTitle.isBlank()) {
+                if (isbn.isBlank() && excelTitle.isBlank() && amountText.isBlank()) {
                     continue;
                 }
 
@@ -330,6 +332,19 @@ public class BookService {
                     continue;
                 }
 
+                int amount;
+                try {
+                    amount = parseImportAmount(amountText);
+                } catch (IllegalArgumentException e) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            isbn,
+                            excelTitle,
+                            null,
+                            e.getMessage()));
+                    continue;
+                }
+
                 if (bookRepository.existsByIsbn(isbn)) {
                     mismatches.add(new ImportMismatchDTO(
                             rowIndex + 1,
@@ -342,7 +357,7 @@ public class BookService {
 
                 try {
                     BookEntity fetchedBook = buildBookEntityFromGoogle(isbn);
-                    applySingleInventoryForCurrentUser(fetchedBook, smartschoolUid, campus, 1, 1);
+                    applySingleInventoryForCurrentUser(fetchedBook, smartschoolUid, campus, amount, amount);
                     recomputeBookCopyTotals(fetchedBook);
 
                     if (!titlesMatch(excelTitle, fetchedBook.getTitle())) {
@@ -885,6 +900,24 @@ public class BookService {
                     "Geen school gevonden voor de ingelogde gebruiker");
         }
         return schoolId;
+    }
+
+    private int parseImportAmount(String amountText) {
+        if (amountText == null || amountText.isBlank()) {
+            throw new IllegalArgumentException("Aantal boeken is verplicht");
+        }
+
+        try {
+            int amount = Integer.parseInt(amountText.trim());
+
+            if (amount < 1) {
+                throw new IllegalArgumentException("Aantal boeken moet minstens 1 zijn");
+            }
+
+            return amount;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Aantal boeken moet een geheel getal zijn");
+        }
     }
     // endregion
 }
