@@ -272,7 +272,7 @@ public class ReadingListService {
     }
 
     private ReadingListOverviewDTO toOverview(ReadingListEntity list, Long currentUserId,
-            Map<String, String> displayNames) {
+                                              Map<String, String> displayNames) {
         List<Long> ids = list.getBooks().stream().map(BookEntity::getId).toList();
 
         String creatorName = resolveCreatorName(list, displayNames);
@@ -303,7 +303,7 @@ public class ReadingListService {
     }
 
     private ReadingListDetailDTO toDetail(ReadingListEntity list, Long currentUserId,
-            Map<String, String> displayNames) {
+                                          Map<String, String> displayNames) {
         String creatorName = resolveCreatorName(list, displayNames);
 
         List<ReadingListDetailDTO.BookItem> books = list.getBooks().stream()
@@ -317,7 +317,9 @@ public class ReadingListService {
                             book.getTitle(),
                             authors,
                             book.getThumbnail(),
-                            book.getIsbn());
+                            book.getIsbn(),
+                            book.getAvailableCopies() != null ? book.getAvailableCopies() : 0);
+
                 })
                 .toList();
 

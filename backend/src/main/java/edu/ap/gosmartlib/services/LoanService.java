@@ -32,7 +32,7 @@ public class LoanService {
     // --- BOEKEN UITLENEN ---
     public void createLoans(List<LoanRequestDTO> loanRequests) {
         for (LoanRequestDTO request : loanRequests) {
-            
+
             // AANGEPAST: Geef alleen request.bookId() (Long) door, geen String!
             BookEntity book = bookRepository.findById(request.bookId())
                     .orElseThrow(() -> new BookNotFoundException(request.bookId()));
@@ -44,7 +44,14 @@ public class LoanService {
             // 1. Update de voorraad in de boeken tabel
             book.setAvailableCopies(book.getAvailableCopies() - request.quantity());
             bookRepository.save(book);
-
+            
+            userRepository.findBySmartschoolUid(request.user().smartschoolUserId()).ifPresent(borrower ->
+                    book.getInventories().stream()
+                            .filter(inv -> inv.getSchool().getId().equals(borrower.getSchool().getId()))
+                            .findFirst()
+                            .ifPresent(inv -> inv.setAvailableCopies(
+                                    Math.max(0, inv.getAvailableCopies() - request.quantity())))
+            );
             // 2. Zet in de uitleen tabel per ISBN
             LoanEntity loan = new LoanEntity();
             loan.setSmartschoolUserId(request.user().smartschoolUserId());
@@ -54,8 +61,8 @@ public class LoanService {
             loan.setDueDate(LocalDate.now().plusDays(21)); // Standaard 3 weken de tijd
 
             loanRepository.save(loan);
-            
-            logger.info("UITLEEN GELOGD: {} exemplaren van ISBN {} uitgeleend aan gebruiker {}", 
+
+            logger.info("UITLEEN GELOGD: {} exemplaren van ISBN {} uitgeleend aan gebruiker {}",
                         request.quantity(), book.getIsbn(), request.user().smartschoolUserId());
         }
     }
