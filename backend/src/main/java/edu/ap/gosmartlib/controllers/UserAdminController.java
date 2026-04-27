@@ -9,8 +9,8 @@ import edu.ap.gosmartlib.dto.UpdateUserRoleRequest;
 import edu.ap.gosmartlib.services.UserAdminService;
 import lombok.RequiredArgsConstructor;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/admin/users")
@@ -28,11 +29,11 @@ public class UserAdminController {
     private final UserAdminService userAdminService;
 
     @GetMapping
-    // Runt dit eerst voor al de rest gebeurt (methode beveiliging)
     @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
-    // AuthenticationPrinciple injecteerd automatisch de gebruikergegevens
-    public List<AdminUserDTO> listUsers(@AuthenticationPrincipal OAuth2User oAuth2User) {
-        return userAdminService.listUsersForAdmin(extractUid(oAuth2User));
+    public Page<AdminUserDTO> listUsers(@AuthenticationPrincipal OAuth2User oAuth2User,
+            @RequestParam(required = false) String name,
+            Pageable pageable) {
+        return userAdminService.listUsersForAdmin(extractUid(oAuth2User), name, pageable);
     }
 
     @PatchMapping("/{id}/role")

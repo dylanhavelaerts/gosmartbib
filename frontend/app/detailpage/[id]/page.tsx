@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { Book } from "../../interfaces/Book";
+import { MeResponse } from "../../interfaces/user";
 import Link from "next/link";
 import "./detailpage.css";
 import ReviewSection from "@/app/components/reviewsection/reviewsection";
@@ -27,8 +28,13 @@ export default function DetailPage({
   const [averageReviewRating, setAverageReviewRating] = useState<number | null>(
     null,
   );
-
+  const [currentUser, setCurrentUser] = useState<MeResponse | null>(null);
   const [activeTab, setActiveTab] = useState<"details" | "reviews">("details");
+
+  const isStaff =
+    currentUser?.role === "TEACHER" ||
+    currentUser?.role === "BIBLIOTHEEKBEHEERDER" ||
+    currentUser?.role === "ADMIN";
 
   const normalizedRating =
     typeof averageReviewRating === "number"
@@ -39,20 +45,18 @@ export default function DetailPage({
   const fetchAverageReviewRating = useCallback(async (isbn: string) => {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`, {credentials: "include"}
+        `${process.env.NEXT_PUBLIC_API_URL}/reviews/book/${isbn}`,
+        { credentials: "include" },
       );
-
       if (!res.ok) {
         setAverageReviewRating(null);
         return;
       }
-
       const reviews: ReviewWithRating[] = await res.json();
       if (!Array.isArray(reviews) || reviews.length === 0) {
         setAverageReviewRating(null);
         return;
       }
-
       const sum = reviews.reduce(
         (acc, review) => acc + (review.rating || 0),
         0,
@@ -64,8 +68,16 @@ export default function DetailPage({
   }, []);
 
   useEffect(() => {
-    if (!id) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+      credentials: "include",
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setCurrentUser(data))
+      .catch(() => setCurrentUser(null));
+  }, []);
 
+  useEffect(() => {
+    if (!id) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`, {
       credentials: "include",
     })
@@ -85,18 +97,41 @@ export default function DetailPage({
   return (
     <main className="detailPage">
       <Link href="/catalog" className="backLink">
-        ← Terug naar catalogus
+        Terug naar catalogus
       </Link>
 
       <div className="detailContainer">
+        {/* LEFT PANEL */}
         <div className="detailLeft">
-          <img
-            src={imgSrc}
-            alt={book.title}
-            onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
-            className="detailCover"
-          />
-          <div className="detailUnder">
+          <div className="detailCoverWrapper">
+            <img
+              src={imgSrc}
+              alt={book.title}
+              onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
+              className="detailCover"
+            />
+            {!isStaff &&
+              currentUser &&
+              (() => {
+                const inv = book.inventories?.find(
+                  (i) => i.schoolId === currentUser?.school?.id,
+                );
+                const available = inv?.availableCopies ?? 0;
+                const total = inv?.totalCopies ?? 0;
+                return (
+                  <span
+                    className={`coverBadge ${available > 0 ? "available" : "unavailable"}`}
+                  >
+                    {inv
+                      ? `${available}/${total} beschikbaar`
+                      : "Niet beschikbaar"}
+                  </span>
+                );
+              })()}
+          </div>
+
+          <div className="detailRatingSection">
+            <p className="detailInfoSectionTitle">Beoordeling</p>
             <div className="detailRating">
               <div
                 className="detailRatingStars"
@@ -125,32 +160,31 @@ export default function DetailPage({
                 {averageReviewRating === null ? "-/5" : `${roundedRating}/5`}
               </p>
             </div>
-            <p>
-              <img className="bookIcon" src={"/book-alt.png"} alt="Pages" />{" "}
-              {book.pageCount} pagina's
-            </p>
-            <p>
-              <img
-                className="bookIcon"
-                src={"/book-closed.png"}
-                alt="Language"
-              />{" "}
-              Taal: {book.language.toUpperCase()}
-            </p>
+          </div>
+
+          <div className="detailInfoSection">
+            <p className="detailInfoSectionTitle">Informatie</p>
+            <div className="detailInfoRow">
+              <span className="detailInfoLabel">Auteur</span>
+              <span className="detailInfoValue">
+                {book.authors?.join(", ")}
+              </span>
+            </div>
+            <div className="detailInfoRow">
+              <span className="detailInfoLabel">Uitgavedatum</span>
+              <span className="detailInfoValue">{book.publishedYear}</span>
+            </div>
+            <div className="detailInfoRow">
+              <span className="detailInfoLabel">ISBN</span>
+              <span className="detailInfoValue">{book.isbn}</span>
+            </div>
           </div>
         </div>
 
+        {/* RIGHT PANEL */}
         <div className="detailRight">
           <h1 className="detailTitle">{book.title}</h1>
           <p className="detailAuthors">door {book.authors?.join(", ")}</p>
-
-          <div className="detailBadges">
-            {book.categories?.map((cat) => (
-              <span key={cat} className="badge">
-                {cat}
-              </span>
-            ))}
-          </div>
 
           <div className="detailNavBar">
             <button
@@ -163,60 +197,51 @@ export default function DetailPage({
               className={activeTab === "reviews" ? "active" : ""}
               onClick={() => setActiveTab("reviews")}
             >
-              Reviews
+              Beoordeling
             </button>
           </div>
 
-          {activeTab === "details" ? (
+          {activeTab === "details" && (
             <div className="tabContent">
               <div className="detailDescription">
                 <h2>Waar gaat het over?</h2>
                 <p>{book.description}</p>
               </div>
-              <div className="detailInfoBoxes">
-                <div className="infoBox infoBoxUitgever">
-                  <span className="infoBoxLabel">Uitgever</span>
-                  <span className="infoBoxValue">{book.publisher}</span>
-                </div>
-                <div className="infoBox infoBoxJaar">
-                  <span className="infoBoxLabel">Jaar</span>
-                  <span className="infoBoxValue">{book.publishedYear}</span>
-                </div>
-              </div>
-              <div className="infoBox ISBNBox">
-                <span className="infoBoxLabel">ISBN</span>
-                <span className="infoBoxValue">{book.isbn}</span>
-              </div>
-              <div className="detailInventorySection">
-                <h2>Inventaris</h2>
 
-                {book.inventories && book.inventories.length > 0 ? (
-                  <table className="detailInventoryTable">
-                    <thead>
-                      <tr>
-                        <th>School</th>
-                        <th>Campus</th>
-                        <th>Totaal</th>
-                        <th>Beschikbaar</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {book.inventories.map((inventory, index) => (
-                        <tr key={inventory.id ?? `${inventory.schoolId}-${inventory.campus}-${index}`}>
-                          <td>{inventory.schoolName || inventory.schoolId || "-"}</td>
-                          <td>{inventory.campus || ""}</td>
-                          <td>{inventory.totalCopies}</td>
-                          <td>{inventory.availableCopies}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p>Geen inventarisgegevens beschikbaar.</p>
+              <hr className="detailDivider" />
+
+              <div className="detailMetaRow">
+                {book.ageRange && (
+                  <div className="metaCol">
+                    <span className="metaLabel">Leeftijd</span>
+                    <span className="metaValue">{book.ageRange}</span>
+                  </div>
+                )}
+                {book.categories?.length > 0 && (
+                  <div className="metaCol">
+                    <span className="metaLabel">Genre</span>
+                    <span className="metaValue">
+                      {book.categories.join(", ")}
+                    </span>
+                  </div>
+                )}
+                <div className="metaCol">
+                  <span className="metaLabel">Taal</span>
+                  <span className="metaValue">
+                    {book.language?.toUpperCase()}
+                  </span>
+                </div>
+                {book.pageCount && (
+                  <div className="metaCol">
+                    <span className="metaLabel">Dikte</span>
+                    <span className="metaValue">{book.pageCount} pagina's</span>
+                  </div>
                 )}
               </div>
             </div>
-          ) : (
+          )}
+
+          {activeTab === "reviews" && (
             <div className="tabContent">
               <div className="detailDescription">
                 <ReviewSection

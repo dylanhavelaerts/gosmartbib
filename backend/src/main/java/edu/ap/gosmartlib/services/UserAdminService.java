@@ -2,6 +2,8 @@ package edu.ap.gosmartlib.services;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,15 +22,11 @@ public class UserAdminService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<AdminUserDTO> listUsersForAdmin(String actorUid) {
+    public Page<AdminUserDTO> listUsersForAdmin(String actorUid, String name, Pageable pageable) {
         UserEntity actor = getCurrentAdmin(actorUid);
-
         Long schoolId = actor.getSchool().getId();
-
-        return userRepository.findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(schoolId)
-                .stream()
-                .map(AdminUserDTO::from)
-                .toList();
+        Page<UserEntity> users = userRepository.findBySchoolIdAndName(schoolId, name, pageable);
+        return users.map(AdminUserDTO::from);
     }
 
     @Transactional

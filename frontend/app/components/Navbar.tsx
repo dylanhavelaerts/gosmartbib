@@ -4,10 +4,14 @@ import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import "./Navbar.css";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+
+  const isActive = (href: string) => pathname === href;
 
   return (
     <header className="main-header">
@@ -43,28 +47,63 @@ export default function Navbar() {
 
           <div className={`nav-links ${isOpen ? "open" : ""}`}>
             <Link href="/">
-              <button onClick={() => setIsOpen(false)}>Startpagina</button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className={isActive("/") ? "active" : ""}
+              >
+                Startpagina
+              </button>
             </Link>
             <Link href="/catalog">
-              <button onClick={() => setIsOpen(false)}>Catalogus</button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className={isActive("/catalog") ? "active" : ""}
+              >
+                Catalogus
+              </button>
             </Link>
             <Link href="/spotlight">
-              <button onClick={() => setIsOpen(false)}>In de kijker</button>
-            </Link>
-            <Link href="/lending">
-              <button onClick={() => setIsOpen(false)}>Mijn uitleningen</button>
-            </Link>
-            <Link href="/reading-lists">
-              <button onClick={() => setIsOpen(false)}>Mijn leeslijst</button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className={isActive("/spotlight") ? "active" : ""}
+              >
+                In de kijker
+              </button>
             </Link>
 
+            <Link href="/reading-lists">
+              <button
+                onClick={() => setIsOpen(false)}
+                className={isActive("/reading-lists") ? "active" : ""}
+              >
+                Mijn leeslijst
+              </button>
+            </Link>
+            <Link href="/lending">
+              <button
+                onClick={() => setIsOpen(false)}
+                className={isActive("/lending") ? "active" : ""}
+              >
+                Mijn uitleningen
+              </button>
+            </Link>
             {user?.role === "ADMIN" && (
               <>
                 <Link href="/admin/users">
-                  <button onClick={() => setIsOpen(false)}>Gebruikers</button>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/admin/users") ? "active" : ""}
+                  >
+                    Gebruikers
+                  </button>
                 </Link>
                 <Link href="/manageCatalog">
-                  <button onClick={() => setIsOpen(false)}>Boeken</button>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/manageCatalog") ? "active" : ""}
+                  >
+                    Boeken
+                  </button>
                 </Link>
               </>
             )}

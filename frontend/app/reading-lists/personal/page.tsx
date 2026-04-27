@@ -443,17 +443,27 @@ export default function MyReadingListPage() {
                   )}
                 </div>
 
-                <button
-                  type="submit"
-                  className="mrl-btn-primary mrl-submit-btn"
-                  disabled={formLoading}
-                >
-                  {formLoading
-                    ? "Opslaan..."
-                    : activeList
-                      ? "Wijzigingen opslaan"
-                      : "Lijst aanmaken"}
-                </button>
+                <div className="mrl-form-actions">
+                  <button
+                    type="button"
+                    className="mrl-btn-cancel"
+                    onClick={() => setView("overview")}
+                    disabled={formLoading}
+                  >
+                    Annuleer
+                  </button>
+                  <button
+                    type="submit"
+                    className="mrl-btn-primary mrl-submit-btn"
+                    disabled={formLoading}
+                  >
+                    {formLoading
+                      ? "Opslaan..."
+                      : activeList
+                        ? "Wijzigingen opslaan"
+                        : "Lijst aanmaken"}
+                  </button>
+                </div>
               </div>
             </form>
           </>

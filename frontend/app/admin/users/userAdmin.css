@@ -1,7 +1,10 @@
-main {
+#userMain {
+  padding: 3rem 2rem 0 2rem;
   color: #8e2446;
+  margin-top: 3.5rem;
 }
-main h1 {
+
+#userMain h1 {
   font-size: clamp(16px, 1.5vw, 16px);
   color: #c0392b;
   font-weight: 600;
@@ -91,4 +94,84 @@ main h1 {
   .fullScreen {
     display: table-cell;
   }
+}
+
+.adminSearchbar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 0 0 0.5rem 0;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  border-radius: 0.5rem;
+  border: 1px solid #d8cdd1;
+  background-color: #fff;
+  overflow: hidden;
+  padding: 5px;
+  box-shadow: none;
+}
+
+.adminSearchbar input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0.55rem 1rem;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.adminSearchbar input::placeholder {
+  color: #aaa;
+}
+
+.adminSearchbar #searchButton {
+  background-color: #8e2446;
+  border: none;
+  color: white;
+  padding: 0.55rem 1.1rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.adminSearchbar #searchButton:hover {
+  background-color: #6a1a34;
+}
+
+#userMain .bookListToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  color: #8e2446;
+}
+
+#userMain .resultCount {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+#userMain .pageSizeSelector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#userMain .pageSizeLabel {
+  font-size: 14px;
+}
+
+#userMain .pageSizeSelect {
+  border: 1.5px solid #8e2446;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  font-size: 14px;
+  background-color: white;
+  color: #8e2446;
+  cursor: pointer;
 }

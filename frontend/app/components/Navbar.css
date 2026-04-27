@@ -53,6 +53,10 @@
   color: #8e1f42;
 }
 
+.nav-links .active {
+  color: #8e1f42;
+}
+
 .burger-menu {
   display: none;
   background: none;
