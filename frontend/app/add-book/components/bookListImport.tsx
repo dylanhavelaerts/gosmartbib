@@ -23,6 +23,7 @@ export default function BookListImport() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [campus, setCampus] = useState("");
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setSelectedFile(file);
@@ -40,6 +41,11 @@ export default function BookListImport() {
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
+
+      const trimmedCampus = campus.trim();
+      if(trimmedCampus) {
+        formData.append("campus", trimmedCampus);
+      }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/import`, {
         method: "POST",
@@ -119,6 +125,21 @@ export default function BookListImport() {
       <a href="/BoekenlijstTemplate.xlsx" download className={styles.downloadLink}>
         Download Excelbestand
       </a>
+
+      <label className={styles.campusField}>
+        Campus
+        <input
+          type="text"
+          value={campus}
+          onChange={(e) => setCampus(e.target.value)}
+          placeholder="Laat leeg als er geen campus is"
+          className={styles.campusInput}
+        />
+      </label>
+
+      <p className={styles.helperText}>
+        Deze campus wordt toegepast op alle boeken in dit Excelbestand.
+      </p>
 
       <p className={styles.spacedText}>Voeg hieronder de aangevulde excel file toe.</p>
 
