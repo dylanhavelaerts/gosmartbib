@@ -304,7 +304,7 @@ export default function ReadingListDetailPage() {
                         </button>
                         {isUnavailable && (
                           <button
-                            className={`rld-notif-btn ${notifOn ? "rld-notif-btn--active" : ""}`}
+                            className="rld-notif-btn"
                             onClick={() => toggleNotification(book.id)}
                             title={
                               notifOn
@@ -312,7 +312,18 @@ export default function ReadingListDetailPage() {
                                 : "Notificeer mij als dit boek beschikbaar is"
                             }
                           >
-                            {notifOn ? "Notificatie aan" : "Notificeer mij"}
+                            <img
+                              src={
+                                notifOn
+                                  ? "/notification/bell-notification-social-media_full_black.png"
+                                  : "/notification/bell-notification-social-media.png"
+                              }
+                              alt={
+                                notifOn ? "Notificatie aan" : "Notificatie uit"
+                              }
+                              width={24}
+                              height={24}
+                            />
                           </button>
                         )}
                       </div>
