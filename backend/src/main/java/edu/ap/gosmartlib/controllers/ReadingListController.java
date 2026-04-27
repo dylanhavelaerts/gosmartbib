@@ -1,8 +1,8 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.dto.CreateReadingListDTO;
-import edu.ap.gosmartlib.dto.ReadingListDetailDTO;
-import edu.ap.gosmartlib.dto.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.services.ReadingListService;
 import lombok.RequiredArgsConstructor;

@@ -5,6 +5,7 @@ public record UpsertSchoolIntegrationRequest(
                 String onerosterClientId,
                 String onerosterClientSecret,
                 Boolean onerosterEnabled,
-                String smartschoolAccesscode
+                String smartschoolAccesscode,
+                String smartschoolSenderIdentifier
 ) {
 }

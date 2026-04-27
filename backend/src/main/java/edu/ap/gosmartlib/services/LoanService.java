@@ -8,6 +8,7 @@ import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.LoanRepository;
+import edu.ap.gosmartlib.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,9 @@ public class LoanService {
     private final LoanRepository loanRepository;
     private final LoanHistoryRepository loanHistoryRepository;
     private final BookRepository bookRepository;
+    private final BookNotificationService bookNotificationService;
     private static final Logger logger = LoggerFactory.getLogger(LoanService.class);
+    private final UserRepository userRepository;
 
     // --- BOEKEN UITLENEN ---
     public void createLoans(List<LoanRequestDTO> loanRequests) {
@@ -77,8 +80,15 @@ public class LoanService {
 
         // 2. Verhoog de voorraad in de boeken tabel
         bookRepository.findByIsbn(loan.getIsbn()).ifPresent(book -> {
+            boolean wasUnavailable = book.getAvailableCopies() == 0;
             book.setAvailableCopies(book.getAvailableCopies() + returnQuantity);
             bookRepository.save(book);
+
+        if (wasUnavailable) {
+            userRepository.findBySmartschoolUid(loan.getSmartschoolUserId())
+                    .ifPresent(borrower -> bookNotificationService.triggerNotificationsForBook(
+                            book, borrower.getSchool().getId()));
+        }
         });
 
         // 3. Update of verwijder de actieve uitleen

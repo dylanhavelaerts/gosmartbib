@@ -61,7 +61,9 @@ export default function SchoolIntegrationPage() {
   const schoolId = me?.school?.id ?? null;
   const schoolName = me?.school?.name ?? "";
   const schoolDomain = me?.school?.domain ?? "";
+
   const [smartschoolAccesscode, setSmartschoolAccesscode] = useState("");
+  const [senderIdentifier, setSenderIdentifier] = useState("");
 
   const canUsePage = useMemo(() => {
     return me?.role === "ADMIN" && !!schoolId;
@@ -133,6 +135,7 @@ export default function SchoolIntegrationPage() {
         setClientId("");
         setClientSecret("");
         setSmartschoolAccesscode(""); //altijd leeg na het laden als successvol
+        setSenderIdentifier("");
         setEnabled(false);
         return;
       }
@@ -148,6 +151,7 @@ export default function SchoolIntegrationPage() {
       setClientId(data.onerosterClientId ?? "");
       setClientSecret("");
       setSmartschoolAccesscode(""); //altijd leeg na het laden als successvol
+      setSenderIdentifier(data.smartschoolSenderIdentifier ?? ""); //?
       setEnabled(Boolean(data.onerosterEnabled));
     } catch (err) {
       console.error(err);
@@ -169,6 +173,7 @@ export default function SchoolIntegrationPage() {
         onerosterClientSecret: clientSecret,
         onerosterEnabled: enabled,
         smartschoolAccesscode: smartschoolAccesscode,
+        smartschoolSenderIdentifier: senderIdentifier,
       };
 
       const response = await fetch(
@@ -430,6 +435,17 @@ export default function SchoolIntegrationPage() {
                       ? "Laat leeg om de huidige accesscode te behouden"
                       : "Smartschool accesscode"
                   }
+                />
+              </label>
+              <label className={styles.field}>
+                <span>
+                  Smartschool afzender (gebruikersnaam) van bibliotheekbeheerder
+                </span>
+                <input
+                  type="text"
+                  value={senderIdentifier}
+                  onChange={(e) => setSenderIdentifier(e.target.value)}
+                  placeholder="bv. sof2.voornaam.achternaam"
                 />
               </label>
 

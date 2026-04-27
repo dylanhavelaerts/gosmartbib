@@ -52,25 +52,26 @@ public class SmartschoolMessageService {
 
         sendSoapMessage(integration, username, "Test bericht", "Dit is een testbericht vanuit GoSmartLib.");
     }
-    private void sendSoapMessage(SchoolIntegrationEntity integration, String username, String title, String body){
-
+    private void sendSoapMessage(SchoolIntegrationEntity integration, String username, String title, String body) {
         String accesscode = integration.getSmartschoolAccesscode();
+        String senderIdentifier = integration.getSmartschoolSenderIdentifier() != null
+                ? integration.getSmartschoolSenderIdentifier() : "";
         String endpoint = integration.getOnerosterBaseUrl() + "/Webservices/V3";
 
         String soapEnvelope = """
-                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                                  xmlns:ss="http://www.smartschool.be/Webservices">
-                  <soapenv:Body>
-                    <ss:sendMsg>
-                      <accesscode>%s</accesscode>
-                      <userIdentifier>%s</userIdentifier>
-                      <title>%s</title>
-                      <body>%s</body>
-                      <senderIdentifier>sof2.benjamin.deloore</senderIdentifier>
-                    </ss:sendMsg>
-                  </soapenv:Body>
-                </soapenv:Envelope>
-                """.formatted(accesscode, username, title, body);
+            <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                              xmlns:ss="http://www.smartschool.be/Webservices">
+              <soapenv:Body>
+                <ss:sendMsg>
+                  <accesscode>%s</accesscode>
+                  <userIdentifier>%s</userIdentifier>
+                  <title>%s</title>
+                  <body>%s</body>
+                  <senderIdentifier>%s</senderIdentifier>
+                </ss:sendMsg>
+              </soapenv:Body>
+            </soapenv:Envelope>
+            """.formatted(accesscode, username, title, body, senderIdentifier);
 
         String response = restClient.post()
                 .uri(endpoint)
