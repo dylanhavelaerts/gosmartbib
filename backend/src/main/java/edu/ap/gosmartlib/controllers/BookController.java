@@ -151,9 +151,10 @@ public class BookController {
      */
     @PostMapping("/add/{isbn}")
     public ResponseEntity<?> addBookByIsbn(@PathVariable String isbn, @RequestParam(required = false) String campus,
+            Integer amount,
             Authentication authentication) {
         try {
-            BookDTO addedBook = bookService.addBookByIsbn(isbn, currentUserUid(authentication), campus);
+            BookDTO addedBook = bookService.addBookByIsbn(isbn, currentUserUid(authentication), campus, amount);
             return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);

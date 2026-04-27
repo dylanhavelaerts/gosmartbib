@@ -99,9 +99,35 @@ public class BookService {
         return toDTO(previewBook);
     }
 
-    public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus) {
-        BookEntity newBook = buildBookEntityFromGoogle(isbn);
-        applySingleInventoryForCurrentUser(newBook, smartschoolUid, campus, 1, 1);
+    public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer amount) {
+        if (isbn == null || isbn.isBlank()) {
+            throw new IllegalArgumentException("ISBN mag niet leeg zijn");
+        }
+
+        int copies = amount != null ? amount : 1;
+
+        if (copies < 1) {
+            throw new IllegalArgumentException("Aantal boeken moet minstens 1 zijn");
+        }
+
+        String normalizedIsbn = normalizeIsbn(isbn);
+        SchoolEntity school = resolveSchoolForUser(smartschoolUid);
+        String normalizedCampus = normalizeCampus(campus);
+
+        BookEntity existingBook = bookRepository.findByIsbn(normalizedIsbn).orElse(null);
+
+        if (existingBook != null) {
+            if (hasInventoryForSchoolAndCampus(existingBook, school, normalizedCampus)) {
+                throw new IllegalArgumentException("Boek bestaat al voor deze campus");
+            }
+            addInventory(existingBook, school, normalizedCampus, copies, copies);
+            recomputeBookCopyTotals(existingBook);
+
+            return toDTO(bookRepository.save(existingBook));
+        }
+
+        BookEntity newBook = buildBookEntityFromGoogle(normalizedIsbn);
+        addInventory(newBook, school, normalizedCampus, copies, copies);
         recomputeBookCopyTotals(newBook);
         BookEntity savedBook = bookRepository.save(newBook);
         return toDTO(savedBook);
@@ -301,6 +327,9 @@ public class BookService {
         int totalRows = 0;
         int savedCount = 0;
 
+        SchoolEntity importSchool = resolveSchoolForUser(smartschoolUid);
+        String normalizedCampus = normalizeCampus(campus);
+
         DataFormatter formatter = new DataFormatter();
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
@@ -312,7 +341,7 @@ public class BookService {
                     continue;
                 }
 
-                String isbn = formatter.formatCellValue(row.getCell(0)).trim();
+                String isbn = normalizeIsbn(formatter.formatCellValue(row.getCell(0)));
                 String excelTitle = formatter.formatCellValue(row.getCell(1)).trim();
                 String amountText = formatter.formatCellValue(row.getCell(2)).trim();
 
@@ -345,48 +374,94 @@ public class BookService {
                     continue;
                 }
 
-                if (bookRepository.existsByIsbn(isbn)) {
-                    mismatches.add(new ImportMismatchDTO(
-                            rowIndex + 1,
-                            isbn,
-                            excelTitle,
-                            null,
-                            "Boek bestaat al in de database"));
-                    continue;
-                }
+                BookEntity existingBook = bookRepository.findByIsbn(isbn).orElse(null);
 
-                try {
-                    BookEntity fetchedBook = buildBookEntityFromGoogle(isbn);
-                    applySingleInventoryForCurrentUser(fetchedBook, smartschoolUid, campus, amount, amount);
-                    recomputeBookCopyTotals(fetchedBook);
+                if (existingBook != null) {
 
-                    if (!titlesMatch(excelTitle, fetchedBook.getTitle())) {
+                    if (hasInventoryForSchoolAndCampus(existingBook, importSchool, normalizedCampus)) {
                         mismatches.add(new ImportMismatchDTO(
                                 rowIndex + 1,
                                 isbn,
                                 excelTitle,
-                                fetchedBook.getTitle(),
-                                "De titel komt niet overeen (" + fetchedBook.getTitle() + ")"));
+                                existingBook.getTitle(),
+                                "Boek bestaat al voor deze campus",
+                                amount));
                         continue;
                     }
 
-                    bookRepository.save(fetchedBook);
-                    savedCount++;
+                    if (!titlesMatch(excelTitle, existingBook.getTitle())) {
+                        mismatches.add(new ImportMismatchDTO(
+                                rowIndex + 1,
+                                isbn,
+                                excelTitle,
+                                existingBook.getTitle(),
+                                "De titel komt niet overeen (" + existingBook.getTitle() + ")",
+                                amount));
+                        continue;
+                    }
 
+                    try {
+                        addInventory(existingBook, importSchool, normalizedCampus, amount, amount);
+                        recomputeBookCopyTotals(existingBook);
+                        bookRepository.save(existingBook);
+                        savedCount++;
+                    } catch (Exception e) {
+                        mismatches.add(new ImportMismatchDTO(
+                                rowIndex + 1,
+                                isbn,
+                                excelTitle,
+                                existingBook.getTitle(),
+                                "Onverwachte fout bij het toevoegen van de campusvoorraad", amount));
+                    }
+
+                    continue;
+                }
+
+                BookEntity newBook;
+
+                try {
+                    newBook = buildBookEntityFromGoogle(isbn);
                 } catch (IllegalArgumentException e) {
                     mismatches.add(new ImportMismatchDTO(
                             rowIndex + 1,
                             isbn,
                             excelTitle,
                             null,
-                            "Geen boeken gevonden in Google Books"));
+                            "Geen boeken gevonden in Google Books",
+                            amount));
+                    continue;
                 } catch (Exception e) {
                     mismatches.add(new ImportMismatchDTO(
                             rowIndex + 1,
                             isbn,
                             excelTitle,
                             null,
-                            "Onverwachte fout bij het ophalen en opslaan"));
+                            "Onverwachte fout bij het ophalen uit Google Books", amount));
+                    continue;
+                }
+
+                if (!titlesMatch(excelTitle, newBook.getTitle())) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            isbn,
+                            excelTitle,
+                            newBook.getTitle(),
+                            "De titel komt niet overeen (" + newBook.getTitle() + ")", amount));
+                    continue;
+                }
+
+                try {
+                    addInventory(newBook, importSchool, normalizedCampus, amount, amount);
+                    recomputeBookCopyTotals(newBook);
+                    bookRepository.save(newBook);
+                    savedCount++;
+                } catch (Exception e) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            isbn,
+                            excelTitle,
+                            newBook.getTitle(),
+                            "Onverwachte fout bij het opslaan van het boek", amount));
                 }
             }
 
@@ -918,6 +993,30 @@ public class BookService {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Aantal boeken moet een geheel getal zijn");
         }
+    }
+
+    private boolean hasInventoryForSchoolAndCampus(BookEntity book, SchoolEntity school, String campus) {
+        if (book.getInventories() == null || school == null || school.getId() == null) {
+            return false;
+        }
+
+        String normalizedCampus = normalizeCampus(campus);
+
+        return book.getInventories().stream()
+                .anyMatch(inventory -> inventory.getSchool() != null
+                        && Objects.equals(inventory.getSchool().getId(), school.getId())
+                        && Objects.equals(normalizeCampus(inventory.getCampus()), normalizedCampus));
+    }
+
+    private String normalizeIsbn(String isbn) {
+        if (isbn == null) {
+            return "";
+        }
+
+        return isbn
+                .trim()
+                .replace("-", "")
+                .replace(" ", "");
     }
     // endregion
 }

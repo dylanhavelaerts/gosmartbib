@@ -9,6 +9,7 @@ type ImportMismatch = {
   excelTitle: string;
   fetchedTitle: string | null;
   reason: string;
+  amount: number | null;
 };
 
 type ImportResult = {
@@ -70,42 +71,66 @@ export default function BookListImport() {
     }
   };
 
-    const addSingleBook = async (isbn: string) => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/books/add/${isbn}`,
-        {
-          method: "POST",
-          credentials: "include"
-        },
-      );
+   const addSingleBook = async (mismatch: ImportMismatch) => {
+      setLoading(true);
 
-      if (response.ok) {
-            setImportResult((prev) => {
-      if (!prev) return prev;
-          setMessage(`Import klaar. ${prev.savedCount + 1} boek(en) opgeslagen.`);
-      return {
-        ...prev,
-        savedCount: prev.savedCount + 1,
-        mismatchCount: prev.mismatchCount - 1,
-        mismatches: prev.mismatches.filter(
-          (mismatch) => mismatch.isbn !== isbn
-        ),
-      };
-    });  
-    } else {
-        setMessage("Er ging iets mis bij het opslaan van het boek.")
-        return;
+      try {
+        const params = new URLSearchParams();
+
+        const trimmedCampus = campus.trim();
+
+        if (trimmedCampus) {
+          params.set("campus", trimmedCampus);
+        }
+
+        if (mismatch.amount !== null && mismatch.amount !== undefined) {
+          params.set("amount", String(mismatch.amount));
+        }
+
+        const queryString = params.toString();
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/books/add/${mismatch.isbn}${
+            queryString ? `?${queryString}` : ""
+          }`,
+          {
+            method: "POST",
+            credentials: "include",
+          },
+        );
+
+        if (response.ok) {
+          setImportResult((prev) => {
+            if (!prev) return prev;
+
+            setMessage(`Import klaar. ${prev.savedCount + 1} boek(en) opgeslagen.`);
+
+            return {
+              ...prev,
+              savedCount: prev.savedCount + 1,
+              mismatchCount: prev.mismatchCount - 1,
+              mismatches: prev.mismatches.filter(
+                (item) =>
+                  !(
+                    item.rowNumber === mismatch.rowNumber &&
+                    item.isbn === mismatch.isbn
+                  ),
+              ),
+            };
+          });
+
+          return;
+        }
+
+        const errorText = await response.text();
+        setMessage(errorText || "Er ging iets mis bij het opslaan van het boek.");
+      } catch (error) {
+        console.error(error);
+        setMessage("Kan de server niet bereiken");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error(error);
-      setMessage("Kan de server niet bereiken")
-      return;
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   const uploadButtonClass = `${styles.uploadButton} ${loading ? styles.uploadButtonLoading : ""}`.trim();
   const messageClass = `${styles.message} ${
@@ -177,7 +202,13 @@ export default function BookListImport() {
                   <li className={styles.mismatchElement} key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
                     <p className={styles.mismatchTitle}>Rij {mismatch.rowNumber}: {mismatch.isbn} | {mismatch.excelTitle} |
                     {" "}Reden: {mismatch.reason}</p>{mismatch.reason.includes("De titel komt niet overeen") && (
-                      <button className={styles.mismatchButton} onClick={() => addSingleBook(mismatch.isbn)} disabled={loading}>Toch opslaan</button>
+                      <button
+                        className={styles.mismatchButton}
+                        onClick={() => addSingleBook(mismatch)}
+                        disabled={loading}
+                      >
+                        Toch opslaan
+                      </button>
                     )}
                   </li>
                 ))}
