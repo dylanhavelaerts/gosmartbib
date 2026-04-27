@@ -84,12 +84,6 @@ public class SchoolIntegrationAdminController {
             @AuthenticationPrincipal OAuth2User oAuth2User) {
         return schoolIntegrationAdminService.getLiveClasses(extractUid(oAuth2User), schoolId);
     }
-    //Hardcode om te testen -> volledige methode gaat weg
-    @GetMapping("/test-message")
-    public ResponseEntity<String> testMessage() {
-        smartschoolMessageService.sendTestMessage("sof2.benjamin.deloore");
-        return ResponseEntity.ok("Bericht verstuurd");
-    }
 
     private String extractUid(OAuth2User oAuth2User) {
         if (oAuth2User == null) {
