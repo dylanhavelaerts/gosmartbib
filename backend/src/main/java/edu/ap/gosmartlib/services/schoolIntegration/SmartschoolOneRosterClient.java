@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.services.schoolIntegration;
 
 import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import org.springframework.web.client.RestClient;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SmartschoolOneRosterClient {
@@ -66,20 +68,25 @@ public class SmartschoolOneRosterClient {
             String path,
             String responseKey) {
 
-        ResponseEntity<Map> response = restClient.get()
-                .uri(integration.getOnerosterBaseUrl() + path)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-                .retrieve()
-                .toEntity(Map.class);
+        try {
+            ResponseEntity<Map> response = restClient.get()
+                    .uri(integration.getOnerosterBaseUrl() + path)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .retrieve()
+                    .toEntity(Map.class);
 
-        Map<String, Object> body = response.getBody();
-        if (body == null) return Map.of();
+            Map<String, Object> body = response.getBody();
+            if (body == null) return Map.of();
 
-        Object value = body.get(responseKey);
-        if (value instanceof Map<?, ?>) {
-            return (Map<String, Object>) value;
+            Object value = body.get(responseKey);
+            if (value instanceof Map<?, ?>) {
+                return (Map<String, Object>) value;
+            }
+            return Map.of();
+        } catch (Exception e) {
+            log.error("OneRoster getSingle mislukt voor {}: {}", path, e.getMessage());
+            return Map.of();
         }
-
-        return Map.of();
     }
+
 }
