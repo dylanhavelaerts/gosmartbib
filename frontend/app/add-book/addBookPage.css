@@ -19,7 +19,7 @@
   margin-bottom: 1.5rem;
 }
 
-.tabBtn {
+.lowerNav .tabBtn {
   background-color: transparent;
   border: none;
   color: #513741;
@@ -33,7 +33,7 @@
     box-shadow 0.2s ease;
 }
 
-.selectedCategory {
+.lowerNav .selectedCategory {
   color: #7a1d3f;
   background-color: #fff;
   box-shadow: 0 4px 10px rgba(122, 29, 63, 0.12);
@@ -56,7 +56,7 @@
     width: 100%;
   }
 
-  .tabBtn {
+  .lowerNav .tabBtn {
     flex: 1 1 auto;
     text-align: center;
   }

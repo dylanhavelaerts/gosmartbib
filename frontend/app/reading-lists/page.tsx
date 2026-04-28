@@ -127,7 +127,7 @@ export default function ReadingListsPage() {
       <div className="rl-header">
         <div className="rl-header-text">
           <h1>Leeslijsten</h1>
-          <p>Je eigen persoonlijke lijsten en klaslijsten in één overzicht.</p>
+          <p>Je eigen persoonlijke lijsten en klaslijsten in één overzicht</p>
         </div>
 
         <div className="rl-header-actions">

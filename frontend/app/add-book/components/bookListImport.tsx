@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import styles from "./bookListImport.module.css";
+import "./bookListImport.css";
 
 type ImportMismatch = {
   rowNumber: number;
@@ -107,41 +107,37 @@ export default function BookListImport() {
   };
 
   const uploadButtonClass =
-    `${styles.uploadButton} ${loading ? styles.uploadButtonLoading : ""}`.trim();
-  const messageClass = `${styles.message} ${
+    `uploadButton ${loading ? "uploadButtonLoading" : ""}`.trim();
+  const messageClass = `message ${
     message.includes("klaar") || message.includes("opgeslagen")
-      ? styles.messageSuccess
-      : styles.messageError
+      ? "messageSuccess"
+      : "messageError"
   }`.trim();
 
   return (
     <>
-      <h1 className={styles.title}>Excel file toevoegen</h1>
+      <h1 className="title">Excel file toevoegen</h1>
 
-      <p className={styles.text}>
+      <p className="text">
         Hieronder vind u een link naar een template om boeken toe te voegen.
       </p>
 
-      <div className={styles.widgetCard}>
-        <a
-          href="/BoekenlijstTemplate.xlsx"
-          download
-          className={styles.downloadLink}
-        >
+      <div className="widgetCard">
+        <a href="/BoekenlijstTemplate.xlsx" download className="downloadLink">
           Download Excelbestand
         </a>
 
-        <p className={styles.spacedText}>
+        <p className="spacedText">
           Voeg hieronder de aangevulde excel file toe.
         </p>
 
-        <div className={styles.fileInputBox}>
+        <div className="fileInputBox">
           <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} />
         </div>
 
         {selectedFile && (
-          <div className={styles.selectedFile}>
-            <div className={styles.selectedFileRow}>
+          <div className="selectedFile">
+            <div className="selectedFileRow">
               <p>Geselecteerd bestand: {selectedFile.name}</p>
 
               <button
@@ -158,28 +154,28 @@ export default function BookListImport() {
       </div>
 
       {importResult && (
-        <div className={styles.resultCard}>
+        <div className="resultCard">
           <h2>Import resultaat</h2>
           <p>Totaal aantal rijen: {importResult.totalRows}</p>
           <p>Opgeslagen boeken: {importResult.savedCount}</p>
           <p>Mismatches / fouten: {importResult.mismatchCount}</p>
 
           {importResult.mismatches.length > 0 && (
-            <div className={styles.mismatchSection}>
+            <div className="mismatchSection">
               <p>Problemen gevonden in deze rijen:</p>
               <ul>
                 {importResult.mismatches.map((mismatch, index) => (
                   <li
-                    className={styles.mismatchElement}
+                    className="mismatchElement"
                     key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}
                   >
-                    <p className={styles.mismatchTitle}>
+                    <p className="mismatchTitle">
                       Rij {mismatch.rowNumber}: {mismatch.isbn} |{" "}
                       {mismatch.excelTitle} | Reden: {mismatch.reason}
                     </p>
                     {mismatch.reason.includes("De titel komt niet overeen") && (
                       <button
-                        className={styles.mismatchButton}
+                        className="mismatchButton"
                         onClick={() => addSingleBook(mismatch.isbn)}
                         disabled={loading}
                       >

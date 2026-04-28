@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AGE_RANGE, Book, BookInventory, BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
-import styles from "./addBookForm.module.css";
+import "./addBookForm.css";
 import { MeResponse } from "@/app/interfaces/user";
 
 export default function AddBookWithoutIsbn() {
@@ -212,13 +212,13 @@ for (const inventory of inventories) {
     setImgSrc(previewBook?.thumbnail || "/No-Image-Available-Placeholder.png");
   }, [previewBook]);
 
-  const submitButtonClass = `${styles.submitButton} ${loading ? styles.submitButtonLoading : ""}`.trim();
-  const messageClass = `${styles.message} ${
+  const submitButtonClass = `submitButton ${loading ? "submitButtonLoading" : ""}`.trim();
+  const messageClass = `message ${
     message.includes("succesvol")
-      ? styles.messageSuccess
+      ? "messageSuccess"
       : message.includes("Controleer")
-        ? styles.messageInfo
-        : styles.messageError
+        ? "messageInfo"
+        : "messageError"
   }`.trim();
 
   const createEmptyInventory = (
@@ -291,27 +291,27 @@ useEffect(() => {
 
   return (
     <>
-      <h1 className={styles.title}>Nieuw boek toevoegen zonder ISBN nummer</h1>
+      <h1 className="title">Nieuw boek toevoegen zonder ISBN nummer</h1>
 
-      <p className={styles.description}>
+      <p className="description">
         Geef hier de nodige info om het boek aan te maken.
       </p>
 
-      <form onSubmit={handlePreviewBook} className={styles.form}>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Titel</label>
+      <form onSubmit={handlePreviewBook} className="form">
+        <div className="fieldGroup">
+          <label className="label">Titel</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Titel van het boek"
-            className={styles.input}
+            className="input"
             disabled={previewBook !== null}
           />
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Auteur(s)</label>
+        <div className="fieldGroup">
+          <label className="label">Auteur(s)</label>
 
           {authors.map((author, index) => (
             <input
@@ -320,17 +320,17 @@ useEffect(() => {
               value={author}
               onChange={(e) => handleAuthorChange(index, e.target.value)}
               placeholder={`Auteur ${index + 1}`}
-              className={`${styles.input} ${styles.authorInput}`}
+              className="input authorInput"
               disabled={previewBook !== null}
             />
           ))}
 
-          <div className={styles.authorButtons}>
+          <div className="authorButtons">
             <button
               type="button"
               onClick={handleAddAuthorField}
               disabled={previewBook !== null}
-              className={styles.smallButton}
+              className="smallButton"
             >
               Auteur toevoegen
             </button>
@@ -339,56 +339,56 @@ useEffect(() => {
               type="button"
               onClick={handleRemoveAuthorField}
               disabled={previewBook !== null}
-              className={styles.smallButton}
+              className="smallButton"
             >
               Auteur verwijderen
             </button>
           </div>
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Uitgever</label>
+        <div className="fieldGroup">
+          <label className="label">Uitgever</label>
           <input
             type="text"
             value={publisher}
             onChange={(e) => setPublisher(e.target.value)}
             placeholder="Uitgever van het boek"
-            className={styles.input}
+            className="input"
             disabled={previewBook !== null}
           />
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Omschrijving</label>
+        <div className="fieldGroup">
+          <label className="label">Omschrijving</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Omschrijving van het boek"
             rows={5}
-            className={styles.textarea}
+            className="textarea"
             disabled={previewBook !== null}
           />
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Aantal pagina's</label>
+        <div className="fieldGroup">
+          <label className="label">Aantal pagina's</label>
           <input
             type="number"
             value={pageCount}
             onChange={(e) => setPageCount(Number(e.target.value) || 0)}
-            className={styles.input}
+            className="input"
             disabled={previewBook !== null}
           />
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Categorieën</label>
-          <div ref={dropdownRef} className={styles.dropdownWrapper}>
+        <div className="fieldGroup">
+          <label className="label">Categorieën</label>
+          <div ref={dropdownRef} className="dropdownWrapper">
             <button
               type="button"
               onClick={() => setOpenDropdown(!openDropdown)}
               disabled={previewBook !== null}
-              className={styles.dropdownToggle}
+              className="dropdownToggle"
             >
               {categories.length !== 0
                 ? categories.join(", ")
@@ -396,9 +396,9 @@ useEffect(() => {
             </button>
 
             {openDropdown && (
-              <div className={styles.dropdownPanel}>
+              <div className="dropdownPanel">
                 {BOOK_CATEGORIES.map((category) => (
-                  <label key={category} className={styles.checkboxLabel}>
+                  <label key={category} className="checkboxLabel">
                     <input
                       type="checkbox"
                       checked={categories.includes(category)}
@@ -419,22 +419,22 @@ useEffect(() => {
           </div>
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Leefwereldlabels</label>
-          <div ref={dropdownRefLabel} className={styles.dropdownWrapper}>
+        <div className="fieldGroup">
+          <label className="label">Leefwereldlabels</label>
+          <div ref={dropdownRefLabel} className="dropdownWrapper">
             <button
               type="button"
               onClick={() => setOpenLabelDropdown(!openLabelDropdown)}
               disabled={previewBook !== null}
-              className={styles.dropdownToggle}
+              className="dropdownToggle"
             >
               {labels.length !== 0 ? labels.join(", ") : "Selecteer labels"}
             </button>
 
             {openLabelDropdown && (
-              <div className={styles.dropdownPanel}>
+              <div className="dropdownPanel">
                 {BOOK_LABELS.map((label) => (
-                  <label key={label} className={styles.checkboxLabel}>
+                  <label key={label} className="checkboxLabel">
                     <input
                       type="checkbox"
                       checked={labels.includes(label)}
@@ -455,24 +455,24 @@ useEffect(() => {
           </div>
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Foto</label>
+        <div className="fieldGroup">
+          <label className="label">Foto</label>
           <input
             type="text"
             value={thumbnail}
             onChange={(e) => setThumbnail(e.target.value)}
             placeholder="Url voor een foto van de voorpagina"
-            className={styles.input}
+            className="input"
             disabled={previewBook !== null}
           />
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Taal</label>
+        <div className="fieldGroup">
+          <label className="label">Taal</label>
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className={styles.select}
+            className="select"
             disabled={previewBook !== null}
           >
             <option value="">Alle talen</option>
@@ -482,8 +482,8 @@ useEffect(() => {
           </select>
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Rating</label>
+        <div className="fieldGroup">
+          <label className="label">Rating</label>
           <input
             type="number"
             min="0"
@@ -491,28 +491,28 @@ useEffect(() => {
             step="0.1"
             value={rating}
             onChange={(e) => setRating(Number(e.target.value) || 0)}
-            className={styles.input}
+            className="input"
             disabled={previewBook !== null}
           />
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Jaar van uitgave</label>
+        <div className="fieldGroup">
+          <label className="label">Jaar van uitgave</label>
           <input
             type="number"
             value={publishedYear}
             onChange={(e) => setPublishedYear(Number(e.target.value) || 0)}
-            className={styles.input}
+            className="input"
             disabled={previewBook !== null}
           />
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Leesniveau</label>
+        <div className="fieldGroup">
+          <label className="label">Leesniveau</label>
           <select
             value={readingLevel}
             onChange={(e) => setReadingLevel(e.target.value)}
-            className={styles.select}
+            className="select"
             disabled={previewBook !== null}
           >
             <option value="">leesniveau</option>
@@ -523,12 +523,12 @@ useEffect(() => {
           </select>
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Leeftijd</label>
+        <div className="fieldGroup">
+          <label className="label">Leeftijd</label>
           <select
             value={ageRange}
             onChange={(e) => setAgeRange(e.target.value)}
-            className={styles.select}
+            className="select"
             disabled={previewBook !== null}
           >
             <option value="">leeftijd</option>
@@ -538,48 +538,48 @@ useEffect(() => {
           </select>
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Didactisch boek</label>
+        <div className="fieldGroup">
+          <label className="label">Didactisch boek</label>
           <select
             value={String(didacticTag)}
             onChange={(e) => setDidacticTag(e.target.value === "true")}
-            className={styles.select}
+            className="select"
             disabled={previewBook !== null}
           >
             <option value="true">Ja</option>
             <option value="false">Nee</option>
           </select>
         </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Inventaris per school/campus</label>
+        <div className="fieldGroup">
+          <label className="label">Inventaris per school/campus</label>
 
           {inventories.map((inventory, index) => (
-            <div key={index} className={styles.inventoryCard}>
-              <div className={styles.inventoryGrid}>
-                <div className={styles.inventoryField}>
-                  <label className={styles.label}>School</label>
+            <div key={index} className="inventoryCard">
+              <div className="inventoryGrid">
+                <div className="inventoryField">
+                  <label className="label">School</label>
                   <input
                     type="text"
                     value={inventory.schoolName || ""}
-                    className={styles.input}
+                    className="input"
                     disabled
                   />
                 </div>
 
-                <div className={styles.inventoryField}>
-                  <label className={styles.label}>Campus</label>
+                <div className="inventoryField">
+                  <label className="label">Campus</label>
                   <input
                     type="text"
                     value={inventory.campus}
                     onChange={(e) => updateInventory(index, "campus", e.target.value)}
-                    className={styles.input}
+                    className="input"
                     disabled={previewBook !== null}
                     placeholder="Bijv. Campus Zuid"
                   />
                 </div>
 
-                <div className={styles.inventoryField}>
-                  <label className={styles.label}>Totaal</label>
+                <div className="inventoryField">
+                  <label className="label">Totaal</label>
                   <input
                     type="number"
                     min="0"
@@ -587,13 +587,13 @@ useEffect(() => {
                     onChange={(e) =>
                       updateInventory(index, "totalCopies", Number(e.target.value) || 0)
                     }
-                    className={styles.input}
+                    className="input"
                     disabled={previewBook !== null}
                   />
                 </div>
 
-                <div className={styles.inventoryField}>
-                  <label className={styles.label}>Beschikbaar</label>
+                <div className="inventoryField">
+                  <label className="label">Beschikbaar</label>
                   <input
                     type="number"
                     min="0"
@@ -605,18 +605,18 @@ useEffect(() => {
                         Number(e.target.value) || 0,
                       )
                     }
-                    className={styles.input}
+                    className="input"
                     disabled={previewBook !== null}
                   />
                 </div>
               </div>
 
               {!previewBook && inventories.length > 1 && (
-                <div className={styles.inventoryActions}>
+                <div className="inventoryActions">
                   <button
                     type="button"
                     onClick={() => removeInventoryRow(index)}
-                    className={styles.smallButton}
+                    className="smallButton"
                   >
                     Verwijder regel
                   </button>
@@ -626,18 +626,18 @@ useEffect(() => {
           ))}
 
           {!previewBook && (
-            <div className={styles.inventoryActions}>
+            <div className="inventoryActions">
               <button
                 type="button"
                 onClick={addInventoryRow}
-                className={styles.smallButton}
+                className="smallButton"
               >
                 Campus toevoegen
               </button>
             </div>
           )}
 
-          <div className={styles.inventorySummary}>
+          <div className="inventorySummary">
             <strong>Totaal:</strong> {totalCopiesFromInventories} |{" "}
             <strong>Beschikbaar:</strong> {availableCopiesFromInventories}
           </div>
@@ -651,15 +651,15 @@ useEffect(() => {
       </form>
 
       {previewBook && (
-        <div className={styles.previewCard}>
-          <h2 className={styles.previewTitle}>Preview van het boek:</h2>
+        <div className="previewCard">
+          <h2 className="previewTitle">Preview van het boek:</h2>
 
-          <div className={styles.previewContent}>
+          <div className="previewContent">
             <img
               src={imgSrc}
               alt="Cover"
               onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
-              className={styles.previewImage}
+              className="previewImage"
             />
 
             <div>
@@ -685,12 +685,12 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className={styles.actionRow}>
+          <div className="actionRow">
             <button
               type="button"
               onClick={handleConfirmAdd}
               disabled={loading}
-              className={styles.confirmButton}
+              className="confirmButton"
             >
               {loading ? "Bezig..." : "Ja, Voeg toe aan Catalogus"}
             </button>
@@ -699,7 +699,7 @@ useEffect(() => {
               type="button"
               onClick={handleCancelPreview}
               disabled={loading}
-              className={styles.cancelButton}
+              className="cancelButton"
             >
               Annuleren
             </button>

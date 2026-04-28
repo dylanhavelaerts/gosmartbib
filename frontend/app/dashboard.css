@@ -127,7 +127,7 @@
 .selectedCategory {
   color: #8e1f42 !important;
   border-bottom: 3px solid #8e1f42;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 #bookListDashboard {
@@ -270,3 +270,4 @@
     gap: 2.5rem;
   }
 }
+
