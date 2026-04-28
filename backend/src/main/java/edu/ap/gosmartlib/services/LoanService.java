@@ -1,6 +1,8 @@
 package edu.ap.gosmartlib.services;
 
+import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
+import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.LoanEntity;
 import edu.ap.gosmartlib.entities.LoanHistoryEntity;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Comparator;
 
 @Service
 @Transactional
@@ -93,6 +96,75 @@ public class LoanService {
             loanRepository.save(loan);
             logger.info("DEEL-RETOUR GELOGD: {} exemplaren van ISBN {} teruggebracht door {}. Nog {} uitgeleend.", 
                         returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId(), loan.getQuantity());
+        }
+    }
+
+    // --- ACTIEVE LENINGEN OPHALEN ---
+    public List<ActiveLoanDTO> getActiveLoansByUser(String smartschoolUserId) {
+        List<LoanEntity> loans = loanRepository.findBySmartschoolUserId(smartschoolUserId);
+        
+        return loans.stream().map(loan -> {
+            // Zoek het bijbehorende boek op via ISBN
+            BookEntity book = bookRepository.findByIsbn(loan.getIsbn()).orElse(null);
+            
+            // Zet de zware BookEntity om naar een lichte LoanBookDTO
+            ActiveLoanDTO.LoanBookDTO safeBook = null;
+            if (book != null) {
+                safeBook = new ActiveLoanDTO.LoanBookDTO(
+                    book.getId(),
+                    book.getTitle(),
+                    book.getThumbnail(),
+                    book.getIsbn()
+                );
+            }
+            
+            return new ActiveLoanDTO(
+                loan.getId(), 
+                loan.getSmartschoolUserId(), 
+                loan.getQuantity(), 
+                loan.getLoanDate(), 
+                safeBook
+            );
+        }).toList();
+    }
+
+    // --- BULK BOEKEN TERUGBRENGEN (Vanuit Frontend Mandje) ---
+    public void returnBooksBulk(List<ReturnBulkRequestDTO> returnRequests) {
+        for (ReturnBulkRequestDTO request : returnRequests) {
+            // 1. Zoek op welk ISBN bij dit bookId hoort
+            BookEntity book = bookRepository.findById(request.bookId())
+                    .orElseThrow(() -> new BookNotFoundException(request.bookId()));
+            
+            // 2. Haal ALLE actieve leningen op van deze user voor dit specifieke boek
+            List<LoanEntity> activeLoans = loanRepository.findBySmartschoolUserIdAndIsbn(
+                    request.smartschoolUserId(), book.getIsbn()
+            );
+
+            // 3. Sorteer ze op inleverdatum (dichtstbijzijnde datum eerst)
+            activeLoans.sort(Comparator.comparing(LoanEntity::getDueDate));
+
+            // Hoeveel moeten er in totaal worden teruggebracht?
+            int remainingToReturn = request.quantity();
+
+            // 4. Loop door de leningen en schrijf ze af
+            for (LoanEntity loan : activeLoans) {
+                if (remainingToReturn <= 0) break; // Alle teruggebrachte exemplaren zijn verwerkt!
+
+                // Bepaal hoeveel we van DEZE specifieke record kunnen afhalen
+                // (Kies de kleinste van de twee: wat we nog moeten inleveren vs wat er in deze record staat)
+                int returnForThisLoan = Math.min(remainingToReturn, loan.getQuantity());
+
+                // 5. Hergebruik jouw bestaande logica om het in de geschiedenis te zetten!
+                returnBook(loan.getId(), returnForThisLoan);
+
+                // Verminder het aantal dat we nog moeten afhandelen
+                remainingToReturn -= returnForThisLoan;
+            }
+            
+            if (remainingToReturn > 0) {
+                logger.warn("Let op: Frontend vroeg om {} '{}' boeken terug te brengen, maar de lener had er te weinig in bezit.", 
+                            remainingToReturn, book.getTitle());
+            }
         }
     }
 }
