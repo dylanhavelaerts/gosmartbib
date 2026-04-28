@@ -260,6 +260,19 @@
   gap: 0.6rem;
   position: relative;
 }
+
+.rl-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+
+.rl-card-main:focus-visible {
+  outline: 3px solid rgba(142, 36, 70, 0.25);
+  outline-offset: 4px;
+  border-radius: 10px;
+}
 .rl-card:hover {
   box-shadow: 0 6px 24px rgba(142, 36, 70, 0.13);
   transform: translateY(-2px);

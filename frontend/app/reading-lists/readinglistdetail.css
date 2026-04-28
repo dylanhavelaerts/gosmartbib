@@ -2,9 +2,9 @@
 .rld-page {
   min-height: 100vh;
   width: 100%;
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 1.2rem 1rem 3rem;
+  max-width: 1300px;
+  margin: 4.5rem auto 0;
+  padding: 1.5rem 2rem 3rem;
   color: #201713;
   box-sizing: border-box;
 }
@@ -24,7 +24,9 @@
   gap: 0.3rem;
   transition: opacity 0.15s;
 }
-.rld-back-btn:hover { opacity: 0.7; }
+.rld-back-btn:hover {
+  opacity: 0.7;
+}
 
 /* ── State views ── */
 .rld-state {
@@ -36,17 +38,29 @@
   text-align: center;
   color: #786a61;
 }
-.rld-state p { font-size: 1rem; margin: 0; }
-.rld-state--error p { color: #b9382a; }
-.rld-state--empty p { color: #786a61; }
+.rld-state p {
+  font-size: 1rem;
+  margin: 0;
+}
+.rld-state--error p {
+  color: #b9382a;
+}
+.rld-state--empty p {
+  color: #786a61;
+}
 .rld-spinner {
-  width: 36px; height: 36px;
+  width: 36px;
+  height: 36px;
   border: 3px solid #e5d9cd;
   border-top-color: #7a2f32;
   border-radius: 50%;
   animation: rld-spin 0.8s linear infinite;
 }
-@keyframes rld-spin { to { transform: rotate(360deg); } }
+@keyframes rld-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* ── Shared button ── */
 .rld-btn-outline {
@@ -58,13 +72,18 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
-.rld-btn-outline:hover { background: #7a2f32; color: #fff; }
+.rld-btn-outline:hover {
+  background: #7a2f32;
+  color: #fff;
+}
 
 /* ── Page header card ── */
 .rld-header-card {
-  background: #fffdfa;
+  background: #ffffff;
   border: 1.5px solid #e5d9cd;
   border-radius: 10px;
   padding: 1.1rem 1.3rem 1.2rem;
@@ -114,7 +133,9 @@
   font-size: 0.82rem;
   color: #786a61;
 }
-.rld-meta-item strong { color: #201713; }
+.rld-meta-item strong {
+  color: #201713;
+}
 
 .rld-deadline {
   display: inline-block;
@@ -124,9 +145,18 @@
   padding: 0.22rem 0.7rem;
   margin-top: 0.5rem;
 }
-.rld-deadline--normal  { background: #f8ece8; color: #7a2f32; }
-.rld-deadline--soon    { background: #f6ecd7; color: #a16207; }
-.rld-deadline--overdue { background: #f9e9e5; color: #b9382a; }
+.rld-deadline--normal {
+  background: #f8ece8;
+  color: #7a2f32;
+}
+.rld-deadline--soon {
+  background: #f6ecd7;
+  color: #a16207;
+}
+.rld-deadline--overdue {
+  background: #f9e9e5;
+  color: #b9382a;
+}
 
 .rld-header-actions {
   display: flex;
@@ -166,7 +196,7 @@
 
 /* ── Book row card ── */
 .rld-book-card {
-  background: #fffdfa;
+  background: #ffffff;
   border: 1.5px solid #e5d9cd;
   border-radius: 10px;
   box-shadow: 0 1px 6px rgba(32, 23, 19, 0.06);
@@ -174,7 +204,9 @@
   flex-direction: row;
   align-items: stretch;
   overflow: hidden;
-  transition: box-shadow 0.2s, transform 0.2s;
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s;
   position: relative;
 }
 .rld-book-card:hover {
@@ -263,7 +295,9 @@
   transition: background 0.15s;
   white-space: nowrap;
 }
-.rld-open-btn:hover { background: #a64a43; }
+.rld-open-btn:hover {
+  background: #a64a43;
+}
 
 /* "Markeer als gelezen/ongelezen" — green outlined */
 .rld-read-btn {
@@ -275,15 +309,22 @@
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   white-space: nowrap;
 }
-.rld-read-btn:hover { background: #2f6f4f; color: #fff; }
+.rld-read-btn:hover {
+  background: #2f6f4f;
+  color: #fff;
+}
 .rld-read-btn--done {
   background: #2f6f4f;
   color: #fff;
 }
-.rld-read-btn--done:hover { background: #24563d; }
+.rld-read-btn--done:hover {
+  background: #24563d;
+}
 
 /* ── Read status badge (top-right of card) ── */
 .rld-status-badge {
@@ -308,7 +349,7 @@
 /* ── Responsive ── */
 @media (min-width: 640px) {
   .rld-page {
-    padding: 1.5rem 1.5rem 3rem;
+    padding: 1.5rem 2rem 3rem;
   }
   .rld-cover {
     width: 88px;
