@@ -240,8 +240,8 @@
 /* ── Card grid ── */
 .rl-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 1.4rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.1rem;
 }
 
 /* ── Card ── */
@@ -249,7 +249,7 @@
   background: #ffffff;
   border: 1.5px solid #e8e0d8;
   border-radius: 12px;
-  padding: 1.4rem 1.5rem 1.2rem;
+  padding: 1.1rem 1.2rem 1rem;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
   transition:
     box-shadow 0.2s,
@@ -257,14 +257,14 @@
     border-color 0.2s;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
   position: relative;
 }
 
 .rl-card-main {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
   cursor: pointer;
 }
 
@@ -313,7 +313,7 @@
 
 /* Title */
 .rl-card-title {
-  font-size: 1.08rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #1a1410;
   margin: 0;
@@ -323,7 +323,7 @@
 
 /* Description */
 .rl-card-desc {
-  font-size: 0.87rem;
+  font-size: 0.84rem;
   color: #7a6e65;
   margin: 0;
   line-height: 1.5;
@@ -336,8 +336,8 @@
 .rl-card-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.8rem;
-  font-size: 0.82rem;
+  gap: 0.6rem;
+  font-size: 0.78rem;
   color: #7a6e65;
   margin-top: 0.2rem;
 }
@@ -372,11 +372,11 @@
 /* Card actions */
 .rl-card-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
   align-items: center;
-  margin-top: 0.6rem;
-  padding-top: 0.8rem;
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
   border-top: 1px solid #e8e0d8;
 }
 

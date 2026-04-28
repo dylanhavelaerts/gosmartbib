@@ -255,8 +255,8 @@
 /* ── Overview grid ── */
 .mrl-list-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.2rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.1rem;
 }
 
 .mrl-list-card {
@@ -279,16 +279,16 @@
 
 .mrl-list-card-body {
   display: flex;
-  gap: 1rem;
+  gap: 0.8rem;
   align-items: flex-start;
-  padding: 1.2rem;
+  padding: 1.1rem 1.2rem 1rem;
   cursor: pointer;
   flex: 1;
   transition: background 0.2s;
 }
 
 .mrl-list-card-body:hover {
-  background: #fcf7f9;
+  background: #fdf0f4;
 }
 .mrl-list-card-body h3 {
   font-size: 1rem;
@@ -297,7 +297,7 @@
   color: var(--mrl-text);
 }
 .mrl-list-card-body p {
-  font-size: 0.83rem;
+  font-size: 0.84rem;
   font-family: system-ui, sans-serif;
   color: var(--mrl-text-muted);
   margin: 0 0 0.4rem;
@@ -320,9 +320,9 @@
   display: flex;
   gap: 0.4rem;
   align-items: center;
-  padding: 0.7rem 1.2rem;
+  padding: 0.6rem 1.2rem 0.8rem;
   border-top: 1px solid var(--mrl-border);
-  background: #fafaf8;
+  background: transparent;
   flex-wrap: wrap;
 }
 
@@ -334,6 +334,38 @@
   font-family: system-ui, sans-serif;
   color: var(--mrl-danger);
   font-weight: 600;
+  margin-left: auto;
+}
+
+.mrl-btn-trash {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.mrl-btn-trash::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background: url("/trash.png") center/contain no-repeat;
+  opacity: 0.8;
+  transition:
+    opacity 0.15s,
+    filter 0.15s;
+}
+
+.mrl-btn-trash:hover::before {
+  opacity: 1;
+  filter: sepia(45%) saturate(520%) hue-rotate(330deg) brightness(0.92);
 }
 
 /* ── Create/edit form layout ── */
@@ -490,7 +522,9 @@
   font-family: system-ui, sans-serif;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .mrl-add-btn:hover:not(:disabled) {
   background-color: var(--mrl-accent);
@@ -612,7 +646,9 @@
   border-radius: 4px;
   padding: 0.3rem 0.6rem;
   flex-shrink: 0;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .mrl-remove-btn:hover {
   background-color: #c0392b;
@@ -638,7 +674,9 @@
   background-color: transparent;
   color: var(--mrl-accent);
   border: 1px solid var(--mrl-accent);
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 .mrl-btn-cancel:hover {
   background-color: #f0e9e9;

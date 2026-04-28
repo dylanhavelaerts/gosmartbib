@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./reviewsection.css";
 import Pagination from "../../catalog/pagination";
 import { useAuth } from "../../context/AuthContext";
@@ -34,6 +34,7 @@ export default function ReviewSection({
   const [reportReviewId, setReportReviewId] = useState<number | null>(null);
   const [reportReason, setReportReason] = useState<ReportReason | "">("");
   const [reportError, setReportError] = useState("");
+  const hasInitializedForm = useRef(false);
   const ownReview = user
     ? (reviews.find((review) => review.userId === user.id) ?? null)
     : null;
@@ -104,6 +105,28 @@ export default function ReviewSection({
   useEffect(() => {
     fetchReviews();
   }, [isbn]);
+
+  useEffect(() => {
+    hasInitializedForm.current = false;
+  }, [isbn]);
+
+  useEffect(() => {
+    if (hasInitializedForm.current) {
+      return;
+    }
+    if (!user) {
+      return;
+    }
+
+    if (ownReview) {
+      setShowForm(false);
+      setEditingReviewId(null);
+    } else {
+      setShowForm(true);
+    }
+
+    hasInitializedForm.current = true;
+  }, [user, ownReview]);
 
   function handleSubmitted(moderationNotice?: string) {
     setEditingReviewId(null);

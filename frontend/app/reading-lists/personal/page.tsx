@@ -264,7 +264,15 @@ export default function MyReadingListPage() {
 
                       <div className="mrl-list-card-actions">
                         <button
-                          className="mrl-btn-sm-outline"
+                          className="mrl-btn-outline"
+                          onClick={() =>
+                            router.push(`/reading-lists/${list.id}`)
+                          }
+                        >
+                          Bekijken
+                        </button>
+                        <button
+                          className="mrl-btn-outline"
                           onClick={() => openEdit(list)}
                         >
                           Bewerken
@@ -288,12 +296,11 @@ export default function MyReadingListPage() {
                           </span>
                         ) : (
                           <button
-                            className="mrl-btn-sm-ghost mrl-btn-sm-ghost--danger"
+                            className="mrl-btn-trash"
                             onClick={() => setDeleteConfirm(list.id)}
                             title="Verwijderen"
-                          >
-                            Verwijderen
-                          </button>
+                            aria-label="Verwijderen"
+                          ></button>
                         )}
                       </div>
                     </div>

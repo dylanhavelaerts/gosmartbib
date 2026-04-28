@@ -29,7 +29,6 @@ export default function DetailPage({
     null,
   );
   const [currentUser, setCurrentUser] = useState<MeResponse | null>(null);
-  const [activeTab, setActiveTab] = useState<"details" | "reviews">("details");
 
   const isStaff =
     currentUser?.role === "TEACHER" ||
@@ -186,71 +185,52 @@ export default function DetailPage({
           <h1 className="detailTitle">{book.title}</h1>
           <p className="detailAuthors">door {book.authors?.join(", ")}</p>
 
-          <div className="detailNavBar">
-            <button
-              className={activeTab === "details" ? "active" : ""}
-              onClick={() => setActiveTab("details")}
-            >
-              Details
-            </button>
-            <button
-              className={activeTab === "reviews" ? "active" : ""}
-              onClick={() => setActiveTab("reviews")}
-            >
-              Beoordeling
-            </button>
-          </div>
+          <div className="tabContent">
+            <div className="detailDescription">
+              <h2>Waar gaat het over?</h2>
+              <p>{book.description}</p>
+            </div>
 
-          {activeTab === "details" && (
-            <div className="tabContent">
-              <div className="detailDescription">
-                <h2>Waar gaat het over?</h2>
-                <p>{book.description}</p>
-              </div>
+            <hr className="detailDivider" />
 
-              <hr className="detailDivider" />
-
-              <div className="detailMetaRow">
-                {book.ageRange && (
-                  <div className="metaCol">
-                    <span className="metaLabel">Leeftijd</span>
-                    <span className="metaValue">{book.ageRange}</span>
-                  </div>
-                )}
-                {book.categories?.length > 0 && (
-                  <div className="metaCol">
-                    <span className="metaLabel">Genre</span>
-                    <span className="metaValue">
-                      {book.categories.join(", ")}
-                    </span>
-                  </div>
-                )}
+            <div className="detailMetaRow">
+              {book.ageRange && (
                 <div className="metaCol">
-                  <span className="metaLabel">Taal</span>
+                  <span className="metaLabel">Leeftijd</span>
+                  <span className="metaValue">{book.ageRange}</span>
+                </div>
+              )}
+              {book.categories?.length > 0 && (
+                <div className="metaCol">
+                  <span className="metaLabel">Genre</span>
                   <span className="metaValue">
-                    {book.language?.toUpperCase()}
+                    {book.categories.join(", ")}
                   </span>
                 </div>
-                {book.pageCount && (
-                  <div className="metaCol">
-                    <span className="metaLabel">Dikte</span>
-                    <span className="metaValue">{book.pageCount} pagina's</span>
-                  </div>
-                )}
+              )}
+              <div className="metaCol">
+                <span className="metaLabel">Taal</span>
+                <span className="metaValue">
+                  {book.language?.toUpperCase()}
+                </span>
               </div>
+              {book.pageCount && (
+                <div className="metaCol">
+                  <span className="metaLabel">Dikte</span>
+                  <span className="metaValue">{book.pageCount} pagina's</span>
+                </div>
+              )}
             </div>
-          )}
 
-          {activeTab === "reviews" && (
-            <div className="tabContent">
-              <div className="detailDescription">
-                <ReviewSection
-                  isbn={book.isbn}
-                  onReviewSubmitted={() => fetchAverageReviewRating(book.isbn)}
-                />
-              </div>
+            <hr className="detailDivider" />
+
+            <div className="detailReviews">
+              <ReviewSection
+                isbn={book.isbn}
+                onReviewSubmitted={() => fetchAverageReviewRating(book.isbn)}
+              />
             </div>
-          )}
+          </div>
         </div>
       </div>
     </main>

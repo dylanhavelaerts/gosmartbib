@@ -22,10 +22,10 @@
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  background-color: white;
-  border: 1.5px solid #8e2446;
-  border-radius: 6px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   width: 100%;
   box-sizing: border-box;
   min-width: 0;
@@ -37,7 +37,7 @@
   box-sizing: border-box;
   flex: 0 0 240px;
   width: 240px;
-  padding: 1rem;
+  padding: 1rem 1.5rem 1rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -164,7 +164,8 @@
   width: auto;
   min-width: 0;
   box-sizing: border-box;
-  padding: 1rem;
+  padding: 1rem 1rem 1rem 1.5rem;
+  border-left: 1px solid #e4d5de;
 }
 
 .tabContent {
@@ -182,7 +183,7 @@
 
 .detailAuthors {
   color: #555;
-  margin: 0 0 1rem 0;
+  padding: 0 0 2rem 0;
 }
 
 .detailBadges {
@@ -242,6 +243,11 @@
   font-size: 14px;
   line-height: 1.6;
   color: #333;
+  padding-bottom: 1rem;
+}
+
+.detailReviews {
+  margin-top: 2rem;
 }
 
 /* ── DIVIDER ── */
@@ -305,14 +311,16 @@
 
   .detailLeft {
     flex: unset;
-    width: min(220px, 100%);
-    margin: 0 auto;
-    padding: 1rem 1rem 0.5rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.75rem 0 1rem;
+    border-bottom: 1px solid #e4d5de;
   }
 
   .detailRight {
     width: 100%;
-    padding: 0.75rem 1rem 1rem;
+    padding: 1rem 0 1rem;
+    border-left: none;
   }
 
   .detailTitle {
@@ -323,6 +331,7 @@
   .detailAuthors {
     font-size: 0.9rem;
     margin-bottom: 0.75rem;
+    padding-bottom: 0;
   }
 
   .detailBadges {
