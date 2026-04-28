@@ -30,7 +30,10 @@ public class SmartschoolMessageService {
                 .findBySchool_Id(user.getSchool().getId())
                 .orElseThrow(() -> new IllegalStateException("School heeft geen integratie ingesteld voor school met id" + user.getSchool().getId()));
         String accessToken = authService.getAccessToken(integration);
-
+        if (user.getOnerosterSourcedId() == null || user.getOnerosterSourcedId().isBlank()) {
+            log.warn("Gebruiker {} heeft geen onerosterSourcedId, bericht niet verstuurd", user.getId());
+            return;
+        }
         Map<String, Object> userDetails = oneRosterClient
                 .getUserBySourcedId(integration, accessToken, user.getOnerosterSourcedId());
         String username = (String) userDetails.get("username");
@@ -41,17 +44,6 @@ public class SmartschoolMessageService {
         sendSoapMessage(integration, username, title, body);
     }
 
-    //Hardcode om te testen -> volledige methode gaat weg
-    @Async
-    public void sendTestMessage(String username) {
-        SchoolIntegrationEntity integration = schoolIntegrationRepository
-                .findAll()
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Geen integratie gevonden"));
-
-        sendSoapMessage(integration, username, "Test bericht", "Dit is een testbericht vanuit GoSmartLib.");
-    }
     private void sendSoapMessage(SchoolIntegrationEntity integration, String username, String title, String body) {
         String accesscode = integration.getSmartschoolAccesscode();
         String senderIdentifier = integration.getSmartschoolSenderIdentifier() != null
