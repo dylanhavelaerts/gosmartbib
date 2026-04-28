@@ -219,10 +219,10 @@
   color: #5e35b1;
 }
 
-/* ── Hoofd Layout (Nieuw Verplaatst vanuit tsx) ──────────────── */
 .manage-main-layout {
   display: flex;
   flex-direction: column;
+  margin-top: 9rem;
 }
 
 .manage-title {
@@ -433,7 +433,7 @@
 .details-title {
   margin: 0 0 0.5rem 0;
   font-size: clamp(1.5rem, 4vw, 2rem);
-  color: #c0392b;
+  color: #6e1a34;
   padding: 0;
 }
 
@@ -462,7 +462,7 @@
 }
 
 .btn-danger {
-  background-color: #c0392b;
+  background-color: #6e1a34;
   color: white;
 }
 

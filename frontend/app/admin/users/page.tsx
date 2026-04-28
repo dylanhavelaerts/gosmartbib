@@ -219,8 +219,8 @@ export default function AdminUserPage() {
 
   return (
     <main>
-      {error && <p>{error}</p>}
-      {succes && <p>{succes}</p>}
+      {error && <p className="adminMessage adminMessageError">{error}</p>}
+      {succes && <p className="adminMessage adminMessageSuccess">{succes}</p>}
 
       {!error && me?.role === "ADMIN" && (
         <div id="userMain">

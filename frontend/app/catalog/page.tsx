@@ -37,6 +37,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("Catalogus");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [labelOpen, setLabelOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -163,6 +164,8 @@ export default function Home() {
   return (
     <main className="catalogPage">
       <section className="catalogHeader">
+        <h1>Catalogus</h1>
+
         {/* Search bar */}
         <div className="filterSection">
           <div className="catalogSearchbar">
@@ -176,9 +179,15 @@ export default function Home() {
               🔎︎
             </button>
           </div>
+          <button
+            type="button"
+            className="mobileSidebarToggle"
+            aria-label="Toon filters"
+            onClick={() => setSidebarOpen(true)}
+          >
+            ☰ Filters
+          </button>
         </div>
-
-        <h1>Catalogus</h1>
 
         {/* Tab bar */}
         <ul>
@@ -211,10 +220,24 @@ export default function Home() {
       </section>
 
       <section className="pageLayout">
+        {sidebarOpen && (
+          <div
+            className="sidebarOverlay"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
         {/* Filter bar */}
-        <aside className="filterSidebar">
+        <aside className={`filterSidebar ${sidebarOpen ? "open" : ""}`}>
           <div className="sidebarHeader">
             <span>Filters</span>
+            <button
+              type="button"
+              className="sidebarCloseButton"
+              aria-label="Sluit filters"
+              onClick={() => setSidebarOpen(false)}
+            >
+              ✕
+            </button>
           </div>
 
           <div className="filterBar">
@@ -353,12 +376,18 @@ export default function Home() {
                   <span className="filterRatingLabel">Min</span>
                   <StarRating
                     value={minRating ?? 0}
-                    onChange={(v) => { setMinRating(v); resetPage(); }}
+                    onChange={(v) => {
+                      setMinRating(v);
+                      resetPage();
+                    }}
                   />
                   <button
                     type="button"
                     className="filterRatingClear"
-                    onClick={() => { setMinRating(null); resetPage(); }}
+                    onClick={() => {
+                      setMinRating(null);
+                      resetPage();
+                    }}
                   >
                     Reset
                   </button>
@@ -367,12 +396,18 @@ export default function Home() {
                   <span className="filterRatingLabel">Max</span>
                   <StarRating
                     value={maxRating ?? 0}
-                    onChange={(v) => { setMaxRating(v); resetPage(); }}
+                    onChange={(v) => {
+                      setMaxRating(v);
+                      resetPage();
+                    }}
                   />
                   <button
                     type="button"
                     className="filterRatingClear"
-                    onClick={() => { setMaxRating(null); resetPage(); }}
+                    onClick={() => {
+                      setMaxRating(null);
+                      resetPage();
+                    }}
                   >
                     Reset
                   </button>
