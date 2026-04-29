@@ -9,7 +9,7 @@ import type {
   SchoolIntegrationLiveClassesResponse,
 } from "@/app/interfaces/schoolIntegration";
 import { useEffect, useMemo, useState } from "react";
-import styles from "./schoolIntegration.module.css";
+import "./schoolIntegration.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -325,73 +325,71 @@ export default function SchoolIntegrationPage() {
 
   if (loading) {
     return (
-      <main className={styles.page}>
+      <main className="page">
         <p>Integratie laden...</p>
       </main>
     );
   }
 
   return (
-    <main className={styles.page}>
+    <main className="page">
       <h1>Schoolintegratie</h1>
 
-      {error && <p className={`${styles.message} ${styles.error}`}>{error}</p>}
-      {success && (
-        <p className={`${styles.message} ${styles.success}`}>{success}</p>
-      )}
+      {error && <p className="message error">{error}</p>}
+      {success && <p className="message success">{success}</p>}
 
       {!error && canUsePage && (
         <>
-          <section className={styles.card}>
+          <section className="card">
             <h2>School</h2>
 
-            <div className={styles.grid}>
-              <div className={styles.stat}>
-                <span className={styles.label}>Naam</span>
+            <div className="grid">
+              <div className="stat">
+                <span className="label">Naam</span>
                 <strong>{schoolName || "-"}</strong>
               </div>
 
-              <div className={styles.stat}>
-                <span className={styles.label}>Domein</span>
+              <div className="stat">
+                <span className="label">Domein</span>
                 <strong>{schoolDomain || "-"}</strong>
               </div>
 
-              <div className={styles.stat}>
-                <span className={styles.label}>Actief</span>
+              <div className="stat">
+                <span className="label">Actief</span>
                 <strong>{integration?.onerosterEnabled ? "Ja" : "Nee"}</strong>
               </div>
 
-              <div className={styles.stat}>
-                <span className={styles.label}>Secret opgeslagen</span>
+              <div className="stat">
+                <span className="label">Secret opgeslagen</span>
                 <strong>
                   {integration?.clientSecretConfigured ? "Ja" : "Nee"}
                 </strong>
               </div>
 
-              <div className={styles.stat}>
-                <span className={styles.label}>Laatste test</span>
+              <div className="stat">
+                <span className="label">Laatste test</span>
                 <strong>{formatDate(integration?.lastTestSuccessfulAt)}</strong>
               </div>
 
-              <div className={styles.stat}>
-                <span className={styles.label}>Laatste sync</span>
+              <div className="stat">
+                <span className="label">Laatste sync</span>
                 <strong>{formatDate(integration?.lastSyncAt)}</strong>
               </div>
             </div>
 
             {integration?.lastError && (
-              <div className={styles.alert}>
-                <span className={styles.label}>Laatste fout</span>
+              <div className="alert">
+                <span className="label">Laatste fout</span>
                 <p>{integration.lastError}</p>
               </div>
             )}
           </section>
 
-          <section className={styles.card}>
+          <section className="card">
             <h2>Configuratie</h2>
 
-            <div className={styles.form}>
-              <label className={styles.field}>
+            <div className="form">
+              <label className="field">
                 <span>OneRoster base URL</span>
                 <input
                   type="text"
@@ -401,7 +399,7 @@ export default function SchoolIntegrationPage() {
                 />
               </label>
 
-              <label className={styles.field}>
+              <label className="field">
                 <span>Client ID</span>
                 <input
                   type="text"
@@ -411,7 +409,7 @@ export default function SchoolIntegrationPage() {
                 />
               </label>
 
-              <label className={styles.field}>
+              <label className="field">
                 <span>Client secret</span>
                 <input
                   type="password"
@@ -424,32 +422,8 @@ export default function SchoolIntegrationPage() {
                   }
                 />
               </label>
-              <label className={styles.field}>
-                <span>Smartschool accesscode</span>
-                <input
-                  type="password"
-                  value={smartschoolAccesscode}
-                  onChange={(e) => setSmartschoolAccesscode(e.target.value)}
-                  placeholder={
-                    integration?.smartschoolAccesscodeConfigured
-                      ? "Laat leeg om de huidige accesscode te behouden"
-                      : "Smartschool accesscode"
-                  }
-                />
-              </label>
-              <label className={styles.field}>
-                <span>
-                  Smartschool afzender (gebruikersnaam) van bibliotheekbeheerder
-                </span>
-                <input
-                  type="text"
-                  value={senderIdentifier}
-                  onChange={(e) => setSenderIdentifier(e.target.value)}
-                  placeholder="bv. sof2.voornaam.achternaam"
-                />
-              </label>
 
-              <label className={styles.checkbox}>
+              <label className="checkbox">
                 <input
                   type="checkbox"
                   checked={enabled}
@@ -459,9 +433,9 @@ export default function SchoolIntegrationPage() {
               </label>
             </div>
 
-            <div className={styles.actions}>
+            <div className="actions">
               <button
-                className={`${styles.button} ${styles.primaryButton}`}
+                className="button primaryButton"
                 onClick={handleSave}
                 disabled={saving || testing}
               >
@@ -469,7 +443,7 @@ export default function SchoolIntegrationPage() {
               </button>
 
               <button
-                className={styles.button}
+                className="button"
                 onClick={handleTest}
                 disabled={saving || testing}
               >
@@ -478,13 +452,13 @@ export default function SchoolIntegrationPage() {
             </div>
           </section>
 
-          <section className={styles.card}>
+          <section className="card">
             <h2>Debug</h2>
-            <p className={styles.help}>Test of de live koppeling echt werkt.</p>
+            <p className="help">Test of de live koppeling echt werkt.</p>
 
-            <div className={styles.actions}>
+            <div className="actions">
               <button
-                className={styles.button}
+                className="button"
                 onClick={handleLoadLiveUsers}
                 disabled={loadingUsers}
               >
@@ -492,7 +466,7 @@ export default function SchoolIntegrationPage() {
               </button>
 
               <button
-                className={styles.button}
+                className="button"
                 onClick={handleLoadLiveClasses}
                 disabled={loadingClasses}
               >
@@ -501,9 +475,9 @@ export default function SchoolIntegrationPage() {
             </div>
 
             {testResult && (
-              <div className={styles.debugBlock}>
+              <div className="debugBlock">
                 <h3>Testresultaat</h3>
-                <ul className={styles.list}>
+                <ul className="list">
                   <li>Succes: {testResult.success ? "Ja" : "Nee"}</li>
                   <li>
                     Token ontvangen: {testResult.tokenReceived ? "Ja" : "Nee"}
@@ -519,7 +493,7 @@ export default function SchoolIntegrationPage() {
             )}
 
             {liveUsers && (
-              <div className={styles.debugBlock}>
+              <div className="debugBlock">
                 <h3>Live users</h3>
                 <p>
                   {liveUsers.message} ({liveUsers.userCount} users)
@@ -528,7 +502,7 @@ export default function SchoolIntegrationPage() {
                 {liveUsers.users.length > 5 && (
                   <button
                     type="button"
-                    className={styles.button}
+                    className="button"
                     onClick={() => setShowAllUsers((prev) => !prev)}
                   >
                     {showAllUsers ? "Toon minder" : "Toon alles"}
@@ -548,7 +522,7 @@ export default function SchoolIntegrationPage() {
             )}
 
             {liveClasses && (
-              <div className={styles.debugBlock}>
+              <div className="debugBlock">
                 <h3>Live classes</h3>
                 <p>
                   {liveClasses.message} ({liveClasses.classCount} klassen)
@@ -557,7 +531,7 @@ export default function SchoolIntegrationPage() {
                 {liveClasses.classes.length > 5 && (
                   <button
                     type="button"
-                    className={styles.button}
+                    className="button"
                     onClick={() => setShowAllClasses((prev) => !prev)}
                   >
                     {showAllClasses ? "Toon minder" : "Toon alles"}

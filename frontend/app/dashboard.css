@@ -4,12 +4,26 @@
 }
 
 .page-container > main {
-  padding: 1rem 1.5rem;
+  padding: 0 1.5rem 1rem;
+}
+
+#top-content {
+  width: 100vw;
+  height: 18rem;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 1.5rem;
+  background-image: url("https://media.istockphoto.com/id/1417921874/photo/young-woman-in-school-library.jpg?s=2048x2048&w=is&k=20&c=Rj8z_zeAOYCh8A_-ubdqHpysDP6xSL5mJlExXmJxM7s=");
+  background-size: cover;
+  background-position: 0 32%;
+  opacity: 80%;
 }
 
 #greeting {
   text-align: left;
   margin-top: 4rem;
+  padding-top: 4rem;
   display: flex;
   flex-direction: row;
   align-items: baseline;
@@ -17,22 +31,22 @@
 }
 
 .greetingName {
-  color: #8e1f42;
+  color: #ffffff;
   font-size: 2rem;
   font-weight: bold;
   margin: 0;
 }
 
 .greetingText {
-  color: #721935;
+  color: #ffffff;
   font-weight: normal;
-  padding-left: 1rem;
+  padding-left: 0.5rem;
   font-size: 1.2rem;
   margin: 0;
 }
 
 #searchBox {
-  padding: 2rem 0;
+  padding: 3rem 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -83,7 +97,6 @@
 .main-content-grid {
   display: flex;
   flex-direction: column;
-  padding-top: 4rem;
   gap: 2rem;
   align-items: stretch;
 }
@@ -113,9 +126,8 @@
 
 .selectedCategory {
   color: #8e1f42 !important;
-  background-color: #f4ecee;
   border-bottom: 3px solid #8e1f42;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 #bookListDashboard {
@@ -219,16 +231,13 @@
   cursor: pointer;
 }
 
-.dev-overlay {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 10000;
-}
-
 @media (min-width: 768px) {
   .page-container > main {
     padding: 2rem 3rem;
+  }
+  #top-content {
+    margin-top: -2rem;
+    padding: 0 3rem;
   }
   #bookListDashboard {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -261,3 +270,4 @@
     gap: 2.5rem;
   }
 }
+

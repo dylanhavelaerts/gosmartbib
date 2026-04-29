@@ -1,0 +1,183 @@
+.title {
+  font-size: clamp(22px, 2.2vw, 32px);
+  margin-bottom: 0.6rem;
+  color: #7a1d3f;
+}
+
+.widgetCard {
+  border: 1px solid #e7d4dc;
+  border-radius: 12px;
+  background: #fff;
+  padding: 1.5rem;
+  box-shadow: 0 6px 16px rgba(122, 29, 63, 0.08);
+  margin-top: 0.25rem;
+}
+
+.text {
+  color: #6d5860;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.spacedText {
+  color: #6d5860;
+  margin-top: 1rem;
+}
+
+.downloadLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
+  color: #7a1d3f;
+  font-weight: 600;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid #d8aab7;
+  background: #fbf8f9;
+  box-shadow: none;
+  margin-top: 1rem;
+}
+
+.downloadLink:hover {
+  background: #f3e1e7;
+  border-color: #c78499;
+}
+
+.fileInputBox {
+  padding: 1.25rem;
+  background-color: #fbf8f9;
+  border-radius: 12px;
+  border: 1px solid #e7d4dc;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.fileInputBox input {
+  width: 100%;
+  font: inherit;
+}
+
+.fileInputBox input::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #d8aab7;
+  background: #7a1d3f;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fileInputBox input::file-selector-button:hover {
+  background: #6a1936;
+}
+
+.selectedFile {
+  margin-top: 0.75rem;
+}
+
+.selectedFileRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e7d4dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.selectedFileRow p {
+  margin: 0;
+  color: #5e4f56;
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.uploadButton {
+  padding: 0.55rem 1rem;
+  background-color: #7a1d3f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.uploadButtonLoading {
+  background-color: #c9bfc5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .selectedFileRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .uploadButton {
+    width: 100%;
+  }
+}
+
+.resultCard {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #e7d4dc;
+  border-radius: 12px;
+  background-color: #fff;
+  color: #342a2f;
+  box-shadow: 0 6px 16px rgba(122, 29, 63, 0.08);
+}
+
+.mismatchSection {
+  margin-top: 1rem;
+}
+
+.message {
+  margin-top: 2rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.messageSuccess {
+  background-color: #e8f8ef;
+  color: #1f6a3f;
+  border-color: #c7e5d3;
+}
+
+.messageError {
+  background-color: #f9ecf1;
+  color: #8a3457;
+  border-color: #e7c9d4;
+}
+.mismatchElement {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #eee;
+}
+.mismatchTitle {
+  grid-column: 1/7;
+  margin-right: 0;
+  color: #5e4f56;
+}
+.mismatchButton {
+  background-color: #7a1d3f;
+  border-radius: 8px;
+  height: 2.5rem;
+  color: white;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mismatchButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

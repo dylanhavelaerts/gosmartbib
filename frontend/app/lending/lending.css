@@ -1,13 +1,14 @@
 /* --- LAYOUT & HEADER --- */
 
-/* Override any global .pageLayout (e.g. catalog's flex-row sidebar layout).
-   padding-top accounts for the fixed navbar (4.5rem height + breathing room). */
 main.pageLayout {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 4.5rem);
+  min-height: 0;
+  overflow: hidden;
   box-sizing: border-box;
-  padding: 5.5rem 2.5rem 2rem;
+  padding: 1rem 2.5rem 2rem;
+  margin-top: 4.5rem;
 }
 
 .pageHeader {
@@ -49,6 +50,7 @@ main.pageLayout {
   .uitleenGrid.driekolomsGrid {
     /* Borrower (compact) | Book search (wide) | Cart (fixed) */
     grid-template-columns: 300px 1fr 320px;
+    grid-template-rows: 1fr;
     gap: 0;
     align-items: stretch;
   }

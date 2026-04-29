@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { Book } from "../../interfaces/Book";
 import ProtectedRoute from "../../components/ProtectedRoute";
@@ -8,6 +9,7 @@ import "./createReadingList.css";
 
 export default function CreateReadingListPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   const [title, setTitle] = useState("");
@@ -47,6 +49,10 @@ export default function CreateReadingListPage() {
 
   const removeBookFromList = (bookId: number) => {
     setSelectedBooks((prev) => prev.filter((b) => b.id !== bookId));
+  };
+
+  const goBackToReadingLists = () => {
+    router.push("/reading-lists");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,7 +121,17 @@ export default function CreateReadingListPage() {
   return (
     <ProtectedRoute allowedRoles={["TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"]}>
       <div className="readingListContainer">
-        <h1 className="pageTitle">Nieuwe klasleeslijst aanmaken</h1>
+        <div className="crl-subheader">
+          <button
+            type="button"
+            className="crl-back-link"
+            onClick={goBackToReadingLists}
+            aria-label="Ga terug naar leeslijsten"
+          >
+            ← Terug naar overzicht
+          </button>
+          <h1 className="pageTitle">Nieuwe klasleeslijst aanmaken</h1>
+        </div>
 
         {message && (
           <div
@@ -286,13 +302,23 @@ export default function CreateReadingListPage() {
               </div>
 
               <div className="submit-container">
-                <button
-                  type="submit"
-                  className="titleSubmitBtn submit-full-width"
-                  disabled={loading}
-                >
-                  {loading ? "Lijst opslaan..." : "Klasleeslijst aanmaken"}
-                </button>
+                <div className="crl-form-actions">
+                  <button
+                    type="button"
+                    className="crl-btn-cancel"
+                    onClick={goBackToReadingLists}
+                    disabled={loading}
+                  >
+                    Annuleer
+                  </button>
+                  <button
+                    type="submit"
+                    className="crl-btn-save"
+                    disabled={loading}
+                  >
+                    {loading ? "Lijst opslaan..." : "Klasleeslijst aanmaken"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

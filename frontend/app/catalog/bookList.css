@@ -4,6 +4,10 @@
   min-height: 100vh;
 }
 
+#spotlightPage {
+  margin-top: 4.5rem;
+}
+
 .mainContent {
   flex: 1;
   min-width: 0;
@@ -44,6 +48,10 @@
   color: #888;
 }
 
+.sidebarCloseButton {
+  display: none;
+}
+
 .sidebarOverlay {
   position: fixed;
   inset: 0;
@@ -61,23 +69,49 @@
   }
 
   .filterSidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
-    max-height: none;
+    max-height: 75vh;
     border-right: none;
-    border-bottom: 1px solid #ddd;
-    border-radius: 0;
-    position: static;
-    overflow: visible;
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    background: #fff;
+    z-index: 120;
+    overflow-y: auto;
   }
+
+  .filterSidebar.open {
+    transform: translateY(0);
+  }
+
+  .sidebarCloseButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .mobileSidebarToggle {
     display: inline-flex;
     align-items: center;
+  }
+
+  .sidebarOverlay {
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 110;
   }
 }
 
 .filterSection {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
   padding: 1.2rem 1rem 0.5rem;
 }
 
@@ -87,11 +121,47 @@
   border: 1px solid #ddd;
   padding: 6px;
   width: 100%;
-  max-width: 800px;
+  max-width: 760px;
+  flex: 1 1 520px;
   display: flex;
   align-items: center;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-top: -1rem;
+  margin-bottom: 1rem;
+}
+
+.mobileSidebarToggle {
+  border: 1px solid #e0d6d1;
+  background: #fff;
+  color: #8e2446;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mobileSidebarToggle:hover {
+  border-color: #c7b6bf;
+  color: #721935;
+}
+
+@media (max-width: 768px) {
+  .filterSection {
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .catalogSearchbar {
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .mobileSidebarToggle {
+    align-self: center;
+  }
 }
 
 .catalogSearchbar input {
@@ -133,6 +203,7 @@
   font-weight: 600;
   padding: clamp(8px, 2vw, 16px);
   margin: 0;
+  margin-top: 1rem;
 }
 
 .catalogHeader ul {
