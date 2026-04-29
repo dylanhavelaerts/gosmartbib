@@ -202,7 +202,7 @@ export default function LendingPage() {
           <div className="userProfileCard">
             {selectedUser ? (
               <>
-                {selectedUser.photoUrl ? (
+                {/* {selectedUser.photoUrl ? (
                   <img
                     src={selectedUser.photoUrl}
                     alt="Profile"
@@ -211,6 +211,7 @@ export default function LendingPage() {
                 ) : (
                   <div className="userPhotoPlaceholder">👤</div>
                 )}
+                */}
                 <div className="userInfo">
                   <p className="userName">{selectedUser.name}</p>
                   <p>
@@ -258,6 +259,7 @@ export default function LendingPage() {
             ) : (
               userSearchResults.map((user, idx) => (
                 <div key={idx} className="listItem">
+                  {/*
                   {user.photoUrl ? (
                     <img
                       src={user.photoUrl}
@@ -267,6 +269,7 @@ export default function LendingPage() {
                   ) : (
                     <div className="userPhotoSmall">👤</div>
                   )}
+                  */}
                   <div className="itemDetails">
                     <strong>{user.name}</strong>
                     <span>{user.classGroup}</span>

@@ -204,11 +204,12 @@ export default function ReturnsPage() {
           <div className="userProfileCard">
             {selectedUser ? (
               <>
-                {selectedUser.photoUrl ? (
+                {/* {selectedUser.photoUrl ? (
                   <img src={selectedUser.photoUrl} alt="Profile" className="userPhotoPlaceholder cover" />
                 ) : (
                   <div className="userPhotoPlaceholder">👤</div>
                 )}
+                */}
                 <div className="userInfo">
                   <p className="userName">{selectedUser.name}</p>
                   <p><strong>ID:</strong> {selectedUser.smartschoolUserId}</p>
@@ -241,11 +242,13 @@ export default function ReturnsPage() {
             ) : (
               userSearchResults.map((user, idx) => (
                 <div key={idx} className="listItem">
+                  {/*
                   {user.photoUrl ? (
                     <img src={user.photoUrl} alt="Profile" className="userPhotoSmall cover" />
                   ) : (
                     <div className="userPhotoSmall">👤</div>
                   )}
+                  */}
                   <div className="itemDetails">
                     <strong>{user.name}</strong>
                     <span>{user.classGroup}</span>
@@ -327,7 +330,8 @@ export default function ReturnsPage() {
               </h2>
             </div>
 
-            <div className="resultsFrame">
+            {/* Hier is de class 'extraMargin' aan toegevoegd voor uitlijning */}
+            <div className="resultsFrame extraMargin">
               {returnCart.length === 0 ? (
                 <p className="placeholderText centered">Geen boeken geselecteerd voor inlevering.</p>
               ) : (
@@ -356,7 +360,7 @@ export default function ReturnsPage() {
               Geselecteerde boeken inleveren
             </button>
             <button className="secondaryBtn" onClick={handleCancel} disabled={returnCart.length === 0 && !selectedUser && bookQuery === "" && userQuery === ""}>
-              Annuleren / Schoonmaken
+              Uitlenen annuleren
             </button>
           </div>
         </div>

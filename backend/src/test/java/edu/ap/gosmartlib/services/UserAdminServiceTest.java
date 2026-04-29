@@ -11,6 +11,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -36,36 +40,37 @@ class UserAdminServiceTest {
         UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
         UserEntity student = buildUser(4L, "student-uid", UserRoles.STUDENT, 100L, "GO! School", true);
         UserEntity teacher = buildUser(5L, "teacher-uid", UserRoles.TEACHER, 100L, "GO! School", true);
-        UserEntity wrongTeacher = buildUser(2L, "teacher-uid2", UserRoles.TEACHER, 1L, "FOUTE SCHOOL", true);
-        UserEntity wrongStudent = buildUser(3L, "student-uid2", UserRoles.STUDENT, 1L, "FOUTE SCHOOL", true);
-        UserEntity inactiveStudent = buildUser(6L, "student-uid3", UserRoles.STUDENT, 100L, "GO! School", false);
+        
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<UserEntity> userPage = new PageImpl<>(List.of(student, teacher));
 
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
-        when(userRepository.findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(100L))
-                .thenReturn(List.of(student, teacher));
+        // Aangepast naar findBySchoolIdAndName zoals gedefinieerd in de Service
+        when(userRepository.findBySchoolIdAndName(100L, null, pageable)).thenReturn(userPage);
 
-        List<AdminUserDTO> result = userAdminService.listUsersForAdmin("admin-uid");
+        Page<AdminUserDTO> result = userAdminService.listUsersForAdmin("admin-uid", null, pageable);
 
-        assertEquals(2, result.size());
-        assertEquals("student-uid", result.get(0).smartschoolUid());
-        assertEquals(UserRoles.STUDENT, result.get(0).role());
-        assertEquals("GO! School", result.get(0).school().name());
-        assertEquals(1, result.get(0).classes().size());
+        assertEquals(2, result.getContent().size());
+        assertEquals("student-uid", result.getContent().get(0).smartschoolUid());
+        assertEquals(UserRoles.STUDENT, result.getContent().get(0).role());
+        assertEquals("GO! School", result.getContent().get(0).school().name());
+        assertEquals(1, result.getContent().get(0).classes().size());
 
-        assertEquals("teacher-uid", result.get(1).smartschoolUid());
-        assertEquals(UserRoles.TEACHER, result.get(1).role());
+        assertEquals("teacher-uid", result.getContent().get(1).smartschoolUid());
+        assertEquals(UserRoles.TEACHER, result.getContent().get(1).role());
 
         verify(userRepository).findDetailedBySmartschoolUid("admin-uid");
-        verify(userRepository).findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(100L);
+        verify(userRepository).findBySchoolIdAndName(100L, null, pageable);
         verifyNoMoreInteractions(userRepository);
     }
 
     @Test
     void givenActorDoesNotExist_whenListUsersForAdmin_thenThrowsNotFound() {
         when(userRepository.findDetailedBySmartschoolUid("missing-admin")).thenReturn(Optional.empty());
+        Pageable pageable = PageRequest.of(0, 10);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.listUsersForAdmin("missing-admin"));
+                () -> userAdminService.listUsersForAdmin("missing-admin", null, pageable));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Ingelogde gebruiker niet gevonden", exception.getReason());
@@ -77,9 +82,10 @@ class UserAdminServiceTest {
     void givenActorIsNotBibbeheerder_whenListUsersForAdmin_thenThrowsForbidden() {
         UserEntity actor = buildUser(1L, "teacher-uid", UserRoles.TEACHER, 100L, "GO! School", true);
         when(userRepository.findDetailedBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(actor));
+        Pageable pageable = PageRequest.of(0, 10);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.listUsersForAdmin("teacher-uid"));
+                () -> userAdminService.listUsersForAdmin("teacher-uid", null, pageable));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Geen toegang", exception.getReason());
