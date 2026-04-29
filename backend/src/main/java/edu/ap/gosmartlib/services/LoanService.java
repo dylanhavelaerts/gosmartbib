@@ -10,11 +10,14 @@ import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.LoanRepository;
+import edu.ap.gosmartlib.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.entities.BookInventoryEntity;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,36 +30,60 @@ public class LoanService {
     private final LoanRepository loanRepository;
     private final LoanHistoryRepository loanHistoryRepository;
     private final BookRepository bookRepository;
+    private final UserRepository userRepository;
     private static final Logger logger = LoggerFactory.getLogger(LoanService.class);
 
     // --- BOEKEN UITLENEN ---
     public void createLoans(List<LoanRequestDTO> loanRequests) {
         for (LoanRequestDTO request : loanRequests) {
             
-            // AANGEPAST: Geef alleen request.bookId() (Long) door, geen String!
             BookEntity book = bookRepository.findById(request.bookId())
                     .orElseThrow(() -> new BookNotFoundException(request.bookId()));
 
-            if (book.getAvailableCopies() < request.quantity()) {
-                throw new IllegalArgumentException("Niet genoeg exemplaren beschikbaar voor boek: " + book.getTitle());
+            // 1. Zoek de gebruiker op in de databank (Crasht hier als de lener lokaal niet bestaat)
+            UserEntity borrower = userRepository.findBySmartschoolUid(request.user().smartschoolUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("FOUT 1: Lener (" + request.user().smartschoolUserId() + ") is niet gevonden in de lokale databank."));
+
+            // Check of de lener wel een school heeft (Voorkomt een NullPointerException)
+            if (borrower.getSchool() == null) {
+                throw new IllegalArgumentException("FOUT 2: De lener met ID " + request.user().smartschoolUserId() + " heeft geen school gekoppeld in de database.");
+            }
+            Long schoolId = borrower.getSchool().getId();
+
+            // 2. Zoek de specifieke voorraad van het boek voor deze school
+            if (book.getInventories() == null) {
+                throw new IllegalArgumentException("FOUT 3: Het boek '" + book.getTitle() + "' heeft nog geen enkele voorraad (inventories) in de database.");
             }
 
-            // 1. Update de voorraad in de boeken tabel
+            BookInventoryEntity inventory = book.getInventories().stream()
+                    .filter(inv -> inv.getSchool() != null && inv.getSchool().getId().equals(schoolId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "FOUT 4: Boek '" + book.getTitle() + "' heeft geen voorraad toegewezen gekregen voor School ID: " + schoolId));
+
+            // 3. Controleer of er genoeg voorraad is in de specifieke school
+            if (inventory.getAvailableCopies() < request.quantity()) {
+                throw new IllegalArgumentException(
+                        "Niet genoeg exemplaren beschikbaar voor boek: " + book.getTitle());
+            }
+
+            // 4. Update de voorraad (zowel de school-voorraad als de totale voorraad)
+            inventory.setAvailableCopies(inventory.getAvailableCopies() - request.quantity());
             book.setAvailableCopies(book.getAvailableCopies() - request.quantity());
             bookRepository.save(book);
 
-            // 2. Zet in de uitleen tabel per ISBN
+            // 5. Zet in de uitleen tabel
             LoanEntity loan = new LoanEntity();
             loan.setSmartschoolUserId(request.user().smartschoolUserId());
             loan.setIsbn(book.getIsbn());
             loan.setQuantity(request.quantity());
             loan.setLoanDate(LocalDate.now());
-            loan.setDueDate(LocalDate.now().plusDays(21)); // Standaard 3 weken de tijd
+            loan.setDueDate(LocalDate.now().plusDays(21)); // Standaard 3 weken
 
             loanRepository.save(loan);
             
-            logger.info("UITLEEN GELOGD: {} exemplaren van ISBN {} uitgeleend aan gebruiker {}", 
-                        request.quantity(), book.getIsbn(), request.user().smartschoolUserId());
+            logger.info("UITLEEN GELOGD: {} exemplaren van ISBN {} uitgeleend aan gebruiker {} (School ID: {})", 
+                        request.quantity(), book.getIsbn(), request.user().smartschoolUserId(), schoolId);
         }
     }
 
@@ -73,25 +100,37 @@ public class LoanService {
         LoanHistoryEntity history = new LoanHistoryEntity();
         history.setSmartschoolUserId(loan.getSmartschoolUserId());
         history.setIsbn(loan.getIsbn());
-        history.setQuantity(returnQuantity); // Het aantal dat daadwerkelijk is teruggebracht
+        history.setQuantity(returnQuantity); 
         history.setLoanDate(loan.getLoanDate());
         history.setReturnDate(LocalDate.now());
         loanHistoryRepository.save(history);
 
-        // 2. Verhoog de voorraad in de boeken tabel
+        // 2. Verhoog de voorraad in de boeken tabel én de school-inventory
         bookRepository.findByIsbn(loan.getIsbn()).ifPresent(book -> {
+            
+            // Haal de lener op om de juiste school-voorraad te verhogen (Bugfix voor teamgenoot)
+            userRepository.findBySmartschoolUid(loan.getSmartschoolUserId()).ifPresent(borrower -> {
+                Long schoolId = borrower.getSchool().getId();
+                
+                book.getInventories().stream()
+                        .filter(inv -> inv.getSchool().getId().equals(schoolId))
+                        .findFirst()
+                        .ifPresent(inventory -> {
+                            inventory.setAvailableCopies(inventory.getAvailableCopies() + returnQuantity);
+                        });
+            });
+
+            // Verhoog de algemene book voorraad
             book.setAvailableCopies(book.getAvailableCopies() + returnQuantity);
             bookRepository.save(book);
         });
 
         // 3. Update of verwijder de actieve uitleen
         if (returnQuantity == loan.getQuantity()) {
-            // Alle uitgeleende exemplaren zijn terug -> Verwijder de record
             loanRepository.delete(loan);
             logger.info("RETOUR GELOGD: Alle {} exemplaren van ISBN {} teruggebracht door {}. Uitleen verwijderd.", 
                         returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId());
         } else {
-            // Minder teruggebracht dan uitgeleend -> Update de quantity
             loan.setQuantity(loan.getQuantity() - returnQuantity);
             loanRepository.save(loan);
             logger.info("DEEL-RETOUR GELOGD: {} exemplaren van ISBN {} teruggebracht door {}. Nog {} uitgeleend.", 
