@@ -76,7 +76,7 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className={isActive("/reading-lists") ? "active" : ""}
               >
-                Mijn leeslijst
+                Mijn leeslijsten
               </button>
             </Link>
             <Link href="/lending">

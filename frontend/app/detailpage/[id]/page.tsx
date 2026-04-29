@@ -96,7 +96,7 @@ export default function DetailPage({
   return (
     <main className="detailPage">
       <Link href="/catalog" className="backLink">
-        Terug naar catalogus
+        ← Terug naar catalogus
       </Link>
 
       <div className="detailContainer">
