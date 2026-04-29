@@ -37,6 +37,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("Catalogus");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [labelOpen, setLabelOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -128,13 +129,15 @@ export default function Home() {
 
   // -- Helper methods --------------------------------------------------------------------------------------------------------------
 
+  const resetPage = () => setCurrentPage(1);
+
   const toggleCategory = (cat: string) => {
     setCategories((prev) => {
       const next = new Set(prev);
       next.has(cat) ? next.delete(cat) : next.add(cat);
       return next;
     });
-    setCurrentPage(1);
+    resetPage();
   };
 
   const toggleLabel = (label: string) => {
@@ -143,12 +146,12 @@ export default function Home() {
       next.has(label) ? next.delete(label) : next.add(label);
       return next;
     });
-    setCurrentPage(1);
+    resetPage();
   };
 
   const handleQueryChange = (value: string) => {
     setQuery(value);
-    setCurrentPage(1);
+    resetPage();
     if (value) {
       sessionStorage.setItem("catalogSearch", value);
     } else {
@@ -161,6 +164,8 @@ export default function Home() {
   return (
     <main className="catalogPage">
       <section className="catalogHeader">
+        <h1>Catalogus</h1>
+
         {/* Search bar */}
         <div className="filterSection">
           <div className="catalogSearchbar">
@@ -174,9 +179,15 @@ export default function Home() {
               🔎︎
             </button>
           </div>
+          <button
+            type="button"
+            className="mobileSidebarToggle"
+            aria-label="Toon filters"
+            onClick={() => setSidebarOpen(true)}
+          >
+            ☰ Filters
+          </button>
         </div>
-
-        <h1>Catalogus</h1>
 
         {/* Tab bar */}
         <ul>
@@ -209,167 +220,199 @@ export default function Home() {
       </section>
 
       <section className="pageLayout">
+        {sidebarOpen && (
+          <div
+            className="sidebarOverlay"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
         {/* Filter bar */}
-        <aside className="filterSidebar">
+        <aside className={`filterSidebar ${sidebarOpen ? "open" : ""}`}>
           <div className="sidebarHeader">
             <span>Filters</span>
+            <button
+              type="button"
+              className="sidebarCloseButton"
+              aria-label="Sluit filters"
+              onClick={() => setSidebarOpen(false)}
+            >
+              ✕
+            </button>
           </div>
 
           <div className="filterBar">
-            <select
-              value={language}
-              onChange={(e) => {
-                setLanguage(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filterSelect"
-            >
-              <option value="">Alle talen</option>
-              <option value="en">EN</option>
-            </select>
-
-            <div className="filterDropdown">
-              <button
-                className="filterDropdownToggle"
-                onClick={() => {
-                  setCategoryOpen(!categoryOpen);
-                  if (labelOpen) {
-                    setLabelOpen(false);
-                  }
+            <div className="filterGroup">
+              <span className="filterGroupLabel">Taal</span>
+              <select
+                value={language}
+                onChange={(e) => {
+                  setLanguage(e.target.value);
+                  resetPage();
                 }}
+                className="filterSelect"
               >
-                Genre {categories.size > 0 ? `(${categories.size})` : ""}
-              </button>
-              {categoryOpen && (
-                <div className="filterDropdownPanel">
-                  {BOOK_CATEGORIES.map((cat) => (
-                    <label key={cat} className="filterCheckboxLabel">
-                      <input
-                        type="checkbox"
-                        checked={categories.has(cat)}
-                        onChange={() => toggleCategory(cat)}
-                      />
-                      {cat}
-                    </label>
-                  ))}
-                </div>
-              )}
+                <option value="">Alle talen</option>
+                <option value="en">EN</option>
+              </select>
             </div>
 
-            <div className="filterDropdown">
-              <button
-                className="filterDropdownToggle"
-                onClick={() => setLabelOpen(!labelOpen)}
-              >
-                Label {labels.size > 0 ? `(${labels.size})` : ""}
-              </button>
-              {labelOpen && (
-                <div className="filterDropdownPanel">
-                  {BOOK_LABELS.map((label) => (
-                    <label key={label} className="filterCheckboxLabel">
-                      <input
-                        type="checkbox"
-                        checked={labels.has(label)}
-                        onChange={() => toggleLabel(label)}
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <input
-              type="number"
-              placeholder="Min pagina's"
-              value={minPages}
-              onChange={(e) => {
-                setMinPages(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filterInput"
-            />
-            <input
-              type="number"
-              placeholder="Max pagina's"
-              value={maxPages}
-              onChange={(e) => {
-                setMaxPages(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filterInput"
-            />
-
-            <input
-              type="number"
-              placeholder="Min jaar"
-              value={minYear}
-              onChange={(e) => {
-                setMinYear(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filterInput"
-            />
-            <input
-              type="number"
-              placeholder="Max jaar"
-              value={maxYear}
-              onChange={(e) => {
-                setMaxYear(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="filterInput"
-            />
-            <div className="filterRatingGroup">
-              <p className="filterRatingTitle">Minimum beoordeling</p>
-              <div className="filterRatingRow">
-                <StarRating
-                  value={minRating ?? 0}
-                  onChange={(v) => {
-                    setMinRating(v);
-                    setCurrentPage(1);
-                  }}
-                />
+            <div className="filterGroup">
+              <span className="filterGroupLabel">Genre</span>
+              <div className="filterDropdown">
                 <button
-                  type="button"
-                  className="filterRatingClear"
+                  className="filterDropdownToggle"
                   onClick={() => {
-                    setMinRating(null);
-                    setCurrentPage(1);
+                    setCategoryOpen(!categoryOpen);
+                    if (labelOpen) {
+                      setLabelOpen(false);
+                    }
                   }}
                 >
-                  Reset
+                  {categories.size > 0
+                    ? `${categories.size} geselecteerd`
+                    : "Alle genres"}
                 </button>
+                {categoryOpen && (
+                  <div className="filterDropdownPanel">
+                    {BOOK_CATEGORIES.map((cat) => (
+                      <label key={cat} className="filterCheckboxLabel">
+                        <input
+                          type="checkbox"
+                          checked={categories.has(cat)}
+                          onChange={() => toggleCategory(cat)}
+                        />
+                        {cat}
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
-              <span className="filterRatingValue">
-                {minRating !== null ? `${minRating}/5` : "Geen minimum"}
-              </span>
             </div>
 
-            <div className="filterRatingGroup">
-              <p className="filterRatingTitle">Maximum beoordeling</p>
-              <div className="filterRatingRow">
-                <StarRating
-                  value={maxRating ?? 0}
-                  onChange={(v) => {
-                    setMaxRating(v);
-                    setCurrentPage(1);
-                  }}
-                />
+            <div className="filterGroup">
+              <span className="filterGroupLabel">Label</span>
+              <div className="filterDropdown">
                 <button
-                  type="button"
-                  className="filterRatingClear"
-                  onClick={() => {
-                    setMaxRating(null);
-                    setCurrentPage(1);
-                  }}
+                  className="filterDropdownToggle"
+                  onClick={() => setLabelOpen(!labelOpen)}
                 >
-                  Reset
+                  {labels.size > 0
+                    ? `${labels.size} geselecteerd`
+                    : "Alle labels"}
                 </button>
+                {labelOpen && (
+                  <div className="filterDropdownPanel">
+                    {BOOK_LABELS.map((label) => (
+                      <label key={label} className="filterCheckboxLabel">
+                        <input
+                          type="checkbox"
+                          checked={labels.has(label)}
+                          onChange={() => toggleLabel(label)}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
-              <span className="filterRatingValue">
-                {maxRating !== null ? `${maxRating}/5` : "Geen maximum"}
-              </span>
+            </div>
+
+            <div className="filterGroup">
+              <span className="filterGroupLabel">Pagina&apos;s</span>
+              <div className="filterInputRow">
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={minPages}
+                  onChange={(e) => {
+                    setMinPages(e.target.value);
+                    resetPage();
+                  }}
+                  className="filterInput"
+                />
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={maxPages}
+                  onChange={(e) => {
+                    setMaxPages(e.target.value);
+                    resetPage();
+                  }}
+                  className="filterInput"
+                />
+              </div>
+            </div>
+
+            <div className="filterGroup">
+              <span className="filterGroupLabel">Publicatiejaar</span>
+              <div className="filterInputRow">
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={minYear}
+                  onChange={(e) => {
+                    setMinYear(e.target.value);
+                    resetPage();
+                  }}
+                  className="filterInput"
+                />
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={maxYear}
+                  onChange={(e) => {
+                    setMaxYear(e.target.value);
+                    resetPage();
+                  }}
+                  className="filterInput"
+                />
+              </div>
+            </div>
+
+            <div className="filterGroup">
+              <span className="filterGroupLabel">Beoordeling</span>
+              <div className="filterRatingGroup">
+                <div className="filterRatingRow">
+                  <span className="filterRatingLabel">Min</span>
+                  <StarRating
+                    value={minRating ?? 0}
+                    onChange={(v) => {
+                      setMinRating(v);
+                      resetPage();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="filterRatingClear"
+                    onClick={() => {
+                      setMinRating(null);
+                      resetPage();
+                    }}
+                  >
+                    Reset
+                  </button>
+                </div>
+                <div className="filterRatingRow">
+                  <span className="filterRatingLabel">Max</span>
+                  <StarRating
+                    value={maxRating ?? 0}
+                    onChange={(v) => {
+                      setMaxRating(v);
+                      resetPage();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="filterRatingClear"
+                    onClick={() => {
+                      setMaxRating(null);
+                      resetPage();
+                    }}
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
@@ -384,7 +427,7 @@ export default function Home() {
                 value={pageSize}
                 onChange={(e) => {
                   setPageSize(Number(e.target.value));
-                  setCurrentPage(1);
+                  resetPage();
                 }}
                 className="pageSizeSelect"
               >

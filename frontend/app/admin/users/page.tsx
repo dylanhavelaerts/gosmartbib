@@ -4,6 +4,7 @@ import type { MeResponse, AdminUser, UserRole } from "@/app/interfaces/user";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import "./userAdmin.css";
+import Pagination from "@/app/catalog/pagination";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -49,6 +50,13 @@ export default function AdminUserPage() {
   );
   const [savingUserId, setSavingUserId] = useState<number | null>(null);
   const [succes, setSucces] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Paging
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -78,9 +86,19 @@ export default function AdminUserPage() {
           return;
         }
 
-        const userResponse = await fetch(`${API_URL}/admin/users`, {
-          credentials: "include",
-        });
+        const params = new URLSearchParams();
+        params.append("page", String(currentPage - 1));
+        params.append("size", String(pageSize));
+        if (searchQuery) {
+          params.append("name", searchQuery);
+        }
+
+        const userResponse = await fetch(
+          `${API_URL}/admin/users?${params.toString()}`,
+          {
+            credentials: "include",
+          },
+        );
 
         if (!userResponse.ok) {
           setError("Kon gebruikers niet ophalen");
@@ -88,20 +106,22 @@ export default function AdminUserPage() {
           return;
         }
 
-        const userData: AdminUser[] = await userResponse.json();
-        setUsers(userData);
+        const userData = await userResponse.json();
+        setUsers(userData.content);
+        setTotalPages(userData.totalPages);
+        setTotalElements(userData.totalElements);
 
         const nextSelectedRoles: Record<number, UserRole> = {};
-        userData.forEach((user) => {
+        userData.content.forEach((user: AdminUser) => {
           nextSelectedRoles[user.id] = user.role;
         });
         setSelectedRoles(nextSelectedRoles);
 
         const uniqueUids = Array.from(
           new Set(
-            userData
-              .map((user) => user.smartschoolUid?.trim())
-              .filter((uid): uid is string => !!uid && uid !== ""),
+            userData.content
+              .map((user: AdminUser) => user.smartschoolUid?.trim())
+              .filter((uid?: string): uid is string => !!uid && uid !== ""),
           ),
         );
 
@@ -135,8 +155,12 @@ export default function AdminUserPage() {
       }
     };
 
-    load();
-  }, []);
+    const timer = setTimeout(() => {
+      load();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [currentPage, pageSize, searchQuery]);
 
   const handleSave = async (userId: number) => {
     if (!API_URL) return;
@@ -195,17 +219,51 @@ export default function AdminUserPage() {
 
   return (
     <main>
-      {error && <p>{error}</p>}
-      {succes && <p>{succes}</p>}
+      {error && <p className="adminMessage adminMessageError">{error}</p>}
+      {succes && <p className="adminMessage adminMessageSuccess">{succes}</p>}
 
       {!error && me?.role === "ADMIN" && (
-        <div>
+        <div id="userMain">
           <div className="adminPageHeader">
             <h1>Gebruikersbeheer {me?.school?.name}</h1>
 
             <Link href="/admin/school-integration" className="adminPrimaryLink">
               <button className="adminPrimaryButton">Schoolintegratie</button>
             </Link>
+          </div>
+
+          <div className="adminSearchbar">
+            <input
+              type="text"
+              placeholder="Zoek op naam"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <button id="searchButton" aria-label="Zoeken">
+              🔎︎
+            </button>
+          </div>
+
+          <div className="bookListToolbar">
+            <span className="resultCount">{totalElements} gebruikers</span>
+            <div className="pageSizeSelector">
+              <span className="pageSizeLabel">Per pagina:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="pageSizeSelect"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
           </div>
 
           <table className="adminTable">
@@ -284,6 +342,11 @@ export default function AdminUserPage() {
               })}
             </tbody>
           </table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
     </main>

@@ -4,7 +4,12 @@ import { useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import "./mockRoleSwitcher.css";
 
-const roles = ["Leerling", "Leerkracht", "Bibliotheekbeheerder", "admin"];
+const roles: { label: string; value: string }[] = [
+  { label: "Leerling", value: "leerling" },
+  { label: "Leerkracht", value: "leerkracht" },
+  { label: "Bibliotheekbeheerder", value: "bibliotheekbeheerder" },
+  { label: "Administrator", value: "admin" },
+];
 
 export default function MockRoleSwitcher() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -17,7 +22,7 @@ export default function MockRoleSwitcher() {
   if (!isDevEnvironment || !user) return null;
 
   const switchRole = async (role: string) => {
-    await fetch(`${apiUrl}/auth/mock-role/${role.toLowerCase()}`, {
+    await fetch(`${apiUrl}/auth/mock-role/${role}`, {
       method: "POST",
       credentials: "include",
     });
@@ -34,11 +39,11 @@ export default function MockRoleSwitcher() {
         <div className="mockRoleDropdown">
           {roles.map((role) => (
             <div
-              key={role}
+              key={role.value}
               className="mockRoleOption"
-              onClick={() => switchRole(role)}
+              onClick={() => switchRole(role.value)}
             >
-              {role}
+              {role.label}
             </div>
           ))}
         </div>

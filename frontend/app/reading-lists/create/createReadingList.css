@@ -7,13 +7,14 @@
   flex-direction: column;
   width: 100%; /* Fixeert de basisbreedte */
   box-sizing: border-box;
+  margin-top: 4.5rem;
 }
 
 .pageTitle {
   font-size: clamp(20px, 1.5vw, 24px);
-  color: #c0392b; 
-  font-weight: 500; 
-  margin: 0 0 1.5rem 0; 
+  color: #6e1a34;
+  font-weight: 500;
+  margin: 0 0 1.5rem 0;
   padding: 0;
   line-height: 1;
 }
@@ -25,7 +26,7 @@
   border: 1.2px solid #8a1d40;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
   padding: 1.5rem;
-  margin-bottom: 1.5rem; 
+  margin-bottom: 1.5rem;
   width: 100%;
   box-sizing: border-box;
   display: flex;
@@ -42,7 +43,7 @@
 @media (min-width: 600px) {
   .info-row-top {
     flex-direction: row;
-    align-items: flex-end; 
+    align-items: flex-end;
   }
 
   .info-row-top .inputGroup:first-child {
@@ -66,18 +67,18 @@
   gap: 2rem;
   width: 100%;
   flex: 1;
-  padding-bottom: 0; 
+  padding-bottom: 0;
 }
 
 @media (min-width: 900px) {
   .manage-wrapper {
-    flex-direction: row; 
+    flex-direction: row;
   }
 }
 
 /* --- GEMEENSCHAPPELIJKE EILAND STYLING --- */
 .eiland-common {
-  height: calc(75vh - 4rem); 
+  height: calc(75vh - 4rem);
   box-sizing: border-box;
   background-color: white;
   border-radius: 7px;
@@ -95,7 +96,7 @@
 
 @media (min-width: 900px) {
   .book-selector-island {
-    width: 450px; 
+    width: 450px;
     flex-shrink: 0;
   }
 }
@@ -138,7 +139,7 @@
   border: 1px solid #eee;
   background-color: #fff;
   display: flex;
-  align-items: center; 
+  align-items: center;
   gap: 1rem;
   transition: all 0.2s ease;
 }
@@ -230,7 +231,7 @@
   min-width: 0; /* Voorkomt flex-blowout naar buiten toe */
   display: flex;
   flex-direction: column;
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 .form-details-content {
@@ -244,7 +245,7 @@
   padding: 1.5rem clamp(1.5rem, 3vw, 2.5rem);
   border-top: 1px solid #ddd;
   background-color: #fdfdfd;
-  flex-shrink: 0; 
+  flex-shrink: 0;
 }
 
 .inputGroup {
@@ -261,7 +262,8 @@
   letter-spacing: 0.04em;
 }
 
-.textInput, .textAreaInput {
+.textInput,
+.textAreaInput {
   padding: 0.8rem;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -438,4 +440,86 @@
 .submit-full-width {
   width: 100%;
   align-self: center;
+}
+
+/* ── Header ── */
+.crl-subheader {
+  margin-bottom: 1.6rem;
+}
+
+.crl-back-link {
+  background: none;
+  border: none;
+  color: #8e2446;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: opacity 0.15s;
+}
+
+.crl-back-link:hover {
+  opacity: 0.7;
+}
+
+.crl-subheader .pageTitle {
+  margin: 0;
+}
+
+/* ── Form Actions ── */
+.crl-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.crl-btn-save,
+.crl-btn-cancel {
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.crl-btn-save {
+  background-color: #8e2446;
+  color: white;
+  border: 1px solid #8e2446;
+}
+
+.crl-btn-save:hover {
+  background-color: #7a1f3d;
+}
+
+.crl-btn-cancel {
+  background-color: transparent;
+  color: #8e2446;
+  border: 1px solid #8e2446;
+}
+
+.crl-btn-cancel:hover {
+  background-color: #f0e9e9;
+}
+
+.crl-btn-save:disabled,
+.crl-btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Messages ── */
+.crl-message {
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-weight: bold;
 }

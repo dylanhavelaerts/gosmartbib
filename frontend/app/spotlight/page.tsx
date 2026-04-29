@@ -68,7 +68,7 @@ export default function Home() {
   };
 
   return (
-    <main>
+    <main id="spotlightPage">
       <h1>In de kijker</h1>
       <ul>
         {selectedIds.size > 0 && (

@@ -2,8 +2,11 @@ package edu.ap.gosmartlib.repositories;
 
 import edu.ap.gosmartlib.entities.UserEntity;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -24,6 +27,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      */
     @EntityGraph(attributePaths = { "school", "classes" })
     List<UserEntity> findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(Long schoolId);
+
+    @Query("SELECT u FROM UserEntity u WHERE u.school.id = :schoolId AND u.active = true AND (:name IS NULL OR LOWER(u.smartschoolUid) LIKE LOWER(CONCAT('%', :name, '%')))")
+    Page<UserEntity> findBySchoolIdAndName(Long schoolId, String name, Pageable pageable);
 
     /**
      * Vindt één specifieke user van een zekere school (scope zo klein mogelijk

@@ -1,0 +1,108 @@
+.main-header {
+  height: 4.5rem;
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  letter-spacing: 0.15em;
+
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.goLogo {
+  height: 2.8rem;
+  width: auto;
+  display: block;
+}
+
+.header-inner {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav-links button {
+  background: none;
+  border: none;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.2s;
+  letter-spacing: 0.05rem;
+  white-space: nowrap;
+}
+
+.nav-links button:hover {
+  color: #8e1f42;
+}
+
+.nav-links .active {
+  color: #8e1f42;
+}
+
+.burger-menu {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+  .burger-menu {
+    display: block;
+    overflow: hidden;
+  }
+
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 4.5rem;
+    left: 0;
+    width: 100%;
+    background: white;
+    padding: 1rem 0 1rem 0;
+    gap: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-links a {
+    width: 100%;
+    display: block;
+    text-decoration: none;
+  }
+
+  .nav-links button {
+    letter-spacing: 0.05rem;
+    font-size: 0.95rem;
+    padding: 0.3rem 0;
+    width: 100%;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    margin: 0; /* Ensures no browser-default margins are adding space */
+    color: #333;
+  }
+}
