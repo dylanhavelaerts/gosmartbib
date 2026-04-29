@@ -127,7 +127,7 @@ export default function ReadingListsPage() {
       <div className="rl-header">
         <div className="rl-header-text">
           <h1>Leeslijsten</h1>
-          <p>Je eigen persoonlijke lijsten en klaslijsten in één overzicht.</p>
+          <p>Je eigen persoonlijke lijsten en klaslijsten in één overzicht</p>
         </div>
 
         <div className="rl-header-actions">
@@ -143,20 +143,21 @@ export default function ReadingListsPage() {
             className="rl-btn-primary"
             onClick={() => router.push("/reading-lists/personal")}
           >
-            Mijn persoonlijke lijst
+            Mijn persoonlijke lijsten
           </button>
         </div>
       </div>
 
       <div className="rl-toolbar">
-        <div className="rl-search-wrap">
+        <div className="rl-searchbar">
           <input
             type="text"
             className="rl-search"
-            placeholder="Zoeken op titel, beschrijving of maker..."
+            placeholder="Zoeken op titel, beschrijving of leeslijst maker..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <button className="rl-search-btn">🔎︎</button>
         </div>
       </div>
 
@@ -201,37 +202,50 @@ export default function ReadingListsPage() {
                 key={list.id}
                 className={`rl-card ${isClass ? "rl-card--class" : "rl-card--personal"}`}
               >
-                <div className="rl-card-badge">
-                  <span
-                    className={`badge ${isClass ? "badge--class" : "badge--personal"}`}
-                  >
-                    {isClass ? "Klas lijst" : "Eigen lijst"}
-                  </span>
-                </div>
-
-                <h2 className="rl-card-title">{list.title}</h2>
-                {list.taskDescription && (
-                  <p className="rl-card-desc">{list.taskDescription}</p>
-                )}
-
-                <div className="rl-card-meta">
-                  <span className="rl-meta-item">
-                    {bookCount} {bookCount === 1 ? "boek" : "boeken"}
-                  </span>
-                  {list.creatorName && (
-                    <span className="rl-meta-item">
-                      Maker: {list.creatorName}
+                <div
+                  className="rl-card-main"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => router.push(`/reading-lists/${list.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      router.push(`/reading-lists/${list.id}`);
+                    }
+                  }}
+                >
+                  <div className="rl-card-badge">
+                    <span
+                      className={`badge ${isClass ? "badge--class" : "badge--personal"}`}
+                    >
+                      {isClass ? "Klas lijst" : "Eigen lijst"}
                     </span>
+                  </div>
+
+                  <h2 className="rl-card-title">{list.title}</h2>
+                  {list.taskDescription && (
+                    <p className="rl-card-desc">{list.taskDescription}</p>
+                  )}
+
+                  <div className="rl-card-meta">
+                    <span className="rl-meta-item">
+                      {bookCount} {bookCount === 1 ? "boek" : "boeken"}
+                    </span>
+                    {list.creatorName && (
+                      <span className="rl-meta-item">
+                        Maker: {list.creatorName}
+                      </span>
+                    )}
+                  </div>
+
+                  {deadline && (
+                    <div
+                      className={`rl-deadline rl-deadline--${deadline.urgency}`}
+                    >
+                      {deadline.label}
+                    </div>
                   )}
                 </div>
-
-                {deadline && (
-                  <div
-                    className={`rl-deadline rl-deadline--${deadline.urgency}`}
-                  >
-                    {deadline.label}
-                  </div>
-                )}
 
                 <div className="rl-card-actions">
                   <button

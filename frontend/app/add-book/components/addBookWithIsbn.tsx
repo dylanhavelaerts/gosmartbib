@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Book } from "../../interfaces/Book";
-import styles from "./addBookForm.module.css";
+import "./addBookForm.css";
 
 export default function AddBookWithIsbn() {
   const [isbn, setIsbn] = useState("");
@@ -88,27 +88,27 @@ export default function AddBookWithIsbn() {
     setImgSrc(previewBook?.thumbnail || "/No-Image-Available-Placeholder.png");
   }, [previewBook]);
 
-  const searchButtonClass = `${styles.submitButton} ${loading ? styles.submitButtonLoading : ""}`.trim();
-  const messageClass = `${styles.message} ${
+  const searchButtonClass = `submitButton ${loading ? "submitButtonLoading" : ""}`.trim();
+  const messageClass = `message ${
     message.includes("succesvol")
-      ? styles.messageSuccess
+      ? "messageSuccess"
       : message.includes("gevonden!")
-        ? styles.messageInfo
-        : styles.messageError
+        ? "messageInfo"
+        : "messageError"
   }`.trim();
 
   return (
     <>
-      <h1 className={styles.title}>Nieuw boek toevoegen</h1>
+      <h1 className="title">Nieuw boek toevoegen</h1>
 
-      <p className={styles.description}>
+      <p className="description">
         Scan of typ het ISBN-nummer in. We halen eerst een voorbeeld op voordat
         we het opslaan.
       </p>
 
-      <form onSubmit={handleSearchBook} className={styles.form}>
-        <div className={styles.fieldGroup}>
-          <label htmlFor="isbn" className={styles.label}>
+      <form onSubmit={handleSearchBook} className="form">
+        <div className="fieldGroup">
+          <label htmlFor="isbn" className="label">
             ISBN Nummer:
           </label>
 
@@ -118,13 +118,13 @@ export default function AddBookWithIsbn() {
             value={isbn}
             onChange={(e) => setIsbn(e.target.value)}
             placeholder="Bijv. 9781473227989"
-            className={styles.input}
+            className="input"
             disabled={previewBook !== null}
           />
         </div>
 
-        <div className={styles.fieldGroup}>
-          <label htmlFor="campus" className={styles.label}>
+        <div className="fieldGroup">
+          <label htmlFor="campus" className="label">
             Campus
           </label>
 
@@ -134,7 +134,7 @@ export default function AddBookWithIsbn() {
             value={campus}
             onChange={(e) => setCampus(e.target.value)}
             placeholder="Bijv. Campus Zuid"
-            className={styles.input}
+            className="input"
             disabled={previewBook !== null}
           />
         </div>
@@ -147,15 +147,15 @@ export default function AddBookWithIsbn() {
       </form>
 
       {previewBook && (
-        <div className={styles.previewCard}>
-          <h2 className={styles.previewTitle}>Preview van het boek:</h2>
+        <div className="previewCard">
+          <h2 className="previewTitle">Preview van het boek:</h2>
 
-          <div className={styles.previewContent}>
+          <div className="previewContent">
             <img
               src={imgSrc}
               alt="Cover"
               onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
-              className={styles.previewImage}
+              className="previewImage"
             />
 
             <div>
@@ -181,12 +181,12 @@ export default function AddBookWithIsbn() {
             </div>
           </div>
 
-          <div className={styles.actionRow}>
+          <div className="actionRow">
             <button
               type="button"
               onClick={handleConfirmAdd}
               disabled={loading}
-              className={styles.confirmButton}
+              className="confirmButton"
             >
               {loading ? "Bezig..." : "Ja, Voeg toe aan Catalogus"}
             </button>
@@ -195,7 +195,7 @@ export default function AddBookWithIsbn() {
               type="button"
               onClick={handleCancelPreview}
               disabled={loading}
-              className={styles.cancelButton}
+              className="cancelButton"
             >
               Annuleren
             </button>

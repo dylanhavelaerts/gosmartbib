@@ -1,11 +1,12 @@
 .page {
   color: #8e2446;
   padding: 1rem;
+  margin-top: 4.5rem;
 }
 
 .page h1 {
   font-size: clamp(24px, 2vw, 32px);
-  color: #c0392b;
+  color: #8e2446;
   font-weight: 600;
   margin: 0 0 1rem 0;
 }

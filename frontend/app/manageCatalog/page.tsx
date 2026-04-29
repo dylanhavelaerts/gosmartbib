@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Book, BookInventory, BOOK_CATEGORIES, BOOK_LABELS } from "../interfaces/Book";
+import {
+  Book,
+  BookInventory,
+  BOOK_CATEGORIES,
+  BOOK_LABELS,
+} from "../interfaces/Book";
 import type { MeResponse } from "../interfaces/user";
 import { useRouter, useSearchParams } from "next/navigation";
 import "../catalog/bookList.css";
@@ -45,7 +50,10 @@ export default function ManageCatalogPage() {
 
   function openModal() {
     if (!selectedBook) return;
-    setFormData({ ...selectedBook, inventories: buildFallbackInventories(selectedBook) });
+    setFormData({
+      ...selectedBook,
+      inventories: buildFallbackInventories(selectedBook),
+    });
     setModalOpen(true);
     setError(null);
   }
@@ -54,23 +62,25 @@ export default function ManageCatalogPage() {
     setModalOpen(false);
     setError(null);
   }
-function handleChange(
-  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-) {
-  const { name, value } = e.target;
+  function handleChange(
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) {
+    const { name, value } = e.target;
 
-  setFormData((prev) => ({
-    ...prev,
-    [name]:
-      name === "pageCount" || name === "publishedYear"
-        ? value === ""
-          ? undefined
-          : Number(value)
-        : name === "didacticTag"
-          ? value === "true"
-          : value,
-  }));
-}
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        name === "pageCount" || name === "publishedYear"
+          ? value === ""
+            ? undefined
+            : Number(value)
+          : name === "didacticTag"
+            ? value === "true"
+            : value,
+    }));
+  }
   function handleArrayChange(
     e: React.ChangeEvent<HTMLInputElement>,
     field: keyof Book,
@@ -120,49 +130,49 @@ function handleChange(
 
     const inventories = formData.inventories ?? [];
 
-for (const inventory of inventories) {
-  if (!inventory.schoolId) {
-    setError("Elke inventarisregel moet een schoolId hebben.");
-    return;
-  }
+    for (const inventory of inventories) {
+      if (!inventory.schoolId) {
+        setError("Elke inventarisregel moet een schoolId hebben.");
+        return;
+      }
 
-  if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
-    setError("Aantallen mogen niet negatief zijn.");
-    return;
-  }
+      if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
+        setError("Aantallen mogen niet negatief zijn.");
+        return;
+      }
 
-  if (inventory.availableCopies > inventory.totalCopies) {
-    setError("Beschikbare exemplaren mogen niet groter zijn dan totaal.");
-    return;
-  }
-}
+      if (inventory.availableCopies > inventory.totalCopies) {
+        setError("Beschikbare exemplaren mogen niet groter zijn dan totaal.");
+        return;
+      }
+    }
 
-const computedTotalCopies = inventories.reduce(
-    (sum, inventory) => sum + (inventory.totalCopies || 0),
-    0,
-  );
+    const computedTotalCopies = inventories.reduce(
+      (sum, inventory) => sum + (inventory.totalCopies || 0),
+      0,
+    );
 
-  const computedAvailableCopies = inventories.reduce(
-    (sum, inventory) => sum + (inventory.availableCopies || 0),
-    0,
-  );
+    const computedAvailableCopies = inventories.reduce(
+      (sum, inventory) => sum + (inventory.availableCopies || 0),
+      0,
+    );
 
-  const payload = {
-    ...formData,
+    const payload = {
+      ...formData,
     authors: (formData.authors ?? [])
       .map((author) => author.trim())
       .filter((author) => author !== ""),
-    totalCopies: computedTotalCopies,
-    availableCopies: computedAvailableCopies,
-    inventories: inventories.map((inventory) => ({
-      id: inventory.id ?? null,
-      schoolId: inventory.schoolId,
-      schoolName: inventory.schoolName ?? "",
-      campus: inventory.campus,
-      totalCopies: inventory.totalCopies,
-      availableCopies: inventory.availableCopies,
-    })),
-  };
+      totalCopies: computedTotalCopies,
+      availableCopies: computedAvailableCopies,
+      inventories: inventories.map((inventory) => ({
+        id: inventory.id ?? null,
+        schoolId: inventory.schoolId,
+        schoolName: inventory.schoolName ?? "",
+        campus: inventory.campus,
+        totalCopies: inventory.totalCopies,
+        availableCopies: inventory.availableCopies,
+      })),
+    };
 
     try {
       const res = await fetch(`${apiUrl}/books/${selectedBook.id}`, {
@@ -206,79 +216,77 @@ const computedTotalCopies = inventories.reduce(
   }
 
   const buildFallbackInventories = (book: Book): BookInventory[] => {
-  if (book.inventories && book.inventories.length > 0) {
-    return book.inventories;
-  }
+    if (book.inventories && book.inventories.length > 0) {
+      return book.inventories;
+    }
 
-  if (!me?.school) {
-    return [];
-  }
+    if (!me?.school) {
+      return [];
+    }
 
-  return [
-    {
-      id: null,
-      schoolId: me.school.id,
-      schoolName: me.school.name,
-      campus: "",
-      totalCopies: book.totalCopies ?? 0,
-      availableCopies: book.availableCopies ?? 0,
-    },
-  ];
-};
-
-function handleInventoryChange(
-  index: number,
-  field: keyof BookInventory,
-  value: string | number | null,
-) {
-  setFormData((prev) => ({
-    ...prev,
-    inventories: (prev.inventories ?? []).map((inventory, i) =>
-      i === index ? { ...inventory, [field]: value } : inventory,
-    ),
-  }));
-}
-
-function addInventoryRow() {
-  setFormData((prev) => ({
-    ...prev,
-    inventories: [
-      ...(prev.inventories ?? []),
+    return [
       {
         id: null,
-        schoolId: me?.school?.id ?? null,
-        schoolName: me?.school?.name ?? "",
+        schoolId: me.school.id,
+        schoolName: me.school.name,
         campus: "",
-        totalCopies: 1,
-        availableCopies: 1,
+        totalCopies: book.totalCopies ?? 0,
+        availableCopies: book.availableCopies ?? 0,
       },
-    ],
-  }));
-}
+    ];
+  };
 
-function removeInventoryRow(index: number) {
-  setFormData((prev) => ({
-    ...prev,
-    inventories: (prev.inventories ?? []).filter((_, i) => i !== index),
-  }));
-}
+  function handleInventoryChange(
+    index: number,
+    field: keyof BookInventory,
+    value: string | number | null,
+  ) {
+    setFormData((prev) => ({
+      ...prev,
+      inventories: (prev.inventories ?? []).map((inventory, i) =>
+        i === index ? { ...inventory, [field]: value } : inventory,
+      ),
+    }));
+  }
 
-useEffect(() => {
-  fetch(`${apiUrl}/auth/me`, { credentials: "include" })
-    .then((res) => {
-      if (!res.ok) throw new Error("Kon auth/me niet ophalen");
-      return res.json();
-    })
-    .then((data: MeResponse) => setMe(data))
-    .catch((err) => console.error("Fout bij ophalen gebruiker:", err));
-}, [apiUrl]);
+  function addInventoryRow() {
+    setFormData((prev) => ({
+      ...prev,
+      inventories: [
+        ...(prev.inventories ?? []),
+        {
+          id: null,
+          schoolId: me?.school?.id ?? null,
+          schoolName: me?.school?.name ?? "",
+          campus: "",
+          totalCopies: 1,
+          availableCopies: 1,
+        },
+      ],
+    }));
+  }
+
+  function removeInventoryRow(index: number) {
+    setFormData((prev) => ({
+      ...prev,
+      inventories: (prev.inventories ?? []).filter((_, i) => i !== index),
+    }));
+  }
+
+  useEffect(() => {
+    fetch(`${apiUrl}/auth/me`, { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Kon auth/me niet ophalen");
+        return res.json();
+      })
+      .then((data: MeResponse) => setMe(data))
+      .catch((err) => console.error("Fout bij ophalen gebruiker:", err));
+  }, [apiUrl]);
 
   return (
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
       <div>
         <main className="manage-main-layout">
-          <h1 className="manage-title">Beheer catalogus</h1>
-          
           <div className="manage-wrapper">
             {/* EILAND LIJST */}
             <div className="eiland-lijst">
@@ -291,7 +299,7 @@ useEffect(() => {
                   + Boek(en) toevoegen
                 </button>
               </div>
-              
+
               <div className="search-container">
                 <input
                   type="text"
@@ -326,7 +334,9 @@ useEffect(() => {
                           <div className="book-list-info">
                             <h3 className="book-list-title">{book.title}</h3>
                             <p className="book-list-authors">
-                              {book.authors ? book.authors.join(", ") : "Onbekend"}
+                              {book.authors
+                                ? book.authors.join(", ")
+                                : "Onbekend"}
                             </p>
                             <p className="book-list-isbn">
                               ISBN: {book.isbn || "-"}
@@ -405,7 +415,9 @@ useEffect(() => {
                           <tbody>
                             <tr>
                               <th>ISBN</th>
-                              <td className="bold">{selectedBook.isbn || "-"}</td>
+                              <td className="bold">
+                                {selectedBook.isbn || "-"}
+                              </td>
                             </tr>
                             <tr>
                               <th>Uitgeverij</th>
@@ -421,7 +433,9 @@ useEffect(() => {
                             </tr>
                             <tr>
                               <th>Categorie</th>
-                              <td>{selectedBook.categories?.join(", ") || "-"}</td>
+                              <td>
+                                {selectedBook.categories?.join(", ") || "-"}
+                              </td>
                             </tr>
                           </tbody>
                         </table>
@@ -430,13 +444,15 @@ useEffect(() => {
                       <div className="details-summary">
                         <h3>Samenvatting</h3>
                         <p>
-                          {selectedBook.description || "Geen samenvatting beschikbaar voor dit boek."}
+                          {selectedBook.description ||
+                            "Geen samenvatting beschikbaar voor dit boek."}
                         </p>
                       </div>
                       <div className="details-summary">
                         <h3>Inventaris</h3>
 
-                        {selectedBook.inventories && selectedBook.inventories.length > 0 ? (
+                        {selectedBook.inventories &&
+                        selectedBook.inventories.length > 0 ? (
                           <table className="details-table">
                             <thead>
                               <tr>
@@ -447,14 +463,25 @@ useEffect(() => {
                               </tr>
                             </thead>
                             <tbody>
-                              {selectedBook.inventories.map((inventory, index) => (
-                                <tr key={inventory.id ?? `${inventory.schoolId}-${inventory.campus}-${index}`}>
-                                  <td>{inventory.schoolName || inventory.schoolId || "-"}</td>
-                                  <td>{inventory.campus || ""}</td>
-                                  <td>{inventory.totalCopies}</td>
-                                  <td>{inventory.availableCopies}</td>
-                                </tr>
-                              ))}
+                              {selectedBook.inventories.map(
+                                (inventory, index) => (
+                                  <tr
+                                    key={
+                                      inventory.id ??
+                                      `${inventory.schoolId}-${inventory.campus}-${index}`
+                                    }
+                                  >
+                                    <td>
+                                      {inventory.schoolName ||
+                                        inventory.schoolId ||
+                                        "-"}
+                                    </td>
+                                    <td>{inventory.campus || ""}</td>
+                                    <td>{inventory.totalCopies}</td>
+                                    <td>{inventory.availableCopies}</td>
+                                  </tr>
+                                ),
+                              )}
                             </tbody>
                           </table>
                         ) : (
@@ -467,7 +494,7 @@ useEffect(() => {
               )}
             </div>
           </div>
-          
+
           {/* BEWERKEN MODAL */}
           {modalOpen && selectedBook && (
             <div className="modal-overlay">
@@ -562,17 +589,21 @@ useEffect(() => {
                       onChange={handleChange}
                     />
                   </div>
-                  
+
                   <div className="modal-row">
                     <label className="modal-label"> Categorie(ën)</label>
                     <div className="filterDropdown">
                       <button
                         type="button"
                         className="filterDropdownToggle"
-                        onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                        onClick={() =>
+                          setCategoryDropdownOpen(!categoryDropdownOpen)
+                        }
                       >
                         Categorie(ën){" "}
-                        {formData.categories?.length ? `(${formData.categories.length})` : ""}{" "}
+                        {formData.categories?.length
+                          ? `(${formData.categories.length})`
+                          : ""}{" "}
                         ▼
                       </button>
                       {categoryDropdownOpen && (
@@ -581,7 +612,9 @@ useEffect(() => {
                             <label key={cat} className="filterCheckboxLabel">
                               <input
                                 type="checkbox"
-                                checked={formData.categories?.includes(cat) || false}
+                                checked={
+                                  formData.categories?.includes(cat) || false
+                                }
                                 onChange={() => {
                                   const current = formData.categories || [];
                                   const updated = current.includes(cat)
@@ -609,7 +642,9 @@ useEffect(() => {
                               onClick={() =>
                                 setFormData((prev) => ({
                                   ...prev,
-                                  categories: prev.categories?.filter((c) => c !== cat),
+                                  categories: prev.categories?.filter(
+                                    (c) => c !== cat,
+                                  ),
                                 }))
                               }
                             >
@@ -626,9 +661,7 @@ useEffect(() => {
                       <button
                         type="button"
                         className="filterDropdownToggle"
-                        onClick={() =>
-                          setLabelDropdownOpen(!labelDropdownOpen)
-                        }
+                        onClick={() => setLabelDropdownOpen(!labelDropdownOpen)}
                       >
                         Label(s){" "}
                         {formData.labels?.length
@@ -723,11 +756,11 @@ useEffect(() => {
                       value={formData.language ?? ""}
                       onChange={handleChange}
                     >
-                    <option value="">Alle talen</option>
-                    <option value="NE">NE</option>
-                    <option value="EN">EN</option>
-                    <option value="FR">FR</option>
-                      </select>
+                      <option value="">Alle talen</option>
+                      <option value="NE">NE</option>
+                      <option value="EN">EN</option>
+                      <option value="FR">FR</option>
+                    </select>
                   </div>
                   <div className="modal-row">
                     <label className="modal-label" htmlFor="description">
@@ -738,12 +771,13 @@ useEffect(() => {
                       name="readingLevel"
                       value={formData.readingLevel ?? ""}
                       onChange={handleChange}
-                    ><option value="">Leesniveau</option>
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
-                    <option value="D">D</option>
-                      </select>
+                    >
+                      <option value="">Leesniveau</option>
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                      <option value="D">D</option>
+                    </select>
                   </div>
                   <div className="modal-row">
                     <label className="modal-label" htmlFor="description">
@@ -754,11 +788,12 @@ useEffect(() => {
                       name="ageRange"
                       value={formData.ageRange ?? ""}
                       onChange={handleChange}
-                    ><option value="">Leeftijd</option>
-                    <option value="Eerste graad">Eerste graad</option>
-                    <option value="Tweede graad">Tweede graad</option>
-                    <option value="Derde graad">Derde graad</option>
-                      </select>
+                    >
+                      <option value="">Leeftijd</option>
+                      <option value="Eerste graad">Eerste graad</option>
+                      <option value="Tweede graad">Tweede graad</option>
+                      <option value="Derde graad">Derde graad</option>
+                    </select>
                   </div>
                   <div className="modal-row">
                     <label className="modal-label" htmlFor="description">
@@ -773,107 +808,127 @@ useEffect(() => {
                           : String(formData.didacticTag)
                       }
                       onChange={handleChange}
-                    ><option value="true">Ja</option>
-                    <option value="false">Nee</option>
-                      </select>
+                    >
+                      <option value="true">Ja</option>
+                      <option value="false">Nee</option>
+                    </select>
                   </div>
-                                  <div className="modal-row">
-                  <label className="modal-label">Inventaris per school/campus</label>
+                  <div className="modal-row">
+                    <label className="modal-label">
+                      Inventaris per school/campus
+                    </label>
 
-                  {(formData.inventories ?? []).map((inventory, index) => (
-                    <div key={inventory.id ?? index} className="inventory-editor-card">
-                      <div className="inventory-editor-grid">
-                        <div>
-                          <label className="modal-label">School ID</label>
-                          <input
-                            className="modal-input"
-                            type="number"
-                            value={inventory.schoolId ?? ""}
-                            onChange={(e) =>
-                              handleInventoryChange(
-                                index,
-                                "schoolId",
-                                e.target.value === "" ? null : Number(e.target.value),
-                              )
-                            }
-                          />
+                    {(formData.inventories ?? []).map((inventory, index) => (
+                      <div
+                        key={inventory.id ?? index}
+                        className="inventory-editor-card"
+                      >
+                        <div className="inventory-editor-grid">
+                          <div>
+                            <label className="modal-label">School ID</label>
+                            <input
+                              className="modal-input"
+                              type="number"
+                              value={inventory.schoolId ?? ""}
+                              onChange={(e) =>
+                                handleInventoryChange(
+                                  index,
+                                  "schoolId",
+                                  e.target.value === ""
+                                    ? null
+                                    : Number(e.target.value),
+                                )
+                              }
+                            />
+                          </div>
+
+                          <div>
+                            <label className="modal-label">School</label>
+                            <input
+                              className="modal-input"
+                              type="text"
+                              value={inventory.schoolName ?? ""}
+                              onChange={(e) =>
+                                handleInventoryChange(
+                                  index,
+                                  "schoolName",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                          </div>
+
+                          <div>
+                            <label className="modal-label">Campus</label>
+                            <input
+                              className="modal-input"
+                              type="text"
+                              value={inventory.campus}
+                              onChange={(e) =>
+                                handleInventoryChange(
+                                  index,
+                                  "campus",
+                                  e.target.value,
+                                )
+                              }
+                            />
+                          </div>
+
+                          <div>
+                            <label className="modal-label">Totaal</label>
+                            <input
+                              className="modal-input"
+                              type="number"
+                              min="0"
+                              value={inventory.totalCopies}
+                              onChange={(e) =>
+                                handleInventoryChange(
+                                  index,
+                                  "totalCopies",
+                                  Number(e.target.value) || 0,
+                                )
+                              }
+                            />
+                          </div>
+
+                          <div>
+                            <label className="modal-label">Beschikbaar</label>
+                            <input
+                              className="modal-input"
+                              type="number"
+                              min="0"
+                              value={inventory.availableCopies}
+                              onChange={(e) =>
+                                handleInventoryChange(
+                                  index,
+                                  "availableCopies",
+                                  Number(e.target.value) || 0,
+                                )
+                              }
+                            />
+                          </div>
                         </div>
 
-                        <div>
-                          <label className="modal-label">School</label>
-                          <input
-                            className="modal-input"
-                            type="text"
-                            value={inventory.schoolName ?? ""}
-                            onChange={(e) =>
-                              handleInventoryChange(index, "schoolName", e.target.value)
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <label className="modal-label">Campus</label>
-                          <input
-                            className="modal-input"
-                            type="text"
-                            value={inventory.campus}
-                            onChange={(e) =>
-                              handleInventoryChange(index, "campus", e.target.value)
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <label className="modal-label">Totaal</label>
-                          <input
-                            className="modal-input"
-                            type="number"
-                            min="0"
-                            value={inventory.totalCopies}
-                            onChange={(e) =>
-                              handleInventoryChange(
-                                index,
-                                "totalCopies",
-                                Number(e.target.value) || 0,
-                              )
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <label className="modal-label">Beschikbaar</label>
-                          <input
-                            className="modal-input"
-                            type="number"
-                            min="0"
-                            value={inventory.availableCopies}
-                            onChange={(e) =>
-                              handleInventoryChange(
-                                index,
-                                "availableCopies",
-                                Number(e.target.value) || 0,
-                              )
-                            }
-                          />
-                        </div>
+                        {(formData.inventories?.length ?? 0) > 1 && (
+                          <button
+                            type="button"
+                            className="modal-btn-cancel"
+                            onClick={() => removeInventoryRow(index)}
+                          >
+                            Regel verwijderen
+                          </button>
+                        )}
                       </div>
+                    ))}
 
-                      {(formData.inventories?.length ?? 0) > 1 && (
-                        <button
-                          type="button"
-                          className="modal-btn-cancel"
-                          onClick={() => removeInventoryRow(index)}
-                        >
-                          Regel verwijderen
-                        </button>
-                      )}
-                    </div>
-                  ))}
-
-                  <button type="button" className="modal-btn-save" onClick={addInventoryRow}>
-                    + Campus toevoegen
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      className="modal-btn-save"
+                      onClick={addInventoryRow}
+                    >
+                      + Campus toevoegen
+                    </button>
+                  </div>
                 </div>
                 <div className="modal-footer">
                   <button
@@ -900,7 +955,8 @@ useEffect(() => {
             <div className="modalOverlay">
               <div className="modalBox">
                 <p>
-                  Ben je zeker dat je <strong>{selectedBook.title}</strong> wilt verwijderen?
+                  Ben je zeker dat je <strong>{selectedBook.title}</strong> wilt
+                  verwijderen?
                 </p>
                 <p>Deze actie is onterugkeerbaar!</p>
                 <div>
