@@ -1,7 +1,9 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
-import edu.ap.gosmartlib.entities.*;
+import edu.ap.gosmartlib.entities.BookEntity;
+import edu.ap.gosmartlib.entities.LoanEntity;
+import edu.ap.gosmartlib.entities.LoanHistoryEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.LoanHistoryRepository;
@@ -31,35 +33,32 @@ public class LoanService {
     public void createLoans(List<LoanRequestDTO> loanRequests) {
         for (LoanRequestDTO request : loanRequests) {
 
-            BookEntity book = bookRepository.findDetailedById(request.bookId())
+            // AANGEPAST: Geef alleen request.bookId() (Long) door, geen String!
+            BookEntity book = bookRepository.findById(request.bookId())
                     .orElseThrow(() -> new BookNotFoundException(request.bookId()));
 
-            UserEntity borrower = userRepository.findBySmartschoolUid(request.user().smartschoolUserId())
-                    .orElseThrow(() -> new IllegalArgumentException("Lener niet gevonden"));
-
-            Long schoolId = borrower.getSchool().getId();
-
-            BookInventoryEntity inventory = book.getInventories().stream()
-                    .filter(inv -> inv.getSchool().getId().equals(schoolId))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Boek niet beschikbaar voor jouw school: " + book.getTitle()));
-
-            if (inventory.getAvailableCopies() < request.quantity()) {
-                throw new IllegalArgumentException(
-                        "Niet genoeg exemplaren beschikbaar voor boek: " + book.getTitle());
+            if (book.getAvailableCopies() < request.quantity()) {
+                throw new IllegalArgumentException("Niet genoeg exemplaren beschikbaar voor boek: " + book.getTitle());
             }
 
-            inventory.setAvailableCopies(inventory.getAvailableCopies() - request.quantity());
+            // 1. Update de voorraad in de boeken tabel
             book.setAvailableCopies(book.getAvailableCopies() - request.quantity());
             bookRepository.save(book);
 
+            userRepository.findBySmartschoolUid(request.user().smartschoolUserId()).ifPresent(borrower ->
+                    book.getInventories().stream()
+                            .filter(inv -> inv.getSchool().getId().equals(borrower.getSchool().getId()))
+                            .findFirst()
+                            .ifPresent(inv -> inv.setAvailableCopies(
+                                    Math.max(0, inv.getAvailableCopies() - request.quantity())))
+            );
+            // 2. Zet in de uitleen tabel per ISBN
             LoanEntity loan = new LoanEntity();
             loan.setSmartschoolUserId(request.user().smartschoolUserId());
             loan.setIsbn(book.getIsbn());
             loan.setQuantity(request.quantity());
             loan.setLoanDate(LocalDate.now());
-            loan.setDueDate(LocalDate.now().plusDays(21));
+            loan.setDueDate(LocalDate.now().plusDays(21)); // Standaard 3 weken de tijd
 
             loanRepository.save(loan);
 
@@ -88,37 +87,29 @@ public class LoanService {
 
         // 2. Verhoog de voorraad in de boeken tabel
         bookRepository.findByIsbn(loan.getIsbn()).ifPresent(book -> {
+            boolean wasUnavailable = book.getAvailableCopies() == 0;
             book.setAvailableCopies(book.getAvailableCopies() + returnQuantity);
             bookRepository.save(book);
 
-            userRepository.findBySmartschoolUid(loan.getSmartschoolUserId())
-                    .ifPresent(borrower -> {
-                        Long schoolId = borrower.getSchool().getId();
-                        book.getInventories().stream()
-                                .filter(inv -> inv.getSchool().getId().equals(schoolId))
-                                .findFirst()
-                                .ifPresent(inv -> {
-                                    boolean wasSchoolUnavailable = inv.getAvailableCopies() == 0;
-                                    inv.setAvailableCopies(inv.getAvailableCopies() + returnQuantity);
-                                    if (wasSchoolUnavailable) {
-                                        bookNotificationService.triggerNotificationsForBook(book, schoolId);
-                                    }
-                                });
-                    });
+            if (wasUnavailable) {
+                userRepository.findBySmartschoolUid(loan.getSmartschoolUserId())
+                        .ifPresent(borrower -> bookNotificationService.triggerNotificationsForBook(
+                                book, borrower.getSchool().getId()));
+            }
         });
 
         // 3. Update of verwijder de actieve uitleen
         if (returnQuantity == loan.getQuantity()) {
             // Alle uitgeleende exemplaren zijn terug -> Verwijder de record
             loanRepository.delete(loan);
-            logger.info("RETOUR GELOGD: Alle {} exemplaren van ISBN {} teruggebracht door {}. Uitleen verwijderd.", 
-                        returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId());
+            logger.info("RETOUR GELOGD: Alle {} exemplaren van ISBN {} teruggebracht door {}. Uitleen verwijderd.",
+                    returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId());
         } else {
             // Minder teruggebracht dan uitgeleend -> Update de quantity
             loan.setQuantity(loan.getQuantity() - returnQuantity);
             loanRepository.save(loan);
-            logger.info("DEEL-RETOUR GELOGD: {} exemplaren van ISBN {} teruggebracht door {}. Nog {} uitgeleend.", 
-                        returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId(), loan.getQuantity());
+            logger.info("DEEL-RETOUR GELOGD: {} exemplaren van ISBN {} teruggebracht door {}. Nog {} uitgeleend.",
+                    returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId(), loan.getQuantity());
         }
     }
 }

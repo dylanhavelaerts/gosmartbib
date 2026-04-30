@@ -45,7 +45,6 @@ export default function ReadingListDetailPage() {
   const storageKey = `reading-status:${userId}:${id}`;
 
   const [readStatus, setReadStatus] = useState<Record<number, boolean>>({});
-  const [notifStatus, setNotifStatus] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (!id || !user) return;
@@ -78,32 +77,6 @@ export default function ReadingListDetailPage() {
       .finally(() => setLoading(false));
   }, [id, user]);
 
-  useEffect(() => {
-    if (!detail || isStaff) return;
-
-    const unavailableBooks = detail.books.filter(
-      (b) => b.availableCopies === 0,
-    );
-    if (unavailableBooks.length === 0) return;
-
-    Promise.all(
-      unavailableBooks.map((b) =>
-        fetch(`${apiUrl}/books/${b.id}/notification`, {
-          credentials: "include",
-        })
-          .then((r) => r.json())
-          .then((enabled: boolean) => ({ bookId: b.id, enabled }))
-          .catch(() => ({ bookId: b.id, enabled: false })),
-      ),
-    ).then((results) => {
-      const statusMap: Record<number, boolean> = {};
-      for (const { bookId, enabled } of results) {
-        statusMap[bookId] = enabled;
-      }
-      setNotifStatus(statusMap);
-    });
-  }, [detail, isStaff]);
-
   const toggleRead = (bookId: number) => {
     setReadStatus((prev) => {
       const next = { ...prev, [bookId]: !prev[bookId] };
@@ -114,21 +87,6 @@ export default function ReadingListDetailPage() {
       }
       return next;
     });
-  };
-
-  const toggleNotification = async (bookId: number) => {
-    const current = notifStatus[bookId] ?? false;
-    const method = current ? "DELETE" : "POST";
-
-    try {
-      await fetch(`${apiUrl}/books/${bookId}/notification`, {
-        method,
-        credentials: "include",
-      });
-      setNotifStatus((prev) => ({ ...prev, [bookId]: !current }));
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const formatDeadline = (deadline?: string | null) => {
@@ -257,7 +215,6 @@ export default function ReadingListDetailPage() {
               {detail.books.map((book) => {
                 const isRead = readStatus[book.id] ?? false;
                 const isUnavailable = book.availableCopies === 0;
-                const notifOn = notifStatus[book.id] ?? false;
                 return (
                   <div
                     key={book.id}
@@ -302,30 +259,6 @@ export default function ReadingListDetailPage() {
                             ? "Markeer als ongelezen"
                             : "Markeer als gelezen"}
                         </button>
-                        {isUnavailable && (
-                          <button
-                            className="rld-notif-btn"
-                            onClick={() => toggleNotification(book.id)}
-                            title={
-                              notifOn
-                                ? "Notificatie uitschakelen"
-                                : "Notificeer mij als dit boek beschikbaar is"
-                            }
-                          >
-                            <img
-                              src={
-                                notifOn
-                                  ? "/notification/bell-notification-social-media_full_black.png"
-                                  : "/notification/bell-notification-social-media.png"
-                              }
-                              alt={
-                                notifOn ? "Notificatie aan" : "Notificatie uit"
-                              }
-                              width={24}
-                              height={24}
-                            />
-                          </button>
-                        )}
                       </div>
                     </div>
 
