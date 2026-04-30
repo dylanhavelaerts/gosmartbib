@@ -11,9 +11,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,30 +36,33 @@ class UserAdminServiceTest {
 
     @Test
     void givenBibbeheerderExists_whenListUsersForAdmin_thenReturnsActiveMappedUsersFromSameSchool() {
+        Pageable pageable = PageRequest.of(0, 10);
+
         UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
         UserEntity student = buildUser(4L, "student-uid", UserRoles.STUDENT, 100L, "GO! School", true);
         UserEntity teacher = buildUser(5L, "teacher-uid", UserRoles.TEACHER, 100L, "GO! School", true);
-        UserEntity wrongTeacher = buildUser(2L, "teacher-uid2", UserRoles.TEACHER, 1L, "FOUTE SCHOOL", true);
-        UserEntity wrongStudent = buildUser(3L, "student-uid2", UserRoles.STUDENT, 1L, "FOUTE SCHOOL", true);
-        UserEntity inactiveStudent = buildUser(6L, "student-uid3", UserRoles.STUDENT, 100L, "GO! School", false);
 
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
-        when(userRepository.findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(100L))
-                .thenReturn(List.of(student, teacher));
+        when(userRepository.findBySchoolIdAndName(100L, null, pageable))
+                .thenReturn(new PageImpl<>(List.of(student, teacher), pageable, 2));
 
-        List<AdminUserDTO> result = userAdminService.listUsersForAdmin("admin-uid");
+        Page<AdminUserDTO> result = userAdminService.listUsersForAdmin("admin-uid", null, pageable);
 
-        assertEquals(2, result.size());
-        assertEquals("student-uid", result.get(0).smartschoolUid());
-        assertEquals(UserRoles.STUDENT, result.get(0).role());
-        assertEquals("GO! School", result.get(0).school().name());
-        assertEquals(1, result.get(0).classes().size());
+        assertEquals(2, result.getTotalElements());
 
-        assertEquals("teacher-uid", result.get(1).smartschoolUid());
-        assertEquals(UserRoles.TEACHER, result.get(1).role());
+        AdminUserDTO firstUser = result.getContent().get(0);
+        AdminUserDTO secondUser = result.getContent().get(1);
+
+        assertEquals("student-uid", firstUser.smartschoolUid());
+        assertEquals(UserRoles.STUDENT, firstUser.role());
+        assertEquals("GO! School", firstUser.school().name());
+        assertEquals(1, firstUser.classes().size());
+
+        assertEquals("teacher-uid", secondUser.smartschoolUid());
+        assertEquals(UserRoles.TEACHER, secondUser.role());
 
         verify(userRepository).findDetailedBySmartschoolUid("admin-uid");
-        verify(userRepository).findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(100L);
+        verify(userRepository).findBySchoolIdAndName(100L, null, pageable);
         verifyNoMoreInteractions(userRepository);
     }
 
@@ -65,7 +71,7 @@ class UserAdminServiceTest {
         when(userRepository.findDetailedBySmartschoolUid("missing-admin")).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.listUsersForAdmin("missing-admin"));
+                () -> userAdminService.listUsersForAdmin("missing-admin", null, Pageable.unpaged()));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Ingelogde gebruiker niet gevonden", exception.getReason());
@@ -79,7 +85,7 @@ class UserAdminServiceTest {
         when(userRepository.findDetailedBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(actor));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.listUsersForAdmin("teacher-uid"));
+                () -> userAdminService.listUsersForAdmin("teacher-uid", null, Pageable.unpaged()));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Geen toegang", exception.getReason());

@@ -161,6 +161,57 @@
   padding-left: 1.2rem;
 }
 
+.campusForm {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.campusNameField {
+  flex: 1 1 260px;
+}
+
+.campusList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.campusListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid #ead9e3;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  background: #fcf8fa;
+  color: #513741;
+}
+
+.dangerButton {
+  border-color: #b42318;
+  color: #b42318;
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: #fff1f1;
+}
+
+.emptyState {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px dashed #d7bfd0;
+  border-radius: 10px;
+  color: #6f4d5d;
+  background: #fcf8fa;
+}
+
 @media (min-width: 800px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

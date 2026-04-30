@@ -148,22 +148,22 @@ export default function BookListImport() {
         Hieronder vind u een link naar een template om boeken toe te voegen.
       </p>
 
-      <a href="/BoekenlijstTemplate.xlsx" download className={styles.downloadLink}>
+      <a href="/BoekenlijstTemplate.xlsx" download className="downloadLink">
         Download Excelbestand
       </a>
 
-      <label className={styles.campusField}>
+      <label className="campusField">
         Campus
         <input
           type="text"
           value={campus}
           onChange={(e) => setCampus(e.target.value)}
           placeholder="Laat leeg als er geen campus is"
-          className={styles.campusInput}
+          className="campusInput"
         />
       </label>
 
-      <p className={styles.helperText}>
+      <p className="helperText">
         Deze campus wordt toegepast op alle boeken in dit Excelbestand.
       </p>
 
@@ -191,7 +191,6 @@ export default function BookListImport() {
             </div>
           </div>
         )}
-      </div>
 
       {importResult && (
         <div className="resultCard">
@@ -205,11 +204,11 @@ export default function BookListImport() {
               <p>Problemen gevonden in deze rijen:</p>
               <ul>
                 {importResult.mismatches.map((mismatch, index) => (
-                  <li className={styles.mismatchElement} key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
-                    <p className={styles.mismatchTitle}>Rij {mismatch.rowNumber}: {mismatch.isbn} | {mismatch.excelTitle} |
+                  <li className="mismatchElement" key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
+                    <p className="mismatchTitle">Rij {mismatch.rowNumber}: {mismatch.isbn} | {mismatch.excelTitle} |
                     {" "}Reden: {mismatch.reason}</p>{mismatch.reason.includes("De titel komt niet overeen") && (
                       <button
-                        className={styles.mismatchButton}
+                        className="mismatchButton"
                         onClick={() => addSingleBook(mismatch)}
                         disabled={loading}
                       >
