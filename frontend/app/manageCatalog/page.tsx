@@ -176,7 +176,7 @@ function handleArrayChange(
 
     for (const inventory of inventories) {
       if (!inventory.schoolId) {
-        setError("Elke inventarisregel moet een schoolId hebben.");
+        setError("Elke inventarisregel moet een school hebben.");
         return;
       }
 
@@ -212,7 +212,7 @@ function handleArrayChange(
         id: inventory.id ?? null,
         schoolId: inventory.schoolId,
         schoolName: inventory.schoolName ?? "",
-        campus: inventory.campus.trim() ?? "",
+        campus: inventory.campus?.trim() ?? "",
         totalCopies: inventory.totalCopies,
         availableCopies: inventory.availableCopies,
       })),
@@ -316,6 +316,10 @@ function handleArrayChange(
       inventories: (prev.inventories ?? []).filter((_, i) => i !== index),
     }));
   }
+
+  const editableInventoryRows = (formData.inventories ?? [])
+  .map((inventory, index) => ({ inventory, index }))
+  .filter(({ inventory }) => inventory.schoolId === me?.school?.id);
 
   return (
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
@@ -840,11 +844,14 @@ function handleArrayChange(
                       <p className="modal-error">⚠ {campusLoadError}</p>
                     )}
 
-                    {(formData.inventories ?? []).map((inventory, index) => (
-                      <div
-                        key={inventory.id ?? index}
-                        className="inventory-editor-card"
-                      >
+                    {editableInventoryRows.length === 0 && (
+                      <p className="modal-error">
+                        Er is nog geen inventarisregel voor jouw school.
+                      </p>
+                    )}
+
+                    {editableInventoryRows.map(({ inventory, index }) => (
+                      <div key={inventory.id ?? index} className="inventory-editor-card">
                         <div className="inventory-editor-grid">
                           <div>
                             <label className="modal-label">School</label>
@@ -860,33 +867,26 @@ function handleArrayChange(
                             <label className="modal-label">Campus</label>
                             <select
                               className="modal-input"
-                              value={inventory.campus}
+                              value={inventory.campus || ""}
                               onChange={(e) =>
-                                handleInventoryChange(
-                                  index,
-                                  "campus",
-                                  e.target.value,
-                                )
+                                handleInventoryChange(index, "campus", e.target.value)
                               }
                               disabled={loadingCampuses}
                             >
                               <option value="">
-                                {loadingCampuses
-                                  ? "Campussen laden..."
-                                  : "Geen campus"}
+                                {loadingCampuses ? "Campussen laden..." : "Geen campus"}
                               </option>
 
-                              {getCampusSelectOptions(
-                                campuses,
-                                inventory.campus,
-                              ).map((campusOption) => (
-                                <option
-                                  key={`${campusOption.id}-${campusOption.name}`}
-                                  value={campusOption.name}
-                                >
-                                  {campusOption.name}
-                                </option>
-                              ))}
+                              {getCampusSelectOptions(campuses, inventory.campus).map(
+                                (campusOption) => (
+                                  <option
+                                    key={`${campusOption.id}-${campusOption.name}`}
+                                    value={campusOption.name}
+                                  >
+                                    {campusOption.name}
+                                  </option>
+                                ),
+                              )}
                             </select>
                           </div>
 
@@ -925,7 +925,7 @@ function handleArrayChange(
                           </div>
                         </div>
 
-                        {(formData.inventories?.length ?? 0) > 1 && (
+                        {editableInventoryRows.length > 1 && (
                           <button
                             type="button"
                             className="modal-btn-cancel"
