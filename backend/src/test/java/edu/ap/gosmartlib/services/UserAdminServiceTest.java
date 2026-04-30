@@ -17,8 +17,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -38,7 +36,6 @@ class UserAdminServiceTest {
 
     @Test
     void givenBibbeheerderExists_whenListUsersForAdmin_thenReturnsActiveMappedUsersFromSameSchool() {
-        Pageable pageable = PageRequest.of(0, 10);
 
         UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
         UserEntity student = buildUser(4L, "student-uid", UserRoles.STUDENT, 100L, "GO! School", true);

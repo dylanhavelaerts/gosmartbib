@@ -18,9 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Set;
 
@@ -46,7 +43,6 @@ class UserAdminControllerTest {
                 Pageable pageable = PageRequest.of(0, 10);
 
                 when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
-                when(userAdminService.listUsersForAdmin("admin-uid", name, pageable)).thenReturn(expected);
                 when(userAdminService.listUsersForAdmin("admin-uid", null, pageable)).thenReturn(expectedPage);
 
                 Page<AdminUserDTO> result = userAdminController.listUsers(oAuth2User, null, pageable);
