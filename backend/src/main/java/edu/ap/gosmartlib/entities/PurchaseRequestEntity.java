@@ -27,7 +27,7 @@ public class PurchaseRequestEntity {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Fetch(FetchMode.SUBSELECT)
-    @CollectionTable(name = "book_authors", joinColumns = @JoinColumn(name = "book_id"))
+    @CollectionTable(name = "purchase_request_authors", joinColumns = @JoinColumn(name = "purchase_request_id"))
     @Column(name = "author")
     private List<String> authors;
 
