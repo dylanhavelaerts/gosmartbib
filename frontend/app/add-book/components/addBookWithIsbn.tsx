@@ -2,15 +2,65 @@
 
 import { useEffect, useState } from "react";
 import type { Book } from "../../interfaces/Book";
+import type { MeResponse } from "@/app/interfaces/user";
+import type { SchoolCampusDTO } from "@/app/interfaces/schoolIntegration";
+import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
 import "./addBookForm.css";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function AddBookWithIsbn() {
   const [isbn, setIsbn] = useState("");
   const [message, setMessage] = useState("");
+  const [campusLoadError, setCampusLoadError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingCampuses, setLoadingCampuses] = useState(false);
   const [previewBook, setPreviewBook] = useState<Book | null>(null);
   const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
   const [campus, setCampus] = useState("");
+  const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
+
+  useEffect(() => {
+    const loadCampusesForCurrentSchool = async () => {
+      if (!API_URL) {
+        setCampusLoadError("NEXT_PUBLIC_API_URL ontbreekt");
+        return;
+      }
+
+      try {
+        setLoadingCampuses(true);
+        setCampusLoadError("");
+
+        const meResponse = await fetch(`${API_URL}/auth/me`, {
+          credentials: "include",
+        });
+
+        if (!meResponse.ok) {
+          throw new Error("Kon de ingelogde gebruiker niet ophalen");
+        }
+
+        const meData: MeResponse = await meResponse.json();
+
+        if (!meData.school?.id) {
+          throw new Error("Geen school gevonden voor de ingelogde gebruiker");
+        }
+
+        const campusData = await fetchSchoolCampuses(API_URL, meData.school.id);
+        setCampuses(campusData);
+      } catch (error) {
+        console.error(error);
+        setCampusLoadError(
+          error instanceof Error
+            ? error.message
+            : "Kon de campussen niet ophalen",
+        );
+      } finally {
+        setLoadingCampuses(false);
+      }
+    };
+
+    loadCampusesForCurrentSchool();
+  }, []);
 
   const handleSearchBook = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +72,7 @@ export default function AddBookWithIsbn() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/books/search/${isbn}`,{credentials: "include"}
+        `${API_URL}/books/search/${isbn}`,{credentials: "include"}
       );
 
       if (response.ok) {
@@ -55,7 +105,7 @@ export default function AddBookWithIsbn() {
         }
 
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/books/add/${isbn}${params.toString() ? `?${params.toString()}` : ""}`,
+          `${API_URL}/books/add/${isbn}${params.toString() ? `?${params.toString()}` : ""}`,
           {
             method: "POST",
             credentials: "include",
@@ -66,6 +116,7 @@ export default function AddBookWithIsbn() {
         const data = await response.json();
         setMessage(`Boek succesvol aan de database toegevoegd: "${data.title}"`);
         setIsbn("");
+        setCampus("");
         setPreviewBook(null);
       } else {
         setMessage("Er ging iets mis bij het opslaan van het boek.");
@@ -128,15 +179,25 @@ export default function AddBookWithIsbn() {
             Campus
           </label>
 
-          <input
+          <select
             id="campus"
-            type="text"
             value={campus}
             onChange={(e) => setCampus(e.target.value)}
-            placeholder="Bijv. Campus Zuid"
-            className="input"
-            disabled={previewBook !== null}
-          />
+            className="select"
+            disabled={previewBook !== null || loadingCampuses}
+          >
+            <option value="">
+              {loadingCampuses ? "Campussen laden..." : "Geen campus"}
+            </option>
+
+            {campuses.map((campusOption) => (
+              <option key={campusOption.id} value={campusOption.name}>
+                {campusOption.name}
+              </option>
+            ))}
+          </select>
+
+          {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
         </div>
 
         {!previewBook && (
@@ -174,6 +235,9 @@ export default function AddBookWithIsbn() {
               </p>
               <p>
                 <strong>ISBN:</strong> {previewBook.isbn}
+              </p>
+              <p>
+                <strong>Campus:</strong> {campus || "Geen campus"}
               </p>
               <p>
                 <strong>Pagina's:</strong> {previewBook.pageCount}

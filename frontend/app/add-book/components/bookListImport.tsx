@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./bookListImport.css";
+import type { SchoolCampusDTO } from "@/app/interfaces/schoolIntegration";
+import type { MeResponse } from "@/app/interfaces/user";
+import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
 
 type ImportMismatch = {
   rowNumber: number;
@@ -19,12 +22,60 @@ type ImportResult = {
   mismatches: ImportMismatch[];
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function BookListImport() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [message, setMessage] = useState("");
+  const [campusLoadError, setCampusLoadError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingCampuses, setLoadingCampuses] = useState(false);
   const [campus, setCampus] = useState("");
+  const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
+
+  useEffect(() => {
+    const loadCampusesForCurrentSchool = async () => {
+      if (!API_URL) {
+        setCampusLoadError("NEXT_PUBLIC_API_URL ontbreekt");
+        return;
+      }
+
+      try {
+        setLoadingCampuses(true);
+        setCampusLoadError("");
+
+        const meResponse = await fetch(`${API_URL}/auth/me`, {
+          credentials: "include",
+        });
+
+        if (!meResponse.ok) {
+          throw new Error("Kon de ingelogde gebruiker niet ophalen");
+        }
+
+        const meData: MeResponse = await meResponse.json();
+
+        if (!meData.school?.id) {
+          throw new Error("Geen school gevonden voor de ingelogde gebruiker");
+        }
+
+        const campusData = await fetchSchoolCampuses(API_URL, meData.school.id);
+        setCampuses(campusData);
+      } catch (error) {
+        console.error(error);
+        setCampusLoadError(
+          error instanceof Error
+            ? error.message
+            : "Kon de campussen niet ophalen",
+        );
+      } finally {
+        setLoadingCampuses(false);
+      }
+    };
+
+    loadCampusesForCurrentSchool();
+  }, []);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setSelectedFile(file);
@@ -48,7 +99,7 @@ export default function BookListImport() {
         formData.append("campus", trimmedCampus);
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/import`, {
+      const response = await fetch(`${API_URL}/books/import`, {
         method: "POST",
         credentials:"include",
         body: formData,
@@ -90,7 +141,7 @@ export default function BookListImport() {
         const queryString = params.toString();
 
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/books/add/${mismatch.isbn}${
+          `${API_URL}/books/add/${mismatch.isbn}${
             queryString ? `?${queryString}` : ""
           }`,
           {
@@ -154,14 +205,24 @@ export default function BookListImport() {
 
       <label className="campusField">
         Campus
-        <input
-          type="text"
+        <select
           value={campus}
           onChange={(e) => setCampus(e.target.value)}
-          placeholder="Laat leeg als er geen campus is"
           className="campusInput"
-        />
+          disabled={loadingCampuses}
+        >
+          <option value="">
+            {loadingCampuses ? "Campussen laden..." : "Geen campus"}
+          </option>
+
+          {campuses.map((campusOption) => (
+            <option key={campusOption.id} value={campusOption.name}>
+              {campusOption.name}
+            </option>
+          ))}
+        </select>
       </label>
+      {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
 
       <p className="helperText">
         Deze campus wordt toegepast op alle boeken in dit Excelbestand.
