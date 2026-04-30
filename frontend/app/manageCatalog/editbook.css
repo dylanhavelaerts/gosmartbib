@@ -629,6 +629,31 @@
   margin-top: 1rem;
 }
 
+.inventory-editor-card {
+  border: 1px solid #e2d5dc;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #fbf8f9;
+  margin-top: 0.75rem;
+}
+
+.inventory-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.inventory-editor-card .modal-btn-cancel {
+  width: fit-content;
+}
+
+.inventory-editor-card .modal-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+  background-color: #f1eef0;
+}
+
 @media (max-width: 800px) {
   .inventory-editor-grid {
     grid-template-columns: 1fr;
