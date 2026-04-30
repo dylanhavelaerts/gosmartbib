@@ -98,7 +98,8 @@ public class BookNotificationService {
                     "Boek terug beschikbaar",
                     "Het boek '" + book.getTitle() + "' is terug beschikbaar in de bibliotheek."
             );
-            bookNotificationRepository.delete(notification);
         }
+        bookNotificationRepository.deleteAll(notifications);
     }
+
 }
