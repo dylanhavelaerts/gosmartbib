@@ -22,7 +22,6 @@ public class SmartschoolMessageService {
     private final SmartschoolOneRosterClient oneRosterClient;
     private final SchoolIntegrationRepository schoolIntegrationRepository;
     private final SmartschoolSoapClient soapClient;
-    private final SmartschoolSoapClient soapClient;
 
     public void sendMessage(UserEntity user, String title, String body){
         SchoolIntegrationEntity integration = schoolIntegrationRepository
@@ -45,9 +44,8 @@ public class SmartschoolMessageService {
     }
 
 
-        soapClient.sendMessage(integration, username, title, body);
 
     }
 
 
-}
+
