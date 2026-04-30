@@ -103,7 +103,7 @@ class ReadingListControllerTest {
                 ReadingListType.CLASS,
                 false,
                 "teacher",
-                List.of(new ReadingListDetailDTO.BookItem(10L, "Book", List.of("Author"), null, "isbn-10"))
+                List.of(new ReadingListDetailDTO.BookItem(10L, "Book", List.of("Author"), null, "isbn-10", 0))
         );
         when(readingListService.getListDetail(2L, uid)).thenReturn(detail);
 

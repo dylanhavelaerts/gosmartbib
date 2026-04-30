@@ -7,13 +7,15 @@ import edu.ap.gosmartlib.repositories.BookNotificationRepository;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookNotificationService {
@@ -52,6 +54,7 @@ public class BookNotificationService {
                 .orElse(false);
     }
 
+    @Async
     @Transactional
     public void triggerNotificationsForBook(BookEntity book, Long schoolId) {
         List<BookNotificationEntity> notifications = bookNotificationRepository
