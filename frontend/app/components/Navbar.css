@@ -57,6 +57,36 @@
   color: #8e1f42;
 }
 
+#headerNav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-icon-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  overflow: hidden;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.user-icon-img {
+  width: 1.2rem;
+  height: 1.2rem;
+  object-fit: contain;
+  transition: filter 0.2s;
+}
+
+.user-icon-link:hover .user-icon-img,
+.user-icon-active .user-icon-img {
+  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(900%)
+    hue-rotate(315deg);
+}
+
 .burger-menu {
   display: none;
   background: none;
