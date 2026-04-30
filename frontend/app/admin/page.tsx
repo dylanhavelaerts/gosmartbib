@@ -27,7 +27,7 @@ const teacherWidgets = [
     title: "Aankoopsuggesties",
     description:
       "Bekijk suggesties voor nieuwe boeken op basis van gebruikersfeedback.",
-    href: "/admin",
+    href: "/admin/purchase-request",
   },
   {
     iconSrc: "/smartschool/Module iconen/analytics_512x512.png",
