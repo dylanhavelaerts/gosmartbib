@@ -62,14 +62,6 @@ export default function Navbar() {
                 Catalogus
               </button>
             </Link>
-            <Link href="/spotlight">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/spotlight") ? "active" : ""}
-              >
-                In de kijker
-              </button>
-            </Link>
 
             <Link href="/reading-lists">
               <button
@@ -79,30 +71,24 @@ export default function Navbar() {
                 Mijn leeslijsten
               </button>
             </Link>
-            <Link href="/lending">
+            <Link href="/admin/loan-return/loan">
               <button
                 onClick={() => setIsOpen(false)}
-                className={isActive("/lending") ? "active" : ""}
+                className={isActive("/admin/loan-return/loan") ? "active" : ""}
               >
                 Mijn uitleningen
               </button>
             </Link>
-            {user?.role === "ADMIN" && (
+            {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
+              user?.role === "ADMIN" ||
+              user?.role === "TEACHER") && (
               <>
-                <Link href="/admin/users">
+                <Link href="/admin">
                   <button
                     onClick={() => setIsOpen(false)}
-                    className={isActive("/admin/users") ? "active" : ""}
+                    className={isActive("/admin") ? "active" : ""}
                   >
-                    Gebruikers
-                  </button>
-                </Link>
-                <Link href="/manageCatalog">
-                  <button
-                    onClick={() => setIsOpen(false)}
-                    className={isActive("/manageCatalog") ? "active" : ""}
-                  >
-                    Boeken
+                    Beheer
                   </button>
                 </Link>
               </>

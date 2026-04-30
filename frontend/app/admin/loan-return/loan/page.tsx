@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Book } from "../interfaces/Book";
-import { SmartschoolUser } from "../interfaces/SmartschoolUser";
+import { Book } from "../../../interfaces/Book";
+import { SmartschoolUser } from "../../../interfaces/SmartschoolUser";
 import "./lending.css";
 
 interface CartItem {

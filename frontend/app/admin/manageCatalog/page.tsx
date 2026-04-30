@@ -13,9 +13,9 @@ import {
   getCampusSelectOptions,
 } from "../utils/schoolCampuses";
 import { useRouter, useSearchParams } from "next/navigation";
-import "../catalog/bookList.css";
+import "../../catalog/bookList.css";
 import "./editbook.css";
-import ProtectedRoute from "../components/ProtectedRoute";
+import ProtectedRoute from "../../components/ProtectedRoute";
 
 export default function ManageCatalogPage() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -328,7 +328,7 @@ function handleArrayChange(
             <div className="eiland-lijst">
               <div className="headerdiv">
                 <button
-                  onClick={() => router.push("/add-book")}
+                  onClick={() => router.push("/admin/add-book")}
                   className="modal-btn-save"
                   type="button"
                 >

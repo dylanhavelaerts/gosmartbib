@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Book } from "../interfaces/Book";
-import BookCard from "../catalog/bookCard";
-import "../catalog/bookList.css";
+import { Book } from "../../interfaces/Book";
+import BookCard from "../../catalog/bookCard";
+import "../../catalog/bookList.css";
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);

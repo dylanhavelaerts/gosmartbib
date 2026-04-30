@@ -1,48 +1,30 @@
-.user-page {
+.admin-page {
   margin-top: 4.5rem;
   min-height: calc(100vh - 4.5rem);
 }
 
-.user-header {
+.admin-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   padding: 2rem 2.5rem 1rem;
 }
 
-.user-header-title {
-  font-size: 1.4rem;
+.admin-header-title {
+  font-size: 1.6rem;
   font-weight: 700;
   color: #8e2446;
 }
 
-.user-header-title span {
-  color: #8e2446;
+.admin-header-subtitle {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0.2rem 0 0;
 }
 
-.logout-btn {
-  border: 1.5px solid #8e2446;
-  color: #8e2446;
-  background: transparent;
-  padding: 0.5rem 1.25rem;
-  border-radius: 999px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background 0.2s,
-    color 0.2s;
-  white-space: nowrap;
-}
-
-.logout-btn:hover {
-  background: #8e2446;
-  color: #fff;
-}
-
-.widget-grid {
+.admin-widget-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
   padding: 1rem 2.5rem 2.5rem;
 }
@@ -62,8 +44,8 @@
   flex-direction: column;
   gap: 0.6rem;
   text-decoration: none;
-  min-height: 10rem;
-  vertical-align: center;
+  min-height: 12rem;
+  position: relative;
 }
 
 .widget-card:hover {
@@ -103,18 +85,53 @@
   color: #999;
   margin: 0;
   line-height: 1.4;
+  flex: 1;
+}
+
+.widget-open {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #8e2446;
+  text-decoration: none;
+  margin-top: 0.5rem;
+}
+
+.widget-open:hover {
+  text-decoration: underline;
+}
+
+.widget-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #e03355;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .admin-widget-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 640px) {
-  .user-header {
+  .admin-header {
     padding: 1.25rem 1.25rem 0.5rem;
   }
 
-  .user-header-title {
+  .admin-header-title {
     font-size: 1.1rem;
   }
 
-  .widget-grid {
+  .admin-widget-grid {
     grid-template-columns: 1fr;
     padding: 1rem 1.25rem 2rem;
     gap: 1rem;

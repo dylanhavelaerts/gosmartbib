@@ -1,0 +1,114 @@
+.loan-return-page {
+  margin-top: 4.5rem;
+  min-height: calc(100vh - 4.5rem);
+}
+
+.loan-return-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 2rem 2.5rem 1rem;
+}
+
+.loan-return-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #8e2446;
+  margin: 0;
+}
+
+.loan-return-subtitle {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0.2rem 0 0;
+}
+
+.loan-return-grid {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  padding: 1rem 2.5rem 2.5rem;
+}
+
+.action-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e8dde2;
+  box-shadow: 0 2px 8px rgba(142, 36, 70, 0.06);
+  padding: 2.5rem 2rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  min-height: 16rem;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(142, 36, 70, 0.13);
+  border-color: #8e2446;
+}
+
+.action-icon {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: rgba(142, 36, 70, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(900%)
+    hue-rotate(315deg);
+}
+
+.action-icon-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.action-body {
+  flex: 1;
+}
+
+.action-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 0.4rem;
+}
+
+.action-description {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .loan-return-header {
+    padding: 1.25rem 1.25rem 0.5rem;
+  }
+
+  .loan-return-title {
+    font-size: 1.1rem;
+  }
+
+  .loan-return-grid {
+    flex-direction: column;
+    padding: 1rem 1.25rem 2rem;
+  }
+
+  .action-card {
+    padding: 1.5rem;
+    min-height: auto;
+  }
+}
