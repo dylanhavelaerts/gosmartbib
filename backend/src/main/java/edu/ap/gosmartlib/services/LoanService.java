@@ -31,8 +31,8 @@ public class LoanService {
     private final LoanHistoryRepository loanHistoryRepository;
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
+    private final BookNotificationService bookNotificationService;
     private static final Logger logger = LoggerFactory.getLogger(LoanService.class);
-    private final UserRepository userRepository;
 
     // --- BOEKEN UITLENEN ---
     public void createLoans(List<LoanRequestDTO> loanRequests) {
@@ -101,35 +101,30 @@ public class LoanService {
         LoanHistoryEntity history = new LoanHistoryEntity();
         history.setSmartschoolUserId(loan.getSmartschoolUserId());
         history.setIsbn(loan.getIsbn());
-        history.setQuantity(returnQuantity); 
+        history.setQuantity(returnQuantity);
         history.setLoanDate(loan.getLoanDate());
         history.setReturnDate(LocalDate.now());
         loanHistoryRepository.save(history);
 
         // 2. Verhoog de voorraad in de boeken tabel én de school-inventory
         bookRepository.findByIsbn(loan.getIsbn()).ifPresent(book -> {
-            
-            // Haal de lener op om de juiste school-voorraad te verhogen (Bugfix voor teamgenoot)
-            userRepository.findBySmartschoolUid(loan.getSmartschoolUserId()).ifPresent(borrower -> {
-                Long schoolId = borrower.getSchool().getId();
-                
-                book.getInventories().stream()
-                        .filter(inv -> inv.getSchool().getId().equals(schoolId))
-                        .findFirst()
-                        .ifPresent(inventory -> {
-                            inventory.setAvailableCopies(inventory.getAvailableCopies() + returnQuantity);
-                        });
-            });
-
-            // Verhoog de algemene book voorraad
             book.setAvailableCopies(book.getAvailableCopies() + returnQuantity);
             bookRepository.save(book);
 
-            if (wasUnavailable) {
-                userRepository.findBySmartschoolUid(loan.getSmartschoolUserId())
-                        .ifPresent(borrower -> bookNotificationService.triggerNotificationsForBook(
-                                book, borrower.getSchool().getId()));
-            }
+            userRepository.findBySmartschoolUid(loan.getSmartschoolUserId())
+                    .ifPresent(borrower -> {
+                        Long schoolId = borrower.getSchool().getId();
+                        book.getInventories().stream()
+                                .filter(inv -> inv.getSchool().getId().equals(schoolId))
+                                .findFirst()
+                                .ifPresent(inv -> {
+                                    boolean wasSchoolUnavailable = inv.getAvailableCopies() == 0;
+                                    inv.setAvailableCopies(inv.getAvailableCopies() + returnQuantity);
+                                    if (wasSchoolUnavailable) {
+                                        bookNotificationService.triggerNotificationsForBook(book, schoolId);
+                                    }
+                                });
+                    });
         });
 
         // 3. Update of verwijder de actieve uitleen
