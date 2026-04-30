@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import {
   BOOK_CATEGORIES,
   BOOK_LABELS,
-} from "../interfaces/Book";
-import type { Book, BookInventory } from "../interfaces/Book";
-import type { MeResponse } from "../interfaces/user";
-import type { SchoolCampusDTO } from "../interfaces/schoolIntegration";
+} from "../../interfaces/Book";
+import type { Book, BookInventory } from "../../interfaces/Book";
+import type { MeResponse } from "../../interfaces/user";
+import type { SchoolCampusDTO } from "../../interfaces/schoolIntegration";
 import {
   fetchSchoolCampuses,
   getCampusSelectOptions,
-} from "../utils/schoolCampuses";
+} from "../../utils/schoolCampuses";
 import { useRouter, useSearchParams } from "next/navigation";
 import "../../catalog/bookList.css";
 import "./editbook.css";

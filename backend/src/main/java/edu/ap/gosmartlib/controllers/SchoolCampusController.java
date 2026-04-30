@@ -29,7 +29,7 @@ public class SchoolCampusController {
     private final SchoolCampusService schoolCampusService;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
     public List<SchoolCampusDTO> getCampuses(
             @PathVariable Long schoolId,
             @AuthenticationPrincipal OAuth2User oAuth2User) {
@@ -38,7 +38,7 @@ public class SchoolCampusController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
     public SchoolCampusDTO createCampus(
             @PathVariable Long schoolId,
             @Valid @RequestBody CreateSchoolCampusRequest request,
@@ -48,7 +48,7 @@ public class SchoolCampusController {
 
     @DeleteMapping("/{campusId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
     public void deleteCampus(
             @PathVariable Long schoolId,
             @PathVariable Long campusId,

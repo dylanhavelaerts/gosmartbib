@@ -84,18 +84,18 @@ class SchoolCampusServiceTest {
     }
 
     @Test
-    void givenNonAdminActor_whenGetCampuses_thenThrowsForbidden() {
-        UserEntity actor = buildUser("beheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+    void givenNonAdminOrBibbeheerderActor_whenGetCampuses_thenThrowsForbidden() {
+        UserEntity actor = buildUser("leerkracht-uid", UserRoles.TEACHER, 100L, "GO! School");
 
-        when(userRepository.findDetailedBySmartschoolUid("beheerder-uid")).thenReturn(Optional.of(actor));
+        when(userRepository.findDetailedBySmartschoolUid("leerkracht-uid")).thenReturn(Optional.of(actor));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.getCampusesForAdminSchool("beheerder-uid", 100L));
+                () -> schoolCampusService.getCampusesForAdminSchool("leerkracht-uid", 100L));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Geen toegang", exception.getReason());
 
-        verify(userRepository).findDetailedBySmartschoolUid("beheerder-uid");
+        verify(userRepository).findDetailedBySmartschoolUid("leerkracht-uid");
         verifyNoMoreInteractions(userRepository, schoolCampusRepository);
     }
 

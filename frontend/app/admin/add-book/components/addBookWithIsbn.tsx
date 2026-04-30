@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Book } from "../../interfaces/Book";
+import type { Book } from "../../../interfaces/Book";
 import type { MeResponse } from "@/app/interfaces/user";
 import type { SchoolCampusDTO } from "@/app/interfaces/schoolIntegration";
 import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";

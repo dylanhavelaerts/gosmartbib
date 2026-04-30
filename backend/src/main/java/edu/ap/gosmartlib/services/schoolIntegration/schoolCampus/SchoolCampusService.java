@@ -25,7 +25,7 @@ public class SchoolCampusService {
 
     @Transactional(readOnly = true)
     public List<SchoolCampusDTO> getCampusesForAdminSchool(String actorUid, Long schoolId) {
-        UserEntity actor = getCurrentAdmin(actorUid);
+        UserEntity actor = getCurrentAdminOrBibbeheerder(actorUid);
         assertAdminBelongsToSchool(actor, schoolId);
 
         return schoolCampusRepository.findBySchool_IdOrderByNameAsc(schoolId)
@@ -39,7 +39,7 @@ public class SchoolCampusService {
             String actorUid,
             Long schoolId,
             CreateSchoolCampusRequest request) {
-        UserEntity actor = getCurrentAdmin(actorUid);
+        UserEntity actor = getCurrentAdminOrBibbeheerder(actorUid);
         assertAdminBelongsToSchool(actor, schoolId);
 
         if (request == null) {
@@ -69,7 +69,7 @@ public class SchoolCampusService {
 
     @Transactional
     public void deleteCampusForAdminSchool(String actorUid, Long schoolId, Long campusId) {
-        UserEntity actor = getCurrentAdmin(actorUid);
+        UserEntity actor = getCurrentAdminOrBibbeheerder(actorUid);
         assertAdminBelongsToSchool(actor, schoolId);
 
         SchoolCampusEntity campus = schoolCampusRepository.findByIdAndSchool_Id(campusId, schoolId)
@@ -78,13 +78,13 @@ public class SchoolCampusService {
         schoolCampusRepository.delete(campus);
     }
 
-    private UserEntity getCurrentAdmin(String actorUid) {
+    private UserEntity getCurrentAdminOrBibbeheerder(String actorUid) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Ingelogde gebruiker niet gevonden"));
 
-        if (actor.getRole() != UserRoles.ADMIN) {
+        if (actor.getRole() != UserRoles.ADMIN && actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
         }
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {  BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
-import type { Book, BookInventory } from "../../interfaces/Book";
+import {  BOOK_CATEGORIES, BOOK_LABELS } from "../../../interfaces/Book";
+import type { Book, BookInventory } from "../../../interfaces/Book";
 import "./addBookForm.css";
 import type { MeResponse } from "@/app/interfaces/user";
 import type { SchoolCampusDTO } from "@/app/interfaces/schoolIntegration";
