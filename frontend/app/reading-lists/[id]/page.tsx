@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import "../readinglistdetail.css";
+import NotificationBell from "@/app/components/Notifications/Notification";
 
 interface BookItem {
   id: number;
@@ -45,6 +46,10 @@ export default function ReadingListDetailPage() {
   const storageKey = `reading-status:${userId}:${id}`;
 
   const [readStatus, setReadStatus] = useState<Record<number, boolean>>({});
+
+  const hasUnavailableBooks = detail?.books.some(
+    (b) => b.availableCopies === 0,
+  );
 
   useEffect(() => {
     if (!id || !user) return;
@@ -153,6 +158,9 @@ export default function ReadingListDetailPage() {
             </div>
 
             <h1>{detail.title}</h1>
+            {hasUnavailableBooks && (
+              <NotificationBell apiPath={`/reading-lists/${id}/notification`} />
+            )}
 
             {detail.taskDescription && (
               <p className="rld-description">{detail.taskDescription}</p>

@@ -4,27 +4,27 @@ import { useEffect, useState } from "react";
 import "./Notification.css";
 
 interface Props {
-  bookId: number;
+  apiPath: string;
   className?: string;
 }
 
-export default function NotificationBell({ bookId, className = "" }: Props) {
+export default function NotificationBell({ apiPath, className = "" }: Props) {
   const [enabled, setEnabled] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
-    fetch(`${apiUrl}/books/${bookId}/notification`, {
+    fetch(`${apiUrl}${apiPath}`, {
       credentials: "include",
     })
       .then((r) => r.json())
       .then((on: boolean) => setEnabled(on))
       .catch(() => setEnabled(false));
-  }, [bookId]);
+  }, [apiPath]);
 
   const toggle = async () => {
     const method = enabled ? "DELETE" : "POST";
     try {
-      await fetch(`${apiUrl}/books/${bookId}/notification`, {
+      await fetch(`${apiUrl}${apiPath}`, {
         method,
         credentials: "include",
       });

@@ -110,7 +110,10 @@ export default function DetailPage({
               className="detailCover"
             />
             {currentUser && available === 0 && (
-              <NotificationBell bookId={book.id} className="coverBell" />
+              <NotificationBell
+                apiPath={`/books/${book.id}/notification`}
+                className="coverBell"
+              />
             )}
           </div>
 

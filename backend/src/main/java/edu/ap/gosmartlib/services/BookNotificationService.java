@@ -53,6 +53,38 @@ public class BookNotificationService {
                 .map(user -> bookNotificationRepository.existsByUser_IdAndBook_Id(user.getId(), bookId))
                 .orElse(false);
     }
+    @Transactional
+    public void enableBulk(String smartschoolUid, List<Long> bookIds) {
+        UserEntity user = userRepository.findBySmartschoolUid(smartschoolUid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gebruiker niet gevonden"));
+        List<BookEntity> books = bookRepository.findAllById(bookIds);
+        for (BookEntity book : books) {
+            if (!bookNotificationRepository.existsByUser_IdAndBook_Id(user.getId(), book.getId())) {
+                BookNotificationEntity notification = new BookNotificationEntity();
+                notification.setUser(user);
+                notification.setBook(book);
+                bookNotificationRepository.save(notification);
+            }
+        }
+    }
+
+    @Transactional
+    public void disableBulk(String smartschoolUid, List<Long> bookIds) {
+        UserEntity user = userRepository.findBySmartschoolUid(smartschoolUid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gebruiker niet gevonden"));
+        for (Long bookId : bookIds) {
+            bookNotificationRepository.deleteByUser_IdAndBook_Id(user.getId(), bookId);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isAllEnabled(String smartschoolUid, List<Long> bookIds) {
+        if (bookIds.isEmpty()) return false;
+        return userRepository.findBySmartschoolUid(smartschoolUid)
+                .map(user -> bookIds.stream()
+                        .allMatch(bookId -> bookNotificationRepository.existsByUser_IdAndBook_Id(user.getId(), bookId)))
+                .orElse(false);
+    }
 
     @Async
     @Transactional
