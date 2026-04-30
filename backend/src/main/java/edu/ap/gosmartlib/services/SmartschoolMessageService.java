@@ -6,7 +6,6 @@ import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolSoapClient;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolSoapClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

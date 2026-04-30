@@ -423,6 +423,30 @@ export default function SchoolIntegrationPage() {
                 />
               </label>
 
+              <label className="field">
+                <span>Smartschool accesscode</span>
+                <input
+                  type="password"
+                  value={smartschoolAccesscode}
+                  onChange={(e) => setSmartschoolAccesscode(e.target.value)}
+                  placeholder={
+                    integration?.smartschoolAccesscodeConfigured
+                      ? "Laat leeg om de huidige accesscode te behouden"
+                      : "Accesscode"
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>Smartschool afzender (senderIdentifier)</span>
+                <input
+                  type="text"
+                  value={senderIdentifier}
+                  onChange={(e) => setSenderIdentifier(e.target.value)}
+                  placeholder="bv. jan.janssen"
+                />
+              </label>
+
               <label className="checkbox">
                 <input
                   type="checkbox"
