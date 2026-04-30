@@ -1,8 +1,8 @@
 package edu.ap.gosmartlib.services;
 
-import edu.ap.gosmartlib.dto.CreateReadingListDTO;
-import edu.ap.gosmartlib.dto.ReadingListDetailDTO;
-import edu.ap.gosmartlib.dto.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
@@ -272,7 +272,7 @@ public class ReadingListService {
     }
 
     private ReadingListOverviewDTO toOverview(ReadingListEntity list, Long currentUserId,
-            Map<String, String> displayNames) {
+                                              Map<String, String> displayNames) {
         List<Long> ids = list.getBooks().stream().map(BookEntity::getId).toList();
 
         String creatorName = resolveCreatorName(list, displayNames);
@@ -303,7 +303,7 @@ public class ReadingListService {
     }
 
     private ReadingListDetailDTO toDetail(ReadingListEntity list, Long currentUserId,
-            Map<String, String> displayNames) {
+                                          Map<String, String> displayNames) {
         String creatorName = resolveCreatorName(list, displayNames);
 
         List<ReadingListDetailDTO.BookItem> books = list.getBooks().stream()
@@ -317,7 +317,9 @@ public class ReadingListService {
                             book.getTitle(),
                             authors,
                             book.getThumbnail(),
-                            book.getIsbn());
+                            book.getIsbn(),
+                            book.getAvailableCopies() != null ? book.getAvailableCopies() : 0);
+
                 })
                 .toList();
 

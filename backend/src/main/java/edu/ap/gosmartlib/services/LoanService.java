@@ -31,6 +31,7 @@ public class LoanService {
     private final LoanHistoryRepository loanHistoryRepository;
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
+    private final BookNotificationService bookNotificationService;
     private static final Logger logger = LoggerFactory.getLogger(LoanService.class);
 
     // --- BOEKEN UITLENEN ---
@@ -100,41 +101,42 @@ public class LoanService {
         LoanHistoryEntity history = new LoanHistoryEntity();
         history.setSmartschoolUserId(loan.getSmartschoolUserId());
         history.setIsbn(loan.getIsbn());
-        history.setQuantity(returnQuantity); 
+        history.setQuantity(returnQuantity);
         history.setLoanDate(loan.getLoanDate());
         history.setReturnDate(LocalDate.now());
         loanHistoryRepository.save(history);
 
         // 2. Verhoog de voorraad in de boeken tabel én de school-inventory
         bookRepository.findByIsbn(loan.getIsbn()).ifPresent(book -> {
-            
-            // Haal de lener op om de juiste school-voorraad te verhogen (Bugfix voor teamgenoot)
-            userRepository.findBySmartschoolUid(loan.getSmartschoolUserId()).ifPresent(borrower -> {
-                Long schoolId = borrower.getSchool().getId();
-                
-                book.getInventories().stream()
-                        .filter(inv -> inv.getSchool().getId().equals(schoolId))
-                        .findFirst()
-                        .ifPresent(inventory -> {
-                            inventory.setAvailableCopies(inventory.getAvailableCopies() + returnQuantity);
-                        });
-            });
-
-            // Verhoog de algemene book voorraad
             book.setAvailableCopies(book.getAvailableCopies() + returnQuantity);
             bookRepository.save(book);
+
+            userRepository.findBySmartschoolUid(loan.getSmartschoolUserId())
+                    .ifPresent(borrower -> {
+                        Long schoolId = borrower.getSchool().getId();
+                        book.getInventories().stream()
+                                .filter(inv -> inv.getSchool().getId().equals(schoolId))
+                                .findFirst()
+                                .ifPresent(inv -> {
+                                    boolean wasSchoolUnavailable = inv.getAvailableCopies() == 0;
+                                    inv.setAvailableCopies(inv.getAvailableCopies() + returnQuantity);
+                                    if (wasSchoolUnavailable) {
+                                        bookNotificationService.triggerNotificationsForBook(book, schoolId);
+                                    }
+                                });
+                    });
         });
 
         // 3. Update of verwijder de actieve uitleen
         if (returnQuantity == loan.getQuantity()) {
             loanRepository.delete(loan);
-            logger.info("RETOUR GELOGD: Alle {} exemplaren van ISBN {} teruggebracht door {}. Uitleen verwijderd.", 
-                        returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId());
+            logger.info("RETOUR GELOGD: Alle {} exemplaren van ISBN {} teruggebracht door {}. Uitleen verwijderd.",
+                    returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId());
         } else {
             loan.setQuantity(loan.getQuantity() - returnQuantity);
             loanRepository.save(loan);
-            logger.info("DEEL-RETOUR GELOGD: {} exemplaren van ISBN {} teruggebracht door {}. Nog {} uitgeleend.", 
-                        returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId(), loan.getQuantity());
+            logger.info("DEEL-RETOUR GELOGD: {} exemplaren van ISBN {} teruggebracht door {}. Nog {} uitgeleend.",
+                    returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId(), loan.getQuantity());
         }
     }
 

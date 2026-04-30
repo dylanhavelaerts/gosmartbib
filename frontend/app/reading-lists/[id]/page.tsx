@@ -11,6 +11,7 @@ interface BookItem {
   authors: string[];
   thumbnail?: string | null;
   isbn: string;
+  availableCopies: number;
 }
 
 interface ReadingListDetail {
@@ -213,6 +214,7 @@ export default function ReadingListDetailPage() {
             <div className="rld-book-grid">
               {detail.books.map((book) => {
                 const isRead = readStatus[book.id] ?? false;
+                const isUnavailable = book.availableCopies === 0;
                 return (
                   <div
                     key={book.id}
@@ -235,6 +237,11 @@ export default function ReadingListDetailPage() {
                       </p>
                       {book.isbn && (
                         <span className="rld-isbn">ISBN: {book.isbn}</span>
+                      )}
+                      {isUnavailable && (
+                        <span className="rld-unavailable-badge">
+                          Niet beschikbaar
+                        </span>
                       )}
 
                       <div className="rld-book-actions">

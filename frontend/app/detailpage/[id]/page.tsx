@@ -12,6 +12,7 @@ import { MeResponse } from "../../interfaces/user";
 import Link from "next/link";
 import "./detailpage.css";
 import ReviewSection from "@/app/components/reviewsection/reviewsection";
+import NotificationBell from "@/app/components/Notifications/Notification";
 
 interface ReviewWithRating {
   rating: number;
@@ -29,11 +30,6 @@ export default function DetailPage({
     null,
   );
   const [currentUser, setCurrentUser] = useState<MeResponse | null>(null);
-
-  const isStaff =
-    currentUser?.role === "TEACHER" ||
-    currentUser?.role === "BIBLIOTHEEKBEHEERDER" ||
-    currentUser?.role === "ADMIN";
 
   const normalizedRating =
     typeof averageReviewRating === "number"
@@ -92,7 +88,11 @@ export default function DetailPage({
   }, [id, fetchAverageReviewRating]);
 
   if (!book) return <p>Loading...</p>;
-
+  const inv = currentUser
+    ? book.inventories?.find((i) => i.schoolId === currentUser.school?.id)
+    : undefined;
+  const available = inv?.availableCopies ?? 0;
+  const total = inv?.totalCopies ?? 0;
   return (
     <main className="detailPage">
       <Link href="/catalog" className="backLink">
@@ -109,25 +109,19 @@ export default function DetailPage({
               onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
               className="detailCover"
             />
-            {!isStaff &&
-              currentUser &&
-              (() => {
-                const inv = book.inventories?.find(
-                  (i) => i.schoolId === currentUser?.school?.id,
-                );
-                const available = inv?.availableCopies ?? 0;
-                const total = inv?.totalCopies ?? 0;
-                return (
-                  <span
-                    className={`coverBadge ${available > 0 ? "available" : "unavailable"}`}
-                  >
-                    {inv
-                      ? `${available}/${total} beschikbaar`
-                      : "Niet beschikbaar"}
-                  </span>
-                );
-              })()}
+            {currentUser && available === 0 && (
+              <NotificationBell bookId={book.id} className="coverBell" />
+            )}
           </div>
+
+          {/* Beschikbaarheidsbadge staat nu onder de cover */}
+          {currentUser && (
+            <span
+              className={`coverBadge ${available > 0 ? "available" : "unavailable"}`}
+            >
+              {inv ? `${available}/${total} beschikbaar` : "Niet beschikbaar"}
+            </span>
+          )}
 
           <div className="detailRatingSection">
             <p className="detailInfoSectionTitle">Beoordeling</p>

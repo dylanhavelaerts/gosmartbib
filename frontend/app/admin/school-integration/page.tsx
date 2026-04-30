@@ -62,6 +62,9 @@ export default function SchoolIntegrationPage() {
   const schoolName = me?.school?.name ?? "";
   const schoolDomain = me?.school?.domain ?? "";
 
+  const [smartschoolAccesscode, setSmartschoolAccesscode] = useState("");
+  const [senderIdentifier, setSenderIdentifier] = useState("");
+
   const canUsePage = useMemo(() => {
     return me?.role === "ADMIN" && !!schoolId;
   }, [me, schoolId]);
@@ -131,6 +134,8 @@ export default function SchoolIntegrationPage() {
         setBaseUrl("");
         setClientId("");
         setClientSecret("");
+        setSmartschoolAccesscode(""); //altijd leeg na het laden als successvol
+        setSenderIdentifier("");
         setEnabled(false);
         return;
       }
@@ -145,6 +150,8 @@ export default function SchoolIntegrationPage() {
       setBaseUrl(data.onerosterBaseUrl ?? "");
       setClientId(data.onerosterClientId ?? "");
       setClientSecret("");
+      setSmartschoolAccesscode(""); //altijd leeg na het laden als successvol
+      setSenderIdentifier(data.smartschoolSenderIdentifier ?? ""); //?
       setEnabled(Boolean(data.onerosterEnabled));
     } catch (err) {
       console.error(err);
@@ -165,6 +172,8 @@ export default function SchoolIntegrationPage() {
         onerosterClientId: clientId.trim(),
         onerosterClientSecret: clientSecret,
         onerosterEnabled: enabled,
+        smartschoolAccesscode: smartschoolAccesscode,
+        smartschoolSenderIdentifier: senderIdentifier,
       };
 
       const response = await fetch(
@@ -190,13 +199,12 @@ export default function SchoolIntegrationPage() {
       setClientId(data.onerosterClientId ?? "");
       setEnabled(Boolean(data.onerosterEnabled));
       setClientSecret("");
+      setSmartschoolAccesscode("");
       setSuccess("Integratie succesvol opgeslagen");
     } catch (err) {
       console.error(err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Er ging iets mis bij het opslaan",
+        err instanceof Error ? err.message : "Er ging iets mis bij het opslaan",
       );
     } finally {
       setSaving(false);
@@ -328,9 +336,7 @@ export default function SchoolIntegrationPage() {
       <h1>Schoolintegratie</h1>
 
       {error && <p className="message error">{error}</p>}
-      {success && (
-        <p className="message success">{success}</p>
-      )}
+      {success && <p className="message success">{success}</p>}
 
       {!error && canUsePage && (
         <>
@@ -448,9 +454,7 @@ export default function SchoolIntegrationPage() {
 
           <section className="card">
             <h2>Debug</h2>
-            <p className="help">
-              Test of de live koppeling echt werkt.
-            </p>
+            <p className="help">Test of de live koppeling echt werkt.</p>
 
             <div className="actions">
               <button
@@ -475,7 +479,9 @@ export default function SchoolIntegrationPage() {
                 <h3>Testresultaat</h3>
                 <ul className="list">
                   <li>Succes: {testResult.success ? "Ja" : "Nee"}</li>
-                  <li>Token ontvangen: {testResult.tokenReceived ? "Ja" : "Nee"}</li>
+                  <li>
+                    Token ontvangen: {testResult.tokenReceived ? "Ja" : "Nee"}
+                  </li>
                   <li>
                     Schools endpoint bereikbaar:{" "}
                     {testResult.schoolsEndpointReachable ? "Ja" : "Nee"}
@@ -505,7 +511,9 @@ export default function SchoolIntegrationPage() {
 
                 <pre>
                   {JSON.stringify(
-                    showAllUsers ? liveUsers.users : liveUsers.users.slice(0, 5),
+                    showAllUsers
+                      ? liveUsers.users
+                      : liveUsers.users.slice(0, 5),
                     null,
                     2,
                   )}

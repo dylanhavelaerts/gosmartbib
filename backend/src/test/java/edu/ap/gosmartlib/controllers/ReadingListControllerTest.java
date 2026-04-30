@@ -1,8 +1,8 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.dto.CreateReadingListDTO;
-import edu.ap.gosmartlib.dto.ReadingListDetailDTO;
-import edu.ap.gosmartlib.dto.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.services.ReadingListService;
 import edu.ap.gosmartlib.util.ReadingListType;
@@ -103,7 +103,7 @@ class ReadingListControllerTest {
                 ReadingListType.CLASS,
                 false,
                 "teacher",
-                List.of(new ReadingListDetailDTO.BookItem(10L, "Book", List.of("Author"), null, "isbn-10"))
+                List.of(new ReadingListDetailDTO.BookItem(10L, "Book", List.of("Author"), null, "isbn-10", 0))
         );
         when(readingListService.getListDetail(2L, uid)).thenReturn(detail);
 

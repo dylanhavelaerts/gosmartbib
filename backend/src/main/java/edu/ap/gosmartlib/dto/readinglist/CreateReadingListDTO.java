@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.dto;
+package edu.ap.gosmartlib.dto.readinglist;
 
 import lombok.Data;
 import java.util.List;
