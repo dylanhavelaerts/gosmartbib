@@ -8,9 +8,15 @@ import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,10 +31,10 @@ public class UserService {
     // Nog bespreken met klant (hoe lang voor inactive accounts verwijderd mogen
     // worden
     // private static final long DELETION_DAYS = 365; --> ook nog te implementeren
-
     private final UserRepository userRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final SchoolRepository schoolRepository;
+    private final HttpServletRequest request;
 
     /**
      * Wordt aangeroepen elke login
@@ -105,6 +111,24 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Gebruiker niet gevonden"));
 
         return UserDTO.from(user);
+    }
+
+    public void logUserOut(HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
+
+        clearCookie("JSESSIONID", response);
+        clearCookie("AUTHENTICATED", response);
+    }
+
+    private void clearCookie(String name, HttpServletResponse response) {
+        Cookie cookie = new Cookie(name, "");
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        response.addCookie(cookie);
     }
 
     // Maakt van Smartschool groups een SchoolClassEntity

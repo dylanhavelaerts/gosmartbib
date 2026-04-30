@@ -24,7 +24,6 @@ import java.util.Map;
  * basisinformatie van nog een extra API call roept voor de groupInfo
  * Na aanroep mergen we deze informatie bij de fulluserinfo
  */
-
 @Slf4j
 @Component
 public class OAuth2UserService extends DefaultOAuth2UserService {
@@ -80,11 +79,8 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
 
     /**
      * Roept smartschools /Api/V1/groupinfo endpoint aan via de accessToken
-     * 
-     * @param platform    - het platform van de gebruiker, nodig om de juiste URL
-     *                    aan te roepen (lokaal of productie)
-     * @param accessToken - de access token die we gekregen hebben van Spring
-     *                    Security
+     * @param platform    - het platform van de gebruiker, nodig om de juiste URL aan te roepen (lokaal of productie)
+     * @param accessToken - de access token die we gekregen hebben van Spring Security
      * @return raw responsemap met "groups" en "parentGroups"
      */
     private Map<String, Object> fetchGroupInfo(String platform, String accessToken) {
