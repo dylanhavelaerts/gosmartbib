@@ -44,10 +44,11 @@ public class SmartschoolSoapClient {
                     .body(soapEnvelope)
                     .retrieve()
                     .body(String.class);
-            log.info("SOAP bericht verstuurd naar {}: {}", username, response);
+            log.info("SOAP bericht verstuurd: {}", response);
         } catch (Exception e) {
-            log.error("SOAP bericht versturen naar {} mislukt: {}", username, e.getMessage());
+            log.error("SOAP bericht versturen mislukt: {}", e.getMessage());
         }
+
     }
 
 
