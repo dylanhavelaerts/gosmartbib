@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Book } from "../../interfaces/Book";
+import type { Book } from "../../../interfaces/Book";
 import "./addBookForm.css";
 
 export default function AddBookWithIsbn() {

@@ -210,7 +210,7 @@ export default function Home() {
               className={activeTab === "Beheer catalogus" ? "active" : ""}
               onClick={() => {
                 setActiveTab("Beheer catalogus");
-                router.push("/manageCatalog");
+                router.push("/admin/manageCatalog");
               }}
             >
               Beheer catalogus

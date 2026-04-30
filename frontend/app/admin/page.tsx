@@ -1,0 +1,124 @@
+"use client";
+
+import Link from "next/link";
+import { useAuth } from "../context/AuthContext";
+import "./admin.css";
+
+const teacherWidgets = [
+  {
+    iconSrc: "/save.png",
+    iconAlt: "InDeKijker",
+    title: "In de kijker",
+    description:
+      "Beheer welke boeken in de bibliotheek in de kijker staan en promoot bepaalde titels.",
+    href: "/admin/spotlight",
+  },
+  {
+    iconSrc: "/smartschool/Module iconen/enquete_512x512.png",
+    iconAlt: "Reviewmoderatie",
+    title: "Reviewmoderatie",
+    description:
+      "Modereer gebruikersreviews en beheer de zichtbaarheid van inhoud.",
+    href: "/admin/reviews",
+  },
+  {
+    iconSrc: "/admin/buy.png",
+    iconAlt: "Aankoopsuggesties",
+    title: "Aankoopsuggesties",
+    description:
+      "Bekijk suggesties voor nieuwe boeken op basis van gebruikersfeedback.",
+    href: "/admin",
+  },
+  {
+    iconSrc: "/smartschool/Module iconen/analytics_512x512.png",
+    iconAlt: "Statistieken",
+    title: "Statistieken",
+    description:
+      "Bekijk statistieken over populaire boeken en gebruikersactiviteit.",
+    href: "/admin",
+  },
+];
+
+const beheerderWidgets = [
+  {
+    iconSrc: "/admin/settings.png",
+    iconAlt: "Bibliotheekinstellingen",
+    title: "Bibliotheekinstellingen",
+    description: "Beheer uitleentermijnen en algemene bibliotheekinstellingen.",
+    href: "/",
+  },
+  {
+    iconSrc: "/book-icon.png",
+    iconAlt: "Catalogusbeheer",
+    title: "Catalogusbeheer",
+    description:
+      "Voeg nieuwe boeken toe, pas bestaande boeken aan of verwijder oude.",
+    href: "/admin/manageCatalog",
+  },
+  {
+    iconSrc: "/checl.png",
+    iconAlt: "Uitleningen",
+    title: "Uitleningen",
+    description:
+      "Beheer hier nieuwe uitleningen en terugbrengingen van boeken in de bibliotheek.",
+    href: "/admin/loan-return",
+  },
+];
+
+const adminWidgets = [
+  {
+    iconSrc: "/admin/settings.png",
+    iconAlt: "Gebruikersbeheer",
+    title: "Gebruikersbeheer",
+    description: "Beheer gebruikers en hun rollen binnen het systeem.",
+    href: "/admin/users",
+  },
+];
+
+export default function AdminHome() {
+  const { user } = useAuth();
+
+  function getWidgets() {
+    if (user?.role === "ADMIN") {
+      return adminWidgets;
+    } else if (user?.role === "BIBLIOTHEEKBEHEERDER") {
+      return [...beheerderWidgets, ...teacherWidgets];
+    } else if (user?.role === "TEACHER") {
+      return teacherWidgets;
+    } else {
+      return [];
+    }
+  }
+
+  const widgets = getWidgets();
+
+  return (
+    <div className="admin-page">
+      <div className="admin-header">
+        <h2 className="admin-header-title">Beheer</h2>
+        <p className="admin-header-subtitle">
+          Welkom bij het beheerdersdashboard. Hier kun je alle aspecten van de
+          bibliotheek beheren, van de catalogus tot gebruikersreviews en
+          uitleenbeheer. Kies een van de onderstaande opties om aan de slag te
+          gaan.
+        </p>
+      </div>
+
+      <div className="admin-widget-grid">
+        {widgets.map((w) => (
+          <Link key={w.href} href={w.href} className="widget-card">
+            <div className="widget-icon">
+              <img
+                className="widget-icon-img"
+                src={w.iconSrc}
+                alt={w.iconAlt}
+              />
+            </div>
+            <p className="widget-title">{w.title}</p>
+            <p className="widget-description">{w.description}</p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}

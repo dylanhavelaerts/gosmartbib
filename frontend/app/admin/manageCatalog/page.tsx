@@ -6,12 +6,12 @@ import {
   BookInventory,
   BOOK_CATEGORIES,
   BOOK_LABELS,
-} from "../interfaces/Book";
-import type { MeResponse } from "../interfaces/user";
+} from "../../interfaces/Book";
+import type { MeResponse } from "../../interfaces/user";
 import { useRouter, useSearchParams } from "next/navigation";
-import "../catalog/bookList.css";
+import "../../catalog/bookList.css";
 import "./editbook.css";
-import ProtectedRoute from "../components/ProtectedRoute";
+import ProtectedRoute from "../../components/ProtectedRoute";
 
 export default function ManageCatalogPage() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -289,7 +289,7 @@ export default function ManageCatalogPage() {
             <div className="eiland-lijst">
               <div className="headerdiv">
                 <button
-                  onClick={() => router.push("/add-book")}
+                  onClick={() => router.push("/admin/add-book")}
                   className="modal-btn-save"
                   type="button"
                 >

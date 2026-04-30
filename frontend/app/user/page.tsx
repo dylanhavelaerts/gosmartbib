@@ -45,9 +45,7 @@ export default function UserHome() {
   return (
     <div className="user-page">
       <div className="user-header">
-        <h2 className="user-header-title">
-          Mijn <span>account</span>
-        </h2>
+        <h2 className="user-header-title">Mijn account</h2>
         <button className="logout-btn" onClick={logoutUser}>
           Uitloggen
         </button>

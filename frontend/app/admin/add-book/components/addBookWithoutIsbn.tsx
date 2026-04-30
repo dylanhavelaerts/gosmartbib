@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AGE_RANGE, Book, BookInventory, BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
+import { AGE_RANGE, Book, BookInventory, BOOK_CATEGORIES, BOOK_LABELS } from "../../../interfaces/Book";
 import "./addBookForm.css";
 import { MeResponse } from "@/app/interfaces/user";
 
