@@ -127,8 +127,6 @@ function handleArrayChange(
 ) {
   const values = e.target.value
     .split(",")
-    .map((value) => value.trim())
-    .filter((value) => value !== "");
 
   setFormData((prev) => ({ ...prev, [field]: values }));
 }
@@ -567,7 +565,7 @@ function handleArrayChange(
                       name="authors"
                       className="modal-input"
                       type="text"
-                      value={formData.authors?.join(", ") || ""}
+                      value={formData.authors?.join(",") || ""}
                       onChange={(e) => handleArrayChange(e, "authors")}
                     />
                   </div>
