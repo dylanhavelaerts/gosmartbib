@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolSoapClient;
+import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolSoapClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class SmartschoolMessageService {
     private final SmartschoolOneRosterAuthService authService;
     private final SmartschoolOneRosterClient oneRosterClient;
     private final SchoolIntegrationRepository schoolIntegrationRepository;
+    private final SmartschoolSoapClient soapClient;
     private final SmartschoolSoapClient soapClient;
 
     public void sendMessage(UserEntity user, String title, String body){
@@ -38,6 +40,11 @@ public class SmartschoolMessageService {
             log.warn("Geen username gevonden voor gebruiker {}", user.getId());
             return;
         }
+        soapClient.sendMessage(integration, username, title, body);
+
+    }
+
+
         soapClient.sendMessage(integration, username, title, body);
 
     }
