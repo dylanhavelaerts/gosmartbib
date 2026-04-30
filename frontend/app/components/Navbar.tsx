@@ -108,6 +108,15 @@ export default function Navbar() {
               </>
             )}
           </div>
+
+          <Link
+            href="/user"
+            className={`user-icon-link${isActive("/user") ? " user-icon-active" : ""}`}
+            onClick={() => setIsOpen(false)}
+            title="Profiel"
+          >
+            <img src="/user.png" alt="Profiel" className="user-icon-img" />
+          </Link>
         </nav>
       </div>
     </header>

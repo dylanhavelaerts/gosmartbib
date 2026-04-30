@@ -6,10 +6,14 @@ import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveSchoolsRespo
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveUsersResponse;
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationTestResponse;
 import edu.ap.gosmartlib.dto.schoolIntegration.UpsertSchoolIntegrationRequest;
+import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.services.SmartschoolMessageService;
 import edu.ap.gosmartlib.services.schoolIntegration.SchoolIntegrationAdminService;
 import edu.ap.gosmartlib.services.schoolIntegration.SchoolIntegrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -29,6 +33,8 @@ public class SchoolIntegrationAdminController {
 
     private final SchoolIntegrationService schoolIntegrationService;
     private final SchoolIntegrationAdminService schoolIntegrationAdminService;
+    private final UserRepository userRepository;
+    private final SmartschoolMessageService smartschoolMessageService;
 
     @GetMapping
     @PreAuthorize("@roleGuard.isAdmin(authentication)")

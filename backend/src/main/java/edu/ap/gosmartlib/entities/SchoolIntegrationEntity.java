@@ -45,4 +45,11 @@ public class SchoolIntegrationEntity {
 
     @Column(name = "last_error", length = 2000)
     private String lastError;
+
+    @Column(name = "smartschool_accesscode", length = 4000)
+    @Convert(converter = SecretCryptoConverter.class)
+    private String smartschoolAccesscode;
+    @Column(name = "smartschool_sender_identifier", length = 4000)
+    @Convert(converter = SecretCryptoConverter.class)
+    private String smartschoolSenderIdentifier;
 }

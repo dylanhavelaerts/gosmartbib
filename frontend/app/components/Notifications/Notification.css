@@ -1,0 +1,19 @@
+.notifBtn {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 4px;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 50%;
+}
+
+.notifBtn--active img {
+  filter: brightness(0) saturate(100%) invert(14%) sepia(60%) saturate(800%) hue-rotate(300deg);
+}

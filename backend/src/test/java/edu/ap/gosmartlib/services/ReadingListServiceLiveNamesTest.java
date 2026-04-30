@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.services;
 
-import edu.ap.gosmartlib.dto.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
