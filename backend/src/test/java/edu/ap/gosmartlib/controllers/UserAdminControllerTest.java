@@ -11,6 +11,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.server.ResponseStatusException;
@@ -35,22 +39,27 @@ class UserAdminControllerTest {
 
     @Test
     void givenValidOAuthUser_whenListUsers_thenDelegatesWithExtractedUid() {
-        List<AdminUserDTO> expected = List.of(buildAdminUserDTO(1L, "student-uid", UserRoles.STUDENT));
+        List<AdminUserDTO> list = List.of(buildAdminUserDTO(1L, "student-uid", UserRoles.STUDENT));
+        Page<AdminUserDTO> expectedPage = new PageImpl<>(list);
+        Pageable pageable = PageRequest.of(0, 10);
+        
         when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
-        when(userAdminService.listUsersForAdmin("admin-uid")).thenReturn(expected);
+        when(userAdminService.listUsersForAdmin("admin-uid", null, pageable)).thenReturn(expectedPage);
 
-        List<AdminUserDTO> result = userAdminController.listUsers(oAuth2User);
+        Page<AdminUserDTO> result = userAdminController.listUsers(oAuth2User, null, pageable);
 
-        assertEquals(expected, result);
+        assertEquals(expectedPage, result);
         verify(oAuth2User).getAttribute("userID");
-        verify(userAdminService).listUsersForAdmin("admin-uid");
+        verify(userAdminService).listUsersForAdmin("admin-uid", null, pageable);
         verifyNoMoreInteractions(userAdminService, oAuth2User);
     }
 
     @Test
     void givenNullOAuthUser_whenListUsers_thenThrowsUnauthorized() {
+        Pageable pageable = PageRequest.of(0, 10);
+        
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminController.listUsers(null));
+                () -> userAdminController.listUsers(null, null, pageable));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
         assertEquals("Niet ingelogd", exception.getReason());
@@ -60,9 +69,10 @@ class UserAdminControllerTest {
     @Test
     void givenMissingUid_whenListUsers_thenThrowsUnauthorized() {
         when(oAuth2User.getAttribute("userID")).thenReturn(null);
+        Pageable pageable = PageRequest.of(0, 10);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminController.listUsers(oAuth2User));
+                () -> userAdminController.listUsers(oAuth2User, null, pageable));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
         assertEquals("Geen geldige gebruiker", exception.getReason());
@@ -73,9 +83,10 @@ class UserAdminControllerTest {
     @Test
     void givenBlankUid_whenListUsers_thenThrowsUnauthorized() {
         when(oAuth2User.getAttribute("userID")).thenReturn("   ");
+        Pageable pageable = PageRequest.of(0, 10);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminController.listUsers(oAuth2User));
+                () -> userAdminController.listUsers(oAuth2User, null, pageable));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
         assertEquals("Geen geldige gebruiker", exception.getReason());
