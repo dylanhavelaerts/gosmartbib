@@ -40,7 +40,6 @@ export default function SchoolIntegrationPage() {
   const [savingCampus, setSavingCampus] = useState(false);
   const [deletingCampusId, setDeletingCampusId] = useState<number | null>(null);
 
-
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -119,7 +118,6 @@ export default function SchoolIntegrationPage() {
           loadIntegration(meData.school.id),
           loadCampuses(meData.school.id),
         ]);
-
       } catch (err) {
         console.error(err);
         setError("Er ging iets mis bij het laden van de integratie");
@@ -187,7 +185,7 @@ export default function SchoolIntegrationPage() {
     }
   };
 
- const handleCreateCampus = async (e: React.FormEvent) => {
+  const handleCreateCampus = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!API_URL || !schoolId) return;
@@ -497,7 +495,7 @@ export default function SchoolIntegrationPage() {
             )}
           </section>
 
-<section className="card">
+          <section className="card">
             <h2>Campussen</h2>
             <p className="help">
               Voeg hier de campussen toe die later in boekinventaris als keuze
@@ -605,7 +603,7 @@ export default function SchoolIntegrationPage() {
               <label className="field">
                 <span>
                   Smartschool afzender vanaf dit smartschool account zullen de
-                  berichten verstuurdworden
+                  berichten verstuurd worden
                 </span>
                 <input
                   type="text"
