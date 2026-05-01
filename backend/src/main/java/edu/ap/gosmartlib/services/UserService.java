@@ -91,10 +91,14 @@ public class UserService {
                     user.getClasses(), updatedClasses);
             user.setClasses(updatedClasses);
         }
-        String oneRosterSourcedId = oauth2User.getAttribute("oneRosterSourcedId");
-        if (oneRosterSourcedId != null && !oneRosterSourcedId.isBlank()
-                && !oneRosterSourcedId.equals(user.getOnerosterSourcedId())) {
-            user.setOnerosterSourcedId(oneRosterSourcedId);
+        if (groups != null && !groups.isEmpty()) {
+            Object raw = groups.get(0).get("oneRosterSourcedId");
+            if (raw != null && !String.valueOf(raw).isBlank()) {
+                String id = String.valueOf(raw).trim();
+                if (!id.equals(user.getOnerosterSourcedId())) {
+                    user.setOnerosterSourcedId(id);
+                }
+            }
         }
 
         return userRepository.save(user);
