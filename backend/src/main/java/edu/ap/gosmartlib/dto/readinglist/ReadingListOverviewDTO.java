@@ -1,17 +1,24 @@
 package edu.ap.gosmartlib.dto.readinglist;
 
+import edu.ap.gosmartlib.util.ReadingListTargetType;
 import edu.ap.gosmartlib.util.ReadingListType;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public record ReadingListOverviewDTO(
-        Long id,
-        String title,
-        String taskDescription,
-        LocalDateTime deadline,
-        ReadingListType listType,
-        boolean ownList,
-        String creatorName,
-        List<Long> bookIds,
-        int bookCount
-) {}
+                Long id,
+                String title,
+                String taskDescription,
+                LocalDateTime deadline,
+                ReadingListType listType,
+                boolean ownList,
+                String creatorName,
+                List<Long> bookIds,
+                int bookCount,
+                ReadingListTargetType targetType,
+                List<String> targetStudentDisplayNames,
+                List<String> targetClassNames,
+                List<Integer> targetYears,
+                List<Integer> targetGrades,
+                Boolean targetAllSchools) {
+}
