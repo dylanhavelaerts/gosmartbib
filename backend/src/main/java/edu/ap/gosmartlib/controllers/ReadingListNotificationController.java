@@ -25,8 +25,9 @@ public class ReadingListNotificationController {
     public ResponseEntity<Boolean> status(
             @PathVariable Long readingListId,
             @AuthenticationPrincipal OAuth2User oAuth2User) {
+        String uid = extractUid(oAuth2User);
         List<Long> bookIds = getBookIds(readingListId);
-        boolean enabled = bookNotificationService.isAllEnabled(extractUid(oAuth2User), bookIds);
+        boolean enabled = bookNotificationService.isAllEnabled(uid, bookIds);
         return ResponseEntity.ok(enabled);
     }
 
