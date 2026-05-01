@@ -3,10 +3,13 @@ package edu.ap.gosmartlib.services;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
+import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
+import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.util.ReadingListTargetType;
 import edu.ap.gosmartlib.util.ReadingListType;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.Test;
@@ -34,6 +37,9 @@ class ReadingListServiceLiveNamesTest {
     private UserRepository userRepository;
 
     @Mock
+    private SchoolClassRepository schoolClassRepository;
+
+    @Mock
     private BookRepository bookRepository;
 
     @Mock
@@ -44,12 +50,17 @@ class ReadingListServiceLiveNamesTest {
 
     @Test
     void givenResolvedCreatorName_whenGetVisibleLists_thenUsesLiveName() {
+        SchoolEntity school = school(1L, "Testschool");
         UserEntity student = user(1L, "student-uid", UserRoles.STUDENT);
+        student.setSchool(school);
         UserEntity teacher = user(2L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(school);
 
         ReadingListEntity classList = readingList(100L, "Klaslijst", ReadingListType.CLASS, teacher);
+        classList.setTargetType(ReadingListTargetType.STUDENTS);
+        classList.getTargetStudents().add(student);
 
-        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(userRepository.findDetailedBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
         when(readingListRepository.findAllByCreator_IdOrderByIdDesc(1L)).thenReturn(List.of());
         when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
                 .thenReturn(List.of(classList));
@@ -71,12 +82,19 @@ class ReadingListServiceLiveNamesTest {
 
     @Test
     void givenUnresolvedCreatorName_whenGetVisibleLists_thenFallsBackToRoleLabel() {
+        SchoolEntity school = school(1L, "Testschool");
+
         UserEntity student = user(1L, "student-uid", UserRoles.STUDENT);
+        student.setSchool(school);
+
         UserEntity teacher = user(2L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(school);
 
         ReadingListEntity classList = readingList(100L, "Klaslijst", ReadingListType.CLASS, teacher);
+        classList.setTargetType(ReadingListTargetType.STUDENTS);
+        classList.getTargetStudents().add(student);
 
-        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(userRepository.findDetailedBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
         when(readingListRepository.findAllByCreator_IdOrderByIdDesc(1L)).thenReturn(List.of());
         when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
                 .thenReturn(List.of(classList));
@@ -113,5 +131,13 @@ class ReadingListServiceLiveNamesTest {
         list.setCreator(creator);
         list.setBooks(Set.of());
         return list;
+    }
+
+    private SchoolEntity school(Long id, String name) {
+        SchoolEntity school = new SchoolEntity();
+        school.setId(id);
+        school.setName(name);
+        school.setDomain("school-" + id + ".smartschool.be");
+        return school;
     }
 }

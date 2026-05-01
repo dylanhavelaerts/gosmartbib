@@ -52,12 +52,16 @@ class ReadingListControllerTest {
                 "List",
                 "Task",
                 null,
+                "user-1",
+                1,
                 ReadingListType.PERSONAL,
                 true,
-                "user-1",
-                List.of(10L),
-                1
-        );
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                false);
         when(readingListService.getVisibleLists(uid)).thenReturn(List.of(list));
 
         ResponseEntity<?> response = readingListController.getVisibleLists(authentication);
@@ -103,8 +107,15 @@ class ReadingListControllerTest {
                 ReadingListType.CLASS,
                 false,
                 "teacher",
-                List.of(new ReadingListDetailDTO.BookItem(10L, "Book", List.of("Author"), null, "isbn-10", 0))
-        );
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                false,
+                List.of(new ReadingListDetailDTO.BookItem(10L, "Book", List.of("Author"), null, "isbn-10", 0)));
         when(readingListService.getListDetail(2L, uid)).thenReturn(detail);
 
         ResponseEntity<?> response = readingListController.getListDetail(2L, authentication);

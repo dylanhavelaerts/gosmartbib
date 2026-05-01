@@ -8,9 +8,11 @@ import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
+import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.ReadingListType;
 import edu.ap.gosmartlib.util.UserRoles;
+import edu.ap.gosmartlib.util.ReadingListTargetType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -46,6 +48,10 @@ class ReadingListServiceTest {
     private UserRepository userRepository;
     @Mock
     private BookRepository bookRepository;
+    @Mock
+    private SchoolClassRepository schoolClassRepository;
+    @Mock
+    private UserDirectoryService userDirectoryService;
     @InjectMocks
     private ReadingListService readingListService;
 
@@ -53,11 +59,12 @@ class ReadingListServiceTest {
     void givenStaffUserAndValidDto_whenCreateClassList_thenSavesClassList() {
         UserEntity teacher = user(1L, "teacher-uid", UserRoles.TEACHER);
         BookEntity book = book(10L, "Book One");
-        CreateReadingListDTO dto = dto("Klaslijst", "Beschrijving", "2026-05-20T12:00:00", List.of(10L));
+        CreateReadingListDTO dto = classYearDto("Klaslijst", "Beschrijving", "2026-05-20T12:00:00", List.of(10L));
 
         when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
         when(bookRepository.findAllById(List.of(10L))).thenReturn(List.of(book));
-        when(readingListRepository.save(any(ReadingListEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(readingListRepository.save(any(ReadingListEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         ReadingListEntity result = readingListService.createClassList(dto, "teacher-uid");
 
@@ -72,12 +79,15 @@ class ReadingListServiceTest {
         assertEquals(teacher, captured.getCreator());
         assertEquals(1, captured.getBooks().size());
         assertTrue(captured.getBooks().contains(book));
+        assertEquals(ReadingListTargetType.YEARS, captured.getTargetType());
+        assertEquals(Set.of(5), captured.getTargetYears());
+        assertFalse(captured.isTargetAllSchools());
     }
 
     @Test
     void givenStudentUser_whenCreateClassList_thenThrowsAccessDenied() {
         UserEntity student = user(2L, "student-uid", UserRoles.STUDENT);
-        CreateReadingListDTO dto = dto("Klaslijst", "Beschrijving", "2026-05-20T12:00:00", List.of(10L));
+        CreateReadingListDTO dto = classYearDto("Klaslijst", "Beschrijving", "2026-05-20T12:00:00", List.of(10L));
         when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
 
         assertThrows(AccessDeniedException.class, () -> readingListService.createClassList(dto, "student-uid"));
@@ -94,7 +104,8 @@ class ReadingListServiceTest {
 
         when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
         when(bookRepository.findAllById(List.of(11L))).thenReturn(List.of(book));
-        when(readingListRepository.save(any(ReadingListEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(readingListRepository.save(any(ReadingListEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         ReadingListEntity result = readingListService.createPersonalList(dto, "student-uid");
 
@@ -109,14 +120,16 @@ class ReadingListServiceTest {
     @Test
     void givenOwnerPersonalList_whenUpdatePersonalList_thenUpdatesFieldsAndBooks() {
         UserEntity owner = user(10L, "owner-uid", UserRoles.STUDENT);
-        ReadingListEntity existing = readingList(100L, "Old", ReadingListType.PERSONAL, owner, Set.of(book(1L, "Old Book")));
+        ReadingListEntity existing = readingList(100L, "Old", ReadingListType.PERSONAL, owner,
+                Set.of(book(1L, "Old Book")));
         BookEntity newBook = book(2L, "New Book");
         CreateReadingListDTO dto = dto("  New Title  ", "  New Description  ", "2028-01-01T00:00:00", List.of(2L));
 
         when(userRepository.findBySmartschoolUid("owner-uid")).thenReturn(Optional.of(owner));
         when(readingListRepository.findByIdAndCreator_Id(100L, 10L)).thenReturn(Optional.of(existing));
         when(bookRepository.findAllById(List.of(2L))).thenReturn(List.of(newBook));
-        when(readingListRepository.save(any(ReadingListEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(readingListRepository.save(any(ReadingListEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         ReadingListEntity updated = readingListService.updatePersonalList(100L, dto, "owner-uid");
 
@@ -206,14 +219,16 @@ class ReadingListServiceTest {
     @Test
     void givenOwnerStaffAndClassList_whenUpdateClassList_thenUpdates() {
         UserEntity teacher = user(20L, "teacher-uid", UserRoles.TEACHER);
-        ReadingListEntity classList = readingList(400L, "Old Class", ReadingListType.CLASS, teacher, Set.of(book(5L, "Old")));
+        ReadingListEntity classList = readingList(400L, "Old Class", ReadingListType.CLASS, teacher,
+                Set.of(book(5L, "Old")));
         BookEntity newBook = book(6L, "New");
-        CreateReadingListDTO dto = dto("  New Class  ", "  New Desc  ", "2026-10-10T12:00:00", List.of(6L));
+        CreateReadingListDTO dto = classYearDto("  New Class  ", "  New Desc  ", "2026-10-10T12:00:00", List.of(6L));
 
         when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
         when(readingListRepository.findById(400L)).thenReturn(Optional.of(classList));
         when(bookRepository.findAllById(List.of(6L))).thenReturn(List.of(newBook));
-        when(readingListRepository.save(any(ReadingListEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(readingListRepository.save(any(ReadingListEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         ReadingListEntity updated = readingListService.updateClassList(400L, dto, "teacher-uid");
 
@@ -221,6 +236,9 @@ class ReadingListServiceTest {
         assertEquals("New Desc", updated.getTaskDescription());
         assertEquals(LocalDateTime.parse("2026-10-10T12:00:00"), updated.getDeadline());
         assertTrue(updated.getBooks().contains(newBook));
+        assertEquals(ReadingListTargetType.YEARS, updated.getTargetType());
+        assertEquals(Set.of(5), updated.getTargetYears());
+        assertFalse(updated.isTargetAllSchools());
     }
 
     @Test
@@ -244,10 +262,13 @@ class ReadingListServiceTest {
         ReadingListEntity ownClass = readingList(501L, "Own Class", ReadingListType.CLASS, user, Set.of());
         UserEntity otherTeacher = user(51L, "teacher-uid", UserRoles.TEACHER);
         ReadingListEntity otherClass = readingList(502L, "Other Class", ReadingListType.CLASS, otherTeacher, Set.of());
+        otherClass.setTargetType(ReadingListTargetType.STUDENTS);
+        otherClass.getTargetStudents().add(user);
 
         when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(user));
         when(readingListRepository.findAllByCreator_IdOrderByIdDesc(50L)).thenReturn(List.of(ownClass, ownPersonal));
-        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS)).thenReturn(List.of(otherClass, ownClass));
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
+                .thenReturn(List.of(otherClass, ownClass));
 
         List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
 
@@ -260,7 +281,8 @@ class ReadingListServiceTest {
     void givenStudentRequestingOtherPersonalList_whenGetListDetail_thenThrowsAccessDenied() {
         UserEntity student = user(60L, "student-uid", UserRoles.STUDENT);
         UserEntity otherStudent = user(61L, "other-student", UserRoles.STUDENT);
-        ReadingListEntity personalOfOther = readingList(600L, "Other Personal", ReadingListType.PERSONAL, otherStudent, Set.of(book(1L, "Book")));
+        ReadingListEntity personalOfOther = readingList(600L, "Other Personal", ReadingListType.PERSONAL, otherStudent,
+                Set.of(book(1L, "Book")));
 
         when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
         when(readingListRepository.findByIdWithBooks(600L)).thenReturn(Optional.of(personalOfOther));
@@ -275,7 +297,10 @@ class ReadingListServiceTest {
         BookEntity classBook = book(700L, "Class Book");
         classBook.setAuthors(List.of("A. Author"));
         classBook.setIsbn("isbn-700");
-        ReadingListEntity classList = readingList(700L, "Class List", ReadingListType.CLASS, teacher, Set.of(classBook));
+        ReadingListEntity classList = readingList(700L, "Class List", ReadingListType.CLASS, teacher,
+                Set.of(classBook));
+        classList.setTargetType(ReadingListTargetType.STUDENTS);
+        classList.getTargetStudents().add(student);
 
         when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
         when(readingListRepository.findByIdWithBooks(700L)).thenReturn(Optional.of(classList));
@@ -298,6 +323,14 @@ class ReadingListServiceTest {
         return dto;
     }
 
+    private CreateReadingListDTO classYearDto(String title, String description, String deadline, List<Long> bookIds) {
+        CreateReadingListDTO dto = dto(title, description, deadline, bookIds);
+        dto.setTargetType(ReadingListTargetType.YEARS);
+        dto.setTargetYears(List.of(5));
+        dto.setTargetAllSchools(false);
+        return dto;
+    }
+
     private UserEntity user(Long id, String uid, UserRoles role) {
         UserEntity user = new UserEntity();
         user.setId(id);
@@ -315,7 +348,8 @@ class ReadingListServiceTest {
         return book;
     }
 
-    private ReadingListEntity readingList(Long id, String title, ReadingListType type, UserEntity creator, Set<BookEntity> books) {
+    private ReadingListEntity readingList(Long id, String title, ReadingListType type, UserEntity creator,
+            Set<BookEntity> books) {
         ReadingListEntity list = new ReadingListEntity();
         list.setId(id);
         list.setTitle(title);
