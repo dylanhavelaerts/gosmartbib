@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import "../readinglistdetail.css";
 import NotificationBell from "@/app/components/Notifications/Notification";
+import type { ReadingListTargetType } from "@/app/interfaces/ReadingList";
+import { formatReadingListTargets } from "@/app/utils/readingListTargets";
 
 interface BookItem {
   id: number;
@@ -23,6 +25,14 @@ interface ReadingListDetail {
   listType: "CLASS" | "PERSONAL";
   ownList: boolean;
   creatorName?: string | null;
+  targetType?: ReadingListTargetType | null;
+  targetStudentIds?: number[];
+  targetStudentDisplayNames?: string[];
+  targetClassIds?: number[];
+  targetClassNames?: string[];
+  targetYears?: number[];
+  targetGrades?: number[];
+  targetAllSchools?: boolean;
   books: BookItem[];
 }
 
@@ -62,6 +72,8 @@ export default function ReadingListDetailPage() {
     }
 
     setLoading(true);
+    setError(null);
+    
     fetch(`${apiUrl}/reading-lists/${id}`, { credentials: "include" })
       .then(async (res) => {
         if (!res.ok) {
@@ -80,7 +92,7 @@ export default function ReadingListDetailPage() {
         );
       })
       .finally(() => setLoading(false));
-  }, [id, user]);
+  }, [apiUrl, id, storageKey, user]);
 
   const toggleRead = (bookId: number) => {
     setReadStatus((prev) => {
@@ -181,6 +193,12 @@ export default function ReadingListDetailPage() {
                 {totalCount === 1 ? "boek" : "boeken"}
               </span>
             </div>
+
+            {detail.listType === "CLASS" && (
+              <div className="rld-target-summary">
+                {formatReadingListTargets(detail)}
+              </div>
+            )}
 
             {deadline && (
               <div className={`rld-deadline rld-deadline--${deadline.urgency}`}>

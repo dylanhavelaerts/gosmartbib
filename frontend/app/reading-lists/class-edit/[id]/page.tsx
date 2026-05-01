@@ -317,7 +317,18 @@ export default function EditClassReadingListPage() {
   return (
     <ProtectedRoute allowedRoles={["TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"]}>
       <div className="readingListContainer">
-        <h1 className="pageTitle">Klasleeslijst bewerken</h1>
+        <div className="crl-subheader">
+          <button
+            type="button"
+            className="crl-back-link"
+            onClick={() => router.push(`/reading-lists/${id}`)}
+            aria-label="Ga terug naar leeslijst"
+          >
+            ← Terug naar leeslijst
+          </button>
+
+          <h1 className="pageTitle">Klasleeslijst bewerken</h1>
+        </div>
 
         {initialLoading && <p className="loading-text">Leeslijst laden...</p>}
 
@@ -723,13 +734,24 @@ export default function EditClassReadingListPage() {
                 </div>
 
                 <div className="submit-container">
-                  <button
-                    type="submit"
-                    className="titleSubmitBtn submit-full-width"
-                    disabled={loading}
-                  >
-                    {loading ? "Lijst opslaan..." : "Wijzigingen opslaan"}
-                  </button>
+                  <div className="crl-form-actions">
+                    <button
+                      type="button"
+                      className="crl-btn-cancel"
+                      onClick={() => router.push(`/reading-lists/${id}`)}
+                      disabled={loading}
+                    >
+                      Annuleer
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="crl-btn-save"
+                      disabled={loading}
+                    >
+                      {loading ? "Lijst opslaan..." : "Wijzigingen opslaan"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
