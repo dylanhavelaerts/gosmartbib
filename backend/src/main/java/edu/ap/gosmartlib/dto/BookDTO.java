@@ -21,5 +21,6 @@ public record BookDTO(
                 Integer totalCopies,
                 Integer availableCopies,
                 String ageRange,
+                String previewLink,
                 List<BookInventoryDTO> inventories) {
 }

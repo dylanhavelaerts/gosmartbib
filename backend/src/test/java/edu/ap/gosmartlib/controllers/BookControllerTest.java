@@ -49,7 +49,7 @@ class BookControllerTest {
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023, false, null, "A", 1, 1, "Eerste graad", null);
+                2023, false, null, "A", 1, 1, "Eerste graad", "https://books.google.com/preview", null);
     }
 
     // authentication=null → callerRole() returns STUDENT (most restrictive
@@ -467,7 +467,7 @@ class BookControllerTest {
     void givenNegativePageCount_whenUpdateBook_thenReturnsBadRequest() {
         BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
                 -1, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 2023, false, null, "A", 1, 1,
-                "Eerste graad", null);
+                "Eerste graad", null, null);
         when(bookService.updateBook(1L, updatedDTO))
                 .thenThrow(new IllegalArgumentException("Paginacount mag niet negatief zijn"));
 
@@ -482,7 +482,7 @@ class BookControllerTest {
     void givenFuturePublishedYear_whenUpdateBook_thenReturnsBadRequest() {
         BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 9999, false, null, "A", 1, 1,
-                "Eerste graad", null);
+                "Eerste graad", null, null);
         when(bookService.updateBook(1L, updatedDTO))
                 .thenThrow(new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen"));
 
@@ -596,7 +596,7 @@ class BookControllerTest {
         BookDTO createdBook = new BookDTO(42L, "Manual Book", List.of("Author One", "Author Two"),
                 "Manual Publisher", "Manual Description", 321, List.of("Fantasy", "Young adult"),
                 "thumbnail-url", "nl", 4.5, "NOISBN-123e4567-e89b-12d3-a456-426614174000",
-                2024, false, null, "A", 1, 1, "Eerste graad", null);
+                2024, false, null, "A", 1, 1, "Eerste graad", null, null);
 
         when(bookService.addManualBook(request, "uid-123")).thenReturn(createdBook);
 
@@ -649,6 +649,7 @@ class BookControllerTest {
         Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
 
         BookDTO createdBook = buildDTO(5L, "Clean Code");
+        // AANGEPAST: We geven hier 4 argumenten mee aan de test!
         when(bookService.addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null)).thenReturn(createdBook);
 
         ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", null, authentication);
@@ -725,7 +726,7 @@ class BookControllerTest {
     void givenBookWithInventories_whenGetBookById_thenReturnsInventoryData() throws BookNotFoundException {
         BookDTO expected = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023, false, List.of("STEM"), "A", 5, 3, "Eerste graad", List.of(
+                2023, false, List.of("STEM"), "A", 5, 3, "Eerste graad", null, List.of(
                         buildInventoryDTO(11L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
                         buildInventoryDTO(12L, 2L, "GO! School", "Campus Zuid", 3, 2)));
 
@@ -754,7 +755,7 @@ class BookControllerTest {
     void givenBookWithInventories_whenUpdateBook_thenReturnsUpdatedInventoryData() {
         BookDTO updatedDTO = new BookDTO(1L, "Updated Title", List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023, false, List.of("STEM"), "A", 10, 7, "Eerste graad", List.of(
+                2023, false, List.of("STEM"), "A", 10, 7, "Eerste graad", null, List.of(
                         buildInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
                         buildInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
 
@@ -781,7 +782,7 @@ class BookControllerTest {
     void givenInvalidInventoryCounts_whenUpdateBook_thenReturnsBadRequest() {
         BookDTO updatedDTO = new BookDTO(1L, "Updated Title", List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023, false, List.of("STEM"), "A", 3, 5, "Eerste graad", List.of(
+                2023, false, List.of("STEM"), "A", 3, 5, "Eerste graad", null, List.of(
                         buildInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 3, 5)));
 
         when(bookService.updateBook(1L, updatedDTO))
@@ -824,7 +825,7 @@ class BookControllerTest {
         BookDTO createdBook = new BookDTO(42L, "Manual Book", List.of("Author One", "Author Two"),
                 "Manual Publisher", "Manual Description", 321, List.of("Fantasy", "Young adult"),
                 "thumbnail-url", "nl", 4.5, "NOISBN-123e4567-e89b-12d3-a456-426614174000",
-                2024, false, List.of("STEM"), "A", 5, 3, "Eerste graad", List.of(
+                2024, false, List.of("STEM"), "A", 5, 3, "Eerste graad", null, List.of(
                         buildInventoryDTO(21L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
                         buildInventoryDTO(22L, 2L, "GO! School", "Campus Zuid", 3, 2)));
 
