@@ -13,6 +13,9 @@
   -webkit-appearance: none;
   border-radius: 50%;
 }
+.notifBtn img {
+  filter: brightness(0) saturate(100%) invert(14%) sepia(60%) saturate(800%) hue-rotate(300deg);
+}
 
 .notifBtn--active img {
   filter: brightness(0) saturate(100%) invert(14%) sepia(60%) saturate(800%) hue-rotate(300deg);

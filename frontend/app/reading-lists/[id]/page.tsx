@@ -149,18 +149,22 @@ export default function ReadingListDetailPage() {
         <>
           {/* ── Header card ── */}
           <div className="rld-header-card">
-            <div className="rld-badges">
-              <span className="rld-badge">
-                {detail.listType === "CLASS"
-                  ? "Klasleeslijst"
-                  : "Eigen leeslijst"}
-              </span>
+            <div className="rld-header-top">
+              <div className="rld-badges">
+                <span className="rld-badge">
+                  {detail.listType === "CLASS"
+                    ? "Klasleeslijst"
+                    : "Eigen leeslijst"}
+                </span>
+              </div>
+              {hasUnavailableBooks && (
+                <NotificationBell
+                  apiPath={`/reading-lists/${id}/notification`}
+                />
+              )}
             </div>
 
             <h1>{detail.title}</h1>
-            {hasUnavailableBooks && (
-              <NotificationBell apiPath={`/reading-lists/${id}/notification`} />
-            )}
 
             {detail.taskDescription && (
               <p className="rld-description">{detail.taskDescription}</p>
@@ -246,11 +250,6 @@ export default function ReadingListDetailPage() {
                       {book.isbn && (
                         <span className="rld-isbn">ISBN: {book.isbn}</span>
                       )}
-                      {isUnavailable && (
-                        <span className="rld-unavailable-badge">
-                          Niet beschikbaar
-                        </span>
-                      )}
 
                       <div className="rld-book-actions">
                         <button
@@ -269,17 +268,23 @@ export default function ReadingListDetailPage() {
                         </button>
                       </div>
                     </div>
-
-                    {/* Read status badge */}
-                    <span
-                      className={`rld-status-badge ${
-                        isRead
-                          ? "rld-status-badge--read"
-                          : "rld-status-badge--unread"
-                      }`}
-                    >
-                      {isRead ? "Gelezen" : "Nog te lezen"}
-                    </span>
+                    {/* Badges */}
+                    <div className="rld-book-badges">
+                      <span
+                        className={`rld-status-badge ${
+                          isRead
+                            ? "rld-status-badge--read"
+                            : "rld-status-badge--unread"
+                        }`}
+                      >
+                        {isRead ? "Gelezen" : "Nog te lezen"}
+                      </span>
+                      {isUnavailable && (
+                        <span className="rld-status-badge rld-status-badge--unavailable">
+                          Niet beschikbaar
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}

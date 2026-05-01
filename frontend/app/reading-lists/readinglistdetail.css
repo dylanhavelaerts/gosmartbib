@@ -90,13 +90,6 @@
   margin-bottom: 1.4rem;
   box-shadow: 0 1px 6px rgba(32, 23, 19, 0.06);
 }
-
-.rld-badges {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.55rem;
-}
 .rld-badge {
   display: inline-block;
   font-size: 0.72rem;
@@ -327,10 +320,24 @@
 }
 
 /* ── Read status badge (top-right of card) ── */
-.rld-status-badge {
+.rld-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.55rem;
+}
+
+
+.rld-book-badges {
   position: absolute;
   top: 0.65rem;
   right: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+.rld-status-badge {
   font-size: 0.72rem;
   font-weight: 700;
   border-radius: 5px;
@@ -344,6 +351,10 @@
 .rld-status-badge--unread {
   background: #f6ecd7;
   color: #a16207;
+}
+.rld-status-badge--unavailable {
+  background: #fde8e8;
+  color: #b91c1c;
 }
 
 /* ── Responsive ── */

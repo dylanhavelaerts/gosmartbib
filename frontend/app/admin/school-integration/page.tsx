@@ -432,13 +432,16 @@ export default function SchoolIntegrationPage() {
                   placeholder={
                     integration?.smartschoolAccesscodeConfigured
                       ? "Laat leeg om de huidige accesscode te behouden"
-                      : "Accesscode"
+                      : "Webservices Accesscode"
                   }
                 />
               </label>
 
               <label className="field">
-                <span>Smartschool afzender (senderIdentifier)</span>
+                <span>
+                  Smartschool afzender vanaf dit smartschool account zullen de
+                  berichten verstuurdworden
+                </span>
                 <input
                   type="text"
                   value={senderIdentifier}
