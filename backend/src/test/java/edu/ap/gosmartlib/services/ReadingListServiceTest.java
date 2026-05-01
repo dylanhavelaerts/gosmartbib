@@ -6,6 +6,8 @@ import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.entities.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
 import edu.ap.gosmartlib.repositories.SchoolClassRepository;
@@ -314,6 +316,291 @@ class ReadingListServiceTest {
         assertEquals("Class Book", detail.books().get(0).title());
     }
 
+    @Test
+    void givenClassListTargetedToSpecificStudent_whenGetVisibleLists_thenStudentSeesIt() {
+        UserEntity student = user(70L, "student-uid", UserRoles.STUDENT);
+        UserEntity teacher = user(71L, "teacher-uid", UserRoles.TEACHER);
+
+        ReadingListEntity classList = readingList(800L, "Targeted Student List", ReadingListType.CLASS, teacher,
+                Set.of());
+        classList.setTargetType(ReadingListTargetType.STUDENTS);
+        classList.getTargetStudents().add(student);
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findAllByCreator_IdOrderByIdDesc(70L)).thenReturn(List.of());
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
+                .thenReturn(List.of(classList));
+
+        List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
+
+        assertEquals(1, result.size());
+        assertEquals(800L, result.get(0).id());
+        assertEquals("Targeted Student List", result.get(0).title());
+    }
+
+    @Test
+    void givenClassListTargetedToOtherStudent_whenGetVisibleLists_thenStudentDoesNotSeeIt() {
+        UserEntity student = user(70L, "student-uid", UserRoles.STUDENT);
+        UserEntity otherStudent = user(72L, "other-student-uid", UserRoles.STUDENT);
+        UserEntity teacher = user(71L, "teacher-uid", UserRoles.TEACHER);
+
+        ReadingListEntity classList = readingList(801L, "Other Student List", ReadingListType.CLASS, teacher, Set.of());
+        classList.setTargetType(ReadingListTargetType.STUDENTS);
+        classList.getTargetStudents().add(otherStudent);
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findAllByCreator_IdOrderByIdDesc(70L)).thenReturn(List.of());
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
+                .thenReturn(List.of(classList));
+
+        List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void givenClassListTargetedToClass_whenGetVisibleLists_thenStudentInThatClassSeesIt() {
+        SchoolEntity school = school(1L, "Testschool");
+        SchoolClassEntity targetClass = schoolClass(10L, "5ITN", school);
+
+        UserEntity student = user(80L, "student-uid", UserRoles.STUDENT);
+        student.setSchool(school);
+        student.getClasses().add(targetClass);
+
+        UserEntity teacher = user(81L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(school);
+
+        ReadingListEntity classList = readingList(802L, "Class Target List", ReadingListType.CLASS, teacher, Set.of());
+        classList.setTargetType(ReadingListTargetType.CLASSES);
+        classList.getTargetClasses().add(targetClass);
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findAllByCreator_IdOrderByIdDesc(80L)).thenReturn(List.of());
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
+                .thenReturn(List.of(classList));
+
+        List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
+
+        assertEquals(1, result.size());
+        assertEquals(802L, result.get(0).id());
+    }
+
+    @Test
+    void givenClassListTargetedToDifferentClass_whenGetVisibleLists_thenStudentDoesNotSeeIt() {
+        SchoolEntity school = school(1L, "Testschool");
+        SchoolClassEntity studentClass = schoolClass(10L, "5ITN", school);
+        SchoolClassEntity otherClass = schoolClass(11L, "5LAT", school);
+
+        UserEntity student = user(80L, "student-uid", UserRoles.STUDENT);
+        student.setSchool(school);
+        student.getClasses().add(studentClass);
+
+        UserEntity teacher = user(81L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(school);
+
+        ReadingListEntity classList = readingList(803L, "Different Class List", ReadingListType.CLASS, teacher,
+                Set.of());
+        classList.setTargetType(ReadingListTargetType.CLASSES);
+        classList.getTargetClasses().add(otherClass);
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findAllByCreator_IdOrderByIdDesc(80L)).thenReturn(List.of());
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
+                .thenReturn(List.of(classList));
+
+        List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void givenYearTargetSameSchool_whenGetVisibleLists_thenStudentInThatYearSeesIt() {
+        SchoolEntity school = school(1L, "Testschool");
+        SchoolClassEntity studentClass = schoolClass(10L, "5ITN", school);
+
+        UserEntity student = user(90L, "student-uid", UserRoles.STUDENT);
+        student.setSchool(school);
+        student.getClasses().add(studentClass);
+
+        UserEntity teacher = user(91L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(school);
+
+        ReadingListEntity classList = readingList(804L, "Year Target List", ReadingListType.CLASS, teacher, Set.of());
+        classList.setTargetType(ReadingListTargetType.YEARS);
+        classList.getTargetYears().add(5);
+        classList.setTargetAllSchools(false);
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findAllByCreator_IdOrderByIdDesc(90L)).thenReturn(List.of());
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
+                .thenReturn(List.of(classList));
+
+        List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
+
+        assertEquals(1, result.size());
+        assertEquals(804L, result.get(0).id());
+    }
+
+    @Test
+    void givenYearTargetDifferentSchoolAndNotAllSchools_whenGetVisibleLists_thenStudentDoesNotSeeIt() {
+        SchoolEntity teacherSchool = school(1L, "Teacher School");
+        SchoolEntity studentSchool = school(2L, "Student School");
+        SchoolClassEntity studentClass = schoolClass(10L, "5ITN", studentSchool);
+
+        UserEntity student = user(90L, "student-uid", UserRoles.STUDENT);
+        student.setSchool(studentSchool);
+        student.getClasses().add(studentClass);
+
+        UserEntity teacher = user(91L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(teacherSchool);
+
+        ReadingListEntity classList = readingList(805L, "Local Year Target List", ReadingListType.CLASS, teacher,
+                Set.of());
+        classList.setTargetType(ReadingListTargetType.YEARS);
+        classList.getTargetYears().add(5);
+        classList.setTargetAllSchools(false);
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findAllByCreator_IdOrderByIdDesc(90L)).thenReturn(List.of());
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
+                .thenReturn(List.of(classList));
+
+        List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void givenYearTargetDifferentSchoolAndAllSchools_whenGetVisibleLists_thenStudentInThatYearSeesIt() {
+        SchoolEntity teacherSchool = school(1L, "Teacher School");
+        SchoolEntity studentSchool = school(2L, "Student School");
+        SchoolClassEntity studentClass = schoolClass(10L, "5ITN", studentSchool);
+
+        UserEntity student = user(90L, "student-uid", UserRoles.STUDENT);
+        student.setSchool(studentSchool);
+        student.getClasses().add(studentClass);
+
+        UserEntity teacher = user(91L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(teacherSchool);
+
+        ReadingListEntity classList = readingList(806L, "Global Year Target List", ReadingListType.CLASS, teacher,
+                Set.of());
+        classList.setTargetType(ReadingListTargetType.YEARS);
+        classList.getTargetYears().add(5);
+        classList.setTargetAllSchools(true);
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findAllByCreator_IdOrderByIdDesc(90L)).thenReturn(List.of());
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
+                .thenReturn(List.of(classList));
+
+        List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
+
+        assertEquals(1, result.size());
+        assertEquals(806L, result.get(0).id());
+    }
+
+    @Test
+    void givenGradeTargetAllSchools_whenGetVisibleLists_thenStudentInMatchingGradeSeesIt() {
+        SchoolEntity teacherSchool = school(1L, "Teacher School");
+        SchoolEntity studentSchool = school(2L, "Student School");
+        SchoolClassEntity studentClass = schoolClass(10L, "6ITN", studentSchool);
+
+        UserEntity student = user(100L, "student-uid", UserRoles.STUDENT);
+        student.setSchool(studentSchool);
+        student.getClasses().add(studentClass);
+
+        UserEntity teacher = user(101L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(teacherSchool);
+
+        ReadingListEntity classList = readingList(807L, "Grade Target List", ReadingListType.CLASS, teacher, Set.of());
+        classList.setTargetType(ReadingListTargetType.GRADES);
+        classList.getTargetGrades().add(3);
+        classList.setTargetAllSchools(true);
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findAllByCreator_IdOrderByIdDesc(100L)).thenReturn(List.of());
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
+                .thenReturn(List.of(classList));
+
+        List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
+
+        assertEquals(1, result.size());
+        assertEquals(807L, result.get(0).id());
+    }
+
+    @Test
+    void givenGradeTargetSecondGrade_whenGetVisibleLists_thenStudentInThirdGradeDoesNotSeeIt() {
+        SchoolEntity school = school(1L, "Testschool");
+        SchoolClassEntity studentClass = schoolClass(10L, "6ITN", school);
+
+        UserEntity student = user(100L, "student-uid", UserRoles.STUDENT);
+        student.setSchool(school);
+        student.getClasses().add(studentClass);
+
+        UserEntity teacher = user(101L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(school);
+
+        ReadingListEntity classList = readingList(808L, "Second Grade Target List", ReadingListType.CLASS, teacher,
+                Set.of());
+        classList.setTargetType(ReadingListTargetType.GRADES);
+        classList.getTargetGrades().add(2);
+        classList.setTargetAllSchools(false);
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(readingListRepository.findAllByCreator_IdOrderByIdDesc(100L)).thenReturn(List.of());
+        when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
+                .thenReturn(List.of(classList));
+
+        List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void givenClassListWithoutTargetType_whenCreateClassList_thenThrowsIllegalArgumentException() {
+        UserEntity teacher = user(110L, "teacher-uid", UserRoles.TEACHER);
+        CreateReadingListDTO dto = dto("Klaslijst", "Beschrijving", "2026-05-20T12:00:00", List.of());
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+
+        assertThrows(IllegalArgumentException.class, () -> readingListService.createClassList(dto, "teacher-uid"));
+
+        verify(readingListRepository, never()).save(any());
+    }
+
+    @Test
+    void givenTargetAllSchoolsForStudentTarget_whenCreateClassList_thenThrowsIllegalArgumentException() {
+        UserEntity teacher = user(110L, "teacher-uid", UserRoles.TEACHER);
+
+        CreateReadingListDTO dto = dto("Klaslijst", "Beschrijving", "2026-05-20T12:00:00", List.of());
+        dto.setTargetType(ReadingListTargetType.STUDENTS);
+        dto.setTargetStudentIds(List.of(1L));
+        dto.setTargetAllSchools(true);
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+
+        assertThrows(IllegalArgumentException.class, () -> readingListService.createClassList(dto, "teacher-uid"));
+
+        verify(readingListRepository, never()).save(any());
+    }
+
+    @Test
+    void givenYearsAndGradesTogether_whenCreateClassListAsYearTarget_thenThrowsIllegalArgumentException() {
+        UserEntity teacher = user(110L, "teacher-uid", UserRoles.TEACHER);
+
+        CreateReadingListDTO dto = dto("Klaslijst", "Beschrijving", "2026-05-20T12:00:00", List.of());
+        dto.setTargetType(ReadingListTargetType.YEARS);
+        dto.setTargetYears(List.of(5));
+        dto.setTargetGrades(List.of(3));
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+
+        assertThrows(IllegalArgumentException.class, () -> readingListService.createClassList(dto, "teacher-uid"));
+
+        verify(readingListRepository, never()).save(any());
+    }
+
     private CreateReadingListDTO dto(String title, String description, String deadline, List<Long> bookIds) {
         CreateReadingListDTO dto = new CreateReadingListDTO();
         dto.setTitle(title);
@@ -358,5 +645,21 @@ class ReadingListServiceTest {
         list.setCreator(creator);
         list.setBooks(new LinkedHashSet<>(Objects.requireNonNullElseGet(books, Set::of)));
         return list;
+    }
+
+    private SchoolEntity school(Long id, String name) {
+        SchoolEntity school = new SchoolEntity();
+        school.setId(id);
+        school.setName(name);
+        school.setDomain("school-" + id + ".smartschool.be");
+        return school;
+    }
+
+    private SchoolClassEntity schoolClass(Long id, String name, SchoolEntity school) {
+        SchoolClassEntity schoolClass = new SchoolClassEntity();
+        schoolClass.setId(id);
+        schoolClass.setName(name);
+        schoolClass.setSchool(school);
+        return schoolClass;
     }
 }
