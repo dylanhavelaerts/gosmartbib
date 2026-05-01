@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface SchoolClassRepository extends JpaRepository<SchoolClassEntity, Long> {
     Optional<SchoolClassEntity> findBySmartschoolGroupId(String smartschoolGroupId);
+
+    List<SchoolClassEntity> findAllBySchool_IdOrderByNameAsc(Long schoolId);
 }

@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
@@ -13,7 +14,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 
 @RestController
 @RequestMapping("/reading-lists")
@@ -32,6 +32,20 @@ public class ReadingListController {
             return ResponseEntity.badRequest().body("Could not load reading lists: " + e.getMessage());
         }
     }
+
+    @GetMapping("/assignment-targets")
+    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    public ResponseEntity<?> getAssignmentTargets(Authentication authentication) {
+        try {
+            String uid = extractUid(authentication);
+            ReadingListAssignmentTargetsDTO targets = readingListService.getAssignmentTargets(uid);
+            return ResponseEntity.ok(targets);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body("Could not load reading list assignment targets: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getListDetail(@PathVariable Long id, Authentication authentication) {
         try {
@@ -90,6 +104,7 @@ public class ReadingListController {
             return ResponseEntity.badRequest().body("Error deleting personal reading list: " + e.getMessage());
         }
     }
+
     @DeleteMapping("/class/{id}")
     @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
     public ResponseEntity<?> deleteClassList(@PathVariable Long id, Authentication authentication) {
@@ -101,9 +116,11 @@ public class ReadingListController {
             return ResponseEntity.badRequest().body("Error deleting class reading list: " + e.getMessage());
         }
     }
+
     @PutMapping("/class/{id}")
     @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
-    public ResponseEntity<?> updateClassList(@PathVariable Long id,@RequestBody CreateReadingListDTO dto, Authentication authentication) {
+    public ResponseEntity<?> updateClassList(@PathVariable Long id, @RequestBody CreateReadingListDTO dto,
+            Authentication authentication) {
         try {
             String uid = extractUid(authentication);
             ReadingListEntity updated = readingListService.updateClassList(id, dto, uid);
@@ -114,8 +131,12 @@ public class ReadingListController {
     }
 
     /**
-     * This helpermethod extracts the authenticated user's unique ID from the Spring Security Authentication object.
-     * It assumes that the user is authenticated via OAuth2 and that the principal contains a "userID" attribute.
+     * This helper method extracts the authenticated user's unique ID from the
+     * Spring
+     * Security Authentication object.
+     * It assumes that the user is authenticated via OAuth2 and that the principal
+     * contains a "userID" attribute.
+     * 
      * @param authentication
      * @return the authenticated user's unique ID
      * @throws IllegalArgumentException if the user is not authenticated
