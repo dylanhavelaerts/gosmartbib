@@ -686,7 +686,59 @@ public class BookService {
         book.setInventories(new ArrayList<>());
         book.setTotalCopies(0);
         book.setAvailableCopies(0);
-        book.setPreviewLink(volumeInfo.getPreviewLink());
+        
+        // --- NIEUW: Bulletproof Link Extractie ---
+        String finalReaderLink = null;
+        
+        try {
+            String titleQuery = book.getTitle();
+            String authorQuery = (book.getAuthors() != null && !book.getAuthors().isEmpty()) ? book.getAuthors().get(0) : "";
+            String searchQuery = (titleQuery + " " + authorQuery).trim();
+
+            // We gebruiken een strikt URI object om URL-encoding fouten te vermijden!
+            java.net.URI searchUri = UriComponentsBuilder
+                    .fromUriString(googleBooksApiUrl)
+                    .queryParam("q", searchQuery)
+                    .queryParam("key", googleBooksApiKey)
+                    .build()
+                    .toUri();
+
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> searchResponse = restTemplate.getForObject(searchUri, java.util.Map.class);
+
+            // Veilige instanceof checks om ClassCastExceptions te voorkomen
+            if (searchResponse != null && searchResponse.get("items") instanceof java.util.List) {
+                java.util.List<?> items = (java.util.List<?>) searchResponse.get("items");
+                
+                for (Object itemObj : items) {
+                    if (itemObj instanceof java.util.Map) {
+                        java.util.Map<?, ?> item = (java.util.Map<?, ?>) itemObj;
+                        
+                        if (item.get("accessInfo") instanceof java.util.Map) {
+                            java.util.Map<?, ?> accessInfo = (java.util.Map<?, ?>) item.get("accessInfo");
+                            
+                            Object viewabilityObj = accessInfo.get("viewability");
+                            Object webReaderLinkObj = accessInfo.get("webReaderLink");
+
+                            if (viewabilityObj instanceof String && webReaderLinkObj instanceof String) {
+                                String viewability = (String) viewabilityObj;
+                                String webReaderLink = (String) webReaderLinkObj;
+
+                                if (!"NO_PAGES".equals(viewability) && webReaderLink.contains("play.google.com/books/reader")) {
+                                    finalReaderLink = webReaderLink.replace("http://", "https://");
+                                    break; // Match gevonden!
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Fout bij ophalen e-book editie op de achtergrond: " + e.getMessage());
+        }
+
+        // We slaan de gevonden link op (is hij niet gevonden, dan slaat hij keurig 'null' op)
+        book.setPreviewLink(finalReaderLink);
 
         return book;
     }

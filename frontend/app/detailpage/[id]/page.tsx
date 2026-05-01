@@ -19,23 +19,6 @@ interface ReviewWithRating {
 
 type ExtendedBook = Book & { previewLink?: string };
 
-// Deze functie haalt de ID uit de Google link en maakt er de Play Books Reader link van
-function getPlayBooksReaderUrl(previewLink?: string): string | null {
-  if (!previewLink) return null;
-  try {
-    const url = new URL(previewLink);
-    const bookId = url.searchParams.get("id"); // Haalt de ID eruit
-    
-    if (bookId) {
-      // Returnt de fullscreen reader URL!
-      return `https://play.google.com/books/reader?id=${bookId}&pg=GBS.PT1&hl=nl&source=gbs_api`;
-    }
-    return previewLink; 
-  } catch {
-    return previewLink; 
-  }
-}
-
 export default function DetailPage({
   params,
 }: {
@@ -92,6 +75,7 @@ export default function DetailPage({
       .catch(() => setCurrentUser(null));
   }, []);
 
+  // Ophalen van het boek (Inclusief de kant-en-klare link uit de backend!)
   useEffect(() => {
     if (!id) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`, {
@@ -110,8 +94,14 @@ export default function DetailPage({
 
   if (!book) return <p>Loading...</p>;
 
-  // Genereer de Play Books reader link
-  const readerLink = getPlayBooksReaderUrl((book as any).previewLink);
+  // Fix http naar https als de opgeslagen link nog http is
+  let displayLink = book.previewLink;
+  if (displayLink && displayLink.startsWith('http://')) {
+     displayLink = displayLink.replace('http://', 'https://');
+  }
+
+  // Bepaal de tekst op basis van het type link
+  const isReaderLink = displayLink?.includes("play.google.com/books/reader");
 
   return (
     <main className="detailPage">
@@ -233,13 +223,13 @@ export default function DetailPage({
 
             <hr className="detailDivider" />
 
-            {/* DE KNOP NAAR GOOGLE PLAY BOOKS READER */}
+            {/* DE KNOP NAAR GOOGLE PLAY BOOKS PREVIEW */}
             <div className="detailPreviewSection my-6">
               <h3 className="font-semibold text-gray-800 mb-3">Leesvoorbeeld</h3>
               
-              {readerLink ? (
+              {displayLink ? (
                 <a
-                  href={readerLink}
+                  href={displayLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow hover:bg-blue-700 transition-colors"
@@ -247,7 +237,7 @@ export default function DetailPage({
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                   </svg>
-                  Bekijk leesvoorbeeld
+                  {isReaderLink ? "Bekijk leesvoorbeeld (fullscreen)" : "Bekijk op Google Books"}
                 </a>
               ) : (
                 <div className="p-4 bg-gray-50 border border-gray-200 text-gray-500 rounded-lg">
