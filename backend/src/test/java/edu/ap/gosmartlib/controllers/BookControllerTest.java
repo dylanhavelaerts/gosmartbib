@@ -7,7 +7,6 @@ import edu.ap.gosmartlib.dto.BookInventoryDTO;
 import edu.ap.gosmartlib.dto.CreateBookInventoryRequestDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
-import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.BookService;
@@ -27,7 +26,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.Optional;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -651,41 +649,41 @@ class BookControllerTest {
         Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
 
         BookDTO createdBook = buildDTO(5L, "Clean Code");
-        when(bookService.addBookByIsbn("9780132350884", "uid-123", "Campus Zuid")).thenReturn(createdBook);
+        when(bookService.addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null)).thenReturn(createdBook);
 
-        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", authentication);
+        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", null, authentication);
 
         assertEquals(201, result.getStatusCode().value());
         assertEquals(createdBook, result.getBody());
-        verify(bookService, times(1)).addBookByIsbn("9780132350884", "uid-123", "Campus Zuid");
+        verify(bookService, times(1)).addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null);
     }
 
     @Test
     void givenUnknownIsbn_whenAddBookByIsbn_thenReturnsNotFound() {
         Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
 
-        when(bookService.addBookByIsbn("0000000000000", "uid-123", "Campus Zuid"))
-                .thenThrow(new IllegalArgumentException("Geen boek voor ISBN: 0000000000000"));
+        when(bookService.addBookByIsbn("0000000000000", "uid-123", "Campus Zuid", null))
+                .thenThrow(new IllegalArgumentException("Geen boek voor ISBN: 0000000000000", null));
 
-        ResponseEntity<?> result = bookController.addBookByIsbn("0000000000000", "Campus Zuid", authentication);
+        ResponseEntity<?> result = bookController.addBookByIsbn("0000000000000", "Campus Zuid", null, authentication);
 
         assertEquals(404, result.getStatusCode().value());
         assertEquals("Geen boek voor ISBN: 0000000000000", result.getBody());
-        verify(bookService, times(1)).addBookByIsbn("0000000000000", "uid-123", "Campus Zuid");
+        verify(bookService, times(1)).addBookByIsbn("0000000000000", "uid-123", "Campus Zuid", null);
     }
 
     @Test
     void givenUnexpectedServiceError_whenAddBookByIsbn_thenReturnsInternalServerError() {
         Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
 
-        when(bookService.addBookByIsbn("9780132350884", "uid-123", "Campus Zuid"))
+        when(bookService.addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null))
                 .thenThrow(new RuntimeException("Google API down"));
 
-        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", authentication);
+        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", null, authentication);
 
         assertEquals(500, result.getStatusCode().value());
         assertEquals("An error occurred while fetching the book.", result.getBody());
-        verify(bookService, times(1)).addBookByIsbn("9780132350884", "uid-123", "Campus Zuid");
+        verify(bookService, times(1)).addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null);
     }
 
     @Test
@@ -894,13 +892,8 @@ class BookControllerTest {
         org.springframework.security.oauth2.core.user.OAuth2User principal = mock(
                 org.springframework.security.oauth2.core.user.OAuth2User.class);
 
-        UserEntity user = new UserEntity();
-        user.setSmartschoolUid(uid);
-        user.setRole(role);
-
         when(authentication.getPrincipal()).thenReturn(principal);
         when(principal.getAttribute("userID")).thenReturn(uid);
-        when(userRepository.findBySmartschoolUid(uid)).thenReturn(Optional.of(user));
 
         return authentication;
     }

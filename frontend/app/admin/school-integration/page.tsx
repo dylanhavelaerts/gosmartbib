@@ -7,7 +7,9 @@ import type {
   SchoolIntegrationTestResponse,
   SchoolIntegrationLiveUsersResponse,
   SchoolIntegrationLiveClassesResponse,
+  SchoolCampusDTO,
 } from "@/app/interfaces/schoolIntegration";
+import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
 import { useEffect, useMemo, useState } from "react";
 import "./schoolIntegration.css";
 
@@ -34,6 +36,10 @@ export default function SchoolIntegrationPage() {
   const [testing, setTesting] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingClasses, setLoadingClasses] = useState(false);
+  const [loadingCampuses, setLoadingCampuses] = useState(false);
+  const [savingCampus, setSavingCampus] = useState(false);
+  const [deletingCampusId, setDeletingCampusId] = useState<number | null>(null);
+
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -42,6 +48,9 @@ export default function SchoolIntegrationPage() {
   const [integration, setIntegration] = useState<SchoolIntegrationDTO | null>(
     null,
   );
+
+  const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
+  const [newCampusName, setNewCampusName] = useState("");
 
   const [baseUrl, setBaseUrl] = useState("");
   const [clientId, setClientId] = useState("");
@@ -106,7 +115,11 @@ export default function SchoolIntegrationPage() {
           return;
         }
 
-        await loadIntegration(meData.school.id);
+        await Promise.all([
+          loadIntegration(meData.school.id),
+          loadCampuses(meData.school.id),
+        ]);
+
       } catch (err) {
         console.error(err);
         setError("Er ging iets mis bij het laden van de integratie");
@@ -156,6 +169,105 @@ export default function SchoolIntegrationPage() {
     } catch (err) {
       console.error(err);
       setError("Kon de schoolintegratie niet ophalen");
+    }
+  };
+
+  const loadCampuses = async (targetSchoolId: number) => {
+    if (!API_URL) return;
+
+    try {
+      setLoadingCampuses(true);
+      const data = await fetchSchoolCampuses(API_URL, targetSchoolId);
+      setCampuses(data);
+    } catch (err) {
+      console.error(err);
+      setError("Kon de campussen niet ophalen");
+    } finally {
+      setLoadingCampuses(false);
+    }
+  };
+
+ const handleCreateCampus = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!API_URL || !schoolId) return;
+
+    const trimmedName = newCampusName.trim();
+    if (!trimmedName) {
+      setError("Campusnaam mag niet leeg zijn");
+      return;
+    }
+
+    try {
+      setSavingCampus(true);
+      setError("");
+      setSuccess("");
+
+      const response = await fetch(
+        `${API_URL}/admin/schools/${schoolId}/campuses`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name: trimmedName }),
+        },
+      );
+
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(body || "Campus toevoegen mislukt");
+      }
+
+      const createdCampus: SchoolCampusDTO = await response.json();
+      setCampuses((prev) => [...prev, createdCampus]);
+      setNewCampusName("");
+      setSuccess("Campus succesvol toegevoegd");
+    } catch (err) {
+      console.error(err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Er ging iets mis bij het toevoegen van de campus",
+      );
+    } finally {
+      setSavingCampus(false);
+    }
+  };
+
+  const handleDeleteCampus = async (campusId: number) => {
+    if (!API_URL || !schoolId) return;
+
+    try {
+      setDeletingCampusId(campusId);
+      setError("");
+      setSuccess("");
+
+      const response = await fetch(
+        `${API_URL}/admin/schools/${schoolId}/campuses/${campusId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(body || "Campus verwijderen mislukt");
+      }
+
+      setCampuses((prev) => prev.filter((campus) => campus.id !== campusId));
+      setSuccess("Campus succesvol verwijderd");
+    } catch (err) {
+      console.error(err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Er ging iets mis bij het verwijderen van de campus",
+      );
+    } finally {
+      setDeletingCampusId(null);
     }
   };
 
@@ -338,7 +450,7 @@ export default function SchoolIntegrationPage() {
       {error && <p className="message error">{error}</p>}
       {success && <p className="message success">{success}</p>}
 
-      {!error && canUsePage && (
+      {canUsePage && (
         <>
           <section className="card">
             <h2>School</h2>
@@ -382,6 +494,59 @@ export default function SchoolIntegrationPage() {
                 <span className="label">Laatste fout</span>
                 <p>{integration.lastError}</p>
               </div>
+            )}
+          </section>
+
+<section className="card">
+            <h2>Campussen</h2>
+            <p className="help">
+              Voeg hier de campussen toe die later in boekinventaris als keuze
+              verschijnen.
+            </p>
+
+            <form className="campusForm" onSubmit={handleCreateCampus}>
+              <label className="field campusNameField">
+                <span>Nieuwe campus</span>
+                <input
+                  type="text"
+                  value={newCampusName}
+                  onChange={(e) => setNewCampusName(e.target.value)}
+                  placeholder="Bijv. Campus Zuid"
+                  disabled={savingCampus}
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="button primaryButton"
+                disabled={savingCampus || !newCampusName.trim()}
+              >
+                {savingCampus ? "Toevoegen..." : "Campus toevoegen"}
+              </button>
+            </form>
+
+            {loadingCampuses ? (
+              <p className="help">Campussen laden...</p>
+            ) : campuses.length === 0 ? (
+              <p className="emptyState">Nog geen campussen toegevoegd.</p>
+            ) : (
+              <ul className="campusList">
+                {campuses.map((campus) => (
+                  <li key={campus.id} className="campusListItem">
+                    <span>{campus.name}</span>
+                    <button
+                      type="button"
+                      className="button dangerButton"
+                      onClick={() => handleDeleteCampus(campus.id)}
+                      disabled={deletingCampusId === campus.id}
+                    >
+                      {deletingCampusId === campus.id
+                        ? "Verwijderen..."
+                        : "Verwijderen"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
 

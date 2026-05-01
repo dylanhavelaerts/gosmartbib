@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import {
-  Book,
-  BookInventory,
   BOOK_CATEGORIES,
   BOOK_LABELS,
-} from "../interfaces/Book";
-import type { MeResponse } from "../interfaces/user";
+} from "../../interfaces/Book";
+import type { Book, BookInventory } from "../../interfaces/Book";
+import type { MeResponse } from "../../interfaces/user";
+import type { SchoolCampusDTO } from "../../interfaces/schoolIntegration";
+import {
+  fetchSchoolCampuses,
+  getCampusSelectOptions,
+} from "../../utils/schoolCampuses";
 import { useRouter, useSearchParams } from "next/navigation";
-import "../catalog/bookList.css";
+import "../../catalog/bookList.css";
 import "./editbook.css";
-import ProtectedRoute from "../components/ProtectedRoute";
+import ProtectedRoute from "../../components/ProtectedRoute";
 
 export default function ManageCatalogPage() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -27,6 +31,9 @@ export default function ManageCatalogPage() {
   const [deleting, setDeleting] = useState(false);
   const [query, setQuery] = useState("");
   const [me, setMe] = useState<MeResponse | null>(null);
+  const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
+  const [loadingCampuses, setLoadingCampuses] = useState(false);
+  const [campusLoadError, setCampusLoadError] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -47,6 +54,39 @@ export default function ManageCatalogPage() {
       })
       .catch((err) => console.error("Fout bij ophalen boeken:", err));
   }, [apiUrl, searchParams]);
+
+  useEffect(() => {
+    async function loadMeAndCampuses() {
+      try {
+        setLoadingCampuses(true);
+        setCampusLoadError("");
+
+        const response = await fetch(`${apiUrl}/auth/me`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("Kon auth/me niet ophalen");
+        }
+
+        const data: MeResponse = await response.json();
+        setMe(data);
+
+        if (data.school?.id) {
+          const campusData = await fetchSchoolCampuses(apiUrl, data.school.id);
+          setCampuses(campusData);
+        }
+      } catch (err) {
+        console.error("Fout bij ophalen gebruiker of campussen:", err);
+        setCampusLoadError(
+          err instanceof Error ? err.message : "Kon de campussen niet ophalen",
+        );
+      } finally {
+        setLoadingCampuses(false);
+      }
+    }
+    loadMeAndCampuses();
+  }, [apiUrl]);
 
   function openModal() {
     if (!selectedBook) return;
@@ -81,13 +121,15 @@ export default function ManageCatalogPage() {
             : value,
     }));
   }
-  function handleArrayChange(
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: keyof Book,
-  ) {
-    const values = e.target.value.split(",").map((v) => v.trim());
-    setFormData((prev) => ({ ...prev, [field]: values }));
-  }
+function handleArrayChange(
+  e: React.ChangeEvent<HTMLInputElement>,
+  field: keyof Book,
+) {
+  const values = e.target.value
+    .split(",")
+
+  setFormData((prev) => ({ ...prev, [field]: values }));
+}
 
   const filteredBooks = books.filter((book) => {
     const q = query.toLowerCase();
@@ -132,7 +174,7 @@ export default function ManageCatalogPage() {
 
     for (const inventory of inventories) {
       if (!inventory.schoolId) {
-        setError("Elke inventarisregel moet een schoolId hebben.");
+        setError("Elke inventarisregel moet een school hebben.");
         return;
       }
 
@@ -159,13 +201,16 @@ export default function ManageCatalogPage() {
 
     const payload = {
       ...formData,
+    authors: (formData.authors ?? [])
+      .map((author) => author.trim())
+      .filter((author) => author !== ""),
       totalCopies: computedTotalCopies,
       availableCopies: computedAvailableCopies,
       inventories: inventories.map((inventory) => ({
         id: inventory.id ?? null,
         schoolId: inventory.schoolId,
         schoolName: inventory.schoolName ?? "",
-        campus: inventory.campus,
+        campus: inventory.campus?.trim() ?? "",
         totalCopies: inventory.totalCopies,
         availableCopies: inventory.availableCopies,
       })),
@@ -270,15 +315,9 @@ export default function ManageCatalogPage() {
     }));
   }
 
-  useEffect(() => {
-    fetch(`${apiUrl}/auth/me`, { credentials: "include" })
-      .then((res) => {
-        if (!res.ok) throw new Error("Kon auth/me niet ophalen");
-        return res.json();
-      })
-      .then((data: MeResponse) => setMe(data))
-      .catch((err) => console.error("Fout bij ophalen gebruiker:", err));
-  }, [apiUrl]);
+  const editableInventoryRows = (formData.inventories ?? [])
+  .map((inventory, index) => ({ inventory, index }))
+  .filter(({ inventory }) => inventory.schoolId === me?.school?.id);
 
   return (
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
@@ -289,7 +328,7 @@ export default function ManageCatalogPage() {
             <div className="eiland-lijst">
               <div className="headerdiv">
                 <button
-                  onClick={() => router.push("/add-book")}
+                  onClick={() => router.push("/admin/add-book")}
                   className="modal-btn-save"
                   type="button"
                 >
@@ -526,7 +565,7 @@ export default function ManageCatalogPage() {
                       name="authors"
                       className="modal-input"
                       type="text"
-                      value={formData.authors?.join(", ") || ""}
+                      value={formData.authors?.join(",") || ""}
                       onChange={(e) => handleArrayChange(e, "authors")}
                     />
                   </div>
@@ -778,22 +817,6 @@ export default function ManageCatalogPage() {
                   </div>
                   <div className="modal-row">
                     <label className="modal-label" htmlFor="description">
-                      Leeftijd
-                    </label>
-                    <select
-                      className="modal-input"
-                      name="ageRange"
-                      value={formData.ageRange ?? ""}
-                      onChange={handleChange}
-                    >
-                      <option value="">Leeftijd</option>
-                      <option value="Eerste graad">Eerste graad</option>
-                      <option value="Tweede graad">Tweede graad</option>
-                      <option value="Derde graad">Derde graad</option>
-                    </select>
-                  </div>
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="description">
                       Didactisch boek
                     </label>
                     <select
@@ -815,60 +838,54 @@ export default function ManageCatalogPage() {
                       Inventaris per school/campus
                     </label>
 
-                    {(formData.inventories ?? []).map((inventory, index) => (
-                      <div
-                        key={inventory.id ?? index}
-                        className="inventory-editor-card"
-                      >
-                        <div className="inventory-editor-grid">
-                          <div>
-                            <label className="modal-label">School ID</label>
-                            <input
-                              className="modal-input"
-                              type="number"
-                              value={inventory.schoolId ?? ""}
-                              onChange={(e) =>
-                                handleInventoryChange(
-                                  index,
-                                  "schoolId",
-                                  e.target.value === ""
-                                    ? null
-                                    : Number(e.target.value),
-                                )
-                              }
-                            />
-                          </div>
+                    {campusLoadError && (
+                      <p className="modal-error">⚠ {campusLoadError}</p>
+                    )}
 
+                    {editableInventoryRows.length === 0 && (
+                      <p className="modal-error">
+                        Er is nog geen inventarisregel voor jouw school.
+                      </p>
+                    )}
+
+                    {editableInventoryRows.map(({ inventory, index }) => (
+                      <div key={inventory.id ?? index} className="inventory-editor-card">
+                        <div className="inventory-editor-grid">
                           <div>
                             <label className="modal-label">School</label>
                             <input
                               className="modal-input"
                               type="text"
-                              value={inventory.schoolName ?? ""}
-                              onChange={(e) =>
-                                handleInventoryChange(
-                                  index,
-                                  "schoolName",
-                                  e.target.value,
-                                )
-                              }
+                              value={inventory.schoolName || me?.school?.name || ""}
+                              disabled
                             />
                           </div>
 
                           <div>
                             <label className="modal-label">Campus</label>
-                            <input
+                            <select
                               className="modal-input"
-                              type="text"
-                              value={inventory.campus}
+                              value={inventory.campus || ""}
                               onChange={(e) =>
-                                handleInventoryChange(
-                                  index,
-                                  "campus",
-                                  e.target.value,
-                                )
+                                handleInventoryChange(index, "campus", e.target.value)
                               }
-                            />
+                              disabled={loadingCampuses}
+                            >
+                              <option value="">
+                                {loadingCampuses ? "Campussen laden..." : "Geen campus"}
+                              </option>
+
+                              {getCampusSelectOptions(campuses, inventory.campus).map(
+                                (campusOption) => (
+                                  <option
+                                    key={`${campusOption.id}-${campusOption.name}`}
+                                    value={campusOption.name}
+                                  >
+                                    {campusOption.name}
+                                  </option>
+                                ),
+                              )}
+                            </select>
                           </div>
 
                           <div>
@@ -906,7 +923,7 @@ export default function ManageCatalogPage() {
                           </div>
                         </div>
 
-                        {(formData.inventories?.length ?? 0) > 1 && (
+                        {editableInventoryRows.length > 1 && (
                           <button
                             type="button"
                             className="modal-btn-cancel"

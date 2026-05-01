@@ -248,3 +248,9 @@
   color: #7a1d3f;
   font-weight: 600;
 }
+
+.fieldError {
+  margin: 0.4rem 0 0;
+  color: #8a3457;
+  font-size: 0.9rem;
+}

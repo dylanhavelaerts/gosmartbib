@@ -228,7 +228,7 @@ export default function Home() {
               user?.role === "ADMIN") && (
               <li
                 onClick={() => {
-                  router.push("/manageCatalog");
+                  router.push("/admin/manageCatalog");
                 }}
               >
                 Beheer catalogus

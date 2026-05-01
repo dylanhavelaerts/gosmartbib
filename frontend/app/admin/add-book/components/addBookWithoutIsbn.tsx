@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AGE_RANGE, Book, BookInventory, BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
+import {  BOOK_CATEGORIES, BOOK_LABELS } from "../../../interfaces/Book";
+import type { Book, BookInventory } from "../../../interfaces/Book";
 import "./addBookForm.css";
-import { MeResponse } from "@/app/interfaces/user";
+import type { MeResponse } from "@/app/interfaces/user";
+import type { SchoolCampusDTO } from "@/app/interfaces/schoolIntegration";
+import {
+  fetchSchoolCampuses,
+  getCampusSelectOptions,
+} from "@/app/utils/schoolCampuses";
 
 export default function AddBookWithoutIsbn() {
   const [message, setMessage] = useState("");
+  const [campusLoadError, setCampusLoadError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingCampuses, setLoadingCampuses] = useState(false);
   const [previewBook, setPreviewBook] = useState<Book | null>(null);
 
   const [title, setTitle] = useState("");
@@ -28,6 +36,7 @@ export default function AddBookWithoutIsbn() {
   const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
   const [ageRange, setAgeRange] = useState("");
   const [me, setMe] = useState<MeResponse | null>(null);
+  const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
   const [inventories, setInventories] = useState<BookInventory[]>([]);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -64,9 +73,9 @@ export default function AddBookWithoutIsbn() {
       rating,
       publishedYear,
       spotlight: false,
-      didacticTag: false,
-      readingLevel: "",
-      labels: [],
+      didacticTag,
+      readingLevel,
+      labels,
       totalCopies: totalCopiesFromInventories,
       availableCopies: availableCopiesFromInventories,
       ageRange,
@@ -144,7 +153,7 @@ for (const inventory of inventories) {
     setMessage("");
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/add`, {
+      const response = await fetch(`${API_URL}/books/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -192,6 +201,12 @@ for (const inventory of inventories) {
         setPublishedYear(0);
         setRating(0);
         setOpenDropdown(false);
+        setOpenLabelDropdown(false);
+        setDidacticTag(false);
+        setLabels([]);
+        setReadingLevel("");
+        setAgeRange("");
+        setInventories(me?.school ? [createEmptyInventory(me.school)] : []);
       } else {
         setMessage("Er ging iets mis bij het opslaan van het boek.");
       }
@@ -264,10 +279,13 @@ function removeInventoryRow(index: number) {
 }
 
 useEffect(() => {
-  async function loadMe() {
+  async function loadMeAndCampuses() {
     if (!API_URL) return;
 
     try {
+      setLoadingCampuses(true);
+      setCampusLoadError("");
+
       const response = await fetch(`${API_URL}/auth/me`, {
         credentials: "include",
       });
@@ -279,13 +297,23 @@ useEffect(() => {
 
       if (data.school) {
         setInventories([createEmptyInventory(data.school)]);
+
+        const campusData = await fetchSchoolCampuses(API_URL, data.school.id);
+          setCampuses(campusData);
       }
     } catch (error) {
-      console.error("Kon gebruiker niet ophalen:", error);
+        console.error("Kon gebruiker of campussen niet ophalen:", error);
+        setCampusLoadError(
+          error instanceof Error
+            ? error.message
+            : "Kon de campussen niet ophalen",
+        );
+      } finally {
+        setLoadingCampuses(false);
+      }
     }
-  }
 
-  loadMe();
+  loadMeAndCampuses();
 }, [API_URL]);
 
 
@@ -524,21 +552,6 @@ useEffect(() => {
         </div>
 
         <div className="fieldGroup">
-          <label className="label">Leeftijd</label>
-          <select
-            value={ageRange}
-            onChange={(e) => setAgeRange(e.target.value)}
-            className="select"
-            disabled={previewBook !== null}
-          >
-            <option value="">leeftijd</option>
-            <option value="Eerste graad">Eerste graad</option>
-            <option value="Tweede graad">Tweede graad</option>
-            <option value="Derde graad">Derde graad</option>
-          </select>
-        </div>
-
-        <div className="fieldGroup">
           <label className="label">Didactisch boek</label>
           <select
             value={String(didacticTag)}
@@ -552,6 +565,8 @@ useEffect(() => {
         </div>
         <div className="fieldGroup">
           <label className="label">Inventaris per school/campus</label>
+
+          {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
 
           {inventories.map((inventory, index) => (
             <div key={index} className="inventoryCard">
@@ -568,14 +583,29 @@ useEffect(() => {
 
                 <div className="inventoryField">
                   <label className="label">Campus</label>
-                  <input
-                    type="text"
+                  <select
                     value={inventory.campus}
-                    onChange={(e) => updateInventory(index, "campus", e.target.value)}
-                    className="input"
-                    disabled={previewBook !== null}
-                    placeholder="Bijv. Campus Zuid"
-                  />
+                    onChange={(e) =>
+                      updateInventory(index, "campus", e.target.value)
+                    }
+                    className="select"
+                    disabled={previewBook !== null || loadingCampuses}
+                  >
+                    <option value="">
+                      {loadingCampuses ? "Campussen laden..." : "Geen campus"}
+                    </option>
+
+                    {getCampusSelectOptions(campuses, inventory.campus).map(
+                      (campusOption) => (
+                        <option
+                          key={`${campusOption.id}-${campusOption.name}`}
+                          value={campusOption.name}
+                        >
+                          {campusOption.name}
+                        </option>
+                      ),
+                    )}
+                  </select>
                 </div>
 
                 <div className="inventoryField">

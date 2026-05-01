@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Book } from "../interfaces/Book";
-import { SmartschoolUser } from "../interfaces/SmartschoolUser";
+import { Book } from "../../../interfaces/Book";
+import { SmartschoolUser } from "../../../interfaces/SmartschoolUser";
 import "./returns.css";
 
 // Interface voor de boeken die de lener momenteel heeft (gebundeld per boek)
@@ -30,7 +30,7 @@ export default function ReturnsPage() {
   // --- Kolom 2: Uitgeleende boeken States ---
   const [borrowedBooks, setBorrowedBooks] = useState<BorrowedItem[]>([]);
   const [bookQuery, setBookQuery] = useState("");
-  
+
   // --- Kolom 3: Retour Mandje States ---
   const [returnCart, setReturnCart] = useState<ReturnCartItem[]>([]);
 
@@ -79,12 +79,12 @@ export default function ReturnsPage() {
         { credentials: "include" }
       );
       if (!response.ok) throw new Error("Kan leningen niet ophalen");
-      
+
       const data = await response.json();
-      
+
       // We groeperen de losse leningen per boek, zodat we het aantal (quantity) weten.
       const groupedBooks: Record<number, BorrowedItem> = {};
-      
+
       data.forEach((loan: any) => {
         const bookId = loan.book.id;
         if (!groupedBooks[bookId]) {
@@ -92,7 +92,7 @@ export default function ReturnsPage() {
         }
         groupedBooks[bookId].quantityBorrowed += loan.quantity;
       });
-      
+
       setBorrowedBooks(Object.values(groupedBooks));
     } catch (err) {
       console.error(err);
@@ -101,8 +101,8 @@ export default function ReturnsPage() {
   };
 
   // Lokale zoekfilter voor de uitgeleende boeken (want we hebben ze al opgehaald)
-  const filteredBorrowedBooks = borrowedBooks.filter(item => 
-    item.book.title.toLowerCase().includes(bookQuery.toLowerCase()) || 
+  const filteredBorrowedBooks = borrowedBooks.filter(item =>
+    item.book.title.toLowerCase().includes(bookQuery.toLowerCase()) ||
     item.book.authors?.some(a => a.toLowerCase().includes(bookQuery.toLowerCase()))
   );
 
@@ -111,7 +111,7 @@ export default function ReturnsPage() {
     setReturnCart((prev) => {
       const existing = prev.find((i) => i.book.id === borrowedItem.book.id);
       if (existing) return prev;
-      
+
       return [
         ...prev,
         {
@@ -174,12 +174,12 @@ export default function ReturnsPage() {
       if (!response.ok) throw new Error("Fout bij het registreren van de retour.");
 
       alert(`Succes! De boeken van ${selectedUser.name} zijn succesvol ingeleverd.`);
-      
+
       // Mandje leegmaken en de lijst met uitgeleende boeken opnieuw inladen
       setReturnCart([]);
       fetchUserLoans(selectedUser.smartschoolUserId);
       setBookQuery("");
-      
+
     } catch (err) {
       console.error(err);
       alert("Er ging iets mis bij het inleveren van de boeken. Controleer de verbinding.");
@@ -194,7 +194,7 @@ export default function ReturnsPage() {
       </div>
 
       <div className="uitleenGrid driekolomsGrid">
-        
+
         {/* --- KOLOM 1: LENER SELECTEREN --- */}
         <div className="gridColumn borderRight">
           <div className="sectieHeader">

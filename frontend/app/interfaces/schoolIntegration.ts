@@ -41,3 +41,8 @@ export interface SchoolIntegrationLiveClassesResponse {
   classes: Record<string, unknown>[];
   message: string;
 }
+
+export interface SchoolCampusDTO {
+  id: number;
+  name: string;
+}
