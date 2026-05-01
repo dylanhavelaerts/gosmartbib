@@ -6,9 +6,14 @@ import "./Notification.css";
 interface Props {
   apiPath: string;
   className?: string;
+  label?: string;
 }
 
-export default function NotificationBell({ apiPath, className = "" }: Props) {
+export default function NotificationBell({
+  apiPath,
+  className = "",
+  label,
+}: Props) {
   const [enabled, setEnabled] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -44,16 +49,20 @@ export default function NotificationBell({ apiPath, className = "" }: Props) {
           : "Notificeer mij als dit boek beschikbaar is"
       }
     >
-      <img
-        src={
-          enabled
-            ? "/notification/bell-notification-social-media_full_black.png"
-            : "/notification/bell-notification-social-media.png"
-        }
-        alt={enabled ? "Notificatie aan" : "Notificatie uit"}
-        width={24}
-        height={24}
-      />
+      {label ? (
+        <span>{enabled ? "Notificatie uitschakelen" : label}</span>
+      ) : (
+        <img
+          src={
+            enabled
+              ? "/notification/bell-notification-social-media_full_black.png"
+              : "/notification/bell-notification-social-media.png"
+          }
+          alt={enabled ? "Notificatie aan" : "Notificatie uit"}
+          width={24}
+          height={24}
+        />
+      )}
     </button>
   );
 }
