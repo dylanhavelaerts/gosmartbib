@@ -118,9 +118,9 @@ public class LoanService {
                                 .filter(inv -> inv.getSchool().getId().equals(schoolId))
                                 .findFirst()
                                 .ifPresent(inv -> {
-                                    boolean wasSchoolUnavailable = inv.getAvailableCopies() == 0;
+                                    boolean bookHadZeroAvailableCopies = inv.getAvailableCopies() == 0;
                                     inv.setAvailableCopies(inv.getAvailableCopies() + returnQuantity);
-                                    if (wasSchoolUnavailable) {
+                                    if (bookHadZeroAvailableCopies) {
                                         bookNotificationService.triggerNotificationsForBook(book, schoolId);
                                     }
                                 });

@@ -40,7 +40,6 @@ export default function SchoolIntegrationPage() {
   const [savingCampus, setSavingCampus] = useState(false);
   const [deletingCampusId, setDeletingCampusId] = useState<number | null>(null);
 
-
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -119,7 +118,6 @@ export default function SchoolIntegrationPage() {
           loadIntegration(meData.school.id),
           loadCampuses(meData.school.id),
         ]);
-
       } catch (err) {
         console.error(err);
         setError("Er ging iets mis bij het laden van de integratie");
@@ -187,7 +185,7 @@ export default function SchoolIntegrationPage() {
     }
   };
 
- const handleCreateCampus = async (e: React.FormEvent) => {
+  const handleCreateCampus = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!API_URL || !schoolId) return;
@@ -497,7 +495,7 @@ export default function SchoolIntegrationPage() {
             )}
           </section>
 
-<section className="card">
+          <section className="card">
             <h2>Campussen</h2>
             <p className="help">
               Voeg hier de campussen toe die later in boekinventaris als keuze
@@ -585,6 +583,33 @@ export default function SchoolIntegrationPage() {
                       ? "Laat leeg om het huidige secret te behouden"
                       : "Client secret"
                   }
+                />
+              </label>
+
+              <label className="field">
+                <span>Smartschool accesscode</span>
+                <input
+                  type="password"
+                  value={smartschoolAccesscode}
+                  onChange={(e) => setSmartschoolAccesscode(e.target.value)}
+                  placeholder={
+                    integration?.smartschoolAccesscodeConfigured
+                      ? "Laat leeg om de huidige accesscode te behouden"
+                      : "Webservices Accesscode"
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>
+                  Smartschool afzender vanaf dit smartschool account zullen de
+                  berichten verstuurd worden
+                </span>
+                <input
+                  type="text"
+                  value={senderIdentifier}
+                  onChange={(e) => setSenderIdentifier(e.target.value)}
+                  placeholder="bv. jan.janssen"
                 />
               </label>
 

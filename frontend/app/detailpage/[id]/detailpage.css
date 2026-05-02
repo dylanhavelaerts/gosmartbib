@@ -54,6 +54,43 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   display: block;
 }
+.coverBell,
+.coverBell.notifBtn {
+  align-self: center;
+  margin-top: 0;
+  white-space: normal;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  border: none;
+  background-color: #fce8e8;
+  color: #9b1c1c;
+  text-align: center;
+  width: auto;
+}
+
+.coverBell.notifBtn--active {
+  background-color: #f5c6c6;
+  color: #9b1c1c;
+  border: none;
+}
+
+.coverBell:hover:not(.notifBtn--active) {
+  background-color: #f5c6c6;
+}
+
+.coverBell.notifBtn--active:hover {
+  background-color: #eea8a8;
+}
+
+.coverBell span {
+  font-size: 12px;
+  font-weight: 600;
+  color: inherit;
+}
+
 
 .coverBadge {
 align-self: center;

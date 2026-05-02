@@ -91,6 +91,11 @@ public class UserService {
                     user.getClasses(), updatedClasses);
             user.setClasses(updatedClasses);
         }
+        String oneRosterSourcedId = oauth2User.getAttribute("mainAccountReferenceID");
+        if (oneRosterSourcedId != null && !oneRosterSourcedId.isBlank()
+                && !oneRosterSourcedId.equals(user.getOnerosterSourcedId())) {
+            user.setOnerosterSourcedId(oneRosterSourcedId);
+        }
 
         return userRepository.save(user);
     }

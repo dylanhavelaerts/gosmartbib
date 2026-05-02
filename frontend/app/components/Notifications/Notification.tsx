@@ -4,27 +4,32 @@ import { useEffect, useState } from "react";
 import "./Notification.css";
 
 interface Props {
-  bookId: number;
+  apiPath: string;
   className?: string;
+  label?: string;
 }
 
-export default function NotificationBell({ bookId, className = "" }: Props) {
+export default function NotificationBell({
+  apiPath,
+  className = "",
+  label,
+}: Props) {
   const [enabled, setEnabled] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
-    fetch(`${apiUrl}/books/${bookId}/notification`, {
+    fetch(`${apiUrl}${apiPath}`, {
       credentials: "include",
     })
       .then((r) => r.json())
       .then((on: boolean) => setEnabled(on))
       .catch(() => setEnabled(false));
-  }, [bookId]);
+  }, [apiPath]);
 
   const toggle = async () => {
     const method = enabled ? "DELETE" : "POST";
     try {
-      await fetch(`${apiUrl}/books/${bookId}/notification`, {
+      await fetch(`${apiUrl}${apiPath}`, {
         method,
         credentials: "include",
       });
@@ -44,16 +49,20 @@ export default function NotificationBell({ bookId, className = "" }: Props) {
           : "Notificeer mij als dit boek beschikbaar is"
       }
     >
-      <img
-        src={
-          enabled
-            ? "/notification/bell-notification-social-media_full_black.png"
-            : "/notification/bell-notification-social-media.png"
-        }
-        alt={enabled ? "Notificatie aan" : "Notificatie uit"}
-        width={24}
-        height={24}
-      />
+      {label ? (
+        <span>{enabled ? "Notificatie uitschakelen" : label}</span>
+      ) : (
+        <img
+          src={
+            enabled
+              ? "/notification/bell-notification-social-media_full_black.png"
+              : "/notification/bell-notification-social-media.png"
+          }
+          alt={enabled ? "Notificatie aan" : "Notificatie uit"}
+          width={24}
+          height={24}
+        />
+      )}
     </button>
   );
 }

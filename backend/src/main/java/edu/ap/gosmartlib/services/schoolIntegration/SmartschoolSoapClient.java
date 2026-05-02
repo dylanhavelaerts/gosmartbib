@@ -22,20 +22,35 @@ public class SmartschoolSoapClient {
         String safeBody = escapeXml(body);
 
         String soapEnvelope = """
-            <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                              xmlns:ss="http://www.smartschool.be/Webservices">
-              <soapenv:Body>
-                <ss:sendMsg>
-                  <accesscode>%s</accesscode>
-                  <userIdentifier>%s</userIdentifier>
-                  <title>%s</title>
-                  <body>%s</body>
-                  <senderIdentifier>%s</senderIdentifier>
-                </ss:sendMsg>
-              </soapenv:Body>
-            </soapenv:Envelope>
-            """.formatted(accesscode, safeUsername, safeTitle, safeBody, sender);
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                                  xmlns:ss="http://www.smartschool.be/Webservices">
+                  <soapenv:Body>
+                    <ss:sendMsg>
+                      <accesscode>%s</accesscode>
+                      <userIdentifier>%s</userIdentifier>
+                      <title>%s</title>
+                      <body>%s</body>
+                      <senderIdentifier>%s</senderIdentifier>
+                    </ss:sendMsg>
+                  </soapenv:Body>
+                </soapenv:Envelope>
+                """.formatted(accesscode, safeUsername, safeTitle, safeBody, sender);
+
+        try {
+            String response = restClient.post()
+                    .uri(endpoint)
+                    .header("Content-Type", "text/xml;charset=UTF-8")
+                    .header("SOAPAction", "\"\"")
+                    .body(soapEnvelope)
+                    .retrieve()
+                    .body(String.class);
+            log.info("SOAP bericht verstuurd: {}", response);
+        } catch (Exception e) {
+            log.error("SOAP bericht versturen mislukt: {}", e.getMessage());
+        }
+
     }
+
 
     private static String escapeXml(String input) {
         if (input == null) return "";

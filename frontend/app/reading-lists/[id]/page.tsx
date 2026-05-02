@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import "../readinglistdetail.css";
+import NotificationBell from "@/app/components/Notifications/Notification";
 
 interface BookItem {
   id: number;
@@ -45,6 +46,10 @@ export default function ReadingListDetailPage() {
   const storageKey = `reading-status:${userId}:${id}`;
 
   const [readStatus, setReadStatus] = useState<Record<number, boolean>>({});
+
+  const hasUnavailableBooks = detail?.books.some(
+    (b) => b.availableCopies === 0,
+  );
 
   useEffect(() => {
     if (!id || !user) return;
@@ -144,12 +149,19 @@ export default function ReadingListDetailPage() {
         <>
           {/* ── Header card ── */}
           <div className="rld-header-card">
-            <div className="rld-badges">
-              <span className="rld-badge">
-                {detail.listType === "CLASS"
-                  ? "Klasleeslijst"
-                  : "Eigen leeslijst"}
-              </span>
+            <div className="rld-header-top">
+              <div className="rld-badges">
+                <span className="rld-badge">
+                  {detail.listType === "CLASS"
+                    ? "Klasleeslijst"
+                    : "Eigen leeslijst"}
+                </span>
+              </div>
+              {hasUnavailableBooks && (
+                <NotificationBell
+                  apiPath={`/reading-lists/${id}/notification`}
+                />
+              )}
             </div>
 
             <h1>{detail.title}</h1>
@@ -238,11 +250,6 @@ export default function ReadingListDetailPage() {
                       {book.isbn && (
                         <span className="rld-isbn">ISBN: {book.isbn}</span>
                       )}
-                      {isUnavailable && (
-                        <span className="rld-unavailable-badge">
-                          Niet beschikbaar
-                        </span>
-                      )}
 
                       <div className="rld-book-actions">
                         <button
@@ -261,17 +268,23 @@ export default function ReadingListDetailPage() {
                         </button>
                       </div>
                     </div>
-
-                    {/* Read status badge */}
-                    <span
-                      className={`rld-status-badge ${
-                        isRead
-                          ? "rld-status-badge--read"
-                          : "rld-status-badge--unread"
-                      }`}
-                    >
-                      {isRead ? "Gelezen" : "Nog te lezen"}
-                    </span>
+                    {/* Badges */}
+                    <div className="rld-book-badges">
+                      <span
+                        className={`rld-status-badge ${
+                          isRead
+                            ? "rld-status-badge--read"
+                            : "rld-status-badge--unread"
+                        }`}
+                      >
+                        {isRead ? "Gelezen" : "Nog te lezen"}
+                      </span>
+                      {isUnavailable && (
+                        <span className="rld-status-badge rld-status-badge--unavailable">
+                          Niet beschikbaar
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}

@@ -109,10 +109,14 @@ export default function DetailPage({
               onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
               className="detailCover"
             />
-            {currentUser && available === 0 && (
-              <NotificationBell bookId={book.id} className="coverBell" />
-            )}
           </div>
+          {currentUser && available === 0 && (
+            <NotificationBell
+              apiPath={`/books/${book.id}/notification`}
+              className="coverBell"
+              label="Notificaties aanzetten"
+            />
+          )}
 
           {/* Beschikbaarheidsbadge staat nu onder de cover */}
           {currentUser && (

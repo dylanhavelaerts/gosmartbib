@@ -107,6 +107,114 @@ class BookNotificationServiceTest {
 
     // --- isEnabled ---
 
+    // --- enableBulk ---
+
+    @Test
+    void givenValidUserAndBooks_whenEnableBulk_thenSavesOnlyMissingNotifications() {
+        UserEntity user = buildUser(1L, "uid-1");
+        BookEntity book1 = buildBook(10L, "isbn-1");
+        BookEntity book2 = buildBook(11L, "isbn-2");
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
+        when(bookRepository.findAllById(List.of(10L, 11L))).thenReturn(List.of(book1, book2));
+        when(bookNotificationRepository.existsByUser_IdAndBook_Id(1L, 10L)).thenReturn(true);
+        when(bookNotificationRepository.existsByUser_IdAndBook_Id(1L, 11L)).thenReturn(false);
+
+        bookNotificationService.enableBulk("uid-1", List.of(10L, 11L));
+
+        ArgumentCaptor<BookNotificationEntity> captor = ArgumentCaptor.forClass(BookNotificationEntity.class);
+        verify(bookNotificationRepository, times(1)).save(captor.capture());
+        assertEquals(book2, captor.getValue().getBook());
+    }
+
+    @Test
+    void givenAllNotificationsAlreadyExist_whenEnableBulk_thenSavesNothing() {
+        UserEntity user = buildUser(1L, "uid-1");
+        BookEntity book1 = buildBook(10L, "isbn-1");
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
+        when(bookRepository.findAllById(List.of(10L))).thenReturn(List.of(book1));
+        when(bookNotificationRepository.existsByUser_IdAndBook_Id(1L, 10L)).thenReturn(true);
+
+        bookNotificationService.enableBulk("uid-1", List.of(10L));
+
+        verify(bookNotificationRepository, never()).save(any());
+    }
+
+    @Test
+    void givenUserNotFound_whenEnableBulk_thenThrowsNotFound() {
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> bookNotificationService.enableBulk("uid-1", List.of(10L)));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
+
+// --- disableBulk ---
+
+    @Test
+    void givenValidUserAndBookIds_whenDisableBulk_thenDeletesEach() {
+        UserEntity user = buildUser(1L, "uid-1");
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
+
+        bookNotificationService.disableBulk("uid-1", List.of(10L, 11L));
+
+        verify(bookNotificationRepository, times(1)).deleteByUser_IdAndBook_Id(1L, 10L);
+        verify(bookNotificationRepository, times(1)).deleteByUser_IdAndBook_Id(1L, 11L);
+    }
+
+    @Test
+    void givenEmptyList_whenDisableBulk_thenDeletesNothing() {
+        UserEntity user = buildUser(1L, "uid-1");
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
+
+        bookNotificationService.disableBulk("uid-1", List.of());
+
+        verify(bookNotificationRepository, never()).deleteByUser_IdAndBook_Id(any(), any());
+    }
+
+    @Test
+    void givenUserNotFound_whenDisableBulk_thenThrowsNotFound() {
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> bookNotificationService.disableBulk("uid-1", List.of(10L)));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
+
+// --- isAllEnabled ---
+
+    @Test
+    void givenAllNotificationsEnabled_whenIsAllEnabled_thenReturnsTrue() {
+        UserEntity user = buildUser(1L, "uid-1");
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
+        when(bookNotificationRepository.existsByUser_IdAndBook_Id(1L, 10L)).thenReturn(true);
+        when(bookNotificationRepository.existsByUser_IdAndBook_Id(1L, 11L)).thenReturn(true);
+
+        assertTrue(bookNotificationService.isAllEnabled("uid-1", List.of(10L, 11L)));
+    }
+
+    @Test
+    void givenOneNotificationMissing_whenIsAllEnabled_thenReturnsFalse() {
+        UserEntity user = buildUser(1L, "uid-1");
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
+        when(bookNotificationRepository.existsByUser_IdAndBook_Id(1L, 10L)).thenReturn(true);
+        when(bookNotificationRepository.existsByUser_IdAndBook_Id(1L, 11L)).thenReturn(false);
+
+        assertFalse(bookNotificationService.isAllEnabled("uid-1", List.of(10L, 11L)));
+    }
+
+    @Test
+    void givenEmptyBookIdList_whenIsAllEnabled_thenReturnsFalse() {
+        assertFalse(bookNotificationService.isAllEnabled("uid-1", List.of()));
+    }
+
+    @Test
+    void givenUserNotFound_whenIsAllEnabled_thenReturnsFalse() {
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.empty());
+
+        assertFalse(bookNotificationService.isAllEnabled("uid-1", List.of(10L)));
+    }
+
+
     @Test
     void givenNotificationExists_whenIsEnabled_thenReturnsTrue() {
         UserEntity user = buildUser(1L, "uid-1");
@@ -149,8 +257,7 @@ class BookNotificationServiceTest {
 
         verify(messageService, times(1)).sendMessage(eq(user1), eq("Boek terug beschikbaar"), anyString());
         verify(messageService, times(1)).sendMessage(eq(user2), eq("Boek terug beschikbaar"), anyString());
-        verify(bookNotificationRepository, times(1)).delete(n1);
-        verify(bookNotificationRepository, times(1)).delete(n2);
+        verify(bookNotificationRepository, times(1)).deleteAll(List.of(n1, n2));
     }
 
     @Test
