@@ -30,6 +30,7 @@ export function usePurchaseRequests(apiUrl?: string) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const fetchRequests = useCallback(async () => {
     if (!apiUrl) throw new Error("API URL ontbreekt");
@@ -164,6 +165,33 @@ export function usePurchaseRequests(apiUrl?: string) {
     }
   }
 
+  async function deleteRequest(id: number): Promise<boolean> {
+    if (!apiUrl || deletingId !== null) return false;
+
+    try {
+      setDeletingId(id);
+      setActionError("");
+
+      const response = await fetch(`${apiUrl}/purchase-requests/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        setActionError("Er ging iets mis bij het verwijderen.");
+        return false;
+      }
+
+      await fetchRequests();
+      return true;
+    } catch {
+      setActionError("Er ging iets mis bij het verwijderen.");
+      return false;
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return {
     requests,
     loading,
@@ -172,9 +200,11 @@ export function usePurchaseRequests(apiUrl?: string) {
     isSubmitting,
     approvingId,
     rejectingId,
+    deletingId,
     setActionError,
     createRequest,
     approveRequest,
     rejectRequest,
+    deleteRequest,
   };
 }

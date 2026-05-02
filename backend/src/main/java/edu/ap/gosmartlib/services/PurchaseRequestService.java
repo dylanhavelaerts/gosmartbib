@@ -71,6 +71,13 @@ public class PurchaseRequestService {
         return toDTO(purchaseRequestRepository.save(entity));
     }
 
+    public void deleteRequest(Long id) {
+        if (!purchaseRequestRepository.existsById(id)) {
+            throw new EntityNotFoundException("Aankoopverzoek niet gevonden");
+        }
+        purchaseRequestRepository.deleteById(id);
+    }
+
     private PurchaseRequestDTO toDTO(PurchaseRequestEntity entity) {
         return new PurchaseRequestDTO(
                 entity.getId(),

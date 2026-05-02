@@ -148,6 +148,17 @@
   border-color: #d7bbc6;
 }
 
+.btn-delete {
+  border: 1px solid #f5c6cb;
+  background: #fff;
+  color: #842029;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: #f8d7da;
+  border-color: #f1aeb5;
+}
+
 @media (max-width: 720px) {
   .suggestion-card {
     grid-template-columns: 1fr;

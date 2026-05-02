@@ -46,10 +46,12 @@ export default function PurchaseRequestPage() {
     isSubmitting,
     approvingId,
     rejectingId,
+    deletingId,
     setActionError,
     createRequest,
     approveRequest,
     rejectRequest,
+    deleteRequest,
   } = usePurchaseRequests(API_URL);
 
   function addAuthor() {
@@ -304,8 +306,10 @@ export default function PurchaseRequestPage() {
                       isBeheerder={isBeheerder}
                       approving={approvingId === request.id}
                       rejecting={rejectingId === request.id}
+                      deleting={deletingId === request.id}
                       onApprove={(id) => openModal("approve", id)}
                       onReject={(id) => openModal("reject", id)}
+                      onDelete={deleteRequest}
                     />
                   ))}
                 </div>

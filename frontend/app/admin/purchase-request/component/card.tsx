@@ -8,8 +8,10 @@ interface SuggestionCardProps {
   isBeheerder: boolean;
   approving: boolean;
   rejecting: boolean;
+  deleting: boolean;
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
+  onDelete: (id: number) => void;
 }
 
 function statusLabel(status: string): string {
@@ -51,11 +53,13 @@ export default function SuggestionCard({
   isBeheerder,
   approving,
   rejecting,
+  deleting,
   onApprove,
   onReject,
+  onDelete,
 }: SuggestionCardProps) {
   const isActionable = isBeheerder && request.status === "PENDING";
-  const isBusy = approving || rejecting;
+  const isBusy = approving || rejecting || deleting;
 
   return (
     <article className="suggestion-card">
@@ -67,24 +71,35 @@ export default function SuggestionCard({
         <div className="card-top-row">
           <h2 className="card-title">{request.title}</h2>
           <div className="card-top-right">
-            {isActionable && (
-              <div className="card-actions">
+            <div className="card-actions">
+              {isActionable && (
+                <>
+                  <button
+                    className="btn btn-approve"
+                    onClick={() => onApprove(request.id)}
+                    disabled={isBusy}
+                  >
+                    {approving ? "Bezig..." : "Goedkeuren"}
+                  </button>
+                  <button
+                    className="btn btn-reject"
+                    onClick={() => onReject(request.id)}
+                    disabled={isBusy}
+                  >
+                    {rejecting ? "Bezig..." : "Afwijzen"}
+                  </button>
+                </>
+              )}
+              {isBeheerder && (
                 <button
-                  className="btn btn-approve"
-                  onClick={() => onApprove(request.id)}
+                  className="btn btn-delete"
+                  onClick={() => onDelete(request.id)}
                   disabled={isBusy}
                 >
-                  {approving ? "Bezig..." : "Goedkeuren"}
+                  {deleting ? "Bezig..." : "Verwijderen"}
                 </button>
-                <button
-                  className="btn btn-reject"
-                  onClick={() => onReject(request.id)}
-                  disabled={isBusy}
-                >
-                  {rejecting ? "Bezig..." : "Afwijzen"}
-                </button>
-              </div>
-            )}
+              )}
+            </div>
             <span className={`card-status ${statusClassName(request.status)}`}>
               {statusLabel(request.status)}
             </span>

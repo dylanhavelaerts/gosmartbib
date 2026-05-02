@@ -52,6 +52,13 @@ public class PurchaseRequestController {
         return ResponseEntity.ok(purchaseRequestService.rejectRequest(id, note.note()));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    public ResponseEntity<Void> deleteRequest(@PathVariable Long id) {
+        purchaseRequestService.deleteRequest(id);
+        return ResponseEntity.noContent().build();
+    }
+
     private String extractUid(OAuth2User principal) {
         if (principal == null)
             throw new InvalidUserException(HttpStatus.UNAUTHORIZED, "Niet ingelogd");
