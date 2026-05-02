@@ -207,8 +207,8 @@ export default function CreateReadingListPage() {
       return;
     }
 
-    if (!title.trim() || !deadline) {
-      setMessage({ type: "error", text: "Titel en deadline zijn verplicht." });
+    if (!title.trim()) {
+      setMessage({ type: "error", text: "Titel is verplicht." });
       return;
     }
 
@@ -245,7 +245,11 @@ export default function CreateReadingListPage() {
     const payload = {
       title: title.trim(),
       taskDescription: taskDescription.trim() || null,
-      deadline: deadline.length === 16 ? `${deadline}:00` : deadline,
+      deadline: deadline
+        ? deadline.length === 16
+          ? `${deadline}:00`
+          : deadline
+        : null,
       bookIds: selectedBooks.map((b) => b.id),
       ...cleanedTargetPayload,
     };
@@ -323,14 +327,13 @@ export default function CreateReadingListPage() {
                 />
               </div>
               <div className="inputGroup">
-                <label htmlFor="deadline">2. Deadline *</label>
+                <label htmlFor="deadline">2. Deadline</label>
                 <input
                   id="deadline"
                   type="datetime-local"
                   className="textInput"
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
-                  required
                 />
               </div>
             </div>
