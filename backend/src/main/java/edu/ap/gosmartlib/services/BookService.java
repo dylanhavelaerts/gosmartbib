@@ -307,6 +307,7 @@ public class BookService {
                         request.language(),
                         request.categories(),
                         request.labels(),
+                        request.didacticOnly(),
                         request.minPageCount(),
                         request.maxPageCount(),
                         request.minPubYear(),
