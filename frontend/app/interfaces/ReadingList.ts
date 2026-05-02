@@ -65,6 +65,7 @@ export interface ReadingListDetail {
    */
   targetStudentIds?: number[];
   targetStudentDisplayNames?: string[];
+  targetStudents?: ReadingListStudentTarget[];
   targetClassIds?: number[];
   targetClassNames?: string[];
 

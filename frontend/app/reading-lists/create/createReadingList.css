@@ -646,6 +646,205 @@
   line-height: 1.5;
 }
 
+.student-target-search {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.student-target-search .field-label {
+  color: #3e0c1c;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.student-target-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d8cdd1;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 0.8rem 0.95rem;
+  color: #1f2937;
+  font-size: 0.95rem;
+  outline: none;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.student-target-search-input:focus {
+  border-color: #8e2446;
+  box-shadow: 0 0 0 3px rgba(142, 36, 70, 0.14);
+}
+
+.student-target-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.student-target-search-help,
+.student-target-search-status {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.student-target-search-error {
+  margin: 0;
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  border-radius: 12px;
+  background: #fef2f2;
+  padding: 10px 12px;
+  color: #991b1b;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.student-target-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.student-target-result {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(142, 36, 70, 0.18);
+  border-radius: 15px;
+  background: #ffffff;
+  padding: 12px 14px;
+  color: #1f2937;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.student-target-result:hover {
+  transform: translateY(-1px);
+  border-color: rgba(142, 36, 70, 0.5);
+  background: #fdfafb;
+  box-shadow: 0 8px 20px rgba(62, 12, 28, 0.08);
+}
+
+.student-target-result-name {
+  overflow: hidden;
+  color: #222;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-target-result-classes {
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #f3e8ec;
+  padding: 5px 9px;
+  color: #8e2446;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.selected-student-targets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid #eadfe3;
+  padding-top: 12px;
+}
+
+.selected-student-targets-title {
+  margin: 0;
+  color: #3e0c1c;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.selected-student-target-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.selected-student-target-pill {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(142, 36, 70, 0.22);
+  border-radius: 999px;
+  background: #fdfafb;
+  padding: 8px 9px 8px 13px;
+  color: #1f2937;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.selected-student-target-pill > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.selected-student-target-pill small {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 0.73rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-student-target-pill button {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 999px;
+  background: #eadfe3;
+  color: #8e2446;
+  cursor: pointer;
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1;
+  transition:
+    transform 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.selected-student-target-pill button:hover {
+  transform: translateY(-1px);
+  background: #8e2446;
+  color: #ffffff;
+}
+
+@media (max-width: 720px) {
+  .student-target-result {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .student-target-result-classes {
+    align-self: flex-start;
+  }
+
+  .selected-student-target-pill {
+    width: 100%;
+    justify-content: space-between;
+    border-radius: 16px;
+  }
+}
+
 @media (max-width: 1100px) {
   .info-row-top,
   .manage-wrapper {
@@ -680,7 +879,6 @@
   }
 
   .assignment-type-row,
-  .assignment-student-grid,
   .assignment-class-grid,
   .assignment-chip-grid {
     grid-template-columns: 1fr;

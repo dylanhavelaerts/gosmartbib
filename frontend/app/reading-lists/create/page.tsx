@@ -6,9 +6,11 @@ import { useAuth } from "../../context/AuthContext";
 import { Book } from "../../interfaces/Book";
 import type {
   ReadingListAssignmentTargets,
+  ReadingListStudentTarget,
   ReadingListTargetType,
 } from "../../interfaces/ReadingList";
 import ProtectedRoute from "../../components/ProtectedRoute";
+import StudentTargetSearch from "../components/StudentTargetSearch";
 import {
   cleanTargetPayloadForType,
   gradeLabel,
@@ -35,6 +37,9 @@ export default function CreateReadingListPage() {
   const [selectedTargetStudentIds, setSelectedTargetStudentIds] = useState<
     number[]
   >([]);
+  const [selectedTargetStudents, setSelectedTargetStudents] = useState<
+  ReadingListStudentTarget[]
+>([]);
   const [selectedTargetClassIds, setSelectedTargetClassIds] = useState<
     number[]
   >([]);
@@ -92,8 +97,36 @@ export default function CreateReadingListPage() {
     setSelectedBooks((prev) => prev.filter((b) => b.id !== bookId));
   };
 
-  const toggleTargetStudent = (studentId: number) => {
-    setSelectedTargetStudentIds((prev) => toggleNumberInList(studentId, prev));
+  const removeTargetStudent = (studentId: number) => {
+    setSelectedTargetStudentIds((prev) =>
+      prev.filter((currentStudentId) => currentStudentId !== studentId),
+    );
+    setSelectedTargetStudents((prev) =>
+      prev.filter((student) => student.id !== studentId),
+    );
+  };
+
+  const toggleTargetStudent = (student: ReadingListStudentTarget) => {
+    if (selectedTargetStudentIds.includes(student.id)) {
+      removeTargetStudent(student.id);
+      return;
+    }
+
+    setSelectedTargetStudentIds((prev) =>
+      [...prev, student.id].sort((a, b) => a - b),
+    );
+
+    setSelectedTargetStudents((prev) => {
+      if (prev.some((selectedStudent) => selectedStudent.id === student.id)) {
+        return prev;
+      }
+
+      return [...prev, student].sort((a, b) =>
+        a.displayName.localeCompare(b.displayName, "nl", {
+          sensitivity: "base",
+        }),
+      );
+    });
   };
 
   const toggleTargetClass = (classId: number) => {
@@ -155,6 +188,7 @@ export default function CreateReadingListPage() {
 
     setTargetType("CLASSES");
     setSelectedTargetStudentIds([]);
+    setSelectedTargetStudents([]);
     setSelectedTargetClassIds([]);
     setSelectedTargetYears([]);
     setSelectedTargetGrades([]);
@@ -368,35 +402,13 @@ export default function CreateReadingListPage() {
                 <div className="assignment-panel assignment-panel-wide">
                   <h3>Specifieke leerlingen</h3>
 
-                  {assignmentTargets?.students?.length ? (
-                    <div className="assignment-student-grid">
-                      {assignmentTargets.students.map((student) => (
-                        <label
-                          key={student.id}
-                          className="assignment-chip assignment-chip-student"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedTargetStudentIds.includes(
-                              student.id,
-                            )}
-                            onChange={() => toggleTargetStudent(student.id)}
-                          />
-
-                          <span>
-                            {student.displayName}
-                            {student.classNames?.length ? (
-                              <small>{student.classNames.join(", ")}</small>
-                            ) : null}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="assignment-empty">
-                      Er zijn nog geen leerlingen gekend voor je school.
-                    </p>
-                  )}
+                  <StudentTargetSearch
+                    apiUrl={apiUrl}
+                    selectedStudentIds={selectedTargetStudentIds}
+                    selectedStudents={selectedTargetStudents}
+                    onToggleStudent={toggleTargetStudent}
+                    onRemoveStudent={removeTargetStudent}
+                  />
                 </div>
               )}
 
