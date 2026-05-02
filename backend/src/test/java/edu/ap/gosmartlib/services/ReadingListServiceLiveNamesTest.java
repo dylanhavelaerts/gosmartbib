@@ -125,6 +125,8 @@ class ReadingListServiceLiveNamesTest {
     private ReadingListEntity readingList(Long id, String title, ReadingListType type, UserEntity creator) {
         ReadingListEntity list = new ReadingListEntity();
         list.setId(id);
+        list.setPublicUid("public-uid-" + id);
+        list.setPublicVisible(false);
         list.setTitle(title);
         list.setTaskDescription("desc");
         list.setListType(type);

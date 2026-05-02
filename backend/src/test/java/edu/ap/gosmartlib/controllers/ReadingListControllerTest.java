@@ -1,8 +1,11 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListBookDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.UpdateReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.services.ReadingListService;
 import edu.ap.gosmartlib.util.ReadingListType;
@@ -49,6 +52,7 @@ class ReadingListControllerTest {
 
         ReadingListOverviewDTO list = new ReadingListOverviewDTO(
                 1L,
+                "public-uid-1",
                 "List",
                 "Task",
                 null,
@@ -56,6 +60,7 @@ class ReadingListControllerTest {
                 1,
                 ReadingListType.PERSONAL,
                 true,
+                false,
                 null,
                 List.of(),
                 List.of(),
@@ -101,10 +106,12 @@ class ReadingListControllerTest {
 
         ReadingListDetailDTO detail = new ReadingListDetailDTO(
                 2L,
+                "public-uid-2",
                 "Detail",
                 "Task",
                 null,
                 ReadingListType.CLASS,
+                false,
                 false,
                 "teacher",
                 null,
@@ -115,7 +122,7 @@ class ReadingListControllerTest {
                 List.of(),
                 List.of(),
                 false,
-                List.of(new ReadingListDetailDTO.BookItem(10L, "Book", List.of("Author"), null, "isbn-10", 0)));
+                List.of(new ReadingListBookDTO(10L, "Book", List.of("Author"), null, "isbn-10", 0)));
         when(readingListService.getListDetail(2L, uid)).thenReturn(detail);
 
         ResponseEntity<?> response = readingListController.getListDetail(2L, authentication);
@@ -216,6 +223,69 @@ class ReadingListControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(15L, response.getBody());
         verify(readingListService, times(1)).updateClassList(15L, dto, uid);
+    }
+
+    @Test
+    void givenPublicUid_whenGetPublicListDetail_thenReturnsOk() {
+        String publicUid = "public-uid-3";
+
+        PublicReadingListDetailDTO detail = new PublicReadingListDetailDTO(
+                publicUid,
+                "Shared list",
+                "Shared task",
+                null,
+                "STUDENT",
+                List.of(new ReadingListBookDTO(
+                        20L,
+                        "Shared book",
+                        List.of("Author"),
+                        null,
+                        "isbn-20",
+                        1)));
+
+        when(readingListService.getPublicListDetail(publicUid)).thenReturn(detail);
+
+        ResponseEntity<?> response = readingListController.getPublicListDetail(publicUid);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(detail, response.getBody());
+        verify(readingListService, times(1)).getPublicListDetail(publicUid);
+    }
+
+    @Test
+    void givenUnknownPublicUid_whenGetPublicListDetail_thenReturnsNotFound() {
+        String publicUid = "missing-public-uid";
+
+        when(readingListService.getPublicListDetail(publicUid))
+                .thenThrow(new IllegalArgumentException("Publieke leeslijst niet gevonden"));
+
+        ResponseEntity<?> response = readingListController.getPublicListDetail(publicUid);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals("Publieke leeslijst niet gevonden", response.getBody());
+        verify(readingListService, times(1)).getPublicListDetail(publicUid);
+    }
+
+    @Test
+    void givenValidAuthentication_whenUpdatePersonalListVisibility_thenReturnsUpdatedList() {
+        String uid = "student-1";
+        when(authentication.getPrincipal()).thenReturn(oauth2User);
+        when(oauth2User.getAttribute("userID")).thenReturn(uid);
+
+        UpdateReadingListVisibilityDTO dto = new UpdateReadingListVisibilityDTO(true);
+
+        ReadingListEntity updated = new ReadingListEntity();
+        updated.setId(12L);
+        updated.setPublicUid("public-uid-12");
+        updated.setPublicVisible(true);
+
+        when(readingListService.updatePersonalListVisibility(12L, true, uid)).thenReturn(updated);
+
+        ResponseEntity<?> response = readingListController.updatePersonalListVisibility(12L, dto, authentication);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(updated, response.getBody());
+        verify(readingListService, times(1)).updatePersonalListVisibility(12L, true, uid);
     }
 
     @Test

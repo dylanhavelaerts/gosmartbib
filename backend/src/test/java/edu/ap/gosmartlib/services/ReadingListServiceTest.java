@@ -3,6 +3,7 @@ package edu.ap.gosmartlib.services;
 import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -597,6 +598,146 @@ class ReadingListServiceTest {
         when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
 
         assertThrows(IllegalArgumentException.class, () -> readingListService.createClassList(dto, "teacher-uid"));
+
+        verify(readingListRepository, never()).save(any());
+    }
+
+    @Test
+    void givenPublicPersonalList_whenGetPublicListDetail_thenReturnsPublicDetail() {
+        UserEntity creator = user(120L, "creator-uid", UserRoles.STUDENT);
+
+        BookEntity book = book(900L, "Shared Book");
+        book.setAuthors(List.of("A. Author"));
+        book.setThumbnail("thumb.jpg");
+        book.setIsbn("isbn-900");
+        book.setAvailableCopies(2);
+
+        ReadingListEntity list = readingList(
+                900L,
+                "Shared Personal List",
+                ReadingListType.PERSONAL,
+                creator,
+                Set.of(book));
+
+        list.setPublicUid("public-uid-900");
+        list.setPublicVisible(true);
+
+        when(readingListRepository.findByPublicUidWithBooks("public-uid-900"))
+                .thenReturn(Optional.of(list));
+
+        PublicReadingListDetailDTO result = readingListService.getPublicListDetail("public-uid-900");
+
+        assertEquals("public-uid-900", result.publicUid());
+        assertEquals("Shared Personal List", result.title());
+        assertEquals("desc-900", result.taskDescription());
+        assertEquals("STUDENT", result.creatorRole());
+        assertEquals(1, result.books().size());
+        assertEquals("Shared Book", result.books().get(0).title());
+        assertEquals(List.of("A. Author"), result.books().get(0).authors());
+        assertEquals("isbn-900", result.books().get(0).isbn());
+        assertEquals(2, result.books().get(0).availableCopies());
+
+        verify(readingListRepository, times(1)).findByPublicUidWithBooks("public-uid-900");
+    }
+
+    @Test
+    void givenPrivatePersonalList_whenGetPublicListDetail_thenThrowsIllegalArgumentException() {
+        UserEntity creator = user(121L, "creator-uid", UserRoles.STUDENT);
+
+        ReadingListEntity list = readingList(
+                901L,
+                "Private Personal List",
+                ReadingListType.PERSONAL,
+                creator,
+                Set.of());
+
+        list.setPublicUid("public-uid-901");
+        list.setPublicVisible(false);
+
+        when(readingListRepository.findByPublicUidWithBooks("public-uid-901"))
+                .thenReturn(Optional.of(list));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> readingListService.getPublicListDetail("public-uid-901"));
+    }
+
+    @Test
+    void givenPublicClassList_whenGetPublicListDetail_thenThrowsIllegalArgumentException() {
+        UserEntity teacher = user(122L, "teacher-uid", UserRoles.TEACHER);
+
+        ReadingListEntity list = readingList(
+                902L,
+                "Class List",
+                ReadingListType.CLASS,
+                teacher,
+                Set.of());
+
+        list.setPublicUid("public-uid-902");
+        list.setPublicVisible(true);
+
+        when(readingListRepository.findByPublicUidWithBooks("public-uid-902"))
+                .thenReturn(Optional.of(list));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> readingListService.getPublicListDetail("public-uid-902"));
+    }
+
+    @Test
+    void givenUnknownPublicUid_whenGetPublicListDetail_thenThrowsIllegalArgumentException() {
+        when(readingListRepository.findByPublicUidWithBooks("missing-uid"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> readingListService.getPublicListDetail("missing-uid"));
+    }
+
+    @Test
+    void givenOwnerPersonalList_whenUpdatePersonalListVisibility_thenUpdatesPublicVisible() {
+        UserEntity owner = user(130L, "owner-uid", UserRoles.STUDENT);
+
+        ReadingListEntity list = readingList(
+                910L,
+                "Personal List",
+                ReadingListType.PERSONAL,
+                owner,
+                Set.of());
+
+        list.setPublicUid("public-uid-910");
+        list.setPublicVisible(false);
+
+        when(userRepository.findBySmartschoolUid("owner-uid")).thenReturn(Optional.of(owner));
+        when(readingListRepository.findByIdAndCreator_Id(910L, 130L)).thenReturn(Optional.of(list));
+        when(readingListRepository.save(any(ReadingListEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ReadingListEntity result = readingListService.updatePersonalListVisibility(910L, true, "owner-uid");
+
+        assertTrue(result.isPublicVisible());
+        assertEquals("public-uid-910", result.getPublicUid());
+
+        verify(readingListRepository, times(1)).save(list);
+    }
+
+    @Test
+    void givenClassList_whenUpdatePersonalListVisibility_thenThrowsAccessDenied() {
+        UserEntity owner = user(131L, "owner-uid", UserRoles.TEACHER);
+
+        ReadingListEntity classList = readingList(
+                911L,
+                "Class List",
+                ReadingListType.CLASS,
+                owner,
+                Set.of());
+
+        when(userRepository.findBySmartschoolUid("owner-uid")).thenReturn(Optional.of(owner));
+        when(readingListRepository.findByIdAndCreator_Id(911L, 131L)).thenReturn(Optional.of(classList));
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> readingListService.updatePersonalListVisibility(911L, true, "owner-uid"));
 
         verify(readingListRepository, never()).save(any());
     }
