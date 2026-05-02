@@ -5,6 +5,7 @@ import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListBookDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListVisibilityDTO;
 import edu.ap.gosmartlib.dto.readinglist.UpdateReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
@@ -116,6 +117,7 @@ class ReadingListControllerTest {
                 false,
                 "teacher",
                 null,
+                List.of(),
                 List.of(),
                 List.of(),
                 List.of(),
@@ -299,5 +301,35 @@ class ReadingListControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Could not load reading lists: Authenticated user ID not found", response.getBody());
         verify(readingListService, never()).getVisibleLists(any());
+    }
+
+    @Test
+    void givenValidAuthentication_whenSearchAssignmentStudents_thenReturnsOk() {
+        String uid = "teacher-1";
+        when(authentication.getPrincipal()).thenReturn(oauth2User);
+        when(oauth2User.getAttribute("userID")).thenReturn(uid);
+
+        List<ReadingListAssignmentTargetsDTO.StudentTarget> students = List.of(
+                new ReadingListAssignmentTargetsDTO.StudentTarget(
+                        1L,
+                        "Talia Journée",
+                        List.of("5ITN")));
+
+        when(readingListService.searchAssignmentStudents(uid, "tal")).thenReturn(students);
+
+        ResponseEntity<?> response = readingListController.searchAssignmentStudents("tal", authentication);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(students, response.getBody());
+        verify(readingListService, times(1)).searchAssignmentStudents(uid, "tal");
+    }
+
+    @Test
+    void givenMissingAuthentication_whenSearchAssignmentStudents_thenReturnsBadRequest() {
+        ResponseEntity<?> response = readingListController.searchAssignmentStudents("tal", null);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Could not search reading list assignment students: Not authenticated", response.getBody());
+        verify(readingListService, never()).searchAssignmentStudents(any(), any());
     }
 }
