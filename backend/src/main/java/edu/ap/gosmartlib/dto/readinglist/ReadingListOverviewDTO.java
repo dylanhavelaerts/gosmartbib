@@ -6,18 +6,20 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record ReadingListOverviewDTO(
-        Long id,
-        String title,
-        String taskDescription,
-        LocalDateTime deadline,
-        String creatorName,
-        int bookCount,
-        ReadingListType listType,
-        boolean ownList,
-        ReadingListTargetType targetType,
-        List<String> targetStudentDisplayNames,
-        List<String> targetClassNames,
-        List<Integer> targetYears,
-        List<Integer> targetGrades,
-        Boolean targetAllSchools) {
+                Long id,
+                String publicUid,
+                String title,
+                String taskDescription,
+                LocalDateTime deadline,
+                String creatorName,
+                int bookCount,
+                ReadingListType listType,
+                boolean ownList,
+                boolean publicVisible,
+                ReadingListTargetType targetType,
+                List<String> targetStudentDisplayNames,
+                List<String> targetClassNames,
+                List<Integer> targetYears,
+                List<Integer> targetGrades,
+                Boolean targetAllSchools) {
 }

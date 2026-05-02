@@ -8,11 +8,13 @@ import java.util.List;
 
 public record ReadingListDetailDTO(
                 Long id,
+                String publicUid,
                 String title,
                 String taskDescription,
                 LocalDateTime deadline,
                 ReadingListType listType,
                 boolean ownList,
+                boolean publicVisible,
                 String creatorName,
                 ReadingListTargetType targetType,
                 List<Long> targetStudentIds,
@@ -22,13 +24,5 @@ public record ReadingListDetailDTO(
                 List<Integer> targetYears,
                 List<Integer> targetGrades,
                 boolean targetAllSchools,
-                List<BookItem> books) {
-        public record BookItem(
-                        Long id,
-                        String title,
-                        List<String> authors,
-                        String thumbnail,
-                        String isbn,
-                        int availableCopies) {
-        }
+                List<ReadingListBookDTO> books) {
 }
