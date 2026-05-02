@@ -12,6 +12,7 @@ import lombok.ToString;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -34,6 +35,12 @@ public class ReadingListEntity {
 
     @Column(name = "task_description", columnDefinition = "TEXT")
     private String taskDescription;
+
+    @Column(name = "public_uid", unique = true, length = 36)
+    private String publicUid;
+
+    @Column(name = "public_visible", nullable = false)
+    private boolean publicVisible = false;
 
     @Column(nullable = true)
     private LocalDateTime deadline;
@@ -75,4 +82,11 @@ public class ReadingListEntity {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "tbl_reading_list_books", joinColumns = @JoinColumn(name = "reading_list_id"), inverseJoinColumns = @JoinColumn(name = "book_id"))
     private Set<BookEntity> books = new HashSet<>();
+
+    @PrePersist
+    private void ensurePublicUidBeforePersist() {
+        if (publicUid == null || publicUid.isBlank()) {
+            publicUid = UUID.randomUUID().toString();
+        }
+    }
 }
