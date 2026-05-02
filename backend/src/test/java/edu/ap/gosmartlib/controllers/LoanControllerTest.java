@@ -1,9 +1,10 @@
 package edu.ap.gosmartlib.controllers;
 
+import edu.ap.gosmartlib.controllers.LoanControllers.LoanController;
 import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
-import edu.ap.gosmartlib.services.LoanService;
+import edu.ap.gosmartlib.services.Loans.LoanService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

@@ -558,7 +558,7 @@ export default function SchoolIntegrationPage() {
                   type="text"
                   value={baseUrl}
                   onChange={(e) => setBaseUrl(e.target.value)}
-                  placeholder="https://jouwschool.smartschool.be/oneroster"
+                  placeholder="https://jouwschool.smartschool.be"
                 />
               </label>
 

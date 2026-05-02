@@ -12,6 +12,7 @@ import { MeResponse } from "../../interfaces/user";
 import Link from "next/link";
 import "./detailpage.css";
 import ReviewSection from "@/app/components/reviewsection/reviewsection";
+import NotificationBell from "@/app/components/Notifications/Notification";
 
 interface ReviewWithRating {
   rating: number;
@@ -27,7 +28,9 @@ export default function DetailPage({
   const { id } = use(params);
   const [book, setBook] = useState<ExtendedBook | null>(null);
   const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
-  const [averageReviewRating, setAverageReviewRating] = useState<number | null>(null);
+  const [averageReviewRating, setAverageReviewRating] = useState<number | null>(
+    null,
+  );
   const [currentUser, setCurrentUser] = useState<MeResponse | null>(null);
 
   const isStaff =
@@ -93,11 +96,16 @@ export default function DetailPage({
   }, [id, fetchAverageReviewRating]);
 
   if (!book) return <p>Loading...</p>;
-
+  // Bepaal de beschikbaarheid op basis van de inventory voor de school van de gebruiker
+  const inv = currentUser
+    ? book.inventories?.find((i) => i.schoolId === currentUser.school?.id)
+    : undefined;
+  const available = inv?.availableCopies ?? 0;
+  const total = inv?.totalCopies ?? 0;
   // Fix http naar https als de opgeslagen link nog http is
   let displayLink = book.previewLink;
-  if (displayLink && displayLink.startsWith('http://')) {
-     displayLink = displayLink.replace('http://', 'https://');
+  if (displayLink && displayLink.startsWith("http://")) {
+    displayLink = displayLink.replace("http://", "https://");
   }
 
   // Bepaal de tekst op basis van het type link
@@ -119,25 +127,23 @@ export default function DetailPage({
               onError={() => setImgSrc("/No-Image-Available-Placeholder.png")}
               className="detailCover"
             />
-            {!isStaff &&
-              currentUser &&
-              (() => {
-                const inv = book.inventories?.find(
-                  (i: any) => i.schoolId === currentUser?.school?.id,
-                );
-                const available = inv?.availableCopies ?? 0;
-                const total = inv?.totalCopies ?? 0;
-                return (
-                  <span
-                    className={`coverBadge ${available > 0 ? "available" : "unavailable"}`}
-                  >
-                    {inv
-                      ? `${available}/${total} beschikbaar`
-                      : "Niet beschikbaar"}
-                  </span>
-                );
-              })()}
           </div>
+          {currentUser && available === 0 && (
+            <NotificationBell
+              apiPath={`/books/${book.id}/notification`}
+              className="coverBell"
+              label="Notificaties aanzetten"
+            />
+          )}
+
+          {/* Beschikbaarheidsbadge staat nu onder de cover */}
+          {currentUser && (
+            <span
+              className={`coverBadge ${available > 0 ? "available" : "unavailable"}`}
+            >
+              {inv ? `${available}/${total} beschikbaar` : "Niet beschikbaar"}
+            </span>
+          )}
 
           <div className="detailRatingSection">
             <p className="detailInfoSectionTitle">Beoordeling</p>
@@ -150,11 +156,16 @@ export default function DetailPage({
                   <span
                     key={star}
                     className="ratingStar"
-                    style={{
-                      "--fill": `${
-                        Math.max(0, Math.min(1, normalizedRating - (star - 1))) * 100
-                      }%`,
-                    } as CSSProperties}
+                    style={
+                      {
+                        "--fill": `${
+                          Math.max(
+                            0,
+                            Math.min(1, normalizedRating - (star - 1)),
+                          ) * 100
+                        }%`,
+                      } as CSSProperties
+                    }
                   >
                     ★
                   </span>
@@ -170,7 +181,9 @@ export default function DetailPage({
             <p className="detailInfoSectionTitle">Informatie</p>
             <div className="detailInfoRow">
               <span className="detailInfoLabel">Auteur</span>
-              <span className="detailInfoValue">{book.authors?.join(", ")}</span>
+              <span className="detailInfoValue">
+                {book.authors?.join(", ")}
+              </span>
             </div>
             <div className="detailInfoRow">
               <span className="detailInfoLabel">Uitgavedatum</span>
@@ -206,12 +219,16 @@ export default function DetailPage({
               {book.categories?.length > 0 && (
                 <div className="metaCol">
                   <span className="metaLabel">Genre</span>
-                  <span className="metaValue">{book.categories.join(", ")}</span>
+                  <span className="metaValue">
+                    {book.categories.join(", ")}
+                  </span>
                 </div>
               )}
               <div className="metaCol">
                 <span className="metaLabel">Taal</span>
-                <span className="metaValue">{book.language?.toUpperCase()}</span>
+                <span className="metaValue">
+                  {book.language?.toUpperCase()}
+                </span>
               </div>
               {book.pageCount && (
                 <div className="metaCol">
@@ -225,8 +242,10 @@ export default function DetailPage({
 
             {/* DE KNOP NAAR GOOGLE PLAY BOOKS PREVIEW */}
             <div className="detailPreviewSection my-6">
-              <h3 className="font-semibold text-gray-800 mb-3">Leesvoorbeeld</h3>
-              
+              <h3 className="font-semibold text-gray-800 mb-3">
+                Leesvoorbeeld
+              </h3>
+
               {displayLink ? (
                 <a
                   href={displayLink}
@@ -238,7 +257,8 @@ export default function DetailPage({
                 </a>
               ) : (
                 <div className="p-4 bg-gray-50 border border-gray-200 text-gray-500 rounded-lg">
-                  Voor dit boek is helaas geen digitaal leesvoorbeeld beschikbaar.
+                  Voor dit boek is helaas geen digitaal leesvoorbeeld
+                  beschikbaar.
                 </div>
               )}
             </div>
