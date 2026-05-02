@@ -135,32 +135,6 @@ public class ReadingListService {
 
         Long schoolId = requireSchoolId(currentUser);
 
-        List<UserEntity> studentsInSchool = userRepository
-                .findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(schoolId)
-                .stream()
-                .filter(user -> user.getRole() == UserRoles.STUDENT)
-                .toList();
-
-        List<String> studentUids = studentsInSchool.stream()
-                .map(UserEntity::getSmartschoolUid)
-                .filter(Objects::nonNull)
-                .map(String::trim)
-                .filter(uid -> !uid.isBlank())
-                .distinct()
-                .toList();
-
-        Map<String, String> displayNames = resolveDisplayNamesMap(smartschoolUid, studentUids);
-
-        List<ReadingListAssignmentTargetsDTO.StudentTarget> students = studentsInSchool.stream()
-                .map(student -> new ReadingListAssignmentTargetsDTO.StudentTarget(
-                        student.getId(),
-                        resolveStudentDisplayName(student, displayNames),
-                        sortedClassNames(student.getClasses())))
-                .sorted(Comparator.comparing(
-                        ReadingListAssignmentTargetsDTO.StudentTarget::displayName,
-                        String.CASE_INSENSITIVE_ORDER))
-                .toList();
-
         List<ReadingListAssignmentTargetsDTO.ClassTarget> classes = schoolClassRepository
                 .findAllBySchool_IdOrderByNameAsc(schoolId)
                 .stream()
@@ -175,7 +149,65 @@ public class ReadingListService {
                 })
                 .toList();
 
-        return new ReadingListAssignmentTargetsDTO(students, classes, VALID_YEARS, VALID_GRADES);
+        return new ReadingListAssignmentTargetsDTO(List.of(), classes, VALID_YEARS, VALID_GRADES);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReadingListAssignmentTargetsDTO.StudentTarget> searchAssignmentStudents(
+            String smartschoolUid,
+            String query) {
+        UserEntity currentUser = requireCurrentUser(smartschoolUid);
+        requireStaff(currentUser);
+
+        String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        if (normalizedQuery.length() < 2) {
+            return List.of();
+        }
+
+        Long schoolId = requireSchoolId(currentUser);
+
+        List<UserEntity> studentsInSchool = userRepository
+                .findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(schoolId)
+                .stream()
+                .filter(user -> user.getRole() == UserRoles.STUDENT)
+                .toList();
+
+        if (studentsInSchool.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> studentUids = studentsInSchool.stream()
+                .map(UserEntity::getSmartschoolUid)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(uid -> !uid.isBlank())
+                .distinct()
+                .toList();
+
+        Map<String, String> displayNames = resolveDisplayNamesMap(smartschoolUid, studentUids);
+
+        List<ReadingListAssignmentTargetsDTO.StudentTarget> matches = new ArrayList<>();
+
+        for (UserEntity student : studentsInSchool) {
+            String displayName = resolveStudentDisplayName(student, displayNames);
+            List<String> classNames = sortedClassNames(student.getClasses());
+
+            if (!matchesStudentSearch(student, displayName, classNames, normalizedQuery)) {
+                continue;
+            }
+
+            matches.add(new ReadingListAssignmentTargetsDTO.StudentTarget(
+                    student.getId(),
+                    displayName,
+                    classNames));
+        }
+
+        return matches.stream()
+                .sorted(Comparator.comparing(
+                        ReadingListAssignmentTargetsDTO.StudentTarget::displayName,
+                        String.CASE_INSENSITIVE_ORDER))
+                .limit(20)
+                .toList();
     }
 
     @Transactional
@@ -853,6 +885,7 @@ public class ReadingListService {
                 list.getTargetType(),
                 showLocalTargetDetails ? targetStudentIds(list) : List.of(),
                 showLocalTargetDetails ? targetStudentDisplayNames(list, displayNames) : List.of(),
+                showLocalTargetDetails ? targetStudents(list, displayNames) : List.of(),
                 showLocalTargetDetails ? targetClassIds(list) : List.of(),
                 showLocalTargetDetails ? targetClassNames(list) : List.of(),
                 sortedIntegers(list.getTargetYears()),
@@ -904,6 +937,20 @@ public class ReadingListService {
                 .toList();
     }
 
+    private List<ReadingListAssignmentTargetsDTO.StudentTarget> targetStudents(
+            ReadingListEntity list,
+            Map<String, String> displayNames) {
+        return list.getTargetStudents().stream()
+                .map(student -> new ReadingListAssignmentTargetsDTO.StudentTarget(
+                        student.getId(),
+                        resolveStudentDisplayName(student, displayNames),
+                        sortedClassNames(student.getClasses())))
+                .sorted(Comparator.comparing(
+                        ReadingListAssignmentTargetsDTO.StudentTarget::displayName,
+                        String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
     private List<String> targetStudentDisplayNames(ReadingListEntity list, Map<String, String> displayNames) {
         return list.getTargetStudents().stream()
                 .map(student -> resolveStudentDisplayName(student, displayNames))
@@ -949,6 +996,20 @@ public class ReadingListService {
                 .filter(Objects::nonNull)
                 .sorted()
                 .toList();
+    }
+
+    private boolean matchesStudentSearch(
+            UserEntity student,
+            String displayName,
+            List<String> classNames,
+            String normalizedQuery) {
+        return containsNormalized(displayName, normalizedQuery)
+                || containsNormalized(student.getSmartschoolUid(), normalizedQuery)
+                || classNames.stream().anyMatch(className -> containsNormalized(className, normalizedQuery));
+    }
+
+    private boolean containsNormalized(String value, String normalizedQuery) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(normalizedQuery);
     }
     // endregion
 
