@@ -510,6 +510,131 @@
   background: #bbf7d0;
 }
 
+.rld-badge--shared {
+  background: rgba(145, 36, 36, 0.12);
+  color: #7f1d1d;
+  border-color: rgba(145, 36, 36, 0.24);
+}
+
+.rld-share-panel {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(145, 36, 36, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 247, 247, 0.92);
+  box-shadow: 0 14px 35px rgba(127, 29, 29, 0.08);
+}
+
+.rld-share-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rld-share-header h2 {
+  margin: 0 0 0.35rem;
+  color: #7f1d1d;
+  font-size: 1.05rem;
+}
+
+.rld-share-header p {
+  margin: 0;
+  color: #6b4a4a;
+  line-height: 1.5;
+}
+
+.rld-share-url-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.rld-share-url-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(145, 36, 36, 0.22);
+  border-radius: 12px;
+  background: #fff;
+  color: #3f1f1f;
+  font-size: 0.95rem;
+}
+
+.rld-share-url-row input:focus {
+  outline: none;
+  border-color: #991b1b;
+  box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.12);
+}
+
+.rld-share-feedback {
+  margin: 0.85rem 0 0;
+  color: #7f1d1d;
+  font-weight: 600;
+}
+
+.rld-btn-primary,
+.rld-btn-danger {
+  border: none;
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease,
+    opacity 0.16s ease;
+}
+
+.rld-btn-primary {
+  background: #991b1b;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(153, 27, 27, 0.22);
+}
+
+.rld-btn-primary:hover {
+  background: #7f1d1d;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(153, 27, 27, 0.28);
+}
+
+.rld-btn-danger {
+  background: #fff;
+  color: #991b1b;
+  border: 1px solid rgba(153, 27, 27, 0.32);
+}
+
+.rld-btn-danger:hover {
+  background: rgba(153, 27, 27, 0.08);
+  transform: translateY(-1px);
+}
+
+.rld-btn-primary:disabled,
+.rld-btn-danger:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  .rld-share-header {
+    flex-direction: column;
+  }
+
+  .rld-share-url-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rld-share-url-row input,
+  .rld-share-url-row button {
+    width: 100%;
+  }
+}
+
 @media (max-width: 720px) {
   .rld-header-actions,
   .rld-book-actions {

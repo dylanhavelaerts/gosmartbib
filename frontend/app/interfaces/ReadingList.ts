@@ -4,6 +4,7 @@ export type ReadingListTargetType = "STUDENTS" | "CLASSES" | "YEARS" | "GRADES";
 
 export interface ReadingListOverview {
   id: number;
+  publicUid?: string | null;
   title: string;
   taskDescription?: string | null;
   deadline?: string | null;
@@ -19,6 +20,7 @@ export interface ReadingListOverview {
 
   listType: ListType;
   ownList: boolean;
+  publicVisible?: boolean;
 
   targetType?: ReadingListTargetType | null;
 
@@ -46,11 +48,13 @@ export interface ReadingListBookItem {
 
 export interface ReadingListDetail {
   id: number;
+  publicUid?: string | null;
   title: string;
   taskDescription?: string | null;
   deadline?: string | null;
   listType: ListType;
   ownList: boolean;
+  publicVisible?: boolean;
   creatorName?: string | null;
 
   targetType?: ReadingListTargetType | null;
@@ -68,6 +72,15 @@ export interface ReadingListDetail {
   targetGrades?: number[];
   targetAllSchools?: boolean;
 
+  books: ReadingListBookItem[];
+}
+
+export interface PublicReadingListDetail {
+  publicUid: string;
+  title: string;
+  taskDescription?: string | null;
+  deadline?: string | null;
+  creatorRole?: string | null;
   books: ReadingListBookItem[];
 }
 
@@ -103,4 +116,8 @@ export interface CreateReadingListPayload {
   targetYears?: number[];
   targetGrades?: number[];
   targetAllSchools?: boolean;
+}
+
+export interface UpdateReadingListVisibilityPayload {
+  publicVisible: boolean;
 }
