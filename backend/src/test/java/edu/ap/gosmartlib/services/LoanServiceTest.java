@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -254,5 +255,93 @@ class LoanServiceTest {
         user.setSmartschoolUid(uid);
         user.setSchool(school);
         return user;
+    }
+
+    // --- createLoans ---
+    @Test
+    void givenValidRequest_whenCreateLoans_thenSavesLoanAndUpdatesInventory() {
+        // Arrange
+        SchoolEntity school = buildSchool(5L);
+        BookInventoryEntity inventory = buildInventory(school, 5); // 5 beschikbaar
+        BookEntity book = buildBookWithInventory("9780000000001", 5, inventory);
+        book.setId(10L);
+        UserEntity borrower = buildUser(1L, "uid-1", school);
+
+        // Mock de DTOs zodat we de getters kunnen nabootsen
+        LoanRequestDTO request = mock(LoanRequestDTO.class);
+        // We gaan er even vanuit dat je request een user record of class heeft:
+        edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO userDto = mock(edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO.class);
+        
+        when(request.bookId()).thenReturn(10L);
+        when(request.quantity()).thenReturn(2);
+        when(request.user()).thenReturn(userDto);
+        when(userDto.smartschoolUserId()).thenReturn("uid-1");
+
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(borrower));
+        when(loanRepository.save(any(LoanEntity.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act
+        loanService.createLoans(List.of(request));
+
+        // Assert: Controleer of de voorraad is verminderd
+        assertEquals(3, book.getAvailableCopies());
+        assertEquals(3, inventory.getAvailableCopies());
+        
+        // Assert: Controleer of loan en boek zijn opgeslagen
+        verify(bookRepository, times(1)).save(book);
+        verify(loanRepository, times(1)).save(any(LoanEntity.class));
+    }
+
+    @Test
+    void givenNotEnoughInventory_whenCreateLoans_thenThrowsIllegalArgumentException() {
+        // Arrange
+        SchoolEntity school = buildSchool(5L);
+        BookInventoryEntity inventory = buildInventory(school, 1); // Slechts 1 beschikbaar
+        BookEntity book = buildBookWithInventory("9780000000001", 1, inventory);
+        book.setId(10L);
+        UserEntity borrower = buildUser(1L, "uid-1", school);
+
+        LoanRequestDTO request = mock(LoanRequestDTO.class);
+        edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO userDto = mock(edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO.class);
+        
+        when(request.bookId()).thenReturn(10L);
+        when(request.quantity()).thenReturn(2); // Je wilt er 2 lenen
+        when(request.user()).thenReturn(userDto);
+        when(userDto.smartschoolUserId()).thenReturn("uid-1");
+
+        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(borrower));
+
+        // Act & Assert
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, 
+                () -> loanService.createLoans(List.of(request)));
+        
+        assertTrue(ex.getMessage().contains("Niet genoeg exemplaren beschikbaar"));
+        verify(loanRepository, never()).save(any(LoanEntity.class));
+    }
+
+    // --- getActiveLoansByUser ---
+    @Test
+    void givenActiveLoans_whenGetActiveLoansByUser_thenReturnsMappedDTOs() {
+        // Arrange
+        LoanEntity loan = buildLoan(1L, "uid-1", "9780000000001", 2);
+        BookEntity book = buildBookWithInventory("9780000000001", 5, buildInventory(buildSchool(1L), 5));
+        book.setId(10L);
+        book.setTitle("Test Book");
+        
+        when(loanRepository.findBySmartschoolUserId("uid-1")).thenReturn(List.of(loan));
+        when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(book));
+
+        // Act
+        var results = loanService.getActiveLoansByUser("uid-1");
+
+        // Assert
+        assertEquals(1, results.size());
+        assertEquals(1L, results.get(0).loanId());
+        assertEquals("uid-1", results.get(0).smartschoolUserId());
+        assertEquals(2, results.get(0).quantity());
+        assertNotNull(results.get(0).book());
+        assertEquals("Test Book", results.get(0).book().title());
     }
 }
