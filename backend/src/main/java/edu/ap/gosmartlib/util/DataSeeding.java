@@ -74,6 +74,12 @@ public class DataSeeding implements CommandLineRunner {
                                 availableCopies,
                                 ageRange);
                 b.setSpotlight(spotlight);
+                
+                // AANGEPAST: Geef de previewLink in deze mock data standaard null
+                // Als gebruikers via de app op ISBN boeken toevoegen, wordt dit veld door 
+                // BookService ingevuld via de Google API
+                b.setPreviewLink(null); 
+                
                 List<BookInventoryEntity> inventories = createSeedInventories(b, totalCopies, availableCopies);
                 b.setInventories(inventories);
                 return b;

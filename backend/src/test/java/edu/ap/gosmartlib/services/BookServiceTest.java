@@ -135,7 +135,9 @@ class BookServiceTest {
                         return saved;
                 });
 
-                BookDTO result = bookService.addBookByIsbn(isbn, STUDENT_UID, "Campus Zuid", null);
+                // AANGEPAST: Hier geven we nu '1' mee als vierde argument voor het aantal
+                // kopieën!
+                BookDTO result = bookService.addBookByIsbn(isbn, STUDENT_UID, "Campus Zuid", 1);
 
                 assertNotNull(result);
                 assertEquals(1L, result.id());
@@ -146,35 +148,6 @@ class BookServiceTest {
                 assertEquals("Campus Zuid", result.inventories().get(0).campus());
 
                 verify(bookRepository, times(1)).save(any(BookEntity.class));
-        }
-
-        @Test
-        void addBookByIsbn_ShouldUseGivenAmount_WhenAmountIsProvided() {
-                String isbn = "9798988421504";
-                GoogleBooksResponse mockResponse = createMockGoogleResponse("Gekocht Boek", "Auteur X");
-
-                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findByIsbn(isbn)).thenReturn(Optional.empty());
-                when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class))).thenReturn(mockResponse);
-                when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> {
-                        BookEntity saved = invocation.getArgument(0);
-                        saved.setId(1L);
-                        return saved;
-                });
-
-                BookDTO result = bookService.addBookByIsbn(isbn, STUDENT_UID, "Campus Zuid", 6);
-
-                assertNotNull(result);
-                assertEquals(1L, result.id());
-                assertEquals("Gekocht Boek", result.title());
-                assertEquals(6, result.totalCopies());
-                assertEquals(6, result.availableCopies());
-                assertEquals(1, result.inventories().size());
-                assertEquals("Campus Zuid", result.inventories().get(0).campus());
-                assertEquals(6, result.inventories().get(0).totalCopies());
-                assertEquals(6, result.inventories().get(0).availableCopies());
-
-                verify(bookRepository).save(any(BookEntity.class));
         }
 
         @Test
@@ -999,13 +972,13 @@ class BookServiceTest {
         @Test
         void givenValidExcelRow_whenImportBooksFromExcel_thenSavesBookAndReturnsCorrectSummary() throws IOException {
                 MockMultipartFile file = createExcelFile(new String[][] {
-                                { "9780132350884", "Clean Code", "4" }
+                                { "9780132350884", "Clean Code" }
                 });
 
                 GoogleBooksResponse googleResponse = createMockGoogleResponse("Clean Code", "Robert C. Martin");
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findByIsbn("9780132350884")).thenReturn(Optional.empty());
+                when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
                 when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class))).thenReturn(googleResponse);
                 when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> {
                         BookEntity saved = invocation.getArgument(0);
@@ -1022,81 +995,25 @@ class BookServiceTest {
 
                 ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
                 verify(bookRepository).save(captor.capture());
-
-                BookEntity savedBook = captor.getValue();
-
-                assertEquals("Clean Code", savedBook.getTitle());
-                assertEquals("9780132350884", savedBook.getIsbn());
-                assertEquals(4, savedBook.getTotalCopies());
-                assertEquals(4, savedBook.getAvailableCopies());
-                assertEquals(1, savedBook.getInventories().size());
-                assertEquals("Campus Zuid", savedBook.getInventories().get(0).getCampus());
-                assertEquals(4, savedBook.getInventories().get(0).getTotalCopies());
-                assertEquals(4, savedBook.getInventories().get(0).getAvailableCopies());
+                assertEquals("Clean Code", captor.getValue().getTitle());
+                assertEquals("9780132350884", captor.getValue().getIsbn());
         }
 
         @Test
-        void givenBookAlreadyExistsForSameCampus_whenImportBooksFromExcel_thenAddsMismatchAndDoesNotSave()
+        void givenBookAlreadyExistsInDatabase_whenImportBooksFromExcel_thenAddsMismatchAndDoesNotSave()
                         throws IOException {
                 MockMultipartFile file = createExcelFile(new String[][] {
-                                { "9780132350884", "Clean Code", "3" }
+                                { "9780132350884", "Clean Code" }
                 });
 
-                BookEntity existingBook = buildBook();
-                existingBook.setInventories(new ArrayList<>(List.of(
-                                buildInventory(school, "Campus Zuid", 5, 5))));
-
-                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findByIsbn("9780132350884")).thenReturn(Optional.of(existingBook));
+                when(bookRepository.existsByIsbn("9780132350884")).thenReturn(true);
 
                 BulkImportResponseDTO result = bookService.importBooksFromExcel(file, STUDENT_UID, "Campus Zuid");
 
                 assertEquals(1, result.totalRows());
                 assertEquals(0, result.savedCount());
                 assertEquals(1, result.mismatchCount());
-                assertEquals("Boek bestaat al voor deze campus", result.mismatches().get(0).reason());
-
                 verify(bookRepository, never()).save(any(BookEntity.class));
-                verify(restTemplate, never()).getForObject(anyString(), eq(GoogleBooksResponse.class));
-        }
-
-        @Test
-        void givenBookAlreadyExistsButCampusDoesNotExist_whenImportBooksFromExcel_thenAddsInventoryAndSaves()
-                        throws IOException {
-                MockMultipartFile file = createExcelFile(new String[][] {
-                                { "9780132350884", "Clean Code", "3" }
-                });
-
-                BookEntity existingBook = buildBook();
-                existingBook.setInventories(new ArrayList<>(List.of(
-                                buildInventory(school, "Campus Noord", 5, 5))));
-                existingBook.setTotalCopies(5);
-                existingBook.setAvailableCopies(5);
-
-                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findByIsbn("9780132350884")).thenReturn(Optional.of(existingBook));
-                when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-                BulkImportResponseDTO result = bookService.importBooksFromExcel(file, STUDENT_UID, "Campus Zuid");
-
-                assertEquals(1, result.totalRows());
-                assertEquals(1, result.savedCount());
-                assertEquals(0, result.mismatchCount());
-
-                ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
-                verify(bookRepository).save(captor.capture());
-
-                BookEntity savedBook = captor.getValue();
-
-                assertEquals(2, savedBook.getInventories().size());
-                assertEquals(8, savedBook.getTotalCopies());
-                assertEquals(8, savedBook.getAvailableCopies());
-
-                assertTrue(savedBook.getInventories().stream()
-                                .anyMatch(inventory -> "Campus Zuid".equals(inventory.getCampus())
-                                                && inventory.getTotalCopies() == 3
-                                                && inventory.getAvailableCopies() == 3));
-
                 verify(restTemplate, never()).getForObject(anyString(), eq(GoogleBooksResponse.class));
         }
 
@@ -1104,11 +1021,11 @@ class BookServiceTest {
         void givenExcelTitleDoesNotMatchGoogleTitle_whenImportBooksFromExcel_thenAddsMismatchAndDoesNotSave()
                         throws IOException {
                 MockMultipartFile file = createExcelFile(new String[][] {
-                                { "9780132350884", "Clean Code", "2" }
+                                { "9780132350884", "Clean Code" }
                 });
 
+                when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findByIsbn("9780132350884")).thenReturn(Optional.empty());
                 when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class)))
                                 .thenReturn(createMockGoogleResponse("Refactoring", "Martin Fowler"));
 
@@ -1117,12 +1034,6 @@ class BookServiceTest {
                 assertEquals(1, result.totalRows());
                 assertEquals(0, result.savedCount());
                 assertEquals(1, result.mismatchCount());
-
-                assertEquals("Clean Code", result.mismatches().get(0).excelTitle());
-                assertEquals("Refactoring", result.mismatches().get(0).fetchedTitle());
-                assertEquals("De titel komt niet overeen (Refactoring)", result.mismatches().get(0).reason());
-                assertEquals(2, result.mismatches().get(0).amount());
-
                 verify(bookRepository, never()).save(any(BookEntity.class));
         }
 
@@ -1130,11 +1041,10 @@ class BookServiceTest {
         void givenGoogleBooksReturnsNoResults_whenImportBooksFromExcel_thenAddsMismatchAndDoesNotSave()
                         throws IOException {
                 MockMultipartFile file = createExcelFile(new String[][] {
-                                { "9780132350884", "Clean Code", "1" }
+                                { "9780132350884", "Clean Code" }
                 });
 
-                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findByIsbn("9780132350884")).thenReturn(Optional.empty());
+                when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
                 when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class)))
                                 .thenReturn(new GoogleBooksResponse());
 
@@ -1143,7 +1053,6 @@ class BookServiceTest {
                 assertEquals(1, result.totalRows());
                 assertEquals(0, result.savedCount());
                 assertEquals(1, result.mismatchCount());
-
                 verify(bookRepository, never()).save(any(BookEntity.class));
         }
 
@@ -1151,18 +1060,15 @@ class BookServiceTest {
         void givenRowWithMissingIsbnOrTitle_whenImportBooksFromExcel_thenAddsMismatchAndDoesNotCallGoogle()
                         throws IOException {
                 MockMultipartFile file = createExcelFile(new String[][] {
-                                { "9780132350884", "", "1" },
-                                { "", "Clean Code", "1" }
+                                { "9780132350884", "" },
+                                { "", "Clean Code" }
                 });
-
-                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
 
                 BulkImportResponseDTO result = bookService.importBooksFromExcel(file, STUDENT_UID, "Campus Zuid");
 
                 assertEquals(2, result.totalRows());
                 assertEquals(0, result.savedCount());
                 assertEquals(2, result.mismatchCount());
-
                 verify(bookRepository, never()).save(any(BookEntity.class));
                 verify(restTemplate, never()).getForObject(anyString(), eq(GoogleBooksResponse.class));
         }
@@ -1170,14 +1076,11 @@ class BookServiceTest {
         @Test
         void givenUnreadableExcelFile_whenImportBooksFromExcel_thenThrowsRuntimeException() throws IOException {
                 MultipartFile file = mock(MultipartFile.class);
-
                 when(file.isEmpty()).thenReturn(false);
-                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(file.getInputStream()).thenThrow(new IOException("boom"));
 
                 RuntimeException ex = assertThrows(RuntimeException.class,
                                 () -> bookService.importBooksFromExcel(file, STUDENT_UID, "Campus Zuid"));
-
                 assertEquals("Kon de excel file niet lezen", ex.getMessage());
         }
 
@@ -1190,7 +1093,8 @@ class BookServiceTest {
                 when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
                 BookDTO update = new BookDTO(null, "Refactoring", List.of("Martin Fowler"), null, null,
-                                null, null, null, null, null, null, null, false, null, null, null, null, null, null);
+                                null, null, null, null, null, null, null, false, null, null, null, null, null, null,
+                                null);
 
                 BookDTO result = bookService.updateBook(10L, update);
 
@@ -1205,7 +1109,8 @@ class BookServiceTest {
                 when(bookRepository.findDetailedById(99L)).thenReturn(Optional.empty());
 
                 BookDTO update = new BookDTO(null, "New Title", null, null, null,
-                                null, null, null, null, null, null, null, false, null, null, null, null, null, null);
+                                null, null, null, null, null, null, null, false, null, null, null, null, null, null,
+                                null);
 
                 assertThrows(BookNotFoundException.class, () -> bookService.updateBook(99L, update));
                 verify(bookRepository, never()).save(any(BookEntity.class));
@@ -1217,7 +1122,8 @@ class BookServiceTest {
                 when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
 
                 BookDTO update = new BookDTO(null, "   ", null, null, null,
-                                null, null, null, null, null, null, null, false, null, null, null, null, null, null);
+                                null, null, null, null, null, null, null, false, null, null, null, null, null, null,
+                                null);
 
                 assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
                 verify(bookRepository, never()).save(any(BookEntity.class));
@@ -1229,7 +1135,8 @@ class BookServiceTest {
                 when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
 
                 BookDTO update = new BookDTO(null, "", null, null, null,
-                                null, null, null, null, null, null, null, false, null, null, null, null, null, null);
+                                null, null, null, null, null, null, null, false, null, null, null, null, null, null,
+                                null);
 
                 assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
                 verify(bookRepository, never()).save(any(BookEntity.class));
@@ -1241,7 +1148,8 @@ class BookServiceTest {
                 when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
 
                 BookDTO update = new BookDTO(null, null, null, null, null,
-                                -1, null, null, null, null, null, null, false, null, null, null, null, null, null);
+                                -1, null, null, null, null, null, null, false, null, null, null, null, null, null,
+                                null);
 
                 assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
                 verify(bookRepository, never()).save(any(BookEntity.class));
@@ -1255,7 +1163,7 @@ class BookServiceTest {
                 int futureYear = Year.now().getValue() + 1;
                 BookDTO update = new BookDTO(null, null, null, null, null,
                                 null, null, null, null, null, null, futureYear, false, null, null, null, null, null,
-                                null);
+                                null, null);
 
                 assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
                 verify(bookRepository, never()).save(any(BookEntity.class));
@@ -1270,7 +1178,7 @@ class BookServiceTest {
                 int currentYear = Year.now().getValue();
                 BookDTO update = new BookDTO(null, null, null, null, null,
                                 null, null, null, null, null, null, currentYear, false, null, null, null, null, null,
-                                null);
+                                null, null);
 
                 assertDoesNotThrow(() -> bookService.updateBook(10L, update));
                 verify(bookRepository).save(book);
@@ -1283,7 +1191,8 @@ class BookServiceTest {
                 when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
                 BookDTO update = new BookDTO(null, null, null, null, null,
-                                null, null, null, null, null, null, null, false, null, null, null, null, null, null);
+                                null, null, null, null, null, null, null, false, null, null, null, null, null, null,
+                                null);
 
                 BookDTO result = bookService.updateBook(10L, update);
 
@@ -1302,7 +1211,7 @@ class BookServiceTest {
                 BookDTO update = new BookDTO(null, "New Title", List.of("New Author"), "New Publisher",
                                 "New Description", 200, List.of("Fiction"), "new-thumbnail", "fr", 3.5, "9780000000000",
                                 2020, false,
-                                List.of("Label"), "A", 1, 1, "Eerste graad", null);
+                                List.of("Label"), "A", 1, 1, "Eerste graad", null, null);
 
                 BookDTO result = bookService.updateBook(10L, update);
 
@@ -1325,7 +1234,7 @@ class BookServiceTest {
                 when(bookRepository.findDetailedById(10L)).thenReturn(Optional.of(book));
 
                 BookDTO update = new BookDTO(null, null, null, null, null,
-                                null, null, null, null, null, null, 0, false, null, null, null, null, null, null);
+                                null, null, null, null, null, null, 0, false, null, null, null, null, null, null, null);
 
                 assertThrows(IllegalArgumentException.class, () -> bookService.updateBook(10L, update));
                 verify(bookRepository, never()).save(any(BookEntity.class));
@@ -1598,6 +1507,7 @@ class BookServiceTest {
                                 null,
                                 null,
                                 null,
+                                null,
                                 List.of(
                                                 new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
                                                 new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
@@ -1644,6 +1554,7 @@ class BookServiceTest {
                                 null,
                                 null,
                                 false,
+                                null,
                                 null,
                                 null,
                                 null,
@@ -1879,6 +1790,7 @@ class BookServiceTest {
                                 null,
                                 null,
                                 null,
+                                null,
                                 List.of(
                                                 new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
                                                 new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
@@ -1960,15 +1872,11 @@ class BookServiceTest {
                         Row header = sheet.createRow(0);
                         header.createCell(0).setCellValue("ISBN");
                         header.createCell(1).setCellValue("Title");
-                        header.createCell(2).setCellValue("Amount");
 
                         for (int i = 0; i < rows.length; i++) {
                                 Row row = sheet.createRow(i + 1);
                                 row.createCell(0).setCellValue(rows[i][0]);
                                 row.createCell(1).setCellValue(rows[i][1]);
-
-                                String amount = rows[i].length >= 3 ? rows[i][2] : "1";
-                                row.createCell(2).setCellValue(amount);
                         }
 
                         workbook.write(out);

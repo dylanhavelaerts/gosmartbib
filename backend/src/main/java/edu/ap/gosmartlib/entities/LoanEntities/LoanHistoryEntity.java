@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.entities;
+package edu.ap.gosmartlib.entities.LoanEntities;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -26,6 +26,9 @@ public class LoanHistoryEntity {
 
     @Column(nullable = false)
     private LocalDate loanDate; // Oorspronkelijke uitleendatum
+
+    @Column(nullable = false)
+    private LocalDate dueDate; // Originele terugbrengdatum
 
     @Column(nullable = false)
     private LocalDate returnDate; // Datum waarop het is teruggebracht

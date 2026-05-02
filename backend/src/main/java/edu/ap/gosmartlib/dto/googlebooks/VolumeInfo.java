@@ -19,4 +19,5 @@ public class VolumeInfo {
     private String language;
     private Double averageRating;
     private String publishedDate;
+    private String previewLink;
 }

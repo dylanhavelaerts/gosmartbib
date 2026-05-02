@@ -1,0 +1,258 @@
+.page {
+  color: #8e2446;
+  padding: 1rem;
+  margin-top: 4.5rem;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.page h1 {
+  font-size: clamp(22px, 2vw, 30px);
+  color: #8e2446;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+}
+
+.pageSubtitle {
+  font-size: 0.875rem;
+  color: #7c5a6a;
+  margin: 0;
+}
+
+.loadingText {
+  color: #7c5a6a;
+  padding: 0.5rem 0;
+}
+
+.card {
+  border: 1px solid #d7bfd0;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(142, 36, 70, 0.05);
+}
+
+.card h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #8e2446;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.field > span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #3d2030;
+}
+
+.field input {
+  border: 1px solid #c9a9bb;
+  border-radius: 8px;
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+  color: #1a1a1a;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 1rem;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: #8e2446;
+  box-shadow: 0 0 0 3px rgba(142, 36, 70, 0.1);
+}
+
+.field input:disabled {
+  background: #f7f2f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.inputWithUnit {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 200px;
+}
+
+.inputWithUnit input {
+  flex: 1;
+}
+
+.unitLabel {
+  font-size: 0.875rem;
+  color: #7c5a6a;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.button {
+  border: 1px solid #8e2446;
+  background: transparent;
+  color: #8e2446;
+  border-radius: 8px;
+  padding: 0.45rem 1.1rem;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  width: fit-content;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.button:hover:not(:disabled) {
+  background: #f8eff4;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.primaryButton {
+  background: #8e2446;
+  color: #fff;
+  border-color: #8e2446;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: #7a1f3d;
+  border-color: #7a1f3d;
+}
+
+.message {
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.error {
+  background: #fff1f1;
+  color: #b42318;
+  border: 1px solid #fccaca;
+}
+
+.success {
+  background: #f0fff4;
+  color: #067647;
+  border: 1px solid #a8efc4;
+}
+
+.help {
+  margin: 0.25rem 0 1rem 0;
+  font-size: 0.825rem;
+  color: #6f4d5d;
+  line-height: 1.5;
+}
+
+.pageColumns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  align-items: start;
+}
+
+@media (min-width: 700px) {
+  .pageColumns {
+    grid-template-columns: 1fr 550px;
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+
+  .pageColumns .card {
+    margin-bottom: 0;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pageColumns .card .actions {
+    margin-top: auto;
+    padding-top: 1.25rem;
+  }
+}
+
+.infoPanel {
+  background: #fcf8fa;
+  border: 1px dashed #d7bfd0;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.infoPanelTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8e2446;
+  margin: 0 0 0.25rem 0;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #ede0e8;
+  padding-bottom: 0.5rem;
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.infoLabel {
+  color: #7c5a6a;
+  flex-shrink: 0;
+}
+
+.infoValue {
+  color: #1a1a1a;
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (min-width: 800px) {
+  .page {
+    padding: 1.5rem 2rem;
+  }
+
+  .card {
+    padding: 1.75rem 2rem;
+  }
+}
