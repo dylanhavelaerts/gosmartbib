@@ -642,7 +642,7 @@ public class BookService {
         }
     }
 
-    // region Helper functies
+// region Helper functies
     private BookEntity buildBookEntityFromGoogle(String isbn) {
         String url = UriComponentsBuilder
                 .fromUriString(googleBooksApiUrl)
@@ -650,15 +650,28 @@ public class BookService {
                 .queryParam("key", googleBooksApiKey)
                 .toUriString();
 
-        System.out.println("Using Google Books request with key suffix: " +
+        System.out.println("Zoeken naar ISBN: " + isbn + " met key suffix: " +
                 (googleBooksApiKey.length() >= 4
                         ? googleBooksApiKey.substring(googleBooksApiKey.length() - 4)
                         : "too-short"));
 
-        GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
+        GoogleBooksResponse response = null;
+        
+        try {
+            // De eerste API Call (met fout-afvanging)
+            response = restTemplate.getForObject(url, GoogleBooksResponse.class);
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            // Dit vangt fouten zoals 429 (Too Many Requests) of 403 (Quota Exceeded) netjes af
+            System.err.println("CRASH: Google API weigerde het verzoek! Status: " + e.getStatusCode());
+            System.err.println("Reden: " + e.getResponseBodyAsString());
+            throw new RuntimeException("De Google API weigert het verzoek tijdelijk (Status " + e.getStatusCode() + "). Wacht even en probeer het opnieuw.");
+        } catch (Exception e) {
+            System.err.println("CRASH: Onverwachte fout bij ophalen ISBN: " + e.getMessage());
+            throw new RuntimeException("Er ging iets mis bij het communiceren met Google Books.");
+        }
 
         if (response == null || response.getItems() == null || response.getItems().isEmpty()) {
-            throw new IllegalArgumentException("Geen boek voor ISBN: " + isbn);
+            throw new IllegalArgumentException("Geen boek gevonden voor ISBN: " + isbn);
         }
 
         VolumeInfo volumeInfo = response.getItems().get(0).getVolumeInfo();
@@ -687,15 +700,15 @@ public class BookService {
         book.setTotalCopies(0);
         book.setAvailableCopies(0);
         
-        // --- NIEUW: Bulletproof Link Extractie ---
+        // --- NIEUW: Bulletproof Link Extractie mét Titel-Check ---
         String finalReaderLink = null;
         
         try {
-            String titleQuery = book.getTitle();
+            String originalTitle = book.getTitle();
+            String originalTitleLower = originalTitle.toLowerCase().trim();
             String authorQuery = (book.getAuthors() != null && !book.getAuthors().isEmpty()) ? book.getAuthors().get(0) : "";
-            String searchQuery = (titleQuery + " " + authorQuery).trim();
+            String searchQuery = (originalTitle + " " + authorQuery).trim();
 
-            // We gebruiken een strikt URI object om URL-encoding fouten te vermijden!
             java.net.URI searchUri = UriComponentsBuilder
                     .fromUriString(googleBooksApiUrl)
                     .queryParam("q", searchQuery)
@@ -706,7 +719,6 @@ public class BookService {
             @SuppressWarnings("unchecked")
             java.util.Map<String, Object> searchResponse = restTemplate.getForObject(searchUri, java.util.Map.class);
 
-            // Veilige instanceof checks om ClassCastExceptions te voorkomen
             if (searchResponse != null && searchResponse.get("items") instanceof java.util.List) {
                 java.util.List<?> items = (java.util.List<?>) searchResponse.get("items");
                 
@@ -714,7 +726,27 @@ public class BookService {
                     if (itemObj instanceof java.util.Map) {
                         java.util.Map<?, ?> item = (java.util.Map<?, ?>) itemObj;
                         
-                        if (item.get("accessInfo") instanceof java.util.Map) {
+                        // 1. Controleer of de titel van dit zoekresultaat wel overeenkomt met ons boek!
+                        boolean isTitleMatch = false;
+                        if (item.get("volumeInfo") instanceof java.util.Map) {
+                            java.util.Map<?, ?> itemVolumeInfo = (java.util.Map<?, ?>) item.get("volumeInfo");
+                            Object itemTitleObj = itemVolumeInfo.get("title");
+
+                            if (itemTitleObj instanceof String) {
+                                String itemTitleLower = ((String) itemTitleObj).toLowerCase().trim();
+                                
+                                // We checken of de titels sterk overeenkomen
+                                // (Gelijk aan elkaar, of de ene is een onderdeel van de andere i.v.m. ondertitels)
+                                if (itemTitleLower.equals(originalTitleLower) ||
+                                    itemTitleLower.startsWith(originalTitleLower) ||
+                                    originalTitleLower.startsWith(itemTitleLower)) {
+                                    isTitleMatch = true;
+                                }
+                            }
+                        }
+
+                        // 2. Als de titel klopt, dán pas kijken we naar de lees-link
+                        if (isTitleMatch && item.get("accessInfo") instanceof java.util.Map) {
                             java.util.Map<?, ?> accessInfo = (java.util.Map<?, ?>) item.get("accessInfo");
                             
                             Object viewabilityObj = accessInfo.get("viewability");
@@ -726,7 +758,7 @@ public class BookService {
 
                                 if (!"NO_PAGES".equals(viewability) && webReaderLink.contains("play.google.com/books/reader")) {
                                     finalReaderLink = webReaderLink.replace("http://", "https://");
-                                    break; // Match gevonden!
+                                    break; // Perfecte match gevonden, stop met zoeken!
                                 }
                             }
                         }
@@ -737,7 +769,6 @@ public class BookService {
             System.err.println("Fout bij ophalen e-book editie op de achtergrond: " + e.getMessage());
         }
 
-        // We slaan de gevonden link op (is hij niet gevonden, dan slaat hij keurig 'null' op)
         book.setPreviewLink(finalReaderLink);
 
         return book;

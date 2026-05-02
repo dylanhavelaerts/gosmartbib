@@ -294,6 +294,29 @@ align-self: center;
   line-height: 1.4;
 }
 
+.detailPreviewBtn {
+  display: inline-block;
+  background-color: #8e2446;
+  color: white;
+  border: 1.5px solid #8e2446;
+  border-radius: 10px; /* Of 10px als je liever iets minder ronde knoppen hebt */
+  padding: 0.8rem 1.8rem;
+  margin-top: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 10px rgba(142, 36, 70, 0.16);
+}
+
+.detailPreviewBtn:hover {
+  background-color: #6e1a35;
+  border-color: #6e1a35;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(142, 36, 70, 0.22);
+}
+
 /* ── RESPONSIVE ── */
 
 @media (max-width: 750px) {
