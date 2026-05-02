@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 import "./admin.css";
 
 const teacherWidgets = [
@@ -45,7 +46,7 @@ const beheerderWidgets = [
     iconAlt: "Bibliotheekinstellingen",
     title: "Bibliotheekinstellingen",
     description: "Beheer uitleentermijnen en algemene bibliotheekinstellingen.",
-    href: "/",
+    href: "/admin/librarySettings",
   },
   {
     iconSrc: "/book-icon.png",
@@ -93,32 +94,34 @@ export default function AdminHome() {
   const widgets = getWidgets();
 
   return (
-    <div className="admin-page">
-      <div className="admin-header">
-        <h2 className="admin-header-title">Beheer</h2>
-        <p className="admin-header-subtitle">
-          Welkom bij het beheerdersdashboard. Hier kun je alle aspecten van de
-          bibliotheek beheren, van de catalogus tot gebruikersreviews en
-          uitleenbeheer. Kies een van de onderstaande opties om aan de slag te
-          gaan.
-        </p>
-      </div>
+    <ProtectedRoute allowedRoles={["TEACHER", "BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
+      <div className="admin-page">
+        <div className="admin-header">
+          <h2 className="admin-header-title">Beheer</h2>
+          <p className="admin-header-subtitle">
+            Welkom bij het beheerdersdashboard. Hier kun je alle aspecten van de
+            bibliotheek beheren, van de catalogus tot gebruikersreviews en
+            uitleenbeheer. Kies een van de onderstaande opties om aan de slag te
+            gaan.
+          </p>
+        </div>
 
-      <div className="admin-widget-grid">
-        {widgets.map((w) => (
-          <Link key={w.href} href={w.href} className="widget-card">
-            <div className="widget-icon">
-              <img
-                className="widget-icon-img"
-                src={w.iconSrc}
-                alt={w.iconAlt}
-              />
-            </div>
-            <p className="widget-title">{w.title}</p>
-            <p className="widget-description">{w.description}</p>
-          </Link>
-        ))}
+        <div className="admin-widget-grid">
+          {widgets.map((w) => (
+            <Link key={w.href} href={w.href} className="widget-card">
+              <div className="widget-icon">
+                <img
+                  className="widget-icon-img"
+                  src={w.iconSrc}
+                  alt={w.iconAlt}
+                />
+              </div>
+              <p className="widget-title">{w.title}</p>
+              <p className="widget-description">{w.description}</p>
+            </Link>
+          ))}
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }
