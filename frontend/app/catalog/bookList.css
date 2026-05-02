@@ -545,15 +545,19 @@
   cursor: pointer;
 }
 .filterToggleRow {
-  border: 1px solid #d1d5db;
+  border: 1px solid #8e2446;
   border-radius: 6px;
   padding: 0.45rem 0.75rem;
-  background: white;
+  background: #fff;
   width: 100%;
   box-sizing: border-box;
   font-size: 14px;
   font-weight: 500;
+  color: #8e2446;
+  min-height: 38px;
+  justify-content: space-between;
 }
+
 
 
 /* ── Modal ── */

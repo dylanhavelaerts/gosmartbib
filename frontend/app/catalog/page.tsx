@@ -425,6 +425,7 @@ export default function Home() {
               <div className="filterGroup">
                 <span className="filterGroupLabel">Didactische boeken</span>
                 <label className="filterCheckboxLabel filterToggleRow">
+                  Didactische boeken
                   <input
                     type="checkbox"
                     checked={didacticOnly}
@@ -433,7 +434,6 @@ export default function Home() {
                       resetPage();
                     }}
                   />
-                  Didactische boeken weergeven
                 </label>
               </div>
             )}

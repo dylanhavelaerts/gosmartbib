@@ -307,7 +307,7 @@ public class BookService {
                         request.language(),
                         request.categories(),
                         request.labels(),
-                        request.didacticOnly(),
+                        Boolean.TRUE.equals(request.didacticOnly()), // null-safe unbox moet erbij anders leerkrachtenpad geeft errors
                         request.minPageCount(),
                         request.maxPageCount(),
                         request.minPubYear(),
