@@ -1,12 +1,16 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.UpdateReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.services.ReadingListService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -57,6 +61,19 @@ public class ReadingListController {
         }
     }
 
+    @GetMapping("/shared/{publicUid}")
+    public ResponseEntity<?> getPublicListDetail(@PathVariable String publicUid) {
+        try {
+            PublicReadingListDetailDTO detail = readingListService.getPublicListDetail(publicUid);
+            return ResponseEntity.ok(detail);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Publieke leeslijst niet gevonden");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Could not load public reading list: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/class")
     @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
     public ResponseEntity<?> createClassList(@RequestBody CreateReadingListDTO dto, Authentication authentication) {
@@ -91,6 +108,20 @@ public class ReadingListController {
             return ResponseEntity.ok(updated.getId());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error updating personal reading list: " + e.getMessage());
+        }
+    }
+
+    @PatchMapping("/personal/{id}/visibility")
+    public ResponseEntity<?> updatePersonalListVisibility(
+            @PathVariable Long id,
+            @RequestBody UpdateReadingListVisibilityDTO dto,
+            Authentication authentication) {
+        try {
+            String uid = extractUid(authentication);
+            ReadingListEntity updated = readingListService.updatePersonalListVisibility(id, dto.publicVisible(), uid);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating reading list visibility: " + e.getMessage());
         }
     }
 
