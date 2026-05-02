@@ -1,7 +1,9 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListBookDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
@@ -81,6 +83,38 @@ public class ReadingListService {
         Map<String, String> displayNames = resolveDisplayNamesMap(smartschoolUid, userUidsToResolve);
 
         return toDetail(list, currentUser, displayNames);
+    }
+
+    @Transactional(readOnly = true)
+    public PublicReadingListDetailDTO getPublicListDetail(String publicUid) {
+        if (publicUid == null || publicUid.isBlank()) {
+            throw new IllegalArgumentException("Publieke leeslijst niet gevonden");
+        }
+
+        ReadingListEntity list = readingListRepository.findByPublicUidWithBooks(publicUid.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Publieke leeslijst niet gevonden"));
+
+        if (list.getListType() != ReadingListType.PERSONAL || !list.isPublicVisible()) {
+            throw new IllegalArgumentException("Publieke leeslijst niet gevonden");
+        }
+
+        return toPublicDetailDTO(list);
+    }
+
+    @Transactional
+    public ReadingListEntity updatePersonalListVisibility(Long id, boolean publicVisible, String smartschoolUid) {
+        UserEntity currentUser = requireCurrentUser(smartschoolUid);
+
+        ReadingListEntity list = readingListRepository.findByIdAndCreator_Id(id, currentUser.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Persoonlijke leeslijst niet gevonden"));
+
+        if (list.getListType() != ReadingListType.PERSONAL) {
+            throw new AccessDeniedException("Alleen persoonlijke leeslijsten kunnen publiek gedeeld worden");
+        }
+
+        list.setPublicVisible(publicVisible);
+
+        return readingListRepository.save(list);
     }
 
     @Transactional(readOnly = true)
@@ -742,6 +776,7 @@ public class ReadingListService {
 
         return new ReadingListOverviewDTO(
                 list.getId(),
+                list.getPublicUid(),
                 list.getTitle(),
                 list.getTaskDescription(),
                 list.getDeadline(),
@@ -749,6 +784,7 @@ public class ReadingListService {
                 list.getBooks().size(),
                 list.getListType(),
                 Objects.equals(list.getCreator().getId(), currentUser.getId()),
+                list.isPublicVisible(),
                 list.getTargetType(),
                 showLocalTargetDetails ? targetStudentDisplayNames(list, displayNames) : List.of(),
                 showLocalTargetDetails ? targetClassNames(list) : List.of(),
@@ -777,13 +813,13 @@ public class ReadingListService {
             Map<String, String> displayNames) {
         boolean showLocalTargetDetails = canSeeLocalTargetDetails(list, currentUser);
 
-        List<ReadingListDetailDTO.BookItem> books = list.getBooks().stream()
+        List<ReadingListBookDTO> books = list.getBooks().stream()
                 .map(book -> {
                     List<String> authors = book.getAuthors() == null
                             ? List.of()
                             : List.copyOf(book.getAuthors());
 
-                    return new ReadingListDetailDTO.BookItem(
+                    return new ReadingListBookDTO(
                             book.getId(),
                             book.getTitle(),
                             authors,
@@ -795,11 +831,13 @@ public class ReadingListService {
 
         return new ReadingListDetailDTO(
                 list.getId(),
+                list.getPublicUid(),
                 list.getTitle(),
                 list.getTaskDescription(),
                 list.getDeadline(),
                 list.getListType(),
                 Objects.equals(list.getCreator().getId(), currentUser.getId()),
+                list.isPublicVisible(),
                 resolveCreatorName(list, displayNames),
                 list.getTargetType(),
                 showLocalTargetDetails ? targetStudentIds(list) : List.of(),
@@ -810,6 +848,41 @@ public class ReadingListService {
                 sortedIntegers(list.getTargetGrades()),
                 list.isTargetAllSchools(),
                 books);
+    }
+
+    private PublicReadingListDetailDTO toPublicDetailDTO(ReadingListEntity list) {
+        return new PublicReadingListDetailDTO(
+                list.getPublicUid(),
+                list.getTitle(),
+                list.getTaskDescription(),
+                list.getDeadline(),
+                list.getCreator() == null || list.getCreator().getRole() == null ? null
+                        : list.getCreator().getRole().name(),
+                toBookDTOs(list));
+    }
+
+    private List<ReadingListBookDTO> toBookDTOs(ReadingListEntity list) {
+        if (list.getBooks() == null) {
+            return List.of();
+        }
+
+        return list.getBooks()
+                .stream()
+                .sorted(Comparator.comparing(BookEntity::getTitle, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .map(book -> {
+                    List<String> authors = book.getAuthors() == null
+                            ? List.of()
+                            : List.copyOf(book.getAuthors());
+
+                    return new ReadingListBookDTO(
+                            book.getId(),
+                            book.getTitle(),
+                            authors,
+                            book.getThumbnail(),
+                            book.getIsbn(),
+                            book.getAvailableCopies() != null ? book.getAvailableCopies() : 0);
+                })
+                .toList();
     }
 
     private List<Long> targetStudentIds(ReadingListEntity list) {
