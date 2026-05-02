@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListBookDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.entities.SchoolClassEntity;
@@ -102,7 +103,8 @@ public class ReadingListService {
     }
 
     @Transactional
-    public ReadingListEntity updatePersonalListVisibility(Long id, boolean publicVisible, String smartschoolUid) {
+    public ReadingListVisibilityDTO updatePersonalListVisibility(Long id, boolean publicVisible,
+            String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
 
         ReadingListEntity list = readingListRepository.findByIdAndCreator_Id(id, currentUser.getId())
@@ -112,9 +114,18 @@ public class ReadingListService {
             throw new AccessDeniedException("Alleen persoonlijke leeslijsten kunnen publiek gedeeld worden");
         }
 
+        if (list.getPublicUid() == null || list.getPublicUid().isBlank()) {
+            list.setPublicUid(UUID.randomUUID().toString());
+        }
+
         list.setPublicVisible(publicVisible);
 
-        return readingListRepository.save(list);
+        ReadingListEntity saved = readingListRepository.save(list);
+
+        return new ReadingListVisibilityDTO(
+                saved.getId(),
+                saved.getPublicUid(),
+                saved.isPublicVisible());
     }
 
     @Transactional(readOnly = true)

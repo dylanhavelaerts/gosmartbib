@@ -5,6 +5,7 @@ import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListBookDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListVisibilityDTO;
 import edu.ap.gosmartlib.dto.readinglist.UpdateReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.services.ReadingListService;
@@ -267,17 +268,17 @@ class ReadingListControllerTest {
     }
 
     @Test
-    void givenValidAuthentication_whenUpdatePersonalListVisibility_thenReturnsUpdatedList() {
+    void givenValidAuthentication_whenUpdatePersonalListVisibility_thenReturnsUpdatedVisibility() {
         String uid = "student-1";
         when(authentication.getPrincipal()).thenReturn(oauth2User);
         when(oauth2User.getAttribute("userID")).thenReturn(uid);
 
         UpdateReadingListVisibilityDTO dto = new UpdateReadingListVisibilityDTO(true);
 
-        ReadingListEntity updated = new ReadingListEntity();
-        updated.setId(12L);
-        updated.setPublicUid("public-uid-12");
-        updated.setPublicVisible(true);
+        ReadingListVisibilityDTO updated = new ReadingListVisibilityDTO(
+                12L,
+                "public-uid-12",
+                true);
 
         when(readingListService.updatePersonalListVisibility(12L, true, uid)).thenReturn(updated);
 

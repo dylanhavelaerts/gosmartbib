@@ -4,6 +4,7 @@ import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -713,10 +714,14 @@ class ReadingListServiceTest {
         when(readingListRepository.save(any(ReadingListEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        ReadingListEntity result = readingListService.updatePersonalListVisibility(910L, true, "owner-uid");
+        ReadingListVisibilityDTO result = readingListService.updatePersonalListVisibility(
+                910L,
+                true,
+                "owner-uid");
 
-        assertTrue(result.isPublicVisible());
-        assertEquals("public-uid-910", result.getPublicUid());
+        assertEquals(910L, result.id());
+        assertTrue(result.publicVisible());
+        assertEquals("public-uid-910", result.publicUid());
 
         verify(readingListRepository, times(1)).save(list);
     }

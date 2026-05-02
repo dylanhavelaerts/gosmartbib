@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.dto.readinglist.UpdateReadingListVisibilityDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.services.ReadingListService;
 import lombok.RequiredArgsConstructor;
@@ -118,7 +119,12 @@ public class ReadingListController {
             Authentication authentication) {
         try {
             String uid = extractUid(authentication);
-            ReadingListEntity updated = readingListService.updatePersonalListVisibility(id, dto.publicVisible(), uid);
+
+            ReadingListVisibilityDTO updated = readingListService.updatePersonalListVisibility(
+                    id,
+                    dto.publicVisible(),
+                    uid);
+
             return ResponseEntity.ok(updated);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error updating reading list visibility: " + e.getMessage());
