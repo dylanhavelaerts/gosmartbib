@@ -187,6 +187,7 @@ export default function ReadingListDetailPage() {
   const readCount = detail?.books.filter((b) => readStatus[b.id]).length ?? 0;
   const totalCount = detail?.books.length ?? 0;
   const deadline = formatDeadline(detail?.deadline);
+  const showTargetSummary = detail?.listType === "CLASS" && detail.targetType !== null && detail.targetType !== undefined;
 
   return (
     <div className="rld-page">
@@ -259,7 +260,7 @@ export default function ReadingListDetailPage() {
               </span>
             </div>
 
-            {detail.listType === "CLASS" && (
+            {showTargetSummary && (
               <div className="rld-target-summary">
                 {formatReadingListTargets(detail)}
               </div>

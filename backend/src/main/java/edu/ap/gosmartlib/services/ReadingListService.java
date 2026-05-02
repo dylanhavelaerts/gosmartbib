@@ -696,7 +696,17 @@ public class ReadingListService {
     }
 
     private boolean canSeeLocalTargetDetails(ReadingListEntity list, UserEntity currentUser) {
-        return isSameSchool(list.getCreator(), currentUser);
+        if (list == null || currentUser == null) {
+            return false;
+        }
+
+        if (list.getCreator() != null
+                && Objects.equals(list.getCreator().getId(), currentUser.getId())) {
+            return true;
+        }
+
+        return isStaffRole(currentUser.getRole())
+                && isSameSchool(list.getCreator(), currentUser);
     }
 
     private boolean isSameSchool(UserEntity left, UserEntity right) {
@@ -828,12 +838,12 @@ public class ReadingListService {
                 list.getListType(),
                 Objects.equals(list.getCreator().getId(), currentUser.getId()),
                 list.isPublicVisible(),
-                list.getTargetType(),
+                showLocalTargetDetails ? list.getTargetType() : null,
                 showLocalTargetDetails ? targetStudentDisplayNames(list, displayNames) : List.of(),
                 showLocalTargetDetails ? targetClassNames(list) : List.of(),
-                sortedIntegers(list.getTargetYears()),
-                sortedIntegers(list.getTargetGrades()),
-                list.isTargetAllSchools());
+                showLocalTargetDetails ? sortedIntegers(list.getTargetYears()) : List.of(),
+                showLocalTargetDetails ? sortedIntegers(list.getTargetGrades()) : List.of(),
+                showLocalTargetDetails && list.isTargetAllSchools());
     }
 
     private String formatRoleLabel(UserRoles role) {
@@ -882,15 +892,15 @@ public class ReadingListService {
                 Objects.equals(list.getCreator().getId(), currentUser.getId()),
                 list.isPublicVisible(),
                 resolveCreatorName(list, displayNames),
-                list.getTargetType(),
+                showLocalTargetDetails ? list.getTargetType() : null,
                 showLocalTargetDetails ? targetStudentIds(list) : List.of(),
                 showLocalTargetDetails ? targetStudentDisplayNames(list, displayNames) : List.of(),
                 showLocalTargetDetails ? targetStudents(list, displayNames) : List.of(),
                 showLocalTargetDetails ? targetClassIds(list) : List.of(),
                 showLocalTargetDetails ? targetClassNames(list) : List.of(),
-                sortedIntegers(list.getTargetYears()),
-                sortedIntegers(list.getTargetGrades()),
-                list.isTargetAllSchools(),
+                showLocalTargetDetails ? sortedIntegers(list.getTargetYears()) : List.of(),
+                showLocalTargetDetails ? sortedIntegers(list.getTargetGrades()) : List.of(),
+                showLocalTargetDetails && list.isTargetAllSchools(),
                 books);
     }
 
