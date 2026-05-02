@@ -19,4 +19,7 @@ public interface ReadingListRepository extends JpaRepository<ReadingListEntity, 
     // zonder dit triggert een sql query per boek -> performanter
     @Query("SELECT DISTINCT rl FROM ReadingListEntity rl LEFT JOIN FETCH rl.books WHERE rl.id = :id")
     Optional<ReadingListEntity> findByIdWithBooks(@Param("id") Long id);
+
+    @Query("SELECT DISTINCT rl FROM ReadingListEntity rl LEFT JOIN FETCH rl.books WHERE rl.publicUid = :publicUid")
+    Optional<ReadingListEntity> findByPublicUidWithBooks(@Param("publicUid") String publicUid);
 }
