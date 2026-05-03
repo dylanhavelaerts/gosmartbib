@@ -4,131 +4,79 @@ import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.ReadingListService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/reading-lists")
-@RequiredArgsConstructor
 public class ReadingListController {
 
     private final ReadingListService readingListService;
+    private final AuthHelper authHelper;
+
+    public ReadingListController(ReadingListService readingListService, AuthHelper authHelper) {
+        this.readingListService = readingListService;
+        this.authHelper = authHelper;
+    }
 
     @GetMapping
-    public ResponseEntity<?> getVisibleLists(Authentication authentication) {
-        try {
-            String uid = extractUid(authentication);
-            List<ReadingListOverviewDTO> lists = readingListService.getVisibleLists(uid);
-            return ResponseEntity.ok(lists);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Could not load reading lists: " + e.getMessage());
-        }
+    public ResponseEntity<List<ReadingListOverviewDTO>> getVisibleLists(@AuthenticationPrincipal OAuth2User principal) {
+        List<ReadingListOverviewDTO> lists = readingListService.getVisibleLists(authHelper.extractUid(principal));
+        return ResponseEntity.ok(lists);
     }
+
     @GetMapping("/{id}")
-    public ResponseEntity<?> getListDetail(@PathVariable Long id, Authentication authentication) {
-        try {
-            String uid = extractUid(authentication);
-            ReadingListDetailDTO detail = readingListService.getListDetail(id, uid);
-            return ResponseEntity.ok(detail);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Could not load reading list: " + e.getMessage());
-        }
+    public ResponseEntity<ReadingListDetailDTO> getListDetail(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
+        ReadingListDetailDTO detail = readingListService.getListDetail(id, authHelper.extractUid(principal));
+        return ResponseEntity.ok(detail);
     }
 
     @PostMapping("/class")
     @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
-    public ResponseEntity<?> createClassList(@RequestBody CreateReadingListDTO dto, Authentication authentication) {
-        try {
-            String uid = extractUid(authentication);
-            ReadingListEntity created = readingListService.createClassList(dto, uid);
-            return ResponseEntity.ok(created.getId());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error creating class reading list: " + e.getMessage());
-        }
+    public ResponseEntity<Long> createClassList(@RequestBody CreateReadingListDTO dto, @AuthenticationPrincipal OAuth2User principal) {
+        ReadingListEntity created = readingListService.createClassList(dto, authHelper.extractUid(principal));
+        return ResponseEntity.ok(created.getId());
     }
 
     @PostMapping("/personal")
-    public ResponseEntity<?> createPersonalList(@RequestBody CreateReadingListDTO dto, Authentication authentication) {
-        try {
-            String uid = extractUid(authentication);
-            ReadingListEntity created = readingListService.createPersonalList(dto, uid);
-            return ResponseEntity.ok(created.getId());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error creating personal reading list: " + e.getMessage());
-        }
+    public ResponseEntity<Long> createPersonalList(@RequestBody CreateReadingListDTO dto, @AuthenticationPrincipal OAuth2User principal) {
+        ReadingListEntity created = readingListService.createPersonalList(dto, authHelper.extractUid(principal));
+        return ResponseEntity.ok(created.getId());
     }
 
     @PutMapping("/personal/{id}")
-    public ResponseEntity<?> updatePersonalList(
+    public ResponseEntity<Long> updatePersonalList(
             @PathVariable Long id,
             @RequestBody CreateReadingListDTO dto,
-            Authentication authentication) {
-        try {
-            String uid = extractUid(authentication);
-            ReadingListEntity updated = readingListService.updatePersonalList(id, dto, uid);
-            return ResponseEntity.ok(updated.getId());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error updating personal reading list: " + e.getMessage());
-        }
+            @AuthenticationPrincipal OAuth2User principal) {
+        ReadingListEntity updated = readingListService.updatePersonalList(id, dto, authHelper.extractUid(principal));
+        return ResponseEntity.ok(updated.getId());
     }
 
     @DeleteMapping("/personal/{id}")
-    public ResponseEntity<?> deletePersonalList(@PathVariable Long id, Authentication authentication) {
-        try {
-            String uid = extractUid(authentication);
-            readingListService.deletePersonalList(id, uid);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error deleting personal reading list: " + e.getMessage());
-        }
+    public ResponseEntity<Void> deletePersonalList(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
+        readingListService.deletePersonalList(id, authHelper.extractUid(principal));
+        return ResponseEntity.noContent().build();
     }
+
     @DeleteMapping("/class/{id}")
     @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
-    public ResponseEntity<?> deleteClassList(@PathVariable Long id, Authentication authentication) {
-        try {
-            String uid = extractUid(authentication);
-            readingListService.deleteClassList(id, uid);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error deleting class reading list: " + e.getMessage());
-        }
+    public ResponseEntity<Void> deleteClassList(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
+        readingListService.deleteClassList(id, authHelper.extractUid(principal));
+        return ResponseEntity.noContent().build();
     }
+
     @PutMapping("/class/{id}")
     @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
-    public ResponseEntity<?> updateClassList(@PathVariable Long id,@RequestBody CreateReadingListDTO dto, Authentication authentication) {
-        try {
-            String uid = extractUid(authentication);
-            ReadingListEntity updated = readingListService.updateClassList(id, dto, uid);
-            return ResponseEntity.ok(updated.getId());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error updating class reading list: " + e.getMessage());
-        }
-    }
-
-    /**
-     * This helpermethod extracts the authenticated user's unique ID from the Spring Security Authentication object.
-     * It assumes that the user is authenticated via OAuth2 and that the principal contains a "userID" attribute.
-     * @param authentication
-     * @return the authenticated user's unique ID
-     * @throws IllegalArgumentException if the user is not authenticated
-     */
-
-    private String extractUid(Authentication authentication) {
-        if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User principal)) {
-            throw new IllegalArgumentException("Not authenticated");
-        }
-        String uid = principal.getAttribute("userID");
-        if (uid == null || uid.isBlank()) {
-            throw new IllegalArgumentException("Authenticated user ID not found");
-        }
-        return uid;
+    public ResponseEntity<Long> updateClassList(@PathVariable Long id, @RequestBody CreateReadingListDTO dto, @AuthenticationPrincipal OAuth2User principal) {
+        ReadingListEntity updated = readingListService.updateClassList(id, dto, authHelper.extractUid(principal));
+        return ResponseEntity.ok(updated.getId());
     }
 }

@@ -5,6 +5,7 @@ import edu.ap.gosmartlib.dto.reviews.AdminDeleteReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewFlagRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.ReviewService;
 import edu.ap.gosmartlib.util.ReviewStatus;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -26,57 +26,51 @@ import java.util.List;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final AuthHelper authHelper;
 
     @GetMapping("/book/{isbn}")
     public ResponseEntity<List<ReviewSummaryDTO>> getReviewsByBook(@PathVariable String isbn,
             @AuthenticationPrincipal OAuth2User principal) {
-        String actorUid = extractUidOrNull(principal);
-        return ResponseEntity.ok(reviewService.findAllSummaryReviewsByBook(isbn, actorUid));
+        return ResponseEntity.ok(reviewService.findAllSummaryReviewsByBook(isbn, authHelper.extractUidOrNull(principal)));
     }
 
     @GetMapping("/user/{smartschoolUid}")
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<List<ReviewDetailDTO>> getReviewsByUser(@PathVariable String smartschoolUid,
             @AuthenticationPrincipal OAuth2User principal) {
-        String actorUid = extractUid(principal);
-        return ResponseEntity.ok(reviewService.findAllDetailReviewsByUserId(smartschoolUid, actorUid));
+        return ResponseEntity.ok(reviewService.findAllDetailReviewsByUserId(smartschoolUid, authHelper.extractUid(principal)));
     }
 
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<List<ReviewDetailDTO>> getReviewsByStatus(@PathVariable ReviewStatus status,
             @AuthenticationPrincipal OAuth2User principal) {
-        String actorUid = extractUid(principal);
-        return ResponseEntity.ok(reviewService.findAllReviewsByStatus(status, actorUid));
+        return ResponseEntity.ok(reviewService.findAllReviewsByStatus(status, authHelper.extractUid(principal)));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<List<ReviewDetailDTO>> getAllReviews(@AuthenticationPrincipal OAuth2User principal) {
-        String actorUid = extractUid(principal);
-        return ResponseEntity.ok(reviewService.findAllReviews(actorUid));
+        return ResponseEntity.ok(reviewService.findAllReviews(authHelper.extractUid(principal)));
     }
 
     @GetMapping("/moderation")
     @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     public ResponseEntity<List<ReviewDetailDTO>> getModerationReviews(@AuthenticationPrincipal OAuth2User principal) {
-        String smartschoolUid = extractUid(principal);
-        return ResponseEntity.ok(reviewService.findAllSchoolReviewsForModerator(smartschoolUid));
+        return ResponseEntity.ok(reviewService.findAllSchoolReviewsForModerator(authHelper.extractUid(principal)));
     }
 
     @PostMapping
     public ResponseEntity<ReviewSummaryDTO> submitReview(@RequestBody ReviewRequestDTO request,
             @AuthenticationPrincipal OAuth2User principal) {
-        String smartschoolUid = extractUid(principal);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(reviewService.submitReview(request, smartschoolUid));
+                .body(reviewService.submitReview(request, authHelper.extractUid(principal)));
     }
 
     @PatchMapping("/{reviewId}")
     public ResponseEntity<ReviewSummaryDTO> editReview(@PathVariable Long reviewId, @RequestBody ReviewRequestDTO request,
             @AuthenticationPrincipal OAuth2User principal) {
-        String smartschoolUid = extractUid(principal);
-        return ResponseEntity.ok(reviewService.editReview(reviewId, request, smartschoolUid));
+        return ResponseEntity.ok(reviewService.editReview(reviewId, request, authHelper.extractUid(principal)));
     }
 
     @PatchMapping("/{reviewId}/approve")
@@ -104,8 +98,7 @@ public class ReviewController {
     @PatchMapping("/{reviewId}/flag")
     public ResponseEntity<Void> flagReview(@PathVariable Long reviewId, @RequestBody ReviewFlagRequestDTO request,
             @AuthenticationPrincipal OAuth2User principal) {
-        String smartschoolUid = extractUid(principal);
-        reviewService.flagReview(reviewId, smartschoolUid, request.reason());
+        reviewService.flagReview(reviewId, authHelper.extractUid(principal), request.reason());
         return ResponseEntity.noContent().build();
     }
 
@@ -113,42 +106,8 @@ public class ReviewController {
     public ResponseEntity<Void> userDeleteReview(@PathVariable Long reviewId,
             @AuthenticationPrincipal OAuth2User principal,
             Authentication authentication) {
-        String smartschoolUid = extractUid(principal);
-        boolean canModerateDelete = hasModeratorDeleteAccess(authentication);
-        reviewService.userDeleteReview(reviewId, smartschoolUid, canModerateDelete);
+        reviewService.userDeleteReview(reviewId, authHelper.extractUid(principal), hasModeratorDeleteAccess(authentication));
         return ResponseEntity.noContent().build();
-    }
-
-    private boolean hasModeratorDeleteAccess(Authentication authentication) {
-        if (authentication == null || authentication.getAuthorities() == null) {
-            return false;
-        }
-
-        return authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(role -> role.equals("ROLE_TEACHER") || role.equals("ROLE_BIBLIOTHEEKBEHEERDER"));
-    }
-
-    private String extractUid(OAuth2User principal) {
-        if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Niet ingelogd");
-        }
-
-        String uid = principal.getAttribute("userID");
-        if (uid == null || uid.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Geen geldige gebruiker");
-        }
-
-        return uid;
-    }
-
-    private String extractUidOrNull(OAuth2User principal) {
-        if (principal == null) {
-            return null;
-        }
-
-        String uid = principal.getAttribute("userID");
-        return (uid == null || uid.isBlank()) ? null : uid;
     }
 
     @DeleteMapping("/{reviewId}/librarian")
@@ -156,5 +115,14 @@ public class ReviewController {
     public ResponseEntity<Void> librarianDeleteReview(@PathVariable Long reviewId) {
         reviewService.librarianDeleteReview(reviewId);
         return ResponseEntity.noContent().build();
+    }
+
+    private boolean hasModeratorDeleteAccess(Authentication authentication) {
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_TEACHER") || role.equals("ROLE_BIBLIOTHEEKBEHEERDER"));
     }
 }

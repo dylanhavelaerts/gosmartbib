@@ -335,7 +335,6 @@ public class UserDirectoryService {
         return uid == null ? "" : uid.trim().toLowerCase(Locale.ROOT);
     }
 
-    @SuppressWarnings("unchecked")
     private String extractLegacyIdentifier(Map<String, Object> liveUser) {
         Object metadataObj = liveUser.get("metadata");
         if (!(metadataObj instanceof Map<?, ?> metadata)) {

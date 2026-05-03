@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.BookNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,30 +21,29 @@ public class ReadingListNotificationController {
 
     private final BookNotificationService bookNotificationService;
     private final ReadingListRepository readingListRepository;
+    private final AuthHelper authHelper;
 
     @GetMapping
     public ResponseEntity<Boolean> status(
             @PathVariable Long readingListId,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        String uid = extractUid(oAuth2User);
-        List<Long> bookIds = getBookIds(readingListId);
-        boolean enabled = bookNotificationService.isAllEnabled(uid, bookIds);
+            @AuthenticationPrincipal OAuth2User principal) {
+        boolean enabled = bookNotificationService.isAllEnabled(authHelper.extractUid(principal), getBookIds(readingListId));
         return ResponseEntity.ok(enabled);
     }
 
     @PostMapping
     public ResponseEntity<Void> enable(
             @PathVariable Long readingListId,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        bookNotificationService.enableBulk(extractUid(oAuth2User), getBookIds(readingListId));
+            @AuthenticationPrincipal OAuth2User principal) {
+        bookNotificationService.enableBulk(authHelper.extractUid(principal), getBookIds(readingListId));
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping
     public ResponseEntity<Void> disable(
             @PathVariable Long readingListId,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        bookNotificationService.disableBulk(extractUid(oAuth2User), getBookIds(readingListId));
+            @AuthenticationPrincipal OAuth2User principal) {
+        bookNotificationService.disableBulk(authHelper.extractUid(principal), getBookIds(readingListId));
         return ResponseEntity.noContent().build();
     }
 
@@ -54,16 +54,4 @@ public class ReadingListNotificationController {
                 .map(BookEntity::getId)
                 .toList();
     }
-
-    private String extractUid(OAuth2User oAuth2User) {
-        if (oAuth2User == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Niet ingelogd");
-        }
-        String uid = oAuth2User.getAttribute("userID");
-        if (uid == null || uid.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Geen geldige gebruiker");
-        }
-        return uid;
-    }
 }
-
