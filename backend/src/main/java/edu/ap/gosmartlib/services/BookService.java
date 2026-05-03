@@ -63,7 +63,6 @@ public class BookService {
     @Value("${google.books.api.key}")
     private String googleBooksApiKey;
 
-    // Size = aantal items per pagina, page = welke pagina (0-based)
     public Page<BookDTO> getAllBooks(int page, int size, UserRoles callerRole, String currentUserUid) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
@@ -99,35 +98,14 @@ public class BookService {
         return toDTO(previewBook);
     }
 
-    public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer amount) {
-        if (isbn == null || isbn.isBlank()) {
-            throw new IllegalArgumentException("ISBN mag niet leeg zijn");
-        }
-
-        int copies = amount != null ? amount : 1;
-
-        if (copies < 1) {
-            throw new IllegalArgumentException("Aantal boeken moet minstens 1 zijn");
-        }
-
-        String normalizedIsbn = normalizeIsbn(isbn);
-        SchoolEntity school = resolveSchoolForUser(smartschoolUid);
-        String normalizedCampus = normalizeCampus(campus);
-
-        BookEntity existingBook = bookRepository.findByIsbn(normalizedIsbn).orElse(null);
-
-        if (existingBook != null) {
-            if (hasInventoryForSchoolAndCampus(existingBook, school, normalizedCampus)) {
-                throw new IllegalArgumentException("Boek bestaat al voor deze campus");
-            }
-            addInventory(existingBook, school, normalizedCampus, copies, copies);
-            recomputeBookCopyTotals(existingBook);
-
-            return toDTO(bookRepository.save(existingBook));
-        }
-
-        BookEntity newBook = buildBookEntityFromGoogle(normalizedIsbn);
-        addInventory(newBook, school, normalizedCampus, copies, copies);
+    // AANGEPAST: 4 argumenten (inclusief Integer copies), passend bij de BookController
+    public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer copies) {
+        BookEntity newBook = buildBookEntityFromGoogle(isbn);
+        
+        // Zorg dat er altijd minimaal 1 copy is als er null wordt meegegeven
+        int totalCopies = (copies != null && copies > 0) ? copies : 1;
+        
+        applySingleInventoryForCurrentUser(newBook, smartschoolUid, campus, totalCopies, totalCopies);
         recomputeBookCopyTotals(newBook);
         BookEntity savedBook = bookRepository.save(newBook);
         return toDTO(savedBook);
@@ -144,11 +122,6 @@ public class BookService {
         return null;
     }
 
-    /**
-     * Zoekt een boek op via het id in de database.
-     * Als het gevonden wordt, wordt het omgezet naar een DTO en teruggegeven.
-     * Als het niet gevonden wordt, gooit het een BookNotFoundException met het id.
-     */
     public BookDTO getBookById(Long id, UserRoles callerRole, String currentUserUid) throws BookNotFoundException {
 
         BookEntity book = bookRepository.findDetailedById(id)
@@ -165,11 +138,6 @@ public class BookService {
         return visible;
     }
 
-    /**
-     * Zoekt een boek op via het id.
-     * Als het niet gevonden wordt, gooit het een BookNotFoundException.
-     * Als het gevonden wordt, wordt het verwijderd uit de database.
-     */
     public void deleteBook(Long id) throws BookNotFoundException {
         BookEntity book = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException(id));
         bookRepository.delete(book);
@@ -183,15 +151,6 @@ public class BookService {
         bookRepository.save(book);
     }
 
-    /**
-     * Zoekt boeken op basis van een zoekterm. Er wordt gezocht in zowel de titel
-     * als de auteurs van het boek.
-     * 
-     * @param query De zoekterm om op te filteren. Als deze leeg is, worden alle
-     *              boeken teruggegeven.
-     * @return Een lijst van boeken die overeenkomen met de zoekterm, omgezet naar
-     *         DTO's.
-     */
     public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size, UserRoles callerRole,
             String currentUserUid) {
         if (page < 0 || size <= 0)
@@ -307,6 +266,7 @@ public class BookService {
                         request.language(),
                         request.categories(),
                         request.labels(),
+                        Boolean.TRUE.equals(request.didacticOnly()), // null-safe unbox moet erbij anders leerkrachtenpad geeft errors
                         request.minPageCount(),
                         request.maxPageCount(),
                         request.minPubYear(),
@@ -317,8 +277,7 @@ public class BookService {
                 .map(this::toDTO);
     }
 
-    public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid,
-            String campus) {
+    public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid, String campus) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Upload een excel file die niet leeg is");
         }
@@ -326,9 +285,6 @@ public class BookService {
         List<ImportMismatchDTO> mismatches = new ArrayList<>();
         int totalRows = 0;
         int savedCount = 0;
-
-        SchoolEntity importSchool = resolveSchoolForUser(smartschoolUid);
-        String normalizedCampus = normalizeCampus(campus);
 
         DataFormatter formatter = new DataFormatter();
 
@@ -341,11 +297,10 @@ public class BookService {
                     continue;
                 }
 
-                String isbn = normalizeIsbn(formatter.formatCellValue(row.getCell(0)));
+                String isbn = formatter.formatCellValue(row.getCell(0)).trim();
                 String excelTitle = formatter.formatCellValue(row.getCell(1)).trim();
-                String amountText = formatter.formatCellValue(row.getCell(2)).trim();
 
-                if (isbn.isBlank() && excelTitle.isBlank() && amountText.isBlank()) {
+                if (isbn.isBlank() && excelTitle.isBlank()) {
                     continue;
                 }
 
@@ -361,107 +316,48 @@ public class BookService {
                     continue;
                 }
 
-                int amount;
-                try {
-                    amount = parseImportAmount(amountText);
-                } catch (IllegalArgumentException e) {
+                if (bookRepository.existsByIsbn(isbn)) {
                     mismatches.add(new ImportMismatchDTO(
                             rowIndex + 1,
                             isbn,
                             excelTitle,
                             null,
-                            e.getMessage()));
+                            "Boek bestaat al in de database"));
                     continue;
                 }
 
-                BookEntity existingBook = bookRepository.findByIsbn(isbn).orElse(null);
+                try {
+                    BookEntity fetchedBook = buildBookEntityFromGoogle(isbn);
+                    applySingleInventoryForCurrentUser(fetchedBook, smartschoolUid, campus, 1, 1);
+                    recomputeBookCopyTotals(fetchedBook);
 
-                if (existingBook != null) {
-
-                    if (hasInventoryForSchoolAndCampus(existingBook, importSchool, normalizedCampus)) {
+                    if (!titlesMatch(excelTitle, fetchedBook.getTitle())) {
                         mismatches.add(new ImportMismatchDTO(
                                 rowIndex + 1,
                                 isbn,
                                 excelTitle,
-                                existingBook.getTitle(),
-                                "Boek bestaat al voor deze campus",
-                                amount));
+                                fetchedBook.getTitle(),
+                                "De titel komt niet overeen (" + fetchedBook.getTitle() + ")"));
                         continue;
                     }
 
-                    if (!titlesMatch(excelTitle, existingBook.getTitle())) {
-                        mismatches.add(new ImportMismatchDTO(
-                                rowIndex + 1,
-                                isbn,
-                                excelTitle,
-                                existingBook.getTitle(),
-                                "De titel komt niet overeen (" + existingBook.getTitle() + ")",
-                                amount));
-                        continue;
-                    }
-
-                    try {
-                        addInventory(existingBook, importSchool, normalizedCampus, amount, amount);
-                        recomputeBookCopyTotals(existingBook);
-                        bookRepository.save(existingBook);
-                        savedCount++;
-                    } catch (Exception e) {
-                        mismatches.add(new ImportMismatchDTO(
-                                rowIndex + 1,
-                                isbn,
-                                excelTitle,
-                                existingBook.getTitle(),
-                                "Onverwachte fout bij het toevoegen van de campusvoorraad", amount));
-                    }
-
-                    continue;
-                }
-
-                BookEntity newBook;
-
-                try {
-                    newBook = buildBookEntityFromGoogle(isbn);
-                } catch (IllegalArgumentException e) {
-                    mismatches.add(new ImportMismatchDTO(
-                            rowIndex + 1,
-                            isbn,
-                            excelTitle,
-                            null,
-                            "Geen boeken gevonden in Google Books",
-                            amount));
-                    continue;
-                } catch (Exception e) {
-                    mismatches.add(new ImportMismatchDTO(
-                            rowIndex + 1,
-                            isbn,
-                            excelTitle,
-                            null,
-                            "Onverwachte fout bij het ophalen uit Google Books", amount));
-                    continue;
-                }
-
-                if (!titlesMatch(excelTitle, newBook.getTitle())) {
-                    mismatches.add(new ImportMismatchDTO(
-                            rowIndex + 1,
-                            isbn,
-                            excelTitle,
-                            newBook.getTitle(),
-                            "De titel komt niet overeen (" + newBook.getTitle() + ")", amount));
-                    continue;
-                }
-
-                try {
-                    addInventory(newBook, importSchool, normalizedCampus, amount, amount);
-                    recomputeBookCopyTotals(newBook);
-                    bookRepository.save(newBook);
+                    bookRepository.save(fetchedBook);
                     savedCount++;
+
+                } catch (IllegalArgumentException e) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            isbn,
+                            excelTitle,
+                            null,
+                            "Geen boeken gevonden in Google Books"));
                 } catch (Exception e) {
                     mismatches.add(new ImportMismatchDTO(
                             rowIndex + 1,
                             isbn,
                             excelTitle,
-                            newBook.getTitle(),
-                            "Onverwachte fout bij het opslaan van het boek", amount));
+                            null,
+                            "Onverwachte fout bij het ophalen en opslaan"));
                 }
             }
 
@@ -561,9 +457,6 @@ public class BookService {
         book.setLabels(cleanStringList(request.labels()));
         book.setReadingLevel(safeTrim(request.readingLevel()));
         book.setAgeRange(safeTrim(request.ageRange()));
-        // Maakt random ISBN aan
-        // Enorm kleine kans voor een dubbele ID
-        // In dat geval, gewoon opnieuw indienen
         book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
 
         if (request.inventories() != null && !request.inventories().isEmpty()) {
@@ -578,7 +471,6 @@ public class BookService {
 
         BookEntity saved = bookRepository.saveAndFlush(book);
 
-        // Reload zo dat de DB-gegenereerde ISBN in de response DTO zit
         BookEntity reloaded = bookRepository.findDetailedById(saved.getId())
                 .orElseThrow(() -> new IllegalStateException(
                         "Boek werd opgeslagen maar kon niet opnieuw geladen worden"));
@@ -631,6 +523,7 @@ public class BookService {
                 book.getTotalCopies(),
                 book.getAvailableCopies(),
                 book.getAgeRange(),
+                book.getPreviewLink(),
                 inventories);
     }
 
@@ -750,7 +643,7 @@ public class BookService {
         }
     }
 
-    // region Helper functies
+// region Helper functies
     private BookEntity buildBookEntityFromGoogle(String isbn) {
         String url = UriComponentsBuilder
                 .fromUriString(googleBooksApiUrl)
@@ -758,15 +651,28 @@ public class BookService {
                 .queryParam("key", googleBooksApiKey)
                 .toUriString();
 
-        System.out.println("Using Google Books request with key suffix: " +
+        System.out.println("Zoeken naar ISBN: " + isbn + " met key suffix: " +
                 (googleBooksApiKey.length() >= 4
                         ? googleBooksApiKey.substring(googleBooksApiKey.length() - 4)
                         : "too-short"));
 
-        GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
+        GoogleBooksResponse response = null;
+        
+        try {
+            // De eerste API Call (met fout-afvanging)
+            response = restTemplate.getForObject(url, GoogleBooksResponse.class);
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            // Dit vangt fouten zoals 429 (Too Many Requests) of 403 (Quota Exceeded) netjes af
+            System.err.println("CRASH: Google API weigerde het verzoek! Status: " + e.getStatusCode());
+            System.err.println("Reden: " + e.getResponseBodyAsString());
+            throw new RuntimeException("De Google API weigert het verzoek tijdelijk (Status " + e.getStatusCode() + "). Wacht even en probeer het opnieuw.");
+        } catch (Exception e) {
+            System.err.println("CRASH: Onverwachte fout bij ophalen ISBN: " + e.getMessage());
+            throw new RuntimeException("Er ging iets mis bij het communiceren met Google Books.");
+        }
 
         if (response == null || response.getItems() == null || response.getItems().isEmpty()) {
-            throw new IllegalArgumentException("Geen boek voor ISBN: " + isbn);
+            throw new IllegalArgumentException("Geen boek gevonden voor ISBN: " + isbn);
         }
 
         VolumeInfo volumeInfo = response.getItems().get(0).getVolumeInfo();
@@ -794,6 +700,77 @@ public class BookService {
         book.setInventories(new ArrayList<>());
         book.setTotalCopies(0);
         book.setAvailableCopies(0);
+        
+        // --- NIEUW: Bulletproof Link Extractie mét Titel-Check ---
+        String finalReaderLink = null;
+        
+        try {
+            String originalTitle = book.getTitle();
+            String originalTitleLower = originalTitle.toLowerCase().trim();
+            String authorQuery = (book.getAuthors() != null && !book.getAuthors().isEmpty()) ? book.getAuthors().get(0) : "";
+            String searchQuery = (originalTitle + " " + authorQuery).trim();
+
+            java.net.URI searchUri = UriComponentsBuilder
+                    .fromUriString(googleBooksApiUrl)
+                    .queryParam("q", searchQuery)
+                    .queryParam("key", googleBooksApiKey)
+                    .build()
+                    .toUri();
+
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> searchResponse = restTemplate.getForObject(searchUri, java.util.Map.class);
+
+            if (searchResponse != null && searchResponse.get("items") instanceof java.util.List) {
+                java.util.List<?> items = (java.util.List<?>) searchResponse.get("items");
+                
+                for (Object itemObj : items) {
+                    if (itemObj instanceof java.util.Map) {
+                        java.util.Map<?, ?> item = (java.util.Map<?, ?>) itemObj;
+                        
+                        // 1. Controleer of de titel van dit zoekresultaat wel overeenkomt met ons boek!
+                        boolean isTitleMatch = false;
+                        if (item.get("volumeInfo") instanceof java.util.Map) {
+                            java.util.Map<?, ?> itemVolumeInfo = (java.util.Map<?, ?>) item.get("volumeInfo");
+                            Object itemTitleObj = itemVolumeInfo.get("title");
+
+                            if (itemTitleObj instanceof String) {
+                                String itemTitleLower = ((String) itemTitleObj).toLowerCase().trim();
+                                
+                                // We checken of de titels sterk overeenkomen
+                                // (Gelijk aan elkaar, of de ene is een onderdeel van de andere i.v.m. ondertitels)
+                                if (itemTitleLower.equals(originalTitleLower) ||
+                                    itemTitleLower.startsWith(originalTitleLower) ||
+                                    originalTitleLower.startsWith(itemTitleLower)) {
+                                    isTitleMatch = true;
+                                }
+                            }
+                        }
+
+                        // 2. Als de titel klopt, dán pas kijken we naar de lees-link
+                        if (isTitleMatch && item.get("accessInfo") instanceof java.util.Map) {
+                            java.util.Map<?, ?> accessInfo = (java.util.Map<?, ?>) item.get("accessInfo");
+                            
+                            Object viewabilityObj = accessInfo.get("viewability");
+                            Object webReaderLinkObj = accessInfo.get("webReaderLink");
+
+                            if (viewabilityObj instanceof String && webReaderLinkObj instanceof String) {
+                                String viewability = (String) viewabilityObj;
+                                String webReaderLink = (String) webReaderLinkObj;
+
+                                if (!"NO_PAGES".equals(viewability) && webReaderLink.contains("play.google.com/books/reader")) {
+                                    finalReaderLink = webReaderLink.replace("http://", "https://");
+                                    break; // Perfecte match gevonden, stop met zoeken!
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Fout bij ophalen e-book editie op de achtergrond: " + e.getMessage());
+        }
+
+        book.setPreviewLink(finalReaderLink);
 
         return book;
     }
@@ -964,6 +941,7 @@ public class BookService {
                 totalCopies,
                 availableCopies,
                 book.getAgeRange(),
+                book.getPreviewLink(),
                 inventoryDTOs);
     }
 
@@ -975,48 +953,6 @@ public class BookService {
                     "Geen school gevonden voor de ingelogde gebruiker");
         }
         return schoolId;
-    }
-
-    private int parseImportAmount(String amountText) {
-        if (amountText == null || amountText.isBlank()) {
-            throw new IllegalArgumentException("Aantal boeken is verplicht");
-        }
-
-        try {
-            int amount = Integer.parseInt(amountText.trim());
-
-            if (amount < 1) {
-                throw new IllegalArgumentException("Aantal boeken moet minstens 1 zijn");
-            }
-
-            return amount;
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Aantal boeken moet een geheel getal zijn");
-        }
-    }
-
-    private boolean hasInventoryForSchoolAndCampus(BookEntity book, SchoolEntity school, String campus) {
-        if (book.getInventories() == null || school == null || school.getId() == null) {
-            return false;
-        }
-
-        String normalizedCampus = normalizeCampus(campus);
-
-        return book.getInventories().stream()
-                .anyMatch(inventory -> inventory.getSchool() != null
-                        && Objects.equals(inventory.getSchool().getId(), school.getId())
-                        && Objects.equals(normalizeCampus(inventory.getCampus()), normalizedCampus));
-    }
-
-    private String normalizeIsbn(String isbn) {
-        if (isbn == null) {
-            return "";
-        }
-
-        return isbn
-                .trim()
-                .replace("-", "")
-                .replace(" ", "");
     }
     // endregion
 }

@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
 
 @Service
 @Slf4j
@@ -22,25 +21,34 @@ public class SmartschoolMessageService {
     private final SchoolIntegrationRepository schoolIntegrationRepository;
     private final SmartschoolSoapClient soapClient;
 
-    public void sendMessage(UserEntity user, String title, String body){
+    public void sendMessage(UserEntity user, String title, String body) {
         SchoolIntegrationEntity integration = schoolIntegrationRepository
                 .findBySchool_Id(user.getSchool().getId())
-                .orElseThrow(() -> new IllegalStateException("School heeft geen integratie ingesteld voor school met id" + user.getSchool().getId()));
-        String accessToken = authService.getAccessToken(integration);
+                .orElseThrow(() -> new IllegalStateException(
+                        "School heeft geen integratie ingesteld voor school met id " + user.getSchool().getId()));
+
         if (user.getOnerosterSourcedId() == null || user.getOnerosterSourcedId().isBlank()) {
             log.warn("Gebruiker {} heeft geen onerosterSourcedId, bericht niet verstuurd", user.getId());
             return;
         }
-        Map<String, Object> userDetails = oneRosterClient
-                .getUserBySourcedId(integration, accessToken, user.getOnerosterSourcedId());
-        String username = (String) userDetails.get("username");
-        if (username == null||username.isBlank()){
+
+        String accessToken = authService.getAccessToken(integration);
+
+        String username = oneRosterClient.getUsers(integration, accessToken).stream()
+                .filter(u -> user.getOnerosterSourcedId().equals(u.get("sourcedId")))
+                .map(u -> (String) u.get("username"))
+                .filter(n -> n != null && !n.isBlank())
+                .findFirst()
+                .orElse(null);
+
+        if (username == null || username.isBlank()) {
             log.warn("Geen username gevonden voor gebruiker {}", user.getId());
             return;
         }
-        soapClient.sendMessage(integration, username, title, body);
 
+        soapClient.sendMessage(integration, username, title, body);
     }
+
 
 
 

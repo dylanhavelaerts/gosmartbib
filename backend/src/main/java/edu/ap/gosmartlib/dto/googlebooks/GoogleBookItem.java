@@ -9,4 +9,5 @@ import lombok.Setter;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GoogleBookItem {
     private VolumeInfo volumeInfo;
+    private String id;
 }

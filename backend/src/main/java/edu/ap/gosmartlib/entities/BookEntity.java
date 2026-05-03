@@ -51,11 +51,13 @@ public class BookEntity {
     private String language;
 
     private Double rating;
+    
     @Column(unique = true, nullable = false)
     private String isbn;
 
     @Column(name = "published_year")
     private Integer publishedYear;
+    
     @Column(nullable = false)
     private boolean spotlight = false;
 
@@ -79,6 +81,9 @@ public class BookEntity {
 
     @Column(nullable = true)
     private String ageRange;
+
+    @Column(length = 500)
+    private String previewLink;
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<BookInventoryEntity> inventories = new ArrayList<>();

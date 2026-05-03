@@ -1,6 +1,6 @@
-package edu.ap.gosmartlib.repositories;
+package edu.ap.gosmartlib.repositories.LoanRepositories;
 
-import edu.ap.gosmartlib.entities.LoanEntity;
+import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 

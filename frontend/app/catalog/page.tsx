@@ -32,6 +32,8 @@ export default function Home() {
   const [maxYear, setMaxYear] = useState("");
   const [minRating, setMinRating] = useState<number | null>(null);
   const [maxRating, setMaxRating] = useState<number | null>(null);
+  // leerlingen zien didactische boeken sowieso niet maar UX-wise maakt het clean dat ze niet zien dat er een filter is voor iets wat ze toch niet kunnen zien.
+  const [didacticOnly, setDidacticOnly] = useState(false);
 
   // UI state
   const [activeTab, setActiveTab] = useState("Catalogus");
@@ -80,7 +82,8 @@ export default function Home() {
       minYear ||
       maxYear ||
       minRating !== null ||
-      maxRating !== null;
+      maxRating !== null ||
+      didacticOnly;
 
     let url: string;
 
@@ -95,6 +98,7 @@ export default function Home() {
       if (maxYear) params.append("maxPubYear", maxYear);
       if (minRating !== null) params.append("minRating", minRating.toString());
       if (maxRating !== null) params.append("maxRating", maxRating.toString());
+      if (didacticOnly) params.append("didacticOnly", "true");
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/filter?${params}`;
     } else {
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/all?${params}`;
@@ -125,6 +129,7 @@ export default function Home() {
     pageSize,
     minRating,
     maxRating,
+    didacticOnly,
   ]);
 
   // -- Helper methods --------------------------------------------------------------------------------------------------------------
@@ -414,6 +419,24 @@ export default function Home() {
                 </div>
               </div>
             </div>
+            {(user?.role === "TEACHER" ||
+              user?.role === "BIBLIOTHEEKBEHEERDER" ||
+              user?.role === "ADMIN") && (
+              <div className="filterGroup">
+                <span className="filterGroupLabel">Didactische boeken</span>
+                <label className="filterCheckboxLabel filterToggleRow">
+                  Didactische boeken
+                  <input
+                    type="checkbox"
+                    checked={didacticOnly}
+                    onChange={(e) => {
+                      setDidacticOnly(e.target.checked);
+                      resetPage();
+                    }}
+                  />
+                </label>
+              </div>
+            )}
           </div>
         </aside>
 

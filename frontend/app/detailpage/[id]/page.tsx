@@ -18,18 +18,25 @@ interface ReviewWithRating {
   rating: number;
 }
 
+type ExtendedBook = Book & { previewLink?: string };
+
 export default function DetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const [book, setBook] = useState<Book | null>(null);
+  const [book, setBook] = useState<ExtendedBook | null>(null);
   const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
   const [averageReviewRating, setAverageReviewRating] = useState<number | null>(
     null,
   );
   const [currentUser, setCurrentUser] = useState<MeResponse | null>(null);
+
+  const isStaff =
+    currentUser?.role === "TEACHER" ||
+    currentUser?.role === "BIBLIOTHEEKBEHEERDER" ||
+    currentUser?.role === "ADMIN";
 
   const normalizedRating =
     typeof averageReviewRating === "number"
@@ -71,13 +78,14 @@ export default function DetailPage({
       .catch(() => setCurrentUser(null));
   }, []);
 
+  // Ophalen van het boek (Inclusief de kant-en-klare link uit de backend!)
   useEffect(() => {
     if (!id) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`, {
       credentials: "include",
     })
       .then((res) => res.json())
-      .then((data: Book) => {
+      .then((data: ExtendedBook) => {
         setBook(data);
         setImgSrc(
           data.thumbnail?.trim() || "/No-Image-Available-Placeholder.png",
@@ -88,11 +96,21 @@ export default function DetailPage({
   }, [id, fetchAverageReviewRating]);
 
   if (!book) return <p>Loading...</p>;
+  // Bepaal de beschikbaarheid op basis van de inventory voor de school van de gebruiker
   const inv = currentUser
     ? book.inventories?.find((i) => i.schoolId === currentUser.school?.id)
     : undefined;
   const available = inv?.availableCopies ?? 0;
   const total = inv?.totalCopies ?? 0;
+  // Fix http naar https als de opgeslagen link nog http is
+  let displayLink = book.previewLink;
+  if (displayLink && displayLink.startsWith("http://")) {
+    displayLink = displayLink.replace("http://", "https://");
+  }
+
+  // Bepaal de tekst op basis van het type link
+  const isReaderLink = displayLink?.includes("play.google.com/books/reader");
+
   return (
     <main className="detailPage">
       <Link href="/catalog" className="backLink">
@@ -216,6 +234,31 @@ export default function DetailPage({
                 <div className="metaCol">
                   <span className="metaLabel">Dikte</span>
                   <span className="metaValue">{book.pageCount} pagina's</span>
+                </div>
+              )}
+            </div>
+
+            <hr className="detailDivider" />
+
+            {/* DE KNOP NAAR GOOGLE PLAY BOOKS PREVIEW */}
+            <div className="detailPreviewSection my-6">
+              <h3 className="font-semibold text-gray-800 mb-3">
+                Leesvoorbeeld
+              </h3>
+
+              {displayLink ? (
+                <a
+                  href={displayLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="detailPreviewBtn"
+                >
+                  Bekijk de eerste pagina's
+                </a>
+              ) : (
+                <div className="p-4 bg-gray-50 border border-gray-200 text-gray-500 rounded-lg">
+                  Voor dit boek is helaas geen digitaal leesvoorbeeld
+                  beschikbaar.
                 </div>
               )}
             </div>

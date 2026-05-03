@@ -1,16 +1,18 @@
-package edu.ap.gosmartlib.services;
+package edu.ap.gosmartlib.services.Loans;
 
 import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
-import edu.ap.gosmartlib.entities.LoanEntity;
-import edu.ap.gosmartlib.entities.LoanHistoryEntity;
+import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
+import edu.ap.gosmartlib.entities.LoanEntities.LoanHistoryEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.repositories.BookRepository;
-import edu.ap.gosmartlib.repositories.LoanHistoryRepository;
-import edu.ap.gosmartlib.repositories.LoanRepository;
+import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
+import edu.ap.gosmartlib.repositories.LoanRepositories.LoanPolicyRepository;
+import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.services.BookNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,8 @@ public class LoanService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final BookNotificationService bookNotificationService;
+    private final LoanPolicyRepository loanPolicyRepository;
+
     private static final Logger logger = LoggerFactory.getLogger(LoanService.class);
 
     // --- BOEKEN UITLENEN ---
@@ -73,13 +77,15 @@ public class LoanService {
             book.setAvailableCopies(book.getAvailableCopies() - request.quantity());
             bookRepository.save(book);
 
+            int loanPeriod = findReturnPeriodPerSchool(borrower);
+
             // 5. Zet in de uitleen tabel
             LoanEntity loan = new LoanEntity();
             loan.setSmartschoolUserId(request.user().smartschoolUserId());
             loan.setIsbn(book.getIsbn());
             loan.setQuantity(request.quantity());
             loan.setLoanDate(LocalDate.now());
-            loan.setDueDate(LocalDate.now().plusDays(21)); // Standaard 3 weken
+            loan.setDueDate(LocalDate.now().plusDays(loanPeriod));
 
             loanRepository.save(loan);
             
@@ -103,6 +109,7 @@ public class LoanService {
         history.setIsbn(loan.getIsbn());
         history.setQuantity(returnQuantity);
         history.setLoanDate(loan.getLoanDate());
+        history.setDueDate(loan.getDueDate());
         history.setReturnDate(LocalDate.now());
         loanHistoryRepository.save(history);
 
@@ -160,13 +167,27 @@ public class LoanService {
             }
             
             return new ActiveLoanDTO(
-                loan.getId(), 
-                loan.getSmartschoolUserId(), 
-                loan.getQuantity(), 
-                loan.getLoanDate(), 
+                loan.getId(),
+                loan.getSmartschoolUserId(),
+                loan.getQuantity(),
+                loan.getLoanDate(),
+                loan.getDueDate(),
                 safeBook
             );
         }).toList();
+    }
+
+    // --- HELPER: VIND DE DEFAULT RETOUR PERIODE PER SCHOOL ---
+    private int findReturnPeriodPerSchool(UserEntity borrower) {
+        if (borrower.getSchool() == null) {
+            throw new IllegalArgumentException("De lener heeft geen school gekoppeld in de database.");
+        }
+
+        Long schoolId = borrower.getSchool().getId();
+
+        return loanPolicyRepository.findBySchool_Id(schoolId)
+                .map(policy -> policy.getDefaultLoanPeriodDays())
+                .orElse(14); // geen default? Standaard 14 dagen dat geselecteerd wordt
     }
 
     // --- BULK BOEKEN TERUGBRENGEN (Vanuit Frontend Mandje) ---

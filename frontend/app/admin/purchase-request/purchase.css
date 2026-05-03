@@ -1,0 +1,375 @@
+.purchase-page {
+  width: min(1300px, 100%);
+  margin: 5.5rem auto 2rem;
+  padding: 0 1rem;
+  color: #2b2024;
+}
+
+.purchase-title {
+  margin: 0;
+  font-size: 2rem;
+  color: #7a1d3f;
+}
+
+.purchase-subtitle {
+  margin: 0.25rem 0 1.2rem;
+  color: #7b6870;
+}
+
+/* Tabs */
+.tab-bar {
+  display: flex;
+  border-bottom: 2px solid #e2ccd4;
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #7b6870;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.tab-btn:hover {
+  color: #7a1d3f;
+}
+
+.tab-btn.active {
+  color: #7a1d3f;
+  border-bottom-color: #7a1d3f;
+}
+
+/* Form */
+.form-section {
+  max-width: 560px;
+}
+
+.purchase-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid #e7d4dc;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(122, 29, 63, 0.08);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4d3b42;
+}
+
+.form-input {
+  border: 1px solid #d4c4ca;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  color: #2b2024;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #a65a77;
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.author-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.author-row .form-input {
+  flex: 1;
+}
+
+.author-remove-btn {
+  border: 1px solid #e2ccd4;
+  background: #fff;
+  color: #7a1d3f;
+  border-radius: 6px;
+  padding: 0.38rem 0.55rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.author-remove-btn:hover:not(:disabled) {
+  background: #f9ecf1;
+  border-color: #c78499;
+}
+
+.author-add-btn {
+  background: none;
+  border: 1px dashed #c7a8b4;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  color: #7a1d3f;
+  font-size: 0.85rem;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.author-add-btn:hover:not(:disabled) {
+  background: #fdf5f8;
+}
+
+.form-error {
+  margin: 0;
+  color: #b71f49;
+  font-size: 0.9rem;
+}
+
+.form-success {
+  margin: 0;
+  color: #1f6a3f;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.form-submit-btn {
+  align-self: flex-start;
+  background: #7a1d3f;
+  border: 1px solid #7a1d3f;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+
+.form-submit-btn:hover:not(:disabled) {
+  background: #651733;
+  border-color: #651733;
+}
+
+.form-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Overview */
+.overview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.overview-toolbar {
+  border: 1px solid #e2ccd4;
+  border-radius: 12px;
+  padding: 0.85rem;
+  display: flex;
+  gap: 0.8rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  background: #fff;
+  margin-bottom: 0.9rem;
+}
+
+.overview-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.filter-label {
+  font-size: 0.95rem;
+  color: #513741;
+  margin-right: 0.25rem;
+}
+
+.filter-chip {
+  border: 1px solid #d4c4ca;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  background: #f8f4f6;
+  color: #4d3b42;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.filter-chip:hover {
+  border-color: #a65a77;
+}
+
+.filter-chip.active {
+  background: #7a1d3f;
+  border-color: #7a1d3f;
+  color: #fff;
+}
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sort-bar label {
+  font-size: 0.9rem;
+  color: #513741;
+}
+
+.sort-bar select {
+  border: 1px solid #d4c4ca;
+  border-radius: 8px;
+  padding: 0.32rem 0.5rem;
+  background: #fff;
+}
+
+.overview-info {
+  margin: 1rem 0;
+  font-size: 0.95rem;
+  color: #7b6870;
+}
+
+.overview-error {
+  margin: 1rem 0;
+  font-size: 0.95rem;
+  color: #b71f49;
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.overview-pagination {
+  margin-top: 1rem;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 15, 24, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1200;
+}
+
+.modal-box {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border: 1.5px solid #7a1d3f;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 6px 16px rgba(122, 29, 63, 0.18);
+}
+
+.modal-title {
+  margin: 0;
+  color: #7a1d3f;
+  font-size: 1rem;
+}
+
+.modal-text {
+  margin: 0.45rem 0 0.6rem;
+  color: #5e4f56;
+  font-size: 0.9rem;
+}
+
+.modal-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d9c5ce;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  resize: vertical;
+  font: inherit;
+  color: #342a2f;
+  background: #fff;
+}
+
+.modal-input:focus {
+  outline: none;
+  border-color: #a65a77;
+}
+
+.modal-actions {
+  margin-top: 0.8rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.modal-cancel-btn,
+.modal-submit-btn {
+  border-radius: 8px;
+  padding: 0.38rem 0.82rem;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.modal-cancel-btn {
+  border: 1px solid #d9c5ce;
+  background: #fff;
+  color: #5a3f49;
+}
+
+.modal-cancel-btn:hover:not(:disabled) {
+  background: #f9f4f6;
+}
+
+.modal-submit-approve {
+  border: 1px solid #2a7f52;
+  background: #2a7f52;
+  color: #fff;
+}
+
+.modal-submit-approve:hover:not(:disabled) {
+  background: #236641;
+  border-color: #236641;
+}
+
+.modal-submit-reject {
+  border: 1px solid #7a1d3f;
+  background: #7a1d3f;
+  color: #fff;
+}
+
+.modal-submit-reject:hover:not(:disabled) {
+  background: #651733;
+  border-color: #651733;
+}
+
+.modal-cancel-btn:disabled,
+.modal-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

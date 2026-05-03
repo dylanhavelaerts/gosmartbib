@@ -74,7 +74,7 @@ function renderStars(rating: number): string {
   return `${"★".repeat(full)}${"☆".repeat(5 - full)}`;
 }
 
-function formatSchoolLabel(value: string): string {
+export function formatSchoolLabel(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) {
     return "Onbekende school";

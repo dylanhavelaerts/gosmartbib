@@ -12,6 +12,7 @@ public record BookFilterRequest(String query,
                                 Integer maxPubYear,
                                 Double minRating,
                                 Double maxRating,
+                                Boolean didacticOnly,
                                 int page,
                                 int size
 ) {
