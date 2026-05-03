@@ -402,16 +402,11 @@
   padding: 16px 18px 16px 18px;
   border: 1px solid rgba(122, 47, 50, 0.18);
   border-radius: 18px;
-  background:
-    radial-gradient(
-      circle at top left,
-      rgba(246, 222, 219, 0.95),
-      transparent 42%
-    ),
-    #f8fafc;
+  background: #f8fafc;
   color: #1f2937;
   font-weight: 750;
-  line-height: 1.55;
+  line-height: 1;
+  font-size: 0.9rem;
 }
 
 .rld-target-summary::before {
@@ -433,7 +428,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 18px;
+  margin-top: 10px;
   flex-wrap: wrap;
 }
 
@@ -511,9 +506,9 @@
 }
 
 .rld-badge--shared {
-  background: rgba(145, 36, 36, 0.12);
+  border: 1.5px solid #7a2f32;
+  background: transparent;
   color: #7f1d1d;
-  border-color: rgba(145, 36, 36, 0.24);
 }
 
 .rld-share-panel {

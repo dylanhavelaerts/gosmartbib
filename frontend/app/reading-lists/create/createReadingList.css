@@ -155,13 +155,7 @@
   padding: clamp(18px, 2.5vw, 26px);
   border: 1px solid rgba(122, 47, 50, 0.18);
   border-radius: 24px;
-  background:
-    radial-gradient(
-      circle at top left,
-      rgba(246, 222, 219, 0.95),
-      transparent 38%
-    ),
-    #f8fafc;
+  background: #f8fafc;
 }
 
 .assignment-help {
