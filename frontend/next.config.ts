@@ -1,9 +1,19 @@
 import type { NextConfig } from "next";
 
-const nextConfig = {
-  devIndicators: {
-    buildActivity: false,
-    staticIndicator: false,
+const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'covers.openlibrary.org',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+        pathname: '/**',
+      }
+    ],
   },
 };
 
