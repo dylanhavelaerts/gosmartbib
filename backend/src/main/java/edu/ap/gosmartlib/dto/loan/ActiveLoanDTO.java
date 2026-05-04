@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.dto.loan;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record ActiveLoanDTO(
     Long loanId,
@@ -14,6 +15,7 @@ public record ActiveLoanDTO(
         Long id, 
         String title, 
         String thumbnail, 
-        String isbn
+        String isbn,
+        List<String> authors
     ) {}
 }

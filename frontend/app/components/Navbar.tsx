@@ -71,14 +71,17 @@ export default function Navbar() {
                 Mijn leeslijsten
               </button>
             </Link>
-            <Link href="/admin/loan-return/loan">
+            
+            {/* Hier is de link aangepast naar /lended-books */}
+            <Link href="/lended-books">
               <button
                 onClick={() => setIsOpen(false)}
-                className={isActive("/admin/loan-return/loan") ? "active" : ""}
+                className={isActive("/lended-books") ? "active" : ""}
               >
                 Mijn uitleningen
               </button>
             </Link>
+
             {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
               user?.role === "ADMIN" ||
               user?.role === "TEACHER") && (

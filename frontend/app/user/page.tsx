@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import "./userHome.css";
 
 const widgets = [
@@ -12,10 +13,10 @@ const widgets = [
   },
   {
     iconSrc: "/checl.png",
-    iconAlt: "Actieve leningen",
-    title: "Actieve leningen",
-    description: "Overzicht van boeken die je momenteel hebt geleend.",
-    href: "/loans",
+    iconAlt: "Mijn uitleningen",
+    title: "Mijn uitleningen",
+    description: "Overzicht van boeken die je momenteel en in het verleden hebt geleend.",
+    href: "/lended-books",
   },
   {
     iconSrc: "/user.png",
@@ -23,13 +24,6 @@ const widgets = [
     title: "Account info",
     description: "Bekijk en bewerk je profielgegevens.",
     href: "/account",
-  },
-  {
-    iconSrc: "/history.png",
-    iconAlt: "Leenhistoriek",
-    title: "Leenhistoriek",
-    description: "Alle boeken die je in het verleden hebt geleend.",
-    href: "/loan-history",
   },
 ];
 
@@ -53,7 +47,7 @@ export default function UserHome() {
 
       <div className="widget-grid">
         {widgets.map((w) => (
-          <div key={w.href} className="widget-card">
+          <Link key={w.href} href={w.href} className="widget-card">
             <div className="widget-icon">
               <img
                 className="widget-icon-img"
@@ -63,7 +57,7 @@ export default function UserHome() {
             </div>
             <p className="widget-title">{w.title}</p>
             <p className="widget-description">{w.description}</p>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
