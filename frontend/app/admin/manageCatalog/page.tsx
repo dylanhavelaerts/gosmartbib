@@ -16,6 +16,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import "../../catalog/bookList.css";
 import "./editbook.css";
 import ProtectedRoute from "../../components/ProtectedRoute";
+import Pagination from "../../catalog/pagination";
 
 export default function ManageCatalogPage() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -30,29 +31,48 @@ export default function ManageCatalogPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [query, setQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(25);
+  const [totalPages, setTotalPages] = useState(0);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
   const [loadingCampuses, setLoadingCampuses] = useState(false);
   const [campusLoadError, setCampusLoadError] = useState("");
   const router = useRouter();
 
+  // Fetch paged books from backend (with search debounce)
   useEffect(() => {
-    fetch(`${apiUrl}/books/all/unpaged`, { credentials: "include" })
-      .then((res) => {
-        if (!res.ok) throw new Error("Netwerk response was niet ok");
-        return res.json();
-      })
-      .then((data: Book[]) => {
-        setBooks(data);
-        const selectedId = searchParams.get("selectedId");
-        if (selectedId) {
-          const match = data.find((b) => b.id === Number(selectedId));
-          if (match) {
-            setSelectedBook(match);
-          }
-        }
-      })
-      .catch((err) => console.error("Fout bij ophalen boeken:", err));
+    const params = new URLSearchParams();
+    params.append("page", String(currentPage - 1));
+    params.append("size", String(pageSize));
+
+    const isSearching = query.trim() !== "";
+    const url = isSearching
+      ? `${apiUrl}/books/search?query=${encodeURIComponent(query.trim())}&${params}`
+      : `${apiUrl}/books/all?${params}`;
+
+    const delay = isSearching ? 300 : 0;
+    const timer = setTimeout(() => {
+      fetch(url, { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => {
+          setBooks(data.content);
+          setTotalPages(data.totalPages);
+        })
+        .catch((err) => console.error("Fout bij ophalen boeken:", err));
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [query, currentPage, pageSize, apiUrl]);
+
+  // Handle ?selectedId param — fetch the specific book by ID
+  useEffect(() => {
+    const selectedId = searchParams.get("selectedId");
+    if (!selectedId) return;
+    fetch(`${apiUrl}/books/${selectedId}`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((book) => { if (book) setSelectedBook(book); })
+      .catch(() => {});
   }, [apiUrl, searchParams]);
 
   useEffect(() => {
@@ -131,14 +151,9 @@ function handleArrayChange(
   setFormData((prev) => ({ ...prev, [field]: values }));
 }
 
-  const filteredBooks = books.filter((book) => {
-    const q = query.toLowerCase();
-    return (
-      book.title?.toLowerCase().includes(q) ||
-      book.authors?.some((a) => a.toLowerCase().includes(q)) ||
-      book.isbn?.toLowerCase().includes(q)
-    );
-  });
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query]);
 
   async function handleSave() {
     if (!selectedBook) return;
@@ -351,7 +366,7 @@ function handleArrayChange(
                   <p className="empty-message">Geen boeken gevonden.</p>
                 ) : (
                   <ul className="book-list">
-                    {filteredBooks.map((book) => {
+                    {books.map((book) => {
                       const isSelected = selectedBook?.id === book.id;
                       return (
                         <li
@@ -393,6 +408,14 @@ function handleArrayChange(
                     })}
                   </ul>
                 )}
+              </div>
+
+              <div className="list-footer">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
               </div>
             </div>
 

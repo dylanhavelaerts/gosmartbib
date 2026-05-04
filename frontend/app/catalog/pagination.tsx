@@ -24,23 +24,17 @@ export default function Pagination({
 
   if (totalPages <= 0) return null;
 
-  // Bereken welke pagina's zichtbaar moeten zijn
+  // Bereken welke pagina's zichtbaar moeten zijn (±1 rond huidige pagina)
   const visiblePages: number[] = [];
-  const start = Math.max(1, currentPage - 2);
-  const end = Math.min(totalPages, currentPage + 2);
+  const start = Math.max(1, currentPage - 1);
+  const end = Math.min(totalPages, currentPage + 1);
   for (let i = start; i <= end; i++) {
     visiblePages.push(i);
   }
 
-  // Bepaal de eerste en laatste zichtbare pagina
-  const firstVisible = visiblePages[0];
-  const lastVisible = visiblePages[visiblePages.length - 1];
-
-  // Bepaal of we de "Eerste", "Laatste" knoppen en de "..." moeten tonen
-  const showEerste = firstVisible > 1;
-  const showDotsBefore = firstVisible > 2;
-  const showDotsAfter = lastVisible < totalPages - 1;
-  const showLaatste = lastVisible < totalPages;
+  const showPrev = currentPage > 1;
+  const showNext = currentPage < totalPages;
+  const showDotsAfter = end < totalPages;
 
   // Handler voor het springen naar een specifieke pagina via de "..." input
   const handleJump = () => {
@@ -54,36 +48,11 @@ export default function Pagination({
 
   return (
     <div className="pagination">
-      {showEerste && (
-        <button className="paginationBtn" onClick={() => onPageChange(1)}>
-          Eerste
+      {showPrev && (
+        <button className="paginationBtn paginationArrow" onClick={() => onPageChange(currentPage - 1)} aria-label="Vorige pagina">
+          <img src="/back-no-stripe.png" alt="" className="paginationArrowIcon" />
         </button>
       )}
-
-      {showDotsBefore &&
-        (jumpInput === "before" ? (
-          <input
-            className="paginationJumpInput"
-            type="number"
-            min={1}
-            max={totalPages}
-            value={jumpValue}
-            onChange={(e) => setJumpValue(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleJump()}
-            onBlur={handleJump}
-            autoFocus
-          />
-        ) : (
-          <button
-            className="paginationBtn paginationDots"
-            onClick={() => {
-              setJumpInput("before");
-              setJumpValue("");
-            }}
-          >
-            ...
-          </button>
-        ))}
 
       {visiblePages.map((page) => (
         <button
@@ -120,12 +89,13 @@ export default function Pagination({
           </button>
         ))}
 
-      {showLaatste && (
+      {showNext && (
         <button
-          className="paginationBtn"
-          onClick={() => onPageChange(totalPages)}
+          className="paginationBtn paginationArrow"
+          onClick={() => onPageChange(currentPage + 1)}
+          aria-label="Volgende pagina"
         >
-          Laatste
+          <img src="/back-no-stripe.png" alt="" className="paginationArrowIcon paginationArrowFlipped" />
         </button>
       )}
     </div>
