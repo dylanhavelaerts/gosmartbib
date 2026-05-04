@@ -3,7 +3,7 @@ package edu.ap.gosmartlib.controllers;
 import edu.ap.gosmartlib.dto.purchaseRequest.CreatePurchaseRequestDTO;
 import edu.ap.gosmartlib.dto.purchaseRequest.PurchaseRequestDTO;
 import edu.ap.gosmartlib.dto.purchaseRequest.PurchaseRequestNoteDTO;
-import edu.ap.gosmartlib.exceptions.InvalidUserException;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.PurchaseRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,7 +12,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -22,22 +21,19 @@ import java.util.List;
 public class PurchaseRequestController {
 
     private final PurchaseRequestService purchaseRequestService;
+    private final AuthHelper authHelper;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<PurchaseRequestDTO> createRequest(@RequestBody CreatePurchaseRequestDTO dto, @AuthenticationPrincipal OAuth2User principal) {
-        String uid = extractUid(principal);
-
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(purchaseRequestService.createRequest(dto, uid));
+                .body(purchaseRequestService.createRequest(dto, authHelper.extractUid(principal)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<List<PurchaseRequestDTO>> getAllForSchool(@AuthenticationPrincipal OAuth2User principal) {
-        String uid = extractUid(principal);
-
-        return ResponseEntity.ok(purchaseRequestService.findAllForSchool(uid));
+        return ResponseEntity.ok(purchaseRequestService.findAllForSchool(authHelper.extractUid(principal)));
     }
 
     @PatchMapping("/{id}/approve")
@@ -57,16 +53,5 @@ public class PurchaseRequestController {
     public ResponseEntity<Void> deleteRequest(@PathVariable Long id) {
         purchaseRequestService.deleteRequest(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private String extractUid(OAuth2User principal) {
-        if (principal == null)
-            throw new InvalidUserException(HttpStatus.UNAUTHORIZED, "Niet ingelogd");
-
-        String uid = principal.getAttribute("userID");
-        if (uid == null || uid.isBlank())
-            throw new InvalidUserException(HttpStatus.UNAUTHORIZED, "Geen geldige gebruiker");
-
-        return uid;
     }
 }

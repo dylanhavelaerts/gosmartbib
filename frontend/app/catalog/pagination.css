@@ -69,3 +69,19 @@
 .paginationJumpInput {
   -moz-appearance: textfield;
 }
+
+.paginationArrow {
+  padding: 0;
+  width: 2.5rem;
+}
+
+.paginationArrowIcon {
+  width: 0.9rem;
+  height: 0.9rem;
+  object-fit: contain;
+  display: block;
+}
+
+.paginationArrowFlipped {
+  transform: scaleX(-1);
+}

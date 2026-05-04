@@ -630,16 +630,55 @@
   }
 }
 
+/* Header edit/back buttons go full-width on small screens */
 @media (max-width: 720px) {
-  .rld-header-actions,
-  .rld-book-actions {
+  .rld-header-actions {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .rld-btn-outline,
-  .rld-open-btn,
-  .rld-read-btn {
+  .rld-header-actions .rld-btn-outline {
     width: 100%;
+  }
+}
+
+/* Mobile card: switch to column layout */
+@media (max-width: 540px) {
+  .rld-book-card {
+    flex-direction: column;
+  }
+
+  /* Cover becomes a wide banner */
+  .rld-cover {
+    width: 100%;
+    height: 140px;
+  }
+
+  /* Badges stay in the top-right corner of the banner */
+  .rld-book-badges {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  /* Body gets comfortable padding */
+  .rld-book-body {
+    padding: 0.85rem 1rem;
+  }
+
+  /* Buttons: compact row that wraps, not full-width stacks */
+  .rld-book-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .rld-open-btn,
+  .rld-read-btn,
+  .rld-btn-danger {
+    flex: 1 1 auto;
+    width: auto;
+    min-height: 38px;
+    font-size: 0.8rem;
+    padding: 0 12px;
   }
 }

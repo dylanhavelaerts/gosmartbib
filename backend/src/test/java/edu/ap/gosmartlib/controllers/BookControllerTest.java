@@ -9,12 +9,14 @@ import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.BookService;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.ArgumentMatchers.isNull;
@@ -26,7 +28,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.lang.reflect.Method;
@@ -44,6 +46,11 @@ class BookControllerTest {
     private BookService bookService;
     @Mock
     private UserRepository userRepository;
+
+    // @Spy gebruikt de echte implementatie van AuthHelper zodat extractUid/extractUidOrNull
+    // correct werken zonder elke test afzonderlijk te stubben.
+    @Spy
+    private AuthHelper authHelper = new AuthHelper();
 
     @InjectMocks
     private BookController bookController;
@@ -366,8 +373,7 @@ class BookControllerTest {
 
     @Test
     void givenValidExcelFile_whenImportBooks_thenReturnsOkWithImportSummary() {
-
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "books.xlsx",
@@ -382,7 +388,7 @@ class BookControllerTest {
         when(bookService.importBooksFromExcel(any(MultipartFile.class), eq("uid-123"), eq("Campus Zuid")))
                 .thenReturn(expected);
 
-        ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", authentication);
+        ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", principal);
 
         assertEquals(200, result.getStatusCode().value());
         assertSame(expected, result.getBody());
@@ -391,7 +397,7 @@ class BookControllerTest {
 
     @Test
     void givenInvalidExcelFile_whenImportBooks_thenReturnsBadRequest() {
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
 
         MockMultipartFile file = new MockMultipartFile(
                 "file", "books.xlsx",
@@ -401,7 +407,7 @@ class BookControllerTest {
         when(bookService.importBooksFromExcel(any(MultipartFile.class), eq("uid-123"), eq("Campus Zuid")))
                 .thenThrow(new IllegalArgumentException("Upload een excel file die niet leeg is"));
 
-        ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", authentication);
+        ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", principal);
 
         assertEquals(400, result.getStatusCode().value());
         assertEquals("Upload een excel file die niet leeg is", result.getBody());
@@ -410,7 +416,7 @@ class BookControllerTest {
 
     @Test
     void givenUnexpectedServiceError_whenImportBooks_thenReturnsInternalServerError() {
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
 
         MockMultipartFile file = new MockMultipartFile(
                 "file", "books.xlsx",
@@ -420,7 +426,7 @@ class BookControllerTest {
         when(bookService.importBooksFromExcel(any(MultipartFile.class), eq("uid-123"), eq("Campus Zuid")))
                 .thenThrow(new RuntimeException("DB down"));
 
-        ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", authentication);
+        ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", principal);
 
         assertEquals(500, result.getStatusCode().value());
         assertEquals("An error occurred while importing the Excel file.", result.getBody());
@@ -588,7 +594,7 @@ class BookControllerTest {
 
     @Test
     void givenValidManualBookRequest_whenAddManualBook_thenReturnsCreatedBook() {
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
 
         CreateBookRequestDTO request = new CreateBookRequestDTO(
                 "Manual Book", List.of("Author One", "Author Two"), "Manual Publisher", "Manual Description",
@@ -602,7 +608,7 @@ class BookControllerTest {
 
         when(bookService.addManualBook(request, "uid-123")).thenReturn(createdBook);
 
-        ResponseEntity<?> result = bookController.addManualBook(request, authentication);
+        ResponseEntity<?> result = bookController.addManualBook(request, principal);
 
         assertEquals(201, result.getStatusCode().value());
         assertEquals(createdBook, result.getBody());
@@ -611,7 +617,7 @@ class BookControllerTest {
 
     @Test
     void givenBlankTitle_whenAddManualBook_thenReturnsBadRequest() {
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
 
         CreateBookRequestDTO request = new CreateBookRequestDTO(
                 "   ", List.of("Author One"), "Publisher", "Description", 100,
@@ -621,7 +627,7 @@ class BookControllerTest {
         when(bookService.addManualBook(request, "uid-123"))
                 .thenThrow(new IllegalArgumentException("Titel is verplicht"));
 
-        ResponseEntity<?> result = bookController.addManualBook(request, authentication);
+        ResponseEntity<?> result = bookController.addManualBook(request, principal);
 
         assertEquals(400, result.getStatusCode().value());
         assertEquals("Titel is verplicht", result.getBody());
@@ -630,7 +636,7 @@ class BookControllerTest {
 
     @Test
     void givenUnexpectedServiceError_whenAddManualBook_thenReturnsInternalServerError() {
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
 
         CreateBookRequestDTO request = new CreateBookRequestDTO(
                 "Manual Book", List.of("Author One"), "Publisher", "Description", 100,
@@ -639,7 +645,7 @@ class BookControllerTest {
 
         when(bookService.addManualBook(request, "uid-123")).thenThrow(new RuntimeException("DB down"));
 
-        ResponseEntity<?> result = bookController.addManualBook(request, authentication);
+        ResponseEntity<?> result = bookController.addManualBook(request, principal);
 
         assertEquals(500, result.getStatusCode().value());
         assertEquals("An error occurred while saving the book.", result.getBody());
@@ -648,13 +654,12 @@ class BookControllerTest {
 
     @Test
     void givenValidIsbn_whenAddBookByIsbn_thenReturnsCreatedBook() {
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
 
         BookDTO createdBook = buildDTO(5L, "Clean Code");
-        // AANGEPAST: We geven hier 4 argumenten mee aan de test!
         when(bookService.addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null)).thenReturn(createdBook);
 
-        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", null, authentication);
+        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", null, principal);
 
         assertEquals(201, result.getStatusCode().value());
         assertEquals(createdBook, result.getBody());
@@ -663,12 +668,12 @@ class BookControllerTest {
 
     @Test
     void givenUnknownIsbn_whenAddBookByIsbn_thenReturnsNotFound() {
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
 
         when(bookService.addBookByIsbn("0000000000000", "uid-123", "Campus Zuid", null))
                 .thenThrow(new IllegalArgumentException("Geen boek voor ISBN: 0000000000000", null));
 
-        ResponseEntity<?> result = bookController.addBookByIsbn("0000000000000", "Campus Zuid", null, authentication);
+        ResponseEntity<?> result = bookController.addBookByIsbn("0000000000000", "Campus Zuid", null, principal);
 
         assertEquals(404, result.getStatusCode().value());
         assertEquals("Geen boek voor ISBN: 0000000000000", result.getBody());
@@ -677,12 +682,12 @@ class BookControllerTest {
 
     @Test
     void givenUnexpectedServiceError_whenAddBookByIsbn_thenReturnsInternalServerError() {
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
 
         when(bookService.addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null))
                 .thenThrow(new RuntimeException("Google API down"));
 
-        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", null, authentication);
+        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", null, principal);
 
         assertEquals(500, result.getStatusCode().value());
         assertEquals("An error occurred while fetching the book.", result.getBody());
@@ -800,7 +805,7 @@ class BookControllerTest {
 
     @Test
     void givenManualBookRequestWithInventories_whenAddManualBook_thenReturnsCreatedBookWithInventories() {
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
 
         CreateBookRequestDTO request = new CreateBookRequestDTO(
                 "Manual Book",
@@ -833,7 +838,7 @@ class BookControllerTest {
 
         when(bookService.addManualBook(request, "uid-123")).thenReturn(createdBook);
 
-        ResponseEntity<?> result = bookController.addManualBook(request, authentication);
+        ResponseEntity<?> result = bookController.addManualBook(request, principal);
 
         assertEquals(201, result.getStatusCode().value());
         assertEquals(createdBook, result.getBody());
@@ -852,7 +857,7 @@ class BookControllerTest {
 
     @Test
     void givenInvalidInventoryCounts_whenAddManualBook_thenReturnsBadRequest() {
-        Authentication authentication = mockAuthentication("uid-123", UserRoles.ADMIN);
+        OAuth2User principal = mockPrincipal("uid-123");
 
         CreateBookRequestDTO request = new CreateBookRequestDTO(
                 "Manual Book",
@@ -878,7 +883,7 @@ class BookControllerTest {
                 .thenThrow(new IllegalArgumentException(
                         "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren"));
 
-        ResponseEntity<?> result = bookController.addManualBook(request, authentication);
+        ResponseEntity<?> result = bookController.addManualBook(request, principal);
 
         assertEquals(400, result.getStatusCode().value());
         assertEquals("Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren", result.getBody());
@@ -890,15 +895,10 @@ class BookControllerTest {
         return new PageImpl<>(list, PageRequest.of(0, 20), list.size());
     }
 
-    private Authentication mockAuthentication(String uid, UserRoles role) {
-        Authentication authentication = mock(Authentication.class);
-        org.springframework.security.oauth2.core.user.OAuth2User principal = mock(
-                org.springframework.security.oauth2.core.user.OAuth2User.class);
-
-        when(authentication.getPrincipal()).thenReturn(principal);
+    private OAuth2User mockPrincipal(String uid) {
+        OAuth2User principal = mock(OAuth2User.class);
         when(principal.getAttribute("userID")).thenReturn(uid);
-
-        return authentication;
+        return principal;
     }
 
     private BookInventoryDTO buildInventoryDTO(Long id, Long schoolId, String schoolName, String campus,

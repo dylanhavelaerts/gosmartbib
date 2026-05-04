@@ -2,11 +2,13 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.CreateSchoolCampusRequest;
 import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.SchoolCampusDTO;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.schoolIntegration.schoolCampus.SchoolCampusService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -29,6 +31,11 @@ class SchoolCampusControllerTest {
 
     @Mock
     private OAuth2User oAuth2User;
+
+    // @Spy gebruikt de echte implementatie van AuthHelper zodat extractUid/extractUidOrNull
+    // correct werken zonder elke test afzonderlijk te stubben.
+    @Spy
+    private AuthHelper authHelper = new AuthHelper();
 
     @InjectMocks
     private SchoolCampusController schoolCampusController;

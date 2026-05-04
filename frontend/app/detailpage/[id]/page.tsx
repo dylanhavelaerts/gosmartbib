@@ -5,6 +5,7 @@ import {
   use,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { Book } from "../../interfaces/Book";
@@ -16,6 +17,13 @@ import NotificationBell from "@/app/components/Notifications/Notification";
 
 interface ReviewWithRating {
   rating: number;
+}
+
+interface PersonalList {
+  id: number;
+  title: string;
+  taskDescription?: string | null;
+  bookIds: number[];
 }
 
 type ExtendedBook = Book & { previewLink?: string };
@@ -32,6 +40,14 @@ export default function DetailPage({
     null,
   );
   const [currentUser, setCurrentUser] = useState<MeResponse | null>(null);
+  const [readingLists, setReadingLists] = useState<PersonalList[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [addingToList, setAddingToList] = useState<number | null>(null);
+  const [addMsg, setAddMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isStaff =
     currentUser?.role === "TEACHER" ||
@@ -78,6 +94,36 @@ export default function DetailPage({
       .catch(() => setCurrentUser(null));
   }, []);
 
+  useEffect(() => {
+    if (!currentUser) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/reading-lists`, {
+      credentials: "include",
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: PersonalList[]) => {
+        const personal = (Array.isArray(data) ? data : []).filter(
+          (l: PersonalList & { listType?: string; ownList?: boolean }) =>
+            l.listType === "PERSONAL" && l.ownList !== false,
+        );
+        setReadingLists(personal);
+      })
+      .catch(() => setReadingLists([]));
+  }, [currentUser]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+    if (dropdownOpen)
+      document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownOpen]);
+
   // Ophalen van het boek (Inclusief de kant-en-klare link uit de backend!)
   useEffect(() => {
     if (!id) return;
@@ -94,6 +140,49 @@ export default function DetailPage({
       })
       .catch((error) => console.error(error));
   }, [id, fetchAverageReviewRating]);
+
+  const handleAddToList = async (list: PersonalList) => {
+    if (!book) return;
+    if (list.bookIds.includes(book.id)) {
+      setAddMsg({
+        type: "error",
+        text: `"${book.title}" staat al in "${list.title}".`,
+      });
+      setDropdownOpen(false);
+      setTimeout(() => setAddMsg(null), 3000);
+      return;
+    }
+
+    setAddingToList(list.id);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/reading-lists/personal/${list.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            title: list.title,
+            taskDescription: list.taskDescription ?? null,
+            bookIds: [...list.bookIds, book.id],
+          }),
+        },
+      );
+      if (!res.ok) throw new Error();
+      setReadingLists((prev) =>
+        prev.map((l) =>
+          l.id === list.id ? { ...l, bookIds: [...l.bookIds, book.id] } : l,
+        ),
+      );
+      setAddMsg({ type: "success", text: `Toegevoegd aan "${list.title}".` });
+    } catch {
+      setAddMsg({ type: "error", text: "Toevoegen mislukt. Probeer opnieuw." });
+    } finally {
+      setAddingToList(null);
+      setDropdownOpen(false);
+      setTimeout(() => setAddMsg(null), 3000);
+    }
+  };
 
   if (!book) return <p>Loading...</p>;
   // Bepaal de beschikbaarheid op basis van de inventory voor de school van de gebruiker
@@ -143,6 +232,57 @@ export default function DetailPage({
             >
               {inv ? `${available}/${total} beschikbaar` : "Niet beschikbaar"}
             </span>
+          )}
+
+          {/* Toevoegen aan leeslijst */}
+          {currentUser && (
+            <div className="addToListWrapper" ref={dropdownRef}>
+              <button
+                className="addToListBtn"
+                onClick={() => setDropdownOpen((o) => !o)}
+                aria-expanded={dropdownOpen}
+              >
+                + Toevoegen
+                <span className="addToListChevron">
+                  {dropdownOpen ? "▲" : "▼"}
+                </span>
+              </button>
+
+              {dropdownOpen && (
+                <div className="addToListDropdown">
+                  {readingLists.length === 0 ? (
+                    <p className="addToListEmpty">
+                      Geen leeslijsten gevonden.
+                    </p>
+                  ) : (
+                    readingLists.map((list) => {
+                      const alreadyAdded = list.bookIds.includes(book.id);
+                      return (
+                        <button
+                          key={list.id}
+                          className={`addToListItem ${alreadyAdded ? "addToListItem--added" : ""}`}
+                          onClick={() => handleAddToList(list)}
+                          disabled={addingToList === list.id || alreadyAdded}
+                        >
+                          <span className="addToListItemTitle">
+                            {list.title}
+                          </span>
+                          {alreadyAdded && (
+                            <span className="addToListItemCheck">✓</span>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {addMsg && (
+                <p className={`addToListMsg addToListMsg--${addMsg.type}`}>
+                  {addMsg.text}
+                </p>
+              )}
+            </div>
           )}
 
           <div className="detailRatingSection">

@@ -6,10 +6,10 @@ import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveSchoolsRespo
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveUsersResponse;
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationTestResponse;
 import edu.ap.gosmartlib.dto.schoolIntegration.UpsertSchoolIntegrationRequest;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.schoolIntegration.SchoolIntegrationAdminService;
 import edu.ap.gosmartlib.services.schoolIntegration.SchoolIntegrationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/admin/schools/{schoolId}/integration")
@@ -29,13 +28,14 @@ public class SchoolIntegrationAdminController {
 
     private final SchoolIntegrationService schoolIntegrationService;
     private final SchoolIntegrationAdminService schoolIntegrationAdminService;
+    private final AuthHelper authHelper;
 
     @GetMapping
     @PreAuthorize("@roleGuard.isAdmin(authentication)")
     public SchoolIntegrationDTO getIntegration(
             @PathVariable Long schoolId,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        return schoolIntegrationService.getIntegration(extractUid(oAuth2User), schoolId);
+            @AuthenticationPrincipal OAuth2User principal) {
+        return schoolIntegrationService.getIntegration(authHelper.extractUid(principal), schoolId);
     }
 
     @PutMapping
@@ -43,52 +43,39 @@ public class SchoolIntegrationAdminController {
     public SchoolIntegrationDTO upsertIntegration(
             @PathVariable Long schoolId,
             @RequestBody UpsertSchoolIntegrationRequest request,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        return schoolIntegrationService.upsertIntegration(extractUid(oAuth2User), schoolId, request);
+            @AuthenticationPrincipal OAuth2User principal) {
+        return schoolIntegrationService.upsertIntegration(authHelper.extractUid(principal), schoolId, request);
     }
 
     @PostMapping("/test")
     @PreAuthorize("@roleGuard.isAdmin(authentication)")
     public SchoolIntegrationTestResponse testIntegration(
             @PathVariable Long schoolId,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        return schoolIntegrationAdminService.testIntegration(extractUid(oAuth2User), schoolId);
+            @AuthenticationPrincipal OAuth2User principal) {
+        return schoolIntegrationAdminService.testIntegration(authHelper.extractUid(principal), schoolId);
     }
 
     @GetMapping("/live/schools")
     @PreAuthorize("@roleGuard.isAdmin(authentication)")
     public SchoolIntegrationLiveSchoolsResponse getLiveSchools(
             @PathVariable Long schoolId,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        return schoolIntegrationAdminService.getLiveSchools(extractUid(oAuth2User), schoolId);
+            @AuthenticationPrincipal OAuth2User principal) {
+        return schoolIntegrationAdminService.getLiveSchools(authHelper.extractUid(principal), schoolId);
     }
 
     @GetMapping("/live/users")
     @PreAuthorize("@roleGuard.isAdmin(authentication)")
     public SchoolIntegrationLiveUsersResponse getLiveUsers(
             @PathVariable Long schoolId,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        return schoolIntegrationAdminService.getLiveUsers(extractUid(oAuth2User), schoolId);
+            @AuthenticationPrincipal OAuth2User principal) {
+        return schoolIntegrationAdminService.getLiveUsers(authHelper.extractUid(principal), schoolId);
     }
 
     @GetMapping("/live/classes")
     @PreAuthorize("@roleGuard.isAdmin(authentication)")
     public SchoolIntegrationLiveClassesResponse getLiveClasses(
             @PathVariable Long schoolId,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        return schoolIntegrationAdminService.getLiveClasses(extractUid(oAuth2User), schoolId);
-    }
-
-    private String extractUid(OAuth2User oAuth2User) {
-        if (oAuth2User == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Niet ingelogd");
-        }
-
-        String uid = oAuth2User.getAttribute("userID");
-        if (uid == null || uid.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Geen geldige gebruiker");
-        }
-
-        return uid;
+            @AuthenticationPrincipal OAuth2User principal) {
+        return schoolIntegrationAdminService.getLiveClasses(authHelper.extractUid(principal), schoolId);
     }
 }
