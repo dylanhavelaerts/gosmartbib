@@ -138,11 +138,6 @@ public class BookService {
         return visible;
     }
 
-    public void deleteBook(Long id) throws BookNotFoundException {
-        BookEntity book = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException(id));
-        bookRepository.delete(book);
-    }
-
     public void updateSpotlight(Long id, boolean spotlight) {
         BookEntity book = bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));

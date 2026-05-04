@@ -140,21 +140,7 @@ class BookControllerTest {
         verify(bookService, times(1)).getBookById(99L, UserRoles.STUDENT, null);
     }
 
-    @Test
-    void givenBookExists_whenDeleteBook_thenReturnsNoContent() throws BookNotFoundException {
-        ResponseEntity<Void> result = bookController.deleteBook(1L);
 
-        assertEquals(204, result.getStatusCode().value());
-        verify(bookService, times(1)).deleteBook(1L);
-    }
-
-    @Test
-    void givenBookDoesNotExist_whenDeleteBook_thenThrowsBookNotFoundException() throws BookNotFoundException {
-        doThrow(new BookNotFoundException(99L)).when(bookService).deleteBook(99L);
-
-        assertThrows(BookNotFoundException.class, () -> bookController.deleteBook(99L));
-        verify(bookService, times(1)).deleteBook(99L);
-    }
 
     @Test
     void givenSpotlightBooksExist_whenGetBooksInSpotlight_thenReturnsExpectedDTOs() {
@@ -559,14 +545,6 @@ class BookControllerTest {
         verifyNoMoreInteractions(bookService);
     }
 
-    @Test
-    void deleteBook_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
-        Method method = BookController.class.getMethod("deleteBook", Long.class);
-        PreAuthorize preAuthorize = method.getAnnotation(PreAuthorize.class);
-
-        assertNotNull(preAuthorize);
-        assertEquals("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')", preAuthorize.value());
-    }
 
     @Test
     void updateBook_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {

@@ -294,25 +294,6 @@ class BookServiceTest {
         verify(bookRepository).findDetailedById(10L);
     }
 
-    // --- deleteBook Tests ---
-
-    @Test
-    void givenBookExists_whenDeleteBook_thenRepositoryDeleteIsCalled() {
-        BookEntity book = buildBook();
-        when(bookRepository.findById(10L)).thenReturn(Optional.of(book));
-
-        bookService.deleteBook(10L);
-
-        verify(bookRepository).delete(book);
-    }
-
-    @Test
-    void givenBookDoesNotExist_whenDeleteBook_thenThrowsBookNotFoundException() {
-        when(bookRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThrows(BookNotFoundException.class, () -> bookService.deleteBook(99L));
-        verify(bookRepository, never()).delete(any(BookEntity.class));
-    }
 
     // --- getTop4BooksInSpotlight Tests ---
 

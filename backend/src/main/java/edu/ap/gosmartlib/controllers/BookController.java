@@ -180,16 +180,7 @@ public class BookController {
         }
     }
 
-    /**
-     * Verwijdert een boek via het id.
-     * Geeft 204 No Content terug bij succes.
-     */
-    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBook(@PathVariable Long id) throws BookNotFoundException {
-        bookService.deleteBook(id);
-        return ResponseEntity.noContent().build();
-    }
+
 
     /**
      * Past de spotlight status aan van een boek.

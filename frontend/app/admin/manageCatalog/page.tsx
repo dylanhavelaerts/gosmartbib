@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  BOOK_CATEGORIES,
-  BOOK_LABELS,
-} from "../../interfaces/Book";
+import { BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
 import type { Book, BookInventory } from "../../interfaces/Book";
 import type { MeResponse } from "../../interfaces/user";
 import type { SchoolCampusDTO } from "../../interfaces/schoolIntegration";
@@ -27,8 +24,6 @@ export default function ManageCatalogPage() {
   const searchParams = useSearchParams();
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [labelDropdownOpen, setLabelDropdownOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [query, setQuery] = useState("");
   const [me, setMe] = useState<MeResponse | null>(null);
   const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
@@ -121,15 +116,14 @@ export default function ManageCatalogPage() {
             : value,
     }));
   }
-function handleArrayChange(
-  e: React.ChangeEvent<HTMLInputElement>,
-  field: keyof Book,
-) {
-  const values = e.target.value
-    .split(",")
+  function handleArrayChange(
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: keyof Book,
+  ) {
+    const values = e.target.value.split(",");
 
-  setFormData((prev) => ({ ...prev, [field]: values }));
-}
+    setFormData((prev) => ({ ...prev, [field]: values }));
+  }
 
   const filteredBooks = books.filter((book) => {
     const q = query.toLowerCase();
@@ -201,9 +195,9 @@ function handleArrayChange(
 
     const payload = {
       ...formData,
-    authors: (formData.authors ?? [])
-      .map((author) => author.trim())
-      .filter((author) => author !== ""),
+      authors: (formData.authors ?? [])
+        .map((author) => author.trim())
+        .filter((author) => author !== ""),
       totalCopies: computedTotalCopies,
       availableCopies: computedAvailableCopies,
       inventories: inventories.map((inventory) => ({
@@ -233,27 +227,6 @@ function handleArrayChange(
       closeModal();
     } catch {
       setError("Er is iets misgegaan tijdens het opslaan, probeer opnieuw.");
-    }
-  }
-
-  async function tryDelete() {
-    if (!selectedBook) return;
-    setDeleting(true);
-    try {
-      const res = await fetch(`${apiUrl}/books/${selectedBook.id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Delete failed");
-      setBooks((prev) => prev.filter((b) => b.id !== selectedBook.id));
-      setSelectedBook(null);
-      setShowDeleteConfirm(false);
-    } catch {
-      setError(
-        "Er is iets misgegaan tijdens het verwijderen, probeer opnieuw.",
-      );
-    } finally {
-      setDeleting(false);
     }
   }
 
@@ -316,8 +289,8 @@ function handleArrayChange(
   }
 
   const editableInventoryRows = (formData.inventories ?? [])
-  .map((inventory, index) => ({ inventory, index }))
-  .filter(({ inventory }) => inventory.schoolId === me?.school?.id);
+    .map((inventory, index) => ({ inventory, index }))
+    .filter(({ inventory }) => inventory.schoolId === me?.school?.id);
 
   return (
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
@@ -419,13 +392,6 @@ function handleArrayChange(
                         type="button"
                       >
                         Bewerken
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="btn-danger"
-                        type="button"
-                      >
-                        Verwijderen
                       </button>
                     </div>
                   </div>
@@ -849,14 +815,19 @@ function handleArrayChange(
                     )}
 
                     {editableInventoryRows.map(({ inventory, index }) => (
-                      <div key={inventory.id ?? index} className="inventory-editor-card">
+                      <div
+                        key={inventory.id ?? index}
+                        className="inventory-editor-card"
+                      >
                         <div className="inventory-editor-grid">
                           <div>
                             <label className="modal-label">School</label>
                             <input
                               className="modal-input"
                               type="text"
-                              value={inventory.schoolName || me?.school?.name || ""}
+                              value={
+                                inventory.schoolName || me?.school?.name || ""
+                              }
                               disabled
                             />
                           </div>
@@ -867,24 +838,31 @@ function handleArrayChange(
                               className="modal-input"
                               value={inventory.campus || ""}
                               onChange={(e) =>
-                                handleInventoryChange(index, "campus", e.target.value)
+                                handleInventoryChange(
+                                  index,
+                                  "campus",
+                                  e.target.value,
+                                )
                               }
                               disabled={loadingCampuses}
                             >
                               <option value="">
-                                {loadingCampuses ? "Campussen laden..." : "Geen campus"}
+                                {loadingCampuses
+                                  ? "Campussen laden..."
+                                  : "Geen campus"}
                               </option>
 
-                              {getCampusSelectOptions(campuses, inventory.campus).map(
-                                (campusOption) => (
-                                  <option
-                                    key={`${campusOption.id}-${campusOption.name}`}
-                                    value={campusOption.name}
-                                  >
-                                    {campusOption.name}
-                                  </option>
-                                ),
-                              )}
+                              {getCampusSelectOptions(
+                                campuses,
+                                inventory.campus,
+                              ).map((campusOption) => (
+                                <option
+                                  key={`${campusOption.id}-${campusOption.name}`}
+                                  value={campusOption.name}
+                                >
+                                  {campusOption.name}
+                                </option>
+                              ))}
                             </select>
                           </div>
 
@@ -958,35 +936,6 @@ function handleArrayChange(
                     onClick={handleSave}
                   >
                     Opslaan
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* VERWIJDER MODAL */}
-          {showDeleteConfirm && selectedBook && (
-            <div className="modalOverlay">
-              <div className="modalBox">
-                <p>
-                  Ben je zeker dat je <strong>{selectedBook.title}</strong> wilt
-                  verwijderen?
-                </p>
-                <p>Deze actie is onterugkeerbaar!</p>
-                <div>
-                  <button
-                    className="gobackButton"
-                    onClick={() => setShowDeleteConfirm(false)}
-                    disabled={deleting}
-                  >
-                    Ga terug
-                  </button>
-                  <button
-                    className="confirmButton"
-                    onClick={tryDelete}
-                    disabled={deleting}
-                  >
-                    {deleting ? "Verwijderen..." : "Bevestig"}
                   </button>
                 </div>
               </div>
