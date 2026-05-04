@@ -1,15 +1,20 @@
 package edu.ap.gosmartlib.dto.loan;
 
+import edu.ap.gosmartlib.util.UserRoles;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
-public record ActiveLoanDTO(
+public record LoanExtensionRequestDTO(
         Long loanId,
         String smartschoolUserId,
+        UserRoles borrowerRole,
         int quantity,
         LocalDate loanDate,
-        LocalDate dueDate,
-        String extensionStatus,
+        LocalDate currentDueDate,
+        LocalDate proposedDueDate,
+        LocalDateTime requestedAt,
         LoanBookDTO book) {
     public record LoanBookDTO(
             Long id,
