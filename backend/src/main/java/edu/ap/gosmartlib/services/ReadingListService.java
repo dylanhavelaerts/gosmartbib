@@ -787,15 +787,29 @@ public class ReadingListService {
         LinkedHashSet<String> uids = new LinkedHashSet<>();
 
         for (ReadingListEntity list : lists) {
-            if (canSeeLocalTargetDetails(list, currentUser)) {
+            if (canSeeCreatorLiveName(list, currentUser)) {
                 addUid(uids, list.getCreator().getSmartschoolUid());
+            }
 
+            if (canSeeLocalTargetDetails(list, currentUser)) {
                 list.getTargetStudents()
                         .forEach(student -> addUid(uids, student.getSmartschoolUid()));
             }
         }
 
         return new ArrayList<>(uids);
+    }
+
+    private boolean canSeeCreatorLiveName(ReadingListEntity list, UserEntity currentUser) {
+        if (list == null || currentUser == null || list.getCreator() == null) {
+            return false;
+        }
+
+        if (Objects.equals(list.getCreator().getId(), currentUser.getId())) {
+            return true;
+        }
+
+        return isSameSchool(list.getCreator(), currentUser);
     }
 
     private void addUid(Set<String> uids, String uid) {

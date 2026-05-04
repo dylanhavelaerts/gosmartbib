@@ -99,15 +99,6 @@ class ReadingListServiceLiveNamesTest {
         when(readingListRepository.findAllByListTypeOrderByIdDesc(ReadingListType.CLASS))
                 .thenReturn(List.of(classList));
 
-        when(userDirectoryService.resolveDisplayNames(any(), any()))
-                .thenReturn(new ResolveDisplayNamesResponse(
-                        true,
-                        1,
-                        0,
-                        Map.of(),
-                        List.of("teacher-uid"),
-                        "not found"));
-
         List<ReadingListOverviewDTO> result = readingListService.getVisibleLists("student-uid");
 
         assertEquals(1, result.size());

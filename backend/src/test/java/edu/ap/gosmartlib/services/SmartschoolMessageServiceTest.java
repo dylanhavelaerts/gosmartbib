@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -40,7 +41,6 @@ class SmartschoolMessageServiceTest {
         UserEntity user = buildUser(null, buildSchool(1L));
         SchoolIntegrationEntity integration = buildIntegration();
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
-        when(authService.getAccessToken(integration)).thenReturn("access-token");
 
         assertDoesNotThrow(() -> smartschoolMessageService.sendMessage(user, "Titel", "Bericht"));
 
@@ -53,7 +53,6 @@ class SmartschoolMessageServiceTest {
         UserEntity user = buildUser("  ", buildSchool(1L));
         SchoolIntegrationEntity integration = buildIntegration();
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
-        when(authService.getAccessToken(integration)).thenReturn("access-token");
 
         assertDoesNotThrow(() -> smartschoolMessageService.sendMessage(user, "Titel", "Bericht"));
 
@@ -78,8 +77,6 @@ class SmartschoolMessageServiceTest {
         SchoolIntegrationEntity integration = buildIntegration();
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
         when(authService.getAccessToken(integration)).thenReturn("access-token");
-        when(oneRosterClient.getUserBySourcedId(integration, "access-token", "sourced-id-1"))
-                .thenReturn(Map.of());
 
         assertDoesNotThrow(() -> smartschoolMessageService.sendMessage(user, "Titel", "Bericht"));
 
@@ -90,14 +87,19 @@ class SmartschoolMessageServiceTest {
     void givenValidUser_whenSendMessage_thenDelegatesToSoapClient() {
         UserEntity user = buildUser("sourced-id-1", buildSchool(1L));
         SchoolIntegrationEntity integration = buildIntegration();
+
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
         when(authService.getAccessToken(integration)).thenReturn("access-token");
-        when(oneRosterClient.getUserBySourcedId(integration, "access-token", "sourced-id-1"))
-                .thenReturn(Map.of("username", "jan.janssen"));
+        when(oneRosterClient.getUsers(integration, "access-token"))
+                .thenReturn(List.of(
+                        Map.of(
+                                "sourcedId", "sourced-id-1",
+                                "username", "jan.janssen")));
 
         smartschoolMessageService.sendMessage(user, "Boek beschikbaar", "Inhoud");
 
-        verify(soapClient, times(1)).sendMessage(integration, "jan.janssen", "Boek beschikbaar", "Inhoud");
+        verify(soapClient, times(1))
+                .sendMessage(integration, "jan.janssen", "Boek beschikbaar", "Inhoud");
     }
 
     // --- helpers ---
