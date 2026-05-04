@@ -3,6 +3,8 @@ package edu.ap.gosmartlib.services;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO;
 import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
+import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
+import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus;
 import edu.ap.gosmartlib.entities.*;
 import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
@@ -24,9 +26,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +48,8 @@ class LoanServiceTest {
     private BookNotificationService bookNotificationService;
     @Mock
     private LoanPolicyRepository loanPolicyRepository;
+    @Mock
+    private UserDirectoryService userDirectoryService;
 
     @InjectMocks
     private LoanService loanService;
@@ -501,6 +507,18 @@ class LoanServiceTest {
         when(userRepository.findBySmartschoolUid("beheerder-1")).thenReturn(Optional.of(beheerder));
         when(loanRepository.findExtensionRequestsForSchool(LoanExtensionStatus.PENDING, 5L))
                 .thenReturn(List.of(loan));
+
+        when(userDirectoryService.resolveDisplayNames(
+                eq("beheerder-1"),
+                any(ResolveDisplayNamesRequest.class)))
+                .thenReturn(new ResolveDisplayNamesResponse(
+                        true,
+                        1,
+                        1,
+                        Map.of("uid-1", "Jan Janssens"),
+                        List.of(),
+                        "OK"));
+
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(borrower));
         when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(book));
 
@@ -513,12 +531,17 @@ class LoanServiceTest {
         LoanExtensionRequestDTO dto = results.get(0);
         assertEquals(1L, dto.loanId());
         assertEquals("uid-1", dto.smartschoolUserId());
+        assertEquals("Jan Janssens", dto.borrowerDisplayName());
         assertEquals(UserRoles.STUDENT, dto.borrowerRole());
         assertEquals(loan.getDueDate(), dto.currentDueDate());
         assertEquals(loan.getDueDate().plusDays(21), dto.proposedDueDate());
         assertNotNull(dto.requestedAt());
         assertNotNull(dto.book());
         assertEquals("Test Book", dto.book().title());
+
+        verify(userDirectoryService, times(1)).resolveDisplayNames(
+                eq("beheerder-1"),
+                any(ResolveDisplayNamesRequest.class));
     }
 
     @Test

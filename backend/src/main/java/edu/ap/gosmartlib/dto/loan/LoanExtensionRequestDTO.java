@@ -7,20 +7,21 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record LoanExtensionRequestDTO(
-        Long loanId,
-        String smartschoolUserId,
-        UserRoles borrowerRole,
-        int quantity,
-        LocalDate loanDate,
-        LocalDate currentDueDate,
-        LocalDate proposedDueDate,
-        LocalDateTime requestedAt,
-        LoanBookDTO book) {
-    public record LoanBookDTO(
-            Long id,
-            String title,
-            String thumbnail,
-            String isbn,
-            List<String> authors) {
-    }
+                Long loanId,
+                String smartschoolUserId,
+                String borrowerDisplayName,
+                UserRoles borrowerRole,
+                int quantity,
+                LocalDate loanDate,
+                LocalDate currentDueDate,
+                LocalDate proposedDueDate,
+                LocalDateTime requestedAt,
+                LoanBookDTO book) {
+        public record LoanBookDTO(
+                        Long id,
+                        String title,
+                        String thumbnail,
+                        String isbn,
+                        List<String> authors) {
+        }
 }

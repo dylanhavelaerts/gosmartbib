@@ -5,6 +5,7 @@ import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
 import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
+import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
 import edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus;
@@ -16,6 +17,7 @@ import edu.ap.gosmartlib.repositories.LoanRepositories.LoanPolicyRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.BookNotificationService;
+import edu.ap.gosmartlib.services.UserDirectoryService;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -29,6 +31,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 
@@ -42,6 +45,7 @@ public class LoanService {
     private final UserRepository userRepository;
     private final BookNotificationService bookNotificationService;
     private final LoanPolicyRepository loanPolicyRepository;
+    private final UserDirectoryService userDirectoryService;
 
     private static final Logger logger = LoggerFactory.getLogger(LoanService.class);
 
@@ -240,9 +244,20 @@ public class LoanService {
         UserEntity actor = requireBibliotheekbeheerder(actorUid);
         Long schoolId = actor.getSchool().getId();
 
-        return loanRepository.findExtensionRequestsForSchool(LoanExtensionStatus.PENDING, schoolId)
-                .stream()
-                .map(this::toLoanExtensionRequestDTO)
+        List<LoanEntity> loans = loanRepository.findExtensionRequestsForSchool(
+                LoanExtensionStatus.PENDING,
+                schoolId);
+
+        List<String> borrowerUids = loans.stream()
+                .map(LoanEntity::getSmartschoolUserId)
+                .filter(uid -> uid != null && !uid.isBlank())
+                .distinct()
+                .toList();
+
+        Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, borrowerUids);
+
+        return loans.stream()
+                .map(loan -> toLoanExtensionRequestDTO(loan, displayNames))
                 .toList();
     }
 
@@ -323,7 +338,10 @@ public class LoanService {
         return loan.getDueDate().plusDays(currentLoanPeriodDays);
     }
 
-    private LoanExtensionRequestDTO toLoanExtensionRequestDTO(LoanEntity loan) {
+    private LoanExtensionRequestDTO toLoanExtensionRequestDTO(
+            LoanEntity loan,
+            Map<String, String> displayNames) {
+
         UserEntity borrower = userRepository.findBySmartschoolUid(loan.getSmartschoolUserId())
                 .orElseThrow(() -> new IllegalArgumentException("Lener niet gevonden."));
 
@@ -347,6 +365,7 @@ public class LoanService {
         return new LoanExtensionRequestDTO(
                 loan.getId(),
                 loan.getSmartschoolUserId(),
+                resolveBorrowerDisplayName(borrower, displayNames),
                 borrower.getRole(),
                 loan.getQuantity(),
                 loan.getLoanDate(),
@@ -440,5 +459,51 @@ public class LoanService {
             dto.setQuantity(history.getQuantity());
             return dto;
         }).collect(Collectors.toList());
+    }
+
+    private Map<String, String> resolveDisplayNamesMap(String actorUid, List<String> uids) {
+        if (uids == null || uids.isEmpty()) {
+            return Map.of();
+        }
+
+        try {
+            var response = userDirectoryService.resolveDisplayNames(
+                    actorUid,
+                    new ResolveDisplayNamesRequest(uids));
+
+            if (response == null || !response.success() || response.displayNames() == null) {
+                return Map.of();
+            }
+
+            return response.displayNames();
+        } catch (Exception ex) {
+            return Map.of();
+        }
+    }
+
+    private String resolveBorrowerDisplayName(UserEntity borrower, Map<String, String> displayNames) {
+        String borrowerUid = borrower.getSmartschoolUid();
+
+        if (borrowerUid != null && !borrowerUid.isBlank()) {
+            String resolvedName = displayNames.get(borrowerUid);
+
+            if (resolvedName != null && !resolvedName.isBlank()) {
+                return resolvedName;
+            }
+        }
+
+        return fallbackBorrowerLabel(borrower);
+    }
+
+    private String fallbackBorrowerLabel(UserEntity borrower) {
+        if (borrower.getRole() == UserRoles.STUDENT) {
+            return "Leerling";
+        }
+
+        if (borrower.getRole() == UserRoles.TEACHER) {
+            return "Leerkracht";
+        }
+
+        return "Gebruiker";
     }
 }

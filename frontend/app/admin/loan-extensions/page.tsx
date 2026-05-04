@@ -16,6 +16,7 @@ interface LoanBookDTO {
 interface LoanExtensionRequestDTO {
   loanId: number;
   smartschoolUserId: string;
+  borrowerDisplayName: string | null;
   borrowerRole: "STUDENT" | "TEACHER" | "BIBLIOTHEEKBEHEERDER" | "ADMIN" | string;
   quantity: number;
   loanDate: string;
@@ -170,7 +171,7 @@ export default function LoanExtensionsPage() {
                   <div className="loanExtensionMetaGrid">
                     <div>
                       <span>Gebruiker</span>
-                      <strong>{request.smartschoolUserId}</strong>
+                      <strong>{request.borrowerDisplayName || getRoleLabel(request.borrowerRole)}</strong>
                     </div>
                     <div>
                       <span>Aantal</span>
