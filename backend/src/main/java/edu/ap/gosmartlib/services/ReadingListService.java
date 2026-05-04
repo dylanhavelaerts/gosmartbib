@@ -865,6 +865,7 @@ public class ReadingListService {
                 list.getDeadline(),
                 resolveCreatorName(list, displayNames),
                 list.getBooks().size(),
+                list.getBooks().stream().map(BookEntity::getId).toList(),
                 list.getListType(),
                 Objects.equals(list.getCreator().getId(), currentUser.getId()),
                 list.isPublicVisible(),

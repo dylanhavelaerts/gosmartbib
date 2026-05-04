@@ -251,12 +251,12 @@ export default function DetailPage({
               {dropdownOpen && (
                 <div className="addToListDropdown">
                   {readingLists.length === 0 ? (
-                    <p className="addToListEmpty">
-                      Geen leeslijsten gevonden.
-                    </p>
+                    <p className="addToListEmpty">Geen leeslijsten gevonden.</p>
                   ) : (
                     readingLists.map((list) => {
-                      const alreadyAdded = list.bookIds.includes(book.id);
+                      const alreadyAdded = (list.bookIds ?? []).includes(
+                        book.id,
+                      );
                       return (
                         <button
                           key={list.id}
