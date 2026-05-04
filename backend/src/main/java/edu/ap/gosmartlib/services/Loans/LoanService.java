@@ -222,12 +222,21 @@ public class LoanService {
             throw new IllegalArgumentException("Je kunt alleen een verlenging aanvragen voor je eigen uitleningen.");
         }
 
-        if (loan.getExtensionStatus() == LoanExtensionStatus.PENDING) {
+        LoanExtensionStatus currentStatus = loan.getExtensionStatus() != null
+                ? loan.getExtensionStatus()
+                : LoanExtensionStatus.NONE;
+
+        if (currentStatus == LoanExtensionStatus.PENDING) {
             throw new IllegalArgumentException("Er staat al een verlengingsaanvraag open voor deze lening.");
         }
 
-        if (loan.getExtensionStatus() == LoanExtensionStatus.APPROVED) {
+        if (currentStatus == LoanExtensionStatus.APPROVED) {
             throw new IllegalArgumentException("Deze lening werd al verlengd.");
+        }
+
+        if (currentStatus == LoanExtensionStatus.DENIED) {
+            throw new IllegalArgumentException(
+                    "Deze verlengingsaanvraag werd al geweigerd. Je kunt geen nieuwe aanvraag indienen.");
         }
 
         loan.setExtensionStatus(LoanExtensionStatus.PENDING);

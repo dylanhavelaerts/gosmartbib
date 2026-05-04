@@ -646,4 +646,25 @@ class LoanServiceTest {
         assertTrue(ex.getMessage().contains("geen open verlengingsaanvraag"));
         verify(loanRepository, never()).save(any());
     }
+
+    @Test
+    void givenDeniedLoan_whenRequestLoanExtension_thenThrowsException() {
+        // Arrange
+        SchoolEntity school = buildSchool(5L);
+        UserEntity student = buildUserWithRole(1L, "uid-1", school, UserRoles.STUDENT);
+
+        LoanEntity loan = buildLoan(1L, "uid-1", "9780000000001", 1);
+        loan.setExtensionStatus(LoanExtensionStatus.DENIED);
+
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(student));
+        when(loanRepository.findById(1L)).thenReturn(Optional.of(loan));
+
+        // Act & Assert
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> loanService.requestLoanExtension(1L, "uid-1"));
+
+        assertTrue(ex.getMessage().contains("werd al geweigerd"));
+        verify(loanRepository, never()).save(any());
+    }
 }

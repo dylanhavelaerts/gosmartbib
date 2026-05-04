@@ -223,7 +223,7 @@ export default function MijnBoekenPage() {
                 const extensionText = getExtensionText(loan.extensionStatus);
                 const showRequestButton =
                   canRequestExtension &&
-                  (loan.extensionStatus === "NONE" || loan.extensionStatus === "DENIED");
+                  (loan.extensionStatus === "NONE");
 
                 return (
                   <div key={loan.loanId} className="bookCard">
@@ -259,7 +259,6 @@ export default function MijnBoekenPage() {
                         {loan.book?.title || "Onbekend boek"}
                       </h3>
                       
-                      {/* Nieuwe controle op de auteurs array */}
                       <p className="bookCardAuthor">
                         {loan.book?.authors && loan.book.authors.length > 0 
                           ? loan.book.authors.join(", ") 
@@ -297,10 +296,7 @@ export default function MijnBoekenPage() {
                             onClick={() => requestExtension(loan.loanId)}
                           >
                             {requestingLoanId === loan.loanId
-                              ? "Aanvragen..."
-                              : loan.extensionStatus === "DENIED"
-                                ? "Opnieuw verlenging aanvragen"
-                                : "Verlenging aanvragen"}
+                              ? "Aanvragen..." : "Verlenging aanvragen"}
                           </button>
                         )}
                       </div>
