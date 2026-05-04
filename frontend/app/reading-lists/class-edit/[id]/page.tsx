@@ -128,6 +128,12 @@ export default function EditClassReadingListPage() {
           throw new Error("Alleen klaslijsten kunnen hier bewerkt worden.");
         }
 
+        if (!data.ownList) {
+          throw new Error(
+            "Je kan alleen klasleeslijsten bewerken die je zelf hebt aangemaakt.",
+          );
+        }
+
         setTitle(data.title || "");
         setTaskDescription(data.taskDescription || "");
         setDeadline(toDatetimeLocal(data.deadline));

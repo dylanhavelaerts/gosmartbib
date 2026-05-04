@@ -201,7 +201,8 @@ export default function ReadingListsPage() {
             const deadline = formatDeadline(list.deadline);
             const bookCount = list.bookCount ?? list.bookIds?.length ?? 0;
             const isClass = list.listType === "CLASS";
-            const canDeleteClass = isStaff && isClass && list.ownList;
+            const canEditClass = isStaff && isClass && list.ownList;
+            const canDeleteClass = canEditClass;
             const canEditPersonal = list.listType === "PERSONAL" && list.ownList;
             const canCopySharedLink =
               canEditPersonal && list.publicVisible && !!list.publicUid;
@@ -273,6 +274,17 @@ export default function ReadingListsPage() {
                       className="rl-btn-outline"
                       onClick={() =>
                         router.push(`/reading-lists/personal?edit=${list.id}`)
+                      }
+                    >
+                      Bewerken
+                    </button>
+                  )}
+
+                  {canEditClass && (
+                    <button
+                      className="rl-btn-outline"
+                      onClick={() =>
+                        router.push(`/reading-lists/class-edit/${list.id}`)
                       }
                     >
                       Bewerken
