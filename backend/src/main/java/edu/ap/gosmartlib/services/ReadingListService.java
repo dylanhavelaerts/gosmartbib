@@ -210,6 +210,36 @@ public class ReadingListService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<ReadingListAssignmentTargetsDTO.ClassTarget> searchAssignmentClasses(
+            String smartschoolUid,
+            String query) {
+        UserEntity currentUser = requireCurrentUser(smartschoolUid);
+        requireStaff(currentUser);
+
+        String normalizedQuery = query == null ? "" : query.trim();
+
+        if (normalizedQuery.length() < 2) {
+            return List.of();
+        }
+
+        Long schoolId = requireSchoolId(currentUser);
+
+        return schoolClassRepository
+                .findTop20BySchool_IdAndNameContainingIgnoreCaseOrderByNameAsc(schoolId, normalizedQuery)
+                .stream()
+                .map(schoolClass -> {
+                    Integer year = resolveYearFromClassName(schoolClass.getName());
+
+                    return new ReadingListAssignmentTargetsDTO.ClassTarget(
+                            schoolClass.getId(),
+                            schoolClass.getName(),
+                            year,
+                            resolveGradeFromYear(year));
+                })
+                .toList();
+    }
+
     @Transactional
     public ReadingListEntity createClassList(CreateReadingListDTO dto, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);

@@ -65,6 +65,20 @@ public class ReadingListController {
         }
     }
 
+    @GetMapping("/assignment-targets/classes")
+    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    public ResponseEntity<?> searchAssignmentClasses(
+            @RequestParam(defaultValue = "") String query,
+            Authentication authentication) {
+        try {
+            String uid = extractUid(authentication);
+            return ResponseEntity.ok(readingListService.searchAssignmentClasses(uid, query));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body("Could not search reading list assignment classes: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getListDetail(@PathVariable Long id, Authentication authentication) {
         try {
