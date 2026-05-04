@@ -24,7 +24,7 @@ public class LoanDueDateNotificationService {
     private final BookRepository bookRepository;
     private final SmartschoolMessageService messageService;
 
-    @Scheduled(cron = "0 0 8 * * *")
+    @Scheduled(cron = "0 0 19 * * *") // Om te testen op de server, dit zal in de volgende issue aangepast worden
     @Transactional(readOnly = true)
     public void sendDueDateReminders() {
         LocalDate reminderDate = LocalDate.now().plusDays(3);

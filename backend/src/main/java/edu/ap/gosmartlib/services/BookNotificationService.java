@@ -97,7 +97,7 @@ public class BookNotificationService {
                     notification.getUser(),
                     "Boek terug beschikbaar",
                     "Let op: Dit betreft een geautomatiseerd bericht; reacties worden niet in behandeling genomen. GoSmartBib vraagt u nooit om op links te klikken via een e-mail.\n" +
-                            "het boek '" + book.getTitle() + "' is terug beschikbaar in de bibliotheek."
+                            "Het boek '" + book.getTitle() + "' is terug beschikbaar in de bibliotheek."
             );
         }
         bookNotificationRepository.deleteAll(notifications);
