@@ -5,6 +5,7 @@ import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
+import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
 import edu.ap.gosmartlib.services.Loans.LoanService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,7 +53,7 @@ class LoanControllerTest {
         // Arrange
         String uid = "uid-123";
         List<ActiveLoanDTO> expectedLoans = List.of(mock(ActiveLoanDTO.class));
-        
+
         // Vertel de mock wat hij moet doen als de controller het ID opvraagt
         when(principal.getAttribute("userID")).thenReturn(uid);
         when(loanService.getActiveLoansByUser(uid)).thenReturn(expectedLoans);
@@ -112,7 +113,7 @@ class LoanControllerTest {
         // Arrange
         String uid = "uid-123";
         List<LoanHistoryDTO> expectedHistory = List.of(mock(LoanHistoryDTO.class));
-        
+
         when(principal.getAttribute("userID")).thenReturn(uid);
         when(loanService.getLoanHistoryByUser(uid)).thenReturn(expectedHistory);
 
@@ -129,6 +130,114 @@ class LoanControllerTest {
     void givenNullPrincipal_whenGetLoanHistory_thenReturnsUnauthorized() {
         // Act
         ResponseEntity<List<LoanHistoryDTO>> response = loanController.getLoanHistory(null);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        verifyNoInteractions(loanService);
+    }
+
+    // --- Tests voor verlengingsaanvragen ---
+
+    @Test
+    void givenValidPrincipal_whenRequestLoanExtension_thenReturnsOk() {
+        // Arrange
+        Long loanId = 1L;
+        String uid = "uid-123";
+
+        when(principal.getAttribute("userID")).thenReturn(uid);
+
+        // Act
+        ResponseEntity<Void> response = loanController.requestLoanExtension(loanId, principal);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(loanService, times(1)).requestLoanExtension(loanId, uid);
+    }
+
+    @Test
+    void givenNullPrincipal_whenRequestLoanExtension_thenReturnsUnauthorized() {
+        // Act
+        ResponseEntity<Void> response = loanController.requestLoanExtension(1L, null);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        verifyNoInteractions(loanService);
+    }
+
+    @Test
+    void givenValidPrincipal_whenGetPendingExtensionRequests_thenReturnsOkWithRequests() {
+        // Arrange
+        String uid = "beheerder-123";
+        List<LoanExtensionRequestDTO> expectedRequests = List.of(mock(LoanExtensionRequestDTO.class));
+
+        when(principal.getAttribute("userID")).thenReturn(uid);
+        when(loanService.getPendingExtensionRequestsForSchool(uid)).thenReturn(expectedRequests);
+
+        // Act
+        ResponseEntity<List<LoanExtensionRequestDTO>> response = loanController.getPendingExtensionRequests(principal);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedRequests, response.getBody());
+        verify(loanService, times(1)).getPendingExtensionRequestsForSchool(uid);
+    }
+
+    @Test
+    void givenNullPrincipal_whenGetPendingExtensionRequests_thenReturnsUnauthorized() {
+        // Act
+        ResponseEntity<List<LoanExtensionRequestDTO>> response = loanController.getPendingExtensionRequests(null);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        verifyNoInteractions(loanService);
+    }
+
+    @Test
+    void givenValidPrincipal_whenApproveLoanExtension_thenReturnsOk() {
+        // Arrange
+        Long loanId = 1L;
+        String uid = "beheerder-123";
+
+        when(principal.getAttribute("userID")).thenReturn(uid);
+
+        // Act
+        ResponseEntity<Void> response = loanController.approveLoanExtension(loanId, principal);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(loanService, times(1)).approveLoanExtension(loanId, uid);
+    }
+
+    @Test
+    void givenNullPrincipal_whenApproveLoanExtension_thenReturnsUnauthorized() {
+        // Act
+        ResponseEntity<Void> response = loanController.approveLoanExtension(1L, null);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        verifyNoInteractions(loanService);
+    }
+
+    @Test
+    void givenValidPrincipal_whenDenyLoanExtension_thenReturnsOk() {
+        // Arrange
+        Long loanId = 1L;
+        String uid = "beheerder-123";
+
+        when(principal.getAttribute("userID")).thenReturn(uid);
+
+        // Act
+        ResponseEntity<Void> response = loanController.denyLoanExtension(loanId, principal);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(loanService, times(1)).denyLoanExtension(loanId, uid);
+    }
+
+    @Test
+    void givenNullPrincipal_whenDenyLoanExtension_thenReturnsUnauthorized() {
+        // Act
+        ResponseEntity<Void> response = loanController.denyLoanExtension(1L, null);
 
         // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
