@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.services.Loans;
 
 import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
@@ -23,6 +24,7 @@ import edu.ap.gosmartlib.entities.BookInventoryEntity;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Comparator;
 
 @Service
@@ -158,11 +160,19 @@ public class LoanService {
             // Zet de zware BookEntity om naar een lichte LoanBookDTO
             ActiveLoanDTO.LoanBookDTO safeBook = null;
             if (book != null) {
+                // FORCEER HIBERNATE OM DE DATA OP TE HALEN:
+                // We maken een nieuwe ArrayList. Hierdoor dwingen we Hibernate om de auteurs 
+                // nu meteen uit de database te halen, vóórdat de transactie sluit.
+                List<String> safeAuthors = book.getAuthors() != null 
+                    ? new java.util.ArrayList<>(book.getAuthors()) 
+                    : new java.util.ArrayList<>();
+
                 safeBook = new ActiveLoanDTO.LoanBookDTO(
                     book.getId(),
                     book.getTitle(),
                     book.getThumbnail(),
-                    book.getIsbn()
+                    book.getIsbn(),
+                    safeAuthors // <-- Gebruik hier de veilige kopie!
                 );
             }
             
@@ -228,5 +238,34 @@ public class LoanService {
                             remainingToReturn, book.getTitle());
             }
         }
+    }
+
+    // --- HISTORIEK OPHALEN ---
+    public List<LoanHistoryDTO> getLoanHistoryByUser(String smartschoolUid) {
+        List<LoanHistoryEntity> historyList = loanHistoryRepository.findBySmartschoolUserIdOrderByReturnDateDesc(smartschoolUid);
+        
+        return historyList.stream().map(history -> {
+            LoanHistoryDTO dto = new LoanHistoryDTO();
+            dto.setId(history.getId());
+            
+            // Omdat history enkel een ISBN opslaat en geen BookEntity, 
+            // moeten we het boek even opzoeken via de repository.
+            BookEntity book = bookRepository.findByIsbn(history.getIsbn()).orElse(null);
+            
+            if (book != null) {
+                dto.setBookTitle(book.getTitle());
+                // In jullie BookEntity is authors een List<String>, we maken hier een mooie string van
+                dto.setAuthor(String.join(", ", book.getAuthors()));
+            } else {
+                // Fallback voor als het boek intussen verwijderd zou zijn uit de databank
+                dto.setBookTitle("Onbekend Boek (ISBN: " + history.getIsbn() + ")");
+                dto.setAuthor("Onbekende Auteur");
+            }
+            
+            dto.setLoanDate(history.getLoanDate());
+            dto.setReturnDate(history.getReturnDate());
+            dto.setQuantity(history.getQuantity());
+            return dto;
+        }).collect(Collectors.toList());
     }
 }

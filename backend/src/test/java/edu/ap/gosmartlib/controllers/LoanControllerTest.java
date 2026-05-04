@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.controllers.LoanControllers.LoanController;
 import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
 import edu.ap.gosmartlib.services.Loans.LoanService;
@@ -12,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.List;
 
@@ -23,6 +25,9 @@ class LoanControllerTest {
 
     @Mock
     private LoanService loanService;
+
+    @Mock
+    private OAuth2User principal; // Voeg de mock toe voor de ingelogde gebruiker
 
     @InjectMocks
     private LoanController loanController;
@@ -40,21 +45,38 @@ class LoanControllerTest {
         verify(loanService, times(1)).createLoans(requests);
     }
 
+    // --- Tests voor getActiveLoans ---
+
     @Test
-    void givenSmartschoolUserId_whenGetActiveLoans_thenReturnsOkWithLoans() {
+    void givenValidPrincipal_whenGetActiveLoans_thenReturnsOkWithLoans() {
         // Arrange
         String uid = "uid-123";
         List<ActiveLoanDTO> expectedLoans = List.of(mock(ActiveLoanDTO.class));
+        
+        // Vertel de mock wat hij moet doen als de controller het ID opvraagt
+        when(principal.getAttribute("userID")).thenReturn(uid);
         when(loanService.getActiveLoansByUser(uid)).thenReturn(expectedLoans);
 
-        // Act
-        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(uid);
+        // Act: geef de principal mee in plaats van de string
+        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(principal);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expectedLoans, response.getBody());
         verify(loanService, times(1)).getActiveLoansByUser(uid);
     }
+
+    @Test
+    void givenNullPrincipal_whenGetActiveLoans_thenReturnsUnauthorized() {
+        // Act
+        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(null);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        verifyNoInteractions(loanService);
+    }
+
+    // --- Tests voor Return endpoints ---
 
     @Test
     void givenValidRequests_whenReturnBooksBulk_thenReturnsOk() {
@@ -81,5 +103,35 @@ class LoanControllerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(loanService, times(1)).returnBook(loanId, quantity);
+    }
+
+    // --- Tests voor getLoanHistory ---
+
+    @Test
+    void givenValidPrincipal_whenGetLoanHistory_thenReturnsOkWithHistory() {
+        // Arrange
+        String uid = "uid-123";
+        List<LoanHistoryDTO> expectedHistory = List.of(mock(LoanHistoryDTO.class));
+        
+        when(principal.getAttribute("userID")).thenReturn(uid);
+        when(loanService.getLoanHistoryByUser(uid)).thenReturn(expectedHistory);
+
+        // Act
+        ResponseEntity<List<LoanHistoryDTO>> response = loanController.getLoanHistory(principal);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedHistory, response.getBody());
+        verify(loanService, times(1)).getLoanHistoryByUser(uid);
+    }
+
+    @Test
+    void givenNullPrincipal_whenGetLoanHistory_thenReturnsUnauthorized() {
+        // Act
+        ResponseEntity<List<LoanHistoryDTO>> response = loanController.getLoanHistory(null);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        verifyNoInteractions(loanService);
     }
 }
