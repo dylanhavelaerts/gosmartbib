@@ -16,7 +16,7 @@ public class SmartschoolSoapClient {
         String accesscode = escapeXml(integration.getSmartschoolAccesscode());
         String sender = escapeXml(integration.getSmartschoolSenderIdentifier() != null
                 ? integration.getSmartschoolSenderIdentifier() : "");
-        String endpoint = integration.getOnerosterBaseUrl() + "/Webservices/V3";
+        String endpoint = integration.getSchoolBaseUrl() + "/Webservices/V3";
         String safeUsername = escapeXml(username);
         String safeTitle = escapeXml(title);
         String safeBody = escapeXml(body);

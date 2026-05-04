@@ -59,7 +59,7 @@ public class SchoolIntegrationService {
                 .orElseGet(SchoolIntegrationEntity::new);
 
         integration.setSchool(school);
-        integration.setOnerosterBaseUrl(normalizeBaseUrl(request.onerosterBaseUrl()));
+        integration.setSchoolBaseUrl(normalizeBaseUrl(request.schoolBaseUrl()));
         integration.setOnerosterClientId(request.onerosterClientId().trim());
 
         if (request.onerosterClientSecret() != null && !request.onerosterClientSecret().isBlank()) {
@@ -108,7 +108,7 @@ public class SchoolIntegrationService {
     }
 
     private void validateRequest(UpsertSchoolIntegrationRequest request) {
-        if (request.onerosterBaseUrl() == null || request.onerosterBaseUrl().isBlank()) {
+        if (request.schoolBaseUrl() == null || request.schoolBaseUrl().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "OneRoster base URL ontbreekt");
         }
         if (request.onerosterClientId() == null || request.onerosterClientId().isBlank()) {

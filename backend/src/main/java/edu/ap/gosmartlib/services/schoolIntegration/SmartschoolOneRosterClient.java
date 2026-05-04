@@ -42,7 +42,7 @@ public class SmartschoolOneRosterClient {
             String... responseKeys) {
 
         ResponseEntity<Map> response = restClient.get()
-                .uri(integration.getOnerosterBaseUrl() + path)
+                .uri(integration.getSchoolBaseUrl() + path)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .retrieve()
                 .toEntity(Map.class);
@@ -70,7 +70,7 @@ public class SmartschoolOneRosterClient {
 
         try {
             ResponseEntity<Map> response = restClient.get()
-                    .uri(integration.getOnerosterBaseUrl() + path)
+                    .uri(integration.getSchoolBaseUrl() + path)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                     .retrieve()
                     .toEntity(Map.class);

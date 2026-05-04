@@ -26,7 +26,7 @@ public class SmartschoolOneRosterAuthService {
         form.add("scope", "https://purl.imsglobal.org/spec/or/v1p1/scope/roster-core.readonly");
 
         Map<?, ?> response = restClient.post()
-                .uri(integration.getOnerosterBaseUrl() + "/ims/oneroster/token")
+                .uri(integration.getSchoolBaseUrl() + "/ims/oneroster/token")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(form)
                 .retrieve()

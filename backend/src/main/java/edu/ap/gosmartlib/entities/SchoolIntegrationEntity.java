@@ -24,8 +24,8 @@ public class SchoolIntegrationEntity {
     @JoinColumn(name = "school_id", nullable = false, unique = true)
     private SchoolEntity school;
 
-    @Column(name = "oneroster_base_url", nullable = false, length = 255)
-    private String onerosterBaseUrl;
+    @Column(name = "school_base_url", nullable = false, length = 255)
+    private String schoolBaseUrl;
 
     @Column(name = "oneroster_client_id", nullable = false, length = 255)
     private String onerosterClientId;

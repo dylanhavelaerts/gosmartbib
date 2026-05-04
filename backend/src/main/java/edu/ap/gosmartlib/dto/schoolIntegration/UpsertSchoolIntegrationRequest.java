@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.dto.schoolIntegration;
 
 public record UpsertSchoolIntegrationRequest(
-                String onerosterBaseUrl,
+                String schoolBaseUrl,
                 String onerosterClientId,
                 String onerosterClientSecret,
                 Boolean onerosterEnabled,
