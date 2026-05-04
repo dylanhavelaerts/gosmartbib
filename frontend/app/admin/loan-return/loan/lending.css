@@ -3,12 +3,11 @@
 main.pageLayout {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 4.5rem);
-  min-height: 0;
-  overflow: hidden;
+  min-height: calc(100vh - 4.5rem);
   box-sizing: border-box;
   padding: 1rem 2.5rem 2rem;
   margin-top: 4.5rem;
+  overflow: visible;
 }
 
 .pageHeader {
@@ -46,10 +45,19 @@ main.pageLayout {
   min-height: 0;
 }
 
-@media (min-width: 1000px) {
+/* Only use the 3-column layout when there is enough horizontal space */
+@media (min-width: 1200px) {
+  main.pageLayout {
+    height: calc(100vh - 4.5rem);
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .uitleenGrid.driekolomsGrid {
-    /* Borrower (compact) | Book search (wide) | Cart (fixed) */
-    grid-template-columns: 300px 1fr 320px;
+    grid-template-columns: minmax(260px, 300px) minmax(360px, 1fr) minmax(
+        280px,
+        320px
+      );
     grid-template-rows: 1fr;
     gap: 0;
     align-items: stretch;
@@ -63,7 +71,7 @@ main.pageLayout {
   min-height: 0;
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 1200px) {
   .borderRight {
     border-right: 1px solid #ece6f0;
     padding-right: 1.5rem;
@@ -455,4 +463,116 @@ main.pageLayout {
   flex-direction: column;
   flex: 1;
   min-height: 0;
+}
+
+/* --- RESPONSIVE FIXES --- */
+@media (max-width: 1199px) {
+  main.pageLayout {
+    height: auto;
+    overflow: visible;
+  }
+
+  .pageHeader {
+    margin-bottom: 1.25rem;
+  }
+
+  .uitleenGrid.driekolomsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .gridColumn {
+    min-height: auto;
+  }
+
+  .borderRight {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .flexBetween {
+    padding: 0;
+  }
+
+  .resultsFrame {
+    flex: initial;
+    max-height: 420px;
+  }
+
+  .flexColumnGrow {
+    flex: initial;
+  }
+}
+
+@media (max-width: 700px) {
+  main.pageLayout {
+    padding: 1rem 1rem 1.5rem;
+  }
+
+  .pageHeader {
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .pageHeader h1 {
+    font-size: 1.35rem;
+  }
+
+  .userProfileCard {
+    align-items: flex-start;
+  }
+
+  .listItem {
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .itemDetails {
+    min-width: 0;
+  }
+
+  .itemDetails strong,
+  .itemDetails span {
+    overflow-wrap: anywhere;
+  }
+
+  .addArea {
+    align-items: flex-end;
+  }
+
+  .gridColumn .searchbar {
+    align-items: stretch;
+  }
+
+  .gridColumn .searchbar input {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .gridColumn .searchbar #searchButton {
+    padding: 0.55rem 0.8rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .listItem {
+    flex-wrap: wrap;
+  }
+
+  .itemThumbnail,
+  .userPhotoSmall {
+    flex-shrink: 0;
+  }
+
+  .addArea,
+  .quantityControl,
+  .actionBtn {
+    margin-left: auto;
+  }
+
+  .actionFooter {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding-top: 0.75rem;
+    border-top: 1px solid #ece6f0;
+  }
 }
