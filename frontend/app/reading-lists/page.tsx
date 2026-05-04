@@ -3,21 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import type { ReadingListOverview } from "@/app/interfaces/ReadingList";
 import "./readingLists.css";
-
-type ListType = "CLASS" | "PERSONAL";
-
-interface ReadingListOverview {
-  id: number;
-  title: string;
-  taskDescription?: string | null;
-  deadline?: string | null;
-  listType: ListType;
-  ownList: boolean;
-  creatorName?: string | null;
-  bookIds: number[];
-  bookCount?: number;
-}
 
 const STAFF_ROLES = ["TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"];
 
@@ -35,6 +22,8 @@ export default function ReadingListsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [copiedListId, setCopiedListId] = useState<number | null>(null);
+
 
   const fetchLists = () => {
     setLoading(true);
@@ -89,6 +78,25 @@ export default function ReadingListsPage() {
     } finally {
       setActionLoading(null);
       setDeleteConfirm(null);
+    }
+  };
+
+  const handleCopySharedLink = async (listId: number, publicUid?: string | null) => {
+    if (!publicUid || typeof window === "undefined") {
+      return;
+    }
+
+    const sharedUrl = `${window.location.origin}/reading-lists/shared/${publicUid}`;
+
+    try {
+      await navigator.clipboard.writeText(sharedUrl);
+      setCopiedListId(listId);
+
+      window.setTimeout(() => {
+        setCopiedListId(null);
+      }, 1800);
+    } catch {
+      window.prompt("Kopieer deze link:", sharedUrl);
     }
   };
 
@@ -191,12 +199,14 @@ export default function ReadingListsPage() {
         <div className="rl-grid">
           {filtered.map((list) => {
             const deadline = formatDeadline(list.deadline);
-            const bookCount = list.bookIds?.length ?? list.bookCount ?? 0;
+            const bookCount = list.bookCount ?? list.bookIds?.length ?? 0;
             const isClass = list.listType === "CLASS";
-            const canDeleteClass = isStaff && isClass && list.ownList;
-            const canEditPersonal =
-              list.listType === "PERSONAL" && list.ownList;
-
+            const canEditClass = isStaff && isClass && list.ownList;
+            const canDeleteClass = canEditClass;
+            const canEditPersonal = list.listType === "PERSONAL" && list.ownList;
+            const canCopySharedLink =
+              canEditPersonal && list.publicVisible && !!list.publicUid;
+            
             return (
               <div
                 key={list.id}
@@ -220,6 +230,10 @@ export default function ReadingListsPage() {
                     >
                       {isClass ? "Klas lijst" : "Eigen lijst"}
                     </span>
+
+                    {list.listType === "PERSONAL" && list.publicVisible && (
+                      <span className="badge badge--personal">Deelbaar</span>
+                    )}
                   </div>
 
                   <h2 className="rl-card-title">{list.title}</h2>
@@ -263,6 +277,26 @@ export default function ReadingListsPage() {
                       }
                     >
                       Bewerken
+                    </button>
+                  )}
+
+                  {canEditClass && (
+                    <button
+                      className="rl-btn-outline"
+                      onClick={() =>
+                        router.push(`/reading-lists/class-edit/${list.id}`)
+                      }
+                    >
+                      Bewerken
+                    </button>
+                  )}
+
+                  {canCopySharedLink && (
+                    <button
+                      className="rl-btn-outline"
+                      onClick={() => handleCopySharedLink(list.id, list.publicUid)}
+                    >
+                      {copiedListId === list.id ? "Link gekopieerd" : "Kopieer deellink"}
                     </button>
                   )}
 

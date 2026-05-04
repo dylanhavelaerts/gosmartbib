@@ -1,8 +1,13 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListBookDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListVisibilityDTO;
+import edu.ap.gosmartlib.dto.readinglist.UpdateReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.ReadingListService;
@@ -53,15 +58,21 @@ class ReadingListControllerTest {
 
         ReadingListOverviewDTO list = new ReadingListOverviewDTO(
                 1L,
+                "public-uid-1",
                 "List",
                 "Task",
                 null,
+                "user-1",
+                1,
                 ReadingListType.PERSONAL,
                 true,
-                "user-1",
-                List.of(10L),
-                1
-        );
+                false,
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                false);
         when(readingListService.getVisibleLists(uid)).thenReturn(List.of(list));
 
         ResponseEntity<?> response = readingListController.getVisibleLists(oauth2User);
@@ -97,14 +108,24 @@ class ReadingListControllerTest {
 
         ReadingListDetailDTO detail = new ReadingListDetailDTO(
                 2L,
+                "public-uid-2",
                 "Detail",
                 "Task",
                 null,
                 ReadingListType.CLASS,
                 false,
+                false,
                 "teacher",
-                List.of(new ReadingListDetailDTO.BookItem(10L, "Book", List.of("Author"), null, "isbn-10", 0))
-        );
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                false,
+                List.of(new ReadingListBookDTO(10L, "Book", List.of("Author"), null, "isbn-10", 0)));
         when(readingListService.getListDetail(2L, uid)).thenReturn(detail);
 
         ResponseEntity<?> response = readingListController.getListDetail(2L, oauth2User);
@@ -210,5 +231,94 @@ class ReadingListControllerTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         verify(readingListService, never()).getVisibleLists(any());
+    }
+
+    @Test
+    void givenPublicUid_whenGetPublicListDetail_thenReturnsOk() {
+        String publicUid = "public-uid-3";
+
+        PublicReadingListDetailDTO detail = new PublicReadingListDetailDTO(
+                publicUid,
+                "Shared list",
+                "Shared task",
+                null,
+                "STUDENT",
+                List.of(new ReadingListBookDTO(
+                        20L,
+                        "Shared book",
+                        List.of("Author"),
+                        null,
+                        "isbn-20",
+                        1)));
+
+        when(readingListService.getPublicListDetail(publicUid)).thenReturn(detail);
+
+        ResponseEntity<?> response = readingListController.getPublicListDetail(publicUid);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(detail, response.getBody());
+        verify(readingListService, times(1)).getPublicListDetail(publicUid);
+    }
+
+    @Test
+    void givenUnknownPublicUid_whenGetPublicListDetail_thenThrowsException() {
+        String publicUid = "missing-public-uid";
+
+        when(readingListService.getPublicListDetail(publicUid))
+                .thenThrow(new IllegalArgumentException("Publieke leeslijst niet gevonden"));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> readingListController.getPublicListDetail(publicUid));
+        verify(readingListService, times(1)).getPublicListDetail(publicUid);
+    }
+
+    @Test
+    void givenValidAuthentication_whenUpdatePersonalListVisibility_thenReturnsUpdatedVisibility() {
+        String uid = "student-1";
+        when(oauth2User.getAttribute("userID")).thenReturn(uid);
+
+        UpdateReadingListVisibilityDTO dto = new UpdateReadingListVisibilityDTO(true);
+
+        ReadingListVisibilityDTO updated = new ReadingListVisibilityDTO(
+                12L,
+                "public-uid-12",
+                true);
+
+        when(readingListService.updatePersonalListVisibility(12L, true, uid)).thenReturn(updated);
+
+        ResponseEntity<?> response = readingListController.updatePersonalListVisibility(12L, dto, oauth2User);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(updated, response.getBody());
+        verify(readingListService, times(1)).updatePersonalListVisibility(12L, true, uid);
+    }
+
+    @Test
+    void givenValidAuthentication_whenSearchAssignmentStudents_thenReturnsOk() {
+        String uid = "teacher-1";
+        when(oauth2User.getAttribute("userID")).thenReturn(uid);
+
+        List<ReadingListAssignmentTargetsDTO.StudentTarget> students = List.of(
+                new ReadingListAssignmentTargetsDTO.StudentTarget(
+                        1L,
+                        "Talia Journée",
+                        List.of("5ITN")));
+
+        when(readingListService.searchAssignmentStudents(uid, "tal")).thenReturn(students);
+
+        ResponseEntity<?> response = readingListController.searchAssignmentStudents("tal", oauth2User);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(students, response.getBody());
+        verify(readingListService, times(1)).searchAssignmentStudents(uid, "tal");
+    }
+
+    @Test
+    void givenMissingAuthentication_whenSearchAssignmentStudents_thenThrowsUnauthorized() {
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> readingListController.searchAssignmentStudents("tal", null));
+
+        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
+        verify(readingListService, never()).searchAssignmentStudents(any(), any());
     }
 }

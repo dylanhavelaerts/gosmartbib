@@ -1,12 +1,17 @@
 package edu.ap.gosmartlib.controllers.LoanControllers;
 
 import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
 import edu.ap.gosmartlib.services.Loans.LoanService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.List;
 
@@ -23,10 +28,18 @@ public class LoanController {
         return ResponseEntity.ok().build();
     }
 
-    // Actieve leningen ophalen voor de frontend kolom
+    // AANGEPAST: Actieve leningen ophalen voor de frontend kolom (Veilig via sessie)
     @GetMapping("/active")
-    public ResponseEntity<List<ActiveLoanDTO>> getActiveLoans(@RequestParam String smartschoolUserId) {
-        return ResponseEntity.ok(loanService.getActiveLoansByUser(smartschoolUserId));
+    public ResponseEntity<List<ActiveLoanDTO>> getActiveLoans(@AuthenticationPrincipal OAuth2User principal) {
+        // Controleer of de gebruiker is ingelogd
+        if (principal == null || principal.getAttribute("userID") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        // Haal het Smartschool UID veilig op uit de sessie
+        String smartschoolUid = principal.getAttribute("userID");
+        
+        return ResponseEntity.ok(loanService.getActiveLoansByUser(smartschoolUid));
     }
 
     // Meerdere boeken in 1 keer terugbrengen via de frontend inlever-knop
@@ -41,5 +54,20 @@ public class LoanController {
     public ResponseEntity<Void> returnBook(@PathVariable Long loanId, @RequestParam int quantity) {
         loanService.returnBook(loanId, quantity);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<LoanHistoryDTO>> getLoanHistory(@AuthenticationPrincipal OAuth2User principal) {
+        // Controleer of de gebruiker is ingelogd
+        if (principal == null || principal.getAttribute("userID") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        // Haal het Smartschool UID op uit de sessie
+        String smartschoolUid = principal.getAttribute("userID");
+        
+        // Haal data op via service
+        List<LoanHistoryDTO> history = loanService.getLoanHistoryByUser(smartschoolUid);
+        return ResponseEntity.ok(history);
     }
 }

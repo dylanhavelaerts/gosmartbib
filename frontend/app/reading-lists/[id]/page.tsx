@@ -1,30 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import "../readinglistdetail.css";
 import NotificationBell from "@/app/components/Notifications/Notification";
-
-interface BookItem {
-  id: number;
-  title: string;
-  authors: string[];
-  thumbnail?: string | null;
-  isbn: string;
-  availableCopies: number;
-}
-
-interface ReadingListDetail {
-  id: number;
-  title: string;
-  taskDescription?: string | null;
-  deadline?: string | null;
-  listType: "CLASS" | "PERSONAL";
-  ownList: boolean;
-  creatorName?: string | null;
-  books: BookItem[];
-}
+import type {
+  ReadingListDetail,
+  UpdateReadingListVisibilityPayload,
+} from "@/app/interfaces/ReadingList";import { formatReadingListTargets } from "@/app/utils/readingListTargets";
 
 const STAFF_ROLES = ["TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"];
 
@@ -32,6 +16,7 @@ export default function ReadingListDetailPage() {
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
+
   const id = params?.id as string;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -41,6 +26,8 @@ export default function ReadingListDetailPage() {
   const [detail, setDetail] = useState<ReadingListDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visibilityLoading, setVisibilityLoading] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
   const userId = user?.id ?? 0;
   const storageKey = `reading-status:${userId}:${id}`;
@@ -50,6 +37,14 @@ export default function ReadingListDetailPage() {
   const hasUnavailableBooks = detail?.books.some(
     (b) => b.availableCopies === 0,
   );
+
+  const sharedUrl = useMemo(() => {
+    if (typeof window === "undefined" || !detail?.publicUid) {
+      return "";
+    }
+
+    return `${window.location.origin}/reading-lists/shared/${detail.publicUid}`;
+  }, [detail?.publicUid]);
 
   useEffect(() => {
     if (!id || !user) return;
@@ -62,6 +57,8 @@ export default function ReadingListDetailPage() {
     }
 
     setLoading(true);
+    setError(null);
+    
     fetch(`${apiUrl}/reading-lists/${id}`, { credentials: "include" })
       .then(async (res) => {
         if (!res.ok) {
@@ -80,7 +77,7 @@ export default function ReadingListDetailPage() {
         );
       })
       .finally(() => setLoading(false));
-  }, [id, user]);
+  }, [apiUrl, id, storageKey, user]);
 
   const toggleRead = (bookId: number) => {
     setReadStatus((prev) => {
@@ -92,6 +89,81 @@ export default function ReadingListDetailPage() {
       }
       return next;
     });
+  };
+
+  const togglePublicVisibility = async () => {
+  if (!detail || !detail.ownList || detail.listType !== "PERSONAL") {
+    return;
+  }
+
+  const nextPublicVisible = !Boolean(detail.publicVisible);
+
+  const payload: UpdateReadingListVisibilityPayload = {
+    publicVisible: nextPublicVisible,
+  };
+
+  setVisibilityLoading(true);
+  setShareFeedback(null);
+
+  try {
+    const response = await fetch(
+      `${apiUrl}/reading-lists/personal/${detail.id}/visibility`,
+      {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || "Kon deelinstelling niet aanpassen.");
+    }
+
+    const updated = await response.json();
+
+    setDetail((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        publicUid: updated.publicUid ?? current.publicUid,
+        publicVisible: Boolean(updated.publicVisible),
+      };
+    });
+
+    setShareFeedback(
+      nextPublicVisible
+        ? "Deze leeslijst is nu deelbaar via de link."
+        : "Deze leeslijst is weer privé.",
+    );
+  } catch (err) {
+    setShareFeedback(
+      err instanceof Error
+        ? err.message
+        : "Kon deelinstelling niet aanpassen.",
+    );
+  } finally {
+    setVisibilityLoading(false);
+  }
+};
+
+  const copySharedUrl = async () => {
+    if (!sharedUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(sharedUrl);
+      setShareFeedback("Link gekopieerd.");
+    } catch {
+      setShareFeedback("Kopiëren is niet gelukt. Selecteer de link handmatig.");
+    }
   };
 
   const formatDeadline = (deadline?: string | null) => {
@@ -115,6 +187,7 @@ export default function ReadingListDetailPage() {
   const readCount = detail?.books.filter((b) => readStatus[b.id]).length ?? 0;
   const totalCount = detail?.books.length ?? 0;
   const deadline = formatDeadline(detail?.deadline);
+  const showTargetSummary = detail?.listType === "CLASS" && detail.targetType !== null && detail.targetType !== undefined;
 
   return (
     <div className="rld-page">
@@ -156,6 +229,11 @@ export default function ReadingListDetailPage() {
                     ? "Klasleeslijst"
                     : "Eigen leeslijst"}
                 </span>
+                {detail.listType === "PERSONAL" && detail.publicVisible && (
+                  <span className="rld-badge rld-badge--shared">
+                    Deelbaar
+                  </span>
+                )}
               </div>
               {hasUnavailableBooks && (
                 <NotificationBell
@@ -182,6 +260,12 @@ export default function ReadingListDetailPage() {
               </span>
             </div>
 
+            {showTargetSummary && (
+              <div className="rld-target-summary">
+                {formatReadingListTargets(detail)}
+              </div>
+            )}
+
             {deadline && (
               <div className={`rld-deadline rld-deadline--${deadline.urgency}`}>
                 {deadline.label}
@@ -198,6 +282,63 @@ export default function ReadingListDetailPage() {
                 >
                   Bewerken
                 </button>
+              </div>
+            )}
+            {detail.ownList && detail.listType === "PERSONAL" && (
+              <div className="rld-share-panel">
+                <div className="rld-share-header">
+                  <div>
+                    <h2>Delen via link</h2>
+                    <p>
+                      {detail.publicVisible
+                        ? "Iedere ingelogde gebruiker met deze link kan deze leeslijst bekijken."
+                        : "Deze persoonlijke leeslijst is momenteel alleen zichtbaar voor jou."}
+                    </p>
+                  </div>
+
+                  <button
+                    className={
+                      detail.publicVisible
+                        ? "rld-btn-danger"
+                        : "rld-btn-primary"
+                    }
+                    onClick={togglePublicVisibility}
+                    disabled={visibilityLoading}
+                  >
+                    {visibilityLoading
+                      ? "Bezig..."
+                      : detail.publicVisible
+                        ? "Privé maken"
+                        : "Deelbaar maken"}
+                  </button>
+                </div>
+
+                {detail.publicVisible && sharedUrl && (
+                  <div className="rld-share-url-row">
+                    <input
+                      value={sharedUrl}
+                      readOnly
+                      aria-label="Deelbare leeslijstlink"
+                    />
+
+                    <button className="rld-btn-outline" onClick={copySharedUrl}>
+                      Kopiëren
+                    </button>
+
+                    <button
+                      className="rld-btn-outline"
+                      onClick={() =>
+                        router.push(`/reading-lists/shared/${detail.publicUid}`)
+                      }
+                    >
+                      Openen
+                    </button>
+                  </div>
+                )}
+
+                {shareFeedback && (
+                  <p className="rld-share-feedback">{shareFeedback}</p>
+                )}
               </div>
             )}
           </div>

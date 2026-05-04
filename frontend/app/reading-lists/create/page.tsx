@@ -4,7 +4,22 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { Book } from "../../interfaces/Book";
+import type {
+  ReadingListAssignmentTargets,
+  ReadingListClassTarget,
+  ReadingListStudentTarget,
+  ReadingListTargetType,
+} from "../../interfaces/ReadingList";
 import ProtectedRoute from "../../components/ProtectedRoute";
+import StudentTargetSearch from "../components/StudentTargetSearch";
+import ClassTargetSearch from "../components/ClassTargetSearch";
+import {
+  cleanTargetPayloadForType,
+  gradeLabel,
+  scopeLabel,
+  toggleNumberInList,
+  yearLabel,
+} from "../../utils/readingListTargets";
 import "./createReadingList.css";
 
 export default function CreateReadingListPage() {
@@ -15,6 +30,29 @@ export default function CreateReadingListPage() {
   const [title, setTitle] = useState("");
   const [deadline, setDeadline] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
+
+  const [targetType, setTargetType] =
+    useState<ReadingListTargetType>("CLASSES");
+  const [assignmentTargets, setAssignmentTargets] =
+    useState<ReadingListAssignmentTargets | null>(null);
+
+  const [selectedTargetStudentIds, setSelectedTargetStudentIds] = useState<
+    number[]
+  >([]);
+  const [selectedTargetStudents, setSelectedTargetStudents] = useState<
+  ReadingListStudentTarget[]
+  >([]);
+  const [selectedTargetClassIds, setSelectedTargetClassIds] = useState<
+    number[]
+  >([]);
+  const [selectedTargetClasses, setSelectedTargetClasses] = useState<
+  ReadingListClassTarget[]
+  >([]);
+  const [selectedTargetYears, setSelectedTargetYears] = useState<number[]>([]);
+  const [selectedTargetGrades, setSelectedTargetGrades] = useState<number[]>(
+    [],
+  );
+  const [targetAllSchools, setTargetAllSchools] = useState(false);
 
   const [selectedBooks, setSelectedBooks] = useState<Book[]>([]);
   const [allBooks, setAllBooks] = useState<Book[]>([]);
@@ -31,6 +69,19 @@ export default function CreateReadingListPage() {
       .then((res) => (res.ok ? res.json() : []))
       .then((data: Book[]) => setAllBooks(data))
       .catch((err) => console.error("Fout bij ophalen boeken:", err));
+  }, [apiUrl]);
+
+  useEffect(() => {
+    fetch(`${apiUrl}/reading-lists/assignment-targets`, {
+      credentials: "include",
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: ReadingListAssignmentTargets | null) => {
+        if (data) {
+          setAssignmentTargets(data);
+        }
+      })
+      .catch((err) => console.error("Fout bij ophalen doelgroepen:", err));
   }, [apiUrl]);
 
   const filteredBooks = allBooks.filter((book) => {
@@ -51,6 +102,132 @@ export default function CreateReadingListPage() {
     setSelectedBooks((prev) => prev.filter((b) => b.id !== bookId));
   };
 
+  const removeTargetStudent = (studentId: number) => {
+    setSelectedTargetStudentIds((prev) =>
+      prev.filter((currentStudentId) => currentStudentId !== studentId),
+    );
+    setSelectedTargetStudents((prev) =>
+      prev.filter((student) => student.id !== studentId),
+    );
+  };
+
+  const toggleTargetStudent = (student: ReadingListStudentTarget) => {
+    if (selectedTargetStudentIds.includes(student.id)) {
+      removeTargetStudent(student.id);
+      return;
+    }
+
+    setSelectedTargetStudentIds((prev) =>
+      [...prev, student.id].sort((a, b) => a - b),
+    );
+
+    setSelectedTargetStudents((prev) => {
+      if (prev.some((selectedStudent) => selectedStudent.id === student.id)) {
+        return prev;
+      }
+
+      return [...prev, student].sort((a, b) =>
+        a.displayName.localeCompare(b.displayName, "nl", {
+          sensitivity: "base",
+        }),
+      );
+    });
+  };
+
+const removeTargetClass = (classId: number) => {
+  setSelectedTargetClassIds((prev) =>
+    prev.filter((currentClassId) => currentClassId !== classId),
+  );
+
+  setSelectedTargetClasses((prev) =>
+    prev.filter((schoolClass) => schoolClass.id !== classId),
+  );
+};
+
+const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
+  if (selectedTargetClassIds.includes(schoolClass.id)) {
+    removeTargetClass(schoolClass.id);
+    return;
+  }
+
+  setSelectedTargetClassIds((prev) =>
+    [...prev, schoolClass.id].sort((a, b) => a - b),
+  );
+
+  setSelectedTargetClasses((prev) => {
+    if (prev.some((selectedClass) => selectedClass.id === schoolClass.id)) {
+      return prev;
+    }
+
+    return [...prev, schoolClass].sort((a, b) =>
+      a.name.localeCompare(b.name, "nl", { sensitivity: "base" }),
+    );
+  });
+};
+
+  const selectTargetType = (nextTargetType: ReadingListTargetType) => {
+    setTargetType(nextTargetType);
+
+    if (nextTargetType === "STUDENTS" || nextTargetType === "CLASSES") {
+      setTargetAllSchools(false);
+    }
+  };
+
+  const validateTargetSelection = () => {
+    switch (targetType) {
+      case "STUDENTS":
+        return selectedTargetStudentIds.length > 0;
+
+      case "CLASSES":
+        return selectedTargetClassIds.length > 0;
+
+      case "YEARS":
+        return selectedTargetYears.length > 0;
+
+      case "GRADES":
+        return selectedTargetGrades.length > 0;
+
+      default:
+        return false;
+    }
+  };
+
+  const targetSelectionError = () => {
+    switch (targetType) {
+      case "STUDENTS":
+        return "Kies minstens één leerling als doelgroep.";
+
+      case "CLASSES":
+        return "Kies minstens één klas als doelgroep.";
+
+      case "YEARS":
+        return "Kies minstens één jaar als doelgroep.";
+
+      case "GRADES":
+        return "Kies minstens één graad als doelgroep.";
+
+      default:
+        return "Kies een doelgroep.";
+    }
+  };
+
+  const resetForm = () => {
+    setTitle("");
+    setDeadline("");
+    setTaskDescription("");
+    setSelectedBooks([]);
+    setSearchQuery("");
+
+    setTargetType("CLASSES");
+    setSelectedTargetStudentIds([]);
+    setSelectedTargetStudents([]);
+    setSelectedTargetClassIds([]);
+    setSelectedTargetClasses([]);
+    setSelectedTargetYears([]);
+    setSelectedTargetGrades([]);
+    setTargetAllSchools(false);
+  };
+
   const goBackToReadingLists = () => {
     router.push("/reading-lists");
   };
@@ -63,10 +240,18 @@ export default function CreateReadingListPage() {
       return;
     }
 
-    if (!title.trim() || !deadline) {
-      setMessage({ type: "error", text: "Titel en deadline zijn verplicht." });
+    if (!title.trim()) {
+      setMessage({ type: "error", text: "Titel is verplicht." });
       return;
     }
+
+    if (!validateTargetSelection()) {
+      setMessage({
+        type: "error",
+        text: targetSelectionError(),
+      });
+      return;
+}
 
     if (selectedBooks.length === 0) {
       setMessage({
@@ -79,11 +264,27 @@ export default function CreateReadingListPage() {
     setLoading(true);
     setMessage(null);
 
+    const cleanedTargetPayload = cleanTargetPayloadForType(targetType, {
+      targetStudentIds: selectedTargetStudentIds,
+      targetClassIds: selectedTargetClassIds,
+      targetYears: selectedTargetYears,
+      targetGrades: selectedTargetGrades,
+      targetAllSchools:
+        targetType === "YEARS" || targetType === "GRADES"
+          ? targetAllSchools
+          : false,
+    });
+
     const payload = {
       title: title.trim(),
       taskDescription: taskDescription.trim() || null,
-      deadline: deadline.length === 16 ? `${deadline}:00` : deadline,
+      deadline: deadline
+        ? deadline.length === 16
+          ? `${deadline}:00`
+          : deadline
+        : null,
       bookIds: selectedBooks.map((b) => b.id),
+      ...cleanedTargetPayload,
     };
 
     try {
@@ -94,26 +295,28 @@ export default function CreateReadingListPage() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Fout bij opslaan");
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Fout bij opslaan");
+      }
 
       setMessage({
         type: "success",
         text: "Klasleeslijst succesvol aangemaakt.",
       });
 
-      setTitle("");
-      setDeadline("");
-      setTaskDescription("");
-      setSelectedBooks([]);
-      setSearchQuery("");
+      resetForm();
 
       setTimeout(() => setMessage(null), 5000);
-    } catch {
-      setMessage({
-        type: "error",
-        text: "Kon de klasleeslijst niet aanmaken. Probeer opnieuw.",
-      });
-    } finally {
+    } catch (error) {
+        setMessage({
+          type: "error",
+          text:
+            error instanceof Error && error.message
+              ? error.message
+              : "Kon de klasleeslijst niet aanmaken. Probeer opnieuw.",
+        });
+      } finally {
       setLoading(false);
     }
   };
@@ -157,14 +360,13 @@ export default function CreateReadingListPage() {
                 />
               </div>
               <div className="inputGroup">
-                <label htmlFor="deadline">2. Deadline *</label>
+                <label htmlFor="deadline">2. Deadline</label>
                 <input
                   id="deadline"
                   type="datetime-local"
                   className="textInput"
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
-                  required
                 />
               </div>
             </div>
@@ -181,12 +383,189 @@ export default function CreateReadingListPage() {
                 onChange={(e) => setTaskDescription(e.target.value)}
               />
             </div>
+
+            <div className="inputGroup assignment-group">
+              <label>4. Doelgroep *</label>
+              <p className="assignment-help">
+                Een klasleeslijst heeft exact één type doelgroep. Leerlingen en
+                klassen blijven altijd binnen je eigen school. Jaren en graden
+                kunnen ook met alle scholen gedeeld worden.
+              </p>
+
+              <div className="assignment-type-row">
+                <button
+                  type="button"
+                  className={`assignment-type-button ${
+                    targetType === "STUDENTS" ? "active" : ""
+                  }`}
+                  onClick={() => selectTargetType("STUDENTS")}
+                >
+                  Leerlingen
+                </button>
+
+                <button
+                  type="button"
+                  className={`assignment-type-button ${
+                    targetType === "CLASSES" ? "active" : ""
+                  }`}
+                  onClick={() => selectTargetType("CLASSES")}
+                >
+                  Klassen
+                </button>
+
+                <button
+                  type="button"
+                  className={`assignment-type-button ${
+                    targetType === "YEARS" ? "active" : ""
+                  }`}
+                  onClick={() => selectTargetType("YEARS")}
+                >
+                  Jaren
+                </button>
+
+                <button
+                  type="button"
+                  className={`assignment-type-button ${
+                    targetType === "GRADES" ? "active" : ""
+                  }`}
+                  onClick={() => selectTargetType("GRADES")}
+                >
+                  Graden
+                </button>
+              </div>
+
+              {targetType === "STUDENTS" && (
+                <div className="assignment-panel assignment-panel-wide">
+                  <h3>Specifieke leerlingen</h3>
+
+                  <StudentTargetSearch
+                    apiUrl={apiUrl}
+                    selectedStudentIds={selectedTargetStudentIds}
+                    selectedStudents={selectedTargetStudents}
+                    onToggleStudent={toggleTargetStudent}
+                    onRemoveStudent={removeTargetStudent}
+                  />
+                </div>
+              )}
+
+              {targetType === "CLASSES" && (
+                <div className="assignment-panel assignment-panel-wide">
+                  <h3>Specifieke klassen</h3>
+
+                  <ClassTargetSearch
+                    apiUrl={apiUrl}
+                    selectedClassIds={selectedTargetClassIds}
+                    selectedClasses={selectedTargetClasses}
+                    onToggleClass={toggleTargetClass}
+                    onRemoveClass={removeTargetClass}
+                  />
+                </div>
+              )}
+
+              {targetType === "YEARS" && (
+                <div className="assignment-panel">
+                  <div className="assignment-panel-heading">
+                    <h3>Jaren</h3>
+                    <span>{scopeLabel(targetAllSchools)}</span>
+                  </div>
+
+                  <div className="assignment-scope-row">
+                    <label>
+                      <input
+                        type="radio"
+                        name="target-scope"
+                        checked={!targetAllSchools}
+                        onChange={() => setTargetAllSchools(false)}
+                      />
+                      Eigen school
+                    </label>
+
+                    <label>
+                      <input
+                        type="radio"
+                        name="target-scope"
+                        checked={targetAllSchools}
+                        onChange={() => setTargetAllSchools(true)}
+                      />
+                      Alle scholen
+                    </label>
+                  </div>
+
+                  <div className="assignment-chip-grid">
+                    {(assignmentTargets?.years ?? [1, 2, 3, 4, 5, 6, 7]).map(
+                      (year) => (
+                        <label key={year} className="assignment-chip">
+                          <input
+                            type="checkbox"
+                            checked={selectedTargetYears.includes(year)}
+                            onChange={() =>
+                              setSelectedTargetYears((prev) =>
+                                toggleNumberInList(year, prev),
+                              )
+                            }
+                          />
+                          {yearLabel(year)}
+                        </label>
+                      ),
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {targetType === "GRADES" && (
+                <div className="assignment-panel">
+                  <div className="assignment-panel-heading">
+                    <h3>Graden</h3>
+                    <span>{scopeLabel(targetAllSchools)}</span>
+                  </div>
+
+                  <div className="assignment-scope-row">
+                    <label>
+                      <input
+                        type="radio"
+                        name="target-scope"
+                        checked={!targetAllSchools}
+                        onChange={() => setTargetAllSchools(false)}
+                      />
+                      Eigen school
+                    </label>
+
+                    <label>
+                      <input
+                        type="radio"
+                        name="target-scope"
+                        checked={targetAllSchools}
+                        onChange={() => setTargetAllSchools(true)}
+                      />
+                      Alle scholen
+                    </label>
+                  </div>
+
+                  <div className="assignment-chip-grid">
+                    {(assignmentTargets?.grades ?? [1, 2, 3]).map((grade) => (
+                      <label key={grade} className="assignment-chip">
+                        <input
+                          type="checkbox"
+                          checked={selectedTargetGrades.includes(grade)}
+                          onChange={() =>
+                            setSelectedTargetGrades((prev) =>
+                              toggleNumberInList(grade, prev),
+                            )
+                          }
+                        />
+                        {gradeLabel(grade)}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="manage-wrapper">
             <div className="eiland-common book-selector-island">
               <div className="search-container">
-                <label className="search-step-label">4. Zoek boeken</label>
+                <label className="search-step-label">5. Zoek boeken</label>
                 <input
                   type="text"
                   className="search-input"
@@ -249,7 +628,7 @@ export default function CreateReadingListPage() {
               <div className="form-details-content">
                 <div className="inputGroup selected-books-label-wrap">
                   <label>
-                    5. Boeken op deze lijst ({selectedBooks.length})
+                    6. Boeken op deze lijst ({selectedBooks.length})
                   </label>
                 </div>
 

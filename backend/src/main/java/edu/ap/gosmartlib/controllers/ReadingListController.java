@@ -1,8 +1,12 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
+import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
+import edu.ap.gosmartlib.dto.readinglist.UpdateReadingListVisibilityDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.ReadingListService;
@@ -32,9 +36,38 @@ public class ReadingListController {
         return ResponseEntity.ok(lists);
     }
 
+    @GetMapping("/assignment-targets")
+    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    public ResponseEntity<ReadingListAssignmentTargetsDTO> getAssignmentTargets(@AuthenticationPrincipal OAuth2User principal) {
+        ReadingListAssignmentTargetsDTO targets = readingListService.getAssignmentTargets(authHelper.extractUid(principal));
+        return ResponseEntity.ok(targets);
+    }
+
+    @GetMapping("/assignment-targets/students")
+    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    public ResponseEntity<?> searchAssignmentStudents(
+            @RequestParam(defaultValue = "") String query,
+            @AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.ok(readingListService.searchAssignmentStudents(authHelper.extractUid(principal), query));
+    }
+
+    @GetMapping("/assignment-targets/classes")
+    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    public ResponseEntity<?> searchAssignmentClasses(
+            @RequestParam(defaultValue = "") String query,
+            @AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.ok(readingListService.searchAssignmentClasses(authHelper.extractUid(principal), query));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ReadingListDetailDTO> getListDetail(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
         ReadingListDetailDTO detail = readingListService.getListDetail(id, authHelper.extractUid(principal));
+        return ResponseEntity.ok(detail);
+    }
+
+    @GetMapping("/shared/{publicUid}")
+    public ResponseEntity<PublicReadingListDetailDTO> getPublicListDetail(@PathVariable String publicUid) {
+        PublicReadingListDetailDTO detail = readingListService.getPublicListDetail(publicUid);
         return ResponseEntity.ok(detail);
     }
 
@@ -58,6 +91,18 @@ public class ReadingListController {
             @AuthenticationPrincipal OAuth2User principal) {
         ReadingListEntity updated = readingListService.updatePersonalList(id, dto, authHelper.extractUid(principal));
         return ResponseEntity.ok(updated.getId());
+    }
+
+    @PatchMapping("/personal/{id}/visibility")
+    public ResponseEntity<ReadingListVisibilityDTO> updatePersonalListVisibility(
+            @PathVariable Long id,
+            @RequestBody UpdateReadingListVisibilityDTO dto,
+            @AuthenticationPrincipal OAuth2User principal) {
+        ReadingListVisibilityDTO updated = readingListService.updatePersonalListVisibility(
+                id,
+                dto.publicVisible(),
+                authHelper.extractUid(principal));
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/personal/{id}")
