@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.controllers.LoanControllers;
 
 import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
 import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
@@ -28,18 +29,81 @@ public class LoanController {
         return ResponseEntity.ok().build();
     }
 
-    // AANGEPAST: Actieve leningen ophalen voor de frontend kolom (Veilig via sessie)
+    // AANGEPAST: Actieve leningen ophalen voor de frontend kolom (Veilig via
+    // sessie)
     @GetMapping("/active")
     public ResponseEntity<List<ActiveLoanDTO>> getActiveLoans(@AuthenticationPrincipal OAuth2User principal) {
         // Controleer of de gebruiker is ingelogd
         if (principal == null || principal.getAttribute("userID") == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         // Haal het Smartschool UID veilig op uit de sessie
         String smartschoolUid = principal.getAttribute("userID");
-        
+
         return ResponseEntity.ok(loanService.getActiveLoansByUser(smartschoolUid));
+    }
+
+    // Student/leerkracht vraagt verlenging aan voor eigen lening
+    @PostMapping("/{loanId}/extension-request")
+    public ResponseEntity<Void> requestLoanExtension(
+            @PathVariable Long loanId,
+            @AuthenticationPrincipal OAuth2User principal) {
+
+        if (principal == null || principal.getAttribute("userID") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String smartschoolUid = principal.getAttribute("userID");
+
+        loanService.requestLoanExtension(loanId, smartschoolUid);
+        return ResponseEntity.ok().build();
+    }
+
+    // Bibliotheekbeheerder haalt open aanvragen op van eigen school
+    @GetMapping("/extension-requests/pending")
+    public ResponseEntity<List<LoanExtensionRequestDTO>> getPendingExtensionRequests(
+            @AuthenticationPrincipal OAuth2User principal) {
+
+        if (principal == null || principal.getAttribute("userID") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String smartschoolUid = principal.getAttribute("userID");
+
+        return ResponseEntity.ok(loanService.getPendingExtensionRequestsForSchool(smartschoolUid));
+    }
+
+    // Bibliotheekbeheerder keurt verlenging goed
+    @PostMapping("/{loanId}/extension-request/approve")
+    public ResponseEntity<Void> approveLoanExtension(
+            @PathVariable Long loanId,
+            @AuthenticationPrincipal OAuth2User principal) {
+
+        if (principal == null || principal.getAttribute("userID") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String smartschoolUid = principal.getAttribute("userID");
+
+        loanService.approveLoanExtension(loanId, smartschoolUid);
+        return ResponseEntity.ok().build();
+    }
+
+    // Bibliotheekbeheerder weigert verlenging
+    @PostMapping("/{loanId}/extension-request/deny")
+    public ResponseEntity<Void> denyLoanExtension(
+            @PathVariable Long loanId,
+            @AuthenticationPrincipal OAuth2User principal) {
+
+        if (principal == null || principal.getAttribute("userID") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String smartschoolUid = principal.getAttribute("userID");
+
+        loanService.denyLoanExtension(loanId, smartschoolUid);
+        return ResponseEntity.ok().build();
     }
 
     // Meerdere boeken in 1 keer terugbrengen via de frontend inlever-knop
@@ -49,7 +113,8 @@ public class LoanController {
         return ResponseEntity.ok().build();
     }
 
-    // Enkel boek terugbrengen (kun je behouden voor interne aanroepen / admin testing)
+    // Enkel boek terugbrengen (kun je behouden voor interne aanroepen / admin
+    // testing)
     @PostMapping("/{loanId}/return")
     public ResponseEntity<Void> returnBook(@PathVariable Long loanId, @RequestParam int quantity) {
         loanService.returnBook(loanId, quantity);
@@ -62,10 +127,10 @@ public class LoanController {
         if (principal == null || principal.getAttribute("userID") == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         // Haal het Smartschool UID op uit de sessie
         String smartschoolUid = principal.getAttribute("userID");
-        
+
         // Haal data op via service
         List<LoanHistoryDTO> history = loanService.getLoanHistoryByUser(smartschoolUid);
         return ResponseEntity.ok(history);
