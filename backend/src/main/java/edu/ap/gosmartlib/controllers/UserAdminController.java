@@ -1,17 +1,12 @@
 package edu.ap.gosmartlib.controllers;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
-
 import edu.ap.gosmartlib.dto.AdminUserDTO;
 import edu.ap.gosmartlib.dto.UpdateUserRoleRequest;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.UserAdminService;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -19,7 +14,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/admin/users")
@@ -27,13 +24,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class UserAdminController {
 
     private final UserAdminService userAdminService;
+    private final AuthHelper authHelper;
 
     @GetMapping
     @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
-    public Page<AdminUserDTO> listUsers(@AuthenticationPrincipal OAuth2User oAuth2User,
+    public Page<AdminUserDTO> listUsers(@AuthenticationPrincipal OAuth2User principal,
             @RequestParam(required = false) String name,
             Pageable pageable) {
-        return userAdminService.listUsersForAdmin(extractUid(oAuth2User), name, pageable);
+        return userAdminService.listUsersForAdmin(authHelper.extractUid(principal), name, pageable);
     }
 
     @PatchMapping("/{id}/role")
@@ -41,21 +39,7 @@ public class UserAdminController {
     public AdminUserDTO updateRole(
             @PathVariable long id,
             @RequestBody UpdateUserRoleRequest request,
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        return userAdminService.updateUserRole(extractUid(oAuth2User), id, request.role());
-    }
-
-    // Hulpmethodes
-    private String extractUid(OAuth2User oAuth2User) {
-        if (oAuth2User == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Niet ingelogd");
-        }
-
-        String uid = oAuth2User.getAttribute("userID");
-        if (uid == null || uid.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Geen geldige gebruiker");
-        }
-
-        return uid;
+            @AuthenticationPrincipal OAuth2User principal) {
+        return userAdminService.updateUserRole(authHelper.extractUid(principal), id, request.role());
     }
 }

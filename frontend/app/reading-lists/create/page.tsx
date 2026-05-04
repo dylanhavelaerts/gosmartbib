@@ -6,11 +6,13 @@ import { useAuth } from "../../context/AuthContext";
 import { Book } from "../../interfaces/Book";
 import type {
   ReadingListAssignmentTargets,
+  ReadingListClassTarget,
   ReadingListStudentTarget,
   ReadingListTargetType,
 } from "../../interfaces/ReadingList";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import StudentTargetSearch from "../components/StudentTargetSearch";
+import ClassTargetSearch from "../components/ClassTargetSearch";
 import {
   cleanTargetPayloadForType,
   gradeLabel,
@@ -39,9 +41,12 @@ export default function CreateReadingListPage() {
   >([]);
   const [selectedTargetStudents, setSelectedTargetStudents] = useState<
   ReadingListStudentTarget[]
->([]);
+  >([]);
   const [selectedTargetClassIds, setSelectedTargetClassIds] = useState<
     number[]
+  >([]);
+  const [selectedTargetClasses, setSelectedTargetClasses] = useState<
+  ReadingListClassTarget[]
   >([]);
   const [selectedTargetYears, setSelectedTargetYears] = useState<number[]>([]);
   const [selectedTargetGrades, setSelectedTargetGrades] = useState<number[]>(
@@ -129,9 +134,36 @@ export default function CreateReadingListPage() {
     });
   };
 
-  const toggleTargetClass = (classId: number) => {
-    setSelectedTargetClassIds((prev) => toggleNumberInList(classId, prev));
-  };
+const removeTargetClass = (classId: number) => {
+  setSelectedTargetClassIds((prev) =>
+    prev.filter((currentClassId) => currentClassId !== classId),
+  );
+
+  setSelectedTargetClasses((prev) =>
+    prev.filter((schoolClass) => schoolClass.id !== classId),
+  );
+};
+
+const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
+  if (selectedTargetClassIds.includes(schoolClass.id)) {
+    removeTargetClass(schoolClass.id);
+    return;
+  }
+
+  setSelectedTargetClassIds((prev) =>
+    [...prev, schoolClass.id].sort((a, b) => a - b),
+  );
+
+  setSelectedTargetClasses((prev) => {
+    if (prev.some((selectedClass) => selectedClass.id === schoolClass.id)) {
+      return prev;
+    }
+
+    return [...prev, schoolClass].sort((a, b) =>
+      a.name.localeCompare(b.name, "nl", { sensitivity: "base" }),
+    );
+  });
+};
 
   const selectTargetType = (nextTargetType: ReadingListTargetType) => {
     setTargetType(nextTargetType);
@@ -190,6 +222,7 @@ export default function CreateReadingListPage() {
     setSelectedTargetStudentIds([]);
     setSelectedTargetStudents([]);
     setSelectedTargetClassIds([]);
+    setSelectedTargetClasses([]);
     setSelectedTargetYears([]);
     setSelectedTargetGrades([]);
     setTargetAllSchools(false);
@@ -419,42 +452,13 @@ export default function CreateReadingListPage() {
                 <div className="assignment-panel assignment-panel-wide">
                   <h3>Specifieke klassen</h3>
 
-                  {assignmentTargets?.classes?.length ? (
-                    <div className="assignment-class-grid">
-                      {assignmentTargets.classes.map((schoolClass) => (
-                        <label key={schoolClass.id} className="assignment-chip">
-                          <input
-                            type="checkbox"
-                            checked={selectedTargetClassIds.includes(
-                              schoolClass.id,
-                            )}
-                            onChange={() => toggleTargetClass(schoolClass.id)}
-                          />
-
-                          <span>
-                            {schoolClass.name}
-                            {schoolClass.year || schoolClass.grade ? (
-                              <small>
-                                {schoolClass.year
-                                  ? yearLabel(schoolClass.year)
-                                  : ""}
-                                {schoolClass.year && schoolClass.grade
-                                  ? " · "
-                                  : ""}
-                                {schoolClass.grade
-                                  ? gradeLabel(schoolClass.grade)
-                                  : ""}
-                              </small>
-                            ) : null}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="assignment-empty">
-                      Er zijn nog geen klassen gekend voor je school.
-                    </p>
-                  )}
+                  <ClassTargetSearch
+                    apiUrl={apiUrl}
+                    selectedClassIds={selectedTargetClassIds}
+                    selectedClasses={selectedTargetClasses}
+                    onToggleClass={toggleTargetClass}
+                    onRemoveClass={removeTargetClass}
+                  />
                 </div>
               )}
 

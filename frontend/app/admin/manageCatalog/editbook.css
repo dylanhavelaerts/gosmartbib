@@ -1,3 +1,52 @@
+/* ── Search row (search input + per-pagina selector) ────────── */
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-row .search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-row .pageSizeSelector {
+  flex-shrink: 0;
+}
+
+.search-row .pageSizeLabel {
+  font-size: 11px;
+}
+
+.search-row .pageSizeSelect {
+  font-size: 11px;
+  padding: 0.2rem 0.2rem;
+}
+
+/* ── List footer (pagination) ───────────────────────────────── */
+.list-footer {
+  border-top: 1px solid #eee;
+  background: #fdfdfd;
+}
+
+/* Compact pagination inside the narrow eiland-lijst panel */
+.list-footer .pagination {
+  gap: 0.2rem;
+  padding: 0.4rem 0;
+}
+
+.list-footer .paginationBtn {
+  min-width: 1.9rem;
+  height: 1.9rem;
+  font-size: 0.75rem;
+  padding: 0 0.4rem;
+}
+
+.list-footer .paginationNumber {
+  width: 1.9rem;
+  padding: 0;
+}
+
 /* ── Overlay ───────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;

@@ -10,4 +10,8 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClassEntity, 
     Optional<SchoolClassEntity> findBySmartschoolGroupId(String smartschoolGroupId);
 
     List<SchoolClassEntity> findAllBySchool_IdOrderByNameAsc(Long schoolId);
+
+    List<SchoolClassEntity> findTop20BySchool_IdAndNameContainingIgnoreCaseOrderByNameAsc(
+            Long schoolId,
+            String name);
 }

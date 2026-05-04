@@ -3,11 +3,13 @@ package edu.ap.gosmartlib.controllers;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.BookNotificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +34,11 @@ class ReadingListNotificationControllerTest {
 
     @Mock
     private OAuth2User oAuth2User;
+
+    // @Spy gebruikt de echte implementatie van AuthHelper zodat extractUid/extractUidOrNull
+    // correct werken zonder elke test afzonderlijk te stubben.
+    @Spy
+    private AuthHelper authHelper = new AuthHelper();
 
     @InjectMocks
     private ReadingListNotificationController readingListNotificationController;

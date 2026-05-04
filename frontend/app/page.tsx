@@ -29,6 +29,7 @@ export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [search, setSearch] = useState("");
   const [greeting, setGreeting] = useState(GREETINGS[0]);
+  const [firstName, setFirstName] = useState<string | null>(null);
 
   useEffect(() => {
     setGreeting(GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
@@ -41,6 +42,25 @@ export default function Home() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+  useEffect(() => {
+    if (authLoading || !user?.smartschoolUid) return;
+
+    fetch(`${apiUrl}/users/display-names`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uids: [user.smartschoolUid] }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.success && data.displayNames?.[user.smartschoolUid]) {
+          const fullName: string = data.displayNames[user.smartschoolUid];
+          setFirstName(fullName.split(" ")[0]);
+        }
+      })
+      .catch(() => {});
+  }, [authLoading, user, apiUrl]);
 
   const cls = (id: TabId) =>
     `tabBtn ${selected === id ? "selectedCategory" : ""}`;
@@ -116,8 +136,14 @@ export default function Home() {
       <main>
         <div id="top-content">
           <div id="greeting">
-            <h1 className="greetingName">Hey Naam! </h1>
-            <h2 className="greetingText">{greeting}</h2>
+            {firstName ? (
+              <>
+                <h1 className="greetingName">Hey {firstName}!</h1>
+                <h2 className="greetingText">{greeting}</h2>
+              </>
+            ) : (
+              <h1 className="greetingText">{greeting}</h1>
+            )}
           </div>
 
           <div id="searchBox">

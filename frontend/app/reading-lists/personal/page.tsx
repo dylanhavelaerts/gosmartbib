@@ -7,13 +7,31 @@ import { Book } from "../../interfaces/Book";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import "./myReadingList.css";
 
+type FormBook = {
+  id: number;
+  title: string;
+  authors?: string[];
+  thumbnail?: string | null;
+  isbn?: string;
+};
+
 interface PersonalList {
   id: number;
   title: string;
   taskDescription?: string | null;
-  bookIds: number[];
+  bookCount?: number;
+  bookIds?: number[];
   ownList: boolean;
   listType: "PERSONAL" | "CLASS";
+}
+
+interface PersonalListDetailResponse {
+  id: number;
+  title: string;
+  taskDescription?: string | null;
+  ownList: boolean;
+  listType: "PERSONAL" | "CLASS";
+  books?: FormBook[];
 }
 
 type ViewState = "overview" | "create";
@@ -32,7 +50,7 @@ export default function MyReadingListPage() {
 
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
-  const [formBooks, setFormBooks] = useState<Book[]>([]);
+  const [formBooks, setFormBooks] = useState<FormBook[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [formLoading, setFormLoading] = useState(false);
@@ -42,20 +60,6 @@ export default function MyReadingListPage() {
   } | null>(null);
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
-
-  const booksById = useCallback(() => {
-    const map = new Map<number, Book>();
-    allBooks.forEach((b) => map.set(b.id, b));
-    return map;
-  }, [allBooks]);
-
-  const listBooks = (list: PersonalList | null): Book[] => {
-    if (!list) return [];
-    const map = booksById();
-    return list.bookIds
-      .map((id) => map.get(id))
-      .filter((b): b is Book => Boolean(b));
-  };
 
   const fetchMyLists = useCallback(() => {
     if (!user) return;
@@ -86,18 +90,59 @@ export default function MyReadingListPage() {
 
   useEffect(() => {
     const editId = Number(searchParams.get("edit"));
-    if (!editId || myLists.length === 0 || allBooks.length === 0) return;
-    const list = myLists.find((l) => l.id === editId);
-    if (list) openEdit(list);
-  }, [searchParams, myLists, allBooks]);
+    if (!editId || myLists.length === 0) return;
 
-  const openEdit = (list: PersonalList) => {
-    setFormTitle(list.title);
-    setFormDescription(list.taskDescription || "");
-    setFormBooks(listBooks(list));
-    setActiveList(list);
-    setView("create");
+    const list = myLists.find((l) => l.id === editId);
+
+    if (list) {
+      void openEdit(list);
+    }
+  }, [searchParams, myLists]);
+
+  const openEdit = async (list: PersonalList) => {
     setFormMsg(null);
+    setFormLoading(true);
+
+    try {
+      const res = await fetch(`${apiUrl}/reading-lists/${list.id}`, {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Kon leeslijst niet laden.");
+      }
+
+      const detail: PersonalListDetailResponse = await res.json();
+
+      if (detail.listType !== "PERSONAL" || !detail.ownList) {
+        throw new Error("Deze persoonlijke leeslijst kan niet bewerkt worden.");
+      }
+
+      const books = Array.isArray(detail.books) ? detail.books : [];
+
+      setFormTitle(detail.title || "");
+      setFormDescription(detail.taskDescription || "");
+      setFormBooks(books);
+      setSearchQuery("");
+      setActiveList({
+        ...list,
+        title: detail.title,
+        taskDescription: detail.taskDescription,
+        bookIds: books.map((book) => book.id),
+      });
+      setView("create");
+    } catch (err) {
+      console.error(err);
+      setFormMsg({
+        type: "error",
+        text:
+          err instanceof Error && err.message
+            ? err.message
+            : "Kon leeslijst niet laden.",
+      });
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   const openCreate = () => {
@@ -244,7 +289,7 @@ export default function MyReadingListPage() {
             {!listsLoading && myLists.length > 0 && (
               <div className="mrl-list-grid">
                 {myLists.map((list) => {
-                  const count = list.bookIds?.length ?? 0;
+                  const count = list.bookCount ?? list.bookIds?.length ?? 0;
                   return (
                     <div key={list.id} className="mrl-list-card">
                       <div
@@ -273,7 +318,9 @@ export default function MyReadingListPage() {
                         </button>
                         <button
                           className="mrl-btn-outline"
-                          onClick={() => openEdit(list)}
+                          onClick={async () => {
+                            await openEdit(list);
+                          }}
                         >
                           Bewerken
                         </button>

@@ -153,6 +153,47 @@ export default function ReadingListDetailPage() {
   }
 };
 
+  const removeBook = async (bookId: number) => {
+    if (!detail) return;
+
+    const endpoint =
+      detail.listType === "PERSONAL"
+        ? `${apiUrl}/reading-lists/personal/${detail.id}`
+        : `${apiUrl}/reading-lists/class/${detail.id}`;
+
+    const updatedBookIds = detail.books
+      .filter((b) => b.id !== bookId)
+      .map((b) => b.id);
+
+    const payload = {
+      title: detail.title,
+      taskDescription: detail.taskDescription ?? "",
+      deadline: detail.deadline ?? null,
+      bookIds: updatedBookIds,
+      targetType: detail.targetType ?? null,
+      targetStudentIds: detail.targetStudentIds ?? [],
+      targetClassIds: detail.targetClassIds ?? [],
+      targetYears: detail.targetYears ?? [],
+      targetGrades: detail.targetGrades ?? [],
+      targetAllSchools: detail.targetAllSchools ?? false,
+    };
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error();
+      setDetail((prev) =>
+        prev ? { ...prev, books: prev.books.filter((b) => b.id !== bookId) } : prev,
+      );
+    } catch {
+      setError("Kon het boek niet verwijderen uit de leeslijst.");
+    }
+  };
+
   const copySharedUrl = async () => {
     if (!sharedUrl) {
       return;
@@ -407,6 +448,14 @@ export default function ReadingListDetailPage() {
                             ? "Markeer als ongelezen"
                             : "Markeer als gelezen"}
                         </button>
+                        {detail.ownList && (
+                          <button
+                            className="rld-btn-danger"
+                            onClick={() => removeBook(book.id)}
+                          >
+                            Verwijderen
+                          </button>
+                        )}
                       </div>
                     </div>
                     {/* Badges */}

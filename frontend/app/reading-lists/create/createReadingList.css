@@ -1,6 +1,6 @@
 .readingListContainer {
   width: min(1420px, calc(100% - 32px));
-  margin: 0 auto;
+  margin: 4.5rem auto 0;
   padding: 32px 0 56px;
   color: #172033;
 }
@@ -463,7 +463,7 @@
 
 .form-details-island {
   position: sticky;
-  top: 18px;
+  top: calc(4.5rem + 18px);
 }
 
 .form-details-content {

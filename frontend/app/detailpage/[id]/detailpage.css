@@ -113,6 +113,128 @@ align-self: center;
   color: #9b1c1c;
 }
 
+/* ── ADD TO READING LIST DROPDOWN ── */
+
+.addToListWrapper {
+  position: relative;
+  align-self: center;
+  width: 100%;
+}
+
+.addToListBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.45rem 0.9rem;
+  background-color: #8e2446;
+  color: white;
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(142, 36, 70, 0.2);
+  transition: background-color 0.2s ease;
+}
+
+.addToListBtn:hover {
+  background-color: #6e1a35;
+}
+
+.addToListChevron {
+  font-size: 9px;
+  opacity: 0.8;
+}
+
+.addToListDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e4d5de;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.addToListEmpty {
+  padding: 0.75rem 1rem;
+  font-size: 13px;
+  color: #777;
+  margin: 0;
+  text-align: center;
+}
+
+.addToListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f0e6ea;
+  font-size: 13px;
+  color: #1a1a1a;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.addToListItem:last-child {
+  border-bottom: none;
+}
+
+.addToListItem:hover:not(:disabled) {
+  background-color: #f9f0f3;
+}
+
+.addToListItem--added {
+  color: #777;
+  cursor: default;
+}
+
+.addToListItemTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.addToListItemCheck {
+  color: #2d6a4f;
+  font-weight: 700;
+  font-size: 12px;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+.addToListMsg {
+  margin: 0.4rem 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+.addToListMsg--success {
+  color: #2d6a4f;
+  background-color: #e6f4ea;
+}
+
+.addToListMsg--error {
+  color: #9b1c1c;
+  background-color: #fce8e8;
+}
+
 .detailRatingSection {
   display: flex;
   flex-direction: column;

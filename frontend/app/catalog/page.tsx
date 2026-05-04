@@ -104,7 +104,7 @@ export default function Home() {
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/all?${params}`;
     }
 
-    const delay = isSearching ? 300 : 0;
+    const delay = isSearching ? 500 : 0;
     const timer = setTimeout(() => {
       fetch(url, { credentials: "include" })
         .then((res) => res.json())
