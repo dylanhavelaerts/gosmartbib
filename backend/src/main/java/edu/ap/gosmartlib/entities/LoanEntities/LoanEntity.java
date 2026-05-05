@@ -6,10 +6,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "tblLoans")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 public class LoanEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,4 +32,14 @@ public class LoanEntity {
 
     @Column(nullable = false)
     private LocalDate dueDate; // Ten laatste terugbrengen
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private LoanExtensionStatus extensionStatus = LoanExtensionStatus.NONE;
+
+    private LocalDateTime extensionRequestedAt;
+
+    private LocalDateTime extensionDecidedAt;
+
+    private String extensionDecidedBySmartschoolUserId;
 }

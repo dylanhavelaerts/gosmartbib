@@ -64,6 +64,14 @@ const beheerderWidgets = [
       "Beheer hier nieuwe uitleningen en terugbrengingen van boeken in de bibliotheek.",
     href: "/admin/loan-return",
   },
+  {
+    iconSrc: "/checl.png",
+    iconAlt: "Verlengingsaanvragen",
+    title: "Verlengingsaanvragen",
+    description:
+      "Keur aanvragen van leerlingen en leerkrachten goed of wijs ze af.",
+    href: "/admin/loan-extensions",
+  },
 ];
 
 const adminWidgets = [

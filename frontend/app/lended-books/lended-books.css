@@ -79,7 +79,9 @@
   border: 1px solid #ece6f0;
   border-radius: 0.5rem;
   overflow: hidden;
-  transition: box-shadow 0.2s, transform 0.2s;
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s;
 }
 
 .bookCard:hover {
@@ -106,7 +108,7 @@
   max-width: 100%;
   object-fit: contain;
   border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .noCover {
@@ -346,17 +348,96 @@
   background-color: #b71c1c;
 }
 
+.loanActionMessage {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: #fdf2f5;
+  border: 1px solid #f0c7d2;
+  color: #7a1e3b;
+  font-size: 0.92rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(122, 47, 50, 0.08);
+}
+
+.extensionStatus {
+  margin-top: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.extension-pending {
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+}
+
+.extension-approved {
+  background: #ecfdf3;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.extension-denied {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.extensionButton {
+  width: 100%;
+  margin-top: 0.65rem;
+  padding: 0.6rem 0.8rem;
+  border: none;
+  border-radius: 999px;
+  background: #8e2446;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(142, 36, 70, 0.18);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease,
+    opacity 0.16s ease;
+}
+
+.extensionButton:hover:not(:disabled) {
+  background: #7a1e3b;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(142, 36, 70, 0.24);
+}
+
+.extensionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 /* --- RESPONSIVE --- */
 @media (max-width: 1000px) {
-  .bookCard { width: calc(33.333% - 1rem); }
+  .bookCard {
+    width: calc(33.333% - 1rem);
+  }
 }
 
 @media (max-width: 768px) {
-  .bookCard { width: calc(50% - 0.75rem); }
-  .pageLayout { padding: 1rem 1.5rem 2rem; }
+  .bookCard {
+    width: calc(50% - 0.75rem);
+  }
+  .pageLayout {
+    padding: 1rem 1.5rem 2rem;
+  }
 }
 
 @media (max-width: 480px) {
-  .bookCard { width: 100%; }
-  .resultsFrame { padding: 1rem; }
+  .bookCard {
+    width: 100%;
+  }
+  .resultsFrame {
+    padding: 1rem;
+  }
 }

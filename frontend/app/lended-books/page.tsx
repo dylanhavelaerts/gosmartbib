@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import "./lended-books.css";
+import { useAuth } from "../context/AuthContext";
 
 // --- Types ---
+type ExtensionStatus = "NONE" | "PENDING" | "APPROVED" | "DENIED";
+
 interface LoanBookDTO {
   id: number;
   title: string;
@@ -19,6 +22,7 @@ interface ActiveLoan {
   quantity: number;
   loanDate: string;
   dueDate: string;
+  extensionStatus: ExtensionStatus;
   book: LoanBookDTO | null;
 }
 
@@ -32,10 +36,16 @@ interface LoanHistory {
 }
 
 export default function MijnBoekenPage() {
+  const { user } = useAuth();
   const [activeLoans, setActiveLoans] = useState<ActiveLoan[]>([]);
   const [loanHistory, setLoanHistory] = useState<LoanHistory[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [requestingLoanId, setRequestingLoanId] = useState<number | null>(null);
+
+  const canRequestExtension = user?.role === "STUDENT" || user?.role === "TEACHER";
+
 
   useEffect(() => {
     const fetchAllLoans = async () => {
@@ -94,6 +104,50 @@ export default function MijnBoekenPage() {
     }
   };
 
+  const getExtensionText = (status: ExtensionStatus) => {
+    switch (status) {
+      case "PENDING":
+        return "Verlenging aangevraagd";
+      case "APPROVED":
+        return "Verlenging goedgekeurd";
+      case "DENIED":
+        return "Verlenging geweigerd";
+      default:
+        return null;
+    }
+  };
+
+  const requestExtension = async (loanId: number) => {
+    try {
+      setActionMessage(null);
+      setRequestingLoanId(loanId);
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const res = await fetch(`${apiUrl}/loans/${loanId}/extension-request`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || "Kon de verlengingsaanvraag niet versturen.");
+      }
+
+      setActiveLoans((current) =>
+        current.map((loan) =>
+          loan.loanId === loanId ? { ...loan, extensionStatus: "PENDING" } : loan
+        )
+      );
+
+      setActionMessage("Je verlengingsaanvraag werd verstuurd.");
+    } catch (err: any) {
+      setActionMessage(err.message || "Er ging iets mis bij het aanvragen.");
+    } finally {
+      setRequestingLoanId(null);
+    }
+  };
+
+
   // --- UI Components ---
   if (isLoading) {
     return (
@@ -134,6 +188,9 @@ export default function MijnBoekenPage() {
         </div>
       </div>
 
+      {actionMessage && <div className="loanActionMessage">{actionMessage}</div>}
+
+
       <div className="contentGrid">
         {/* --- ACTIEVE UITLENINGEN --- */}
         <section>
@@ -163,6 +220,10 @@ export default function MijnBoekenPage() {
             <div className="resultsFrame">
               {activeLoans.map((loan) => {
                 const status = getDueDateStatus(loan.dueDate);
+                const extensionText = getExtensionText(loan.extensionStatus);
+                const showRequestButton =
+                  canRequestExtension &&
+                  (loan.extensionStatus === "NONE");
 
                 return (
                   <div key={loan.loanId} className="bookCard">
@@ -198,7 +259,6 @@ export default function MijnBoekenPage() {
                         {loan.book?.title || "Onbekend boek"}
                       </h3>
                       
-                      {/* Nieuwe controle op de auteurs array */}
                       <p className="bookCardAuthor">
                         {loan.book?.authors && loan.book.authors.length > 0 
                           ? loan.book.authors.join(", ") 
@@ -219,6 +279,25 @@ export default function MijnBoekenPage() {
                             <span>Aantal:</span>
                             <strong style={{ color: "#8e2446" }}>{loan.quantity}</strong>
                           </div>
+                        )}
+
+                        {extensionText && (
+                          <div
+                            className={`extensionStatus extension-${loan.extensionStatus.toLowerCase()}`}
+                          >
+                            {extensionText}
+                          </div>
+                        )}
+
+                        {showRequestButton && (
+                          <button
+                            className="extensionButton"
+                            disabled={requestingLoanId === loan.loanId}
+                            onClick={() => requestExtension(loan.loanId)}
+                          >
+                            {requestingLoanId === loan.loanId
+                              ? "Aanvragen..." : "Verlenging aanvragen"}
+                          </button>
                         )}
                       </div>
                     </div>
