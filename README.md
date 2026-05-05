@@ -1,106 +1,91 @@
 # GoSmartLib
 
-## Getting started
+## Beschrijving
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+GoSmartLib (ook wel GoSmartBib) is een modern, uitgebreid bibliotheekbeheersysteem dat specifiek is ontworpen voor scholen. Het platform biedt leerlingen, leerkrachten en beheerders de mogelijkheid om een digitale boekencatalogus te raadplegen, boeken te lenen, leeslijsten te beheren en aankoopsuggesties te doen. 
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Het systeem onderscheidt zich door een diepe integratie met Smartschool. Dit stelt scholen in staat om gebruikers, klassen en campussen te synchroniseren via OneRoster, en om berichten te verzenden via SOAP. Daarnaast maakt het platform het mogelijk voor gebruikers om veilig in te loggen via Smartschool OAuth2.
 
-## Add your files
+## Functionaliteiten
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+- **Catalogus en Inventaris**: Zoeken en beheren van boeken met automatische data-aanvulling via de Google Books API.
+- **Uitleenbeheer**: Boeken uitlenen, inleveren, uitleentermijnen verlengen en het beheren van uitleenbeleid.
+- **Leeslijsten**: Aanmaken van leeslijsten voor specifieke klassen, graden of individuele studenten.
+- **Smartschool Integratie**: 
+  - Single Sign-On (SSO) voor veilige toegang.
+  - Automatische synchronisatie van campussen, klassen en leerlingen/leerkrachten via OneRoster.
+  - Verzenden van notificaties/berichten via SOAP.
+- **Reviews en Beoordelingen**: Leerlingen kunnen boeken beoordelen. Het systeem bevat tevens een automatische moderatie om ongepaste woorden te blokkeren.
+- **Notificaties**: Geautomatiseerde interne meldingen (bijvoorbeeld voor te laat ingeleverde boeken).
+- **Aankoopverzoeken**: Functionaliteit voor leerlingen en leerkrachten om nieuwe boeken aan te vragen bij de bibliotheekbeheerder.
+- **Bulk Import**: Ondersteuning voor het in bulk importeren van boeken via Excel-bestanden.
 
+## Technologieën
+
+Dit project maakt gebruik van een moderne tech-stack:
+
+**Frontend**
+- Next.js (v16.1.6)
+- React (v19)
+- TypeScript
+
+**Backend**
+- Java 17
+- Spring Boot (v4.0.2)
+- Spring Security & OAuth2
+- Spring Data JPA
+- Maven
+- Apache POI (voor Excel verwerking)
+
+**Infrastructuur & Database**
+- Docker & Docker Compose
+- Traefik (Reverse proxy met Let's Encrypt automatische SSL-certificaten)
+- MySQL (v8.0)
+
+## Vereisten (Prerequisites)
+
+Om het project te draaien via de voorziene containers, heb je het volgende nodig:
+- Docker
+- Docker Compose
+
+Voor lokale ontwikkeling zonder Docker:
+- Node.js (v20 of hoger)
+- Java Development Kit (JDK 17)
+- Een draaiende MySQL 8.0 server
+
+## Installatie en Setup (Productie / Docker)
+
+1. **Kloon de repository**
+```bash
+git clone [https://gitlab.apstudent.be/bachelor-it/software-project/25-26/team-08/gosmartlib.git](https://gitlab.apstudent.be/bachelor-it/software-project/25-26/team-08/gosmartlib.git)
+cd gosmartlib
 ```
-cd existing_repo
-git remote add origin https://gitlab.apstudent.be/bachelor-it/software-project/25-26/team-08/gosmartlib.git
-git branch -M main
-git push -uf origin main
+2. **Secrets instellen**
+
+Het docker-compose.yml bestand maakt gebruik van Docker secrets voor veilige opslag van inloggegevens. Zorg ervoor dat de volgende omgevingsvariabelen of bestanden zijn geconfigureerd voordat je de containers start:
+
+- `GOOGLE_BOOKS_API_KEY`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+- `DB_ROOT_PASSWORD`
+- `SMARTSCHOOL_CLIENT_ID`
+- `SMARTSCHOOL_CLIENT_SECRET`
+- `APP_CRYPTO_PASSWORD`
+- `APP_CRYPTO_SALT`
+
+3. **Start de applicatie**
+
+Maak het externe netwerk aan (zoals gedefinieerd in de compose file) en start de containers:
+
+```bash
+docker network create proxy
+docker-compose up -d --build
 ```
 
-## Integrate with your tools
 
-- [ ] [Set up project integrations](https://gitlab.apstudent.be/bachelor-it/software-project/25-26/team-08/gosmartlib/-/settings/integrations)
+Traefik zal automatisch het verkeer routeren naar gosmartbib.tech voor de frontend en gosmartbib.tech/api voor de backend.
 
-## Collaborate with your team
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+**Auteurs en Erkenning**
 
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
----
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-
-Choose a self-explaining name for your project.
-
-## Description
-
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-
-Show your appreciation to those who have contributed to the project.
-
-## License
-
-For open source projects, say how it is licensed.
-
-## Project status
-
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
-
---
-Pipeline test
+Dit project is ontwikkeld door Team 08 als onderdeel van het bachelor Software Project (Academiejaar 25-26).
