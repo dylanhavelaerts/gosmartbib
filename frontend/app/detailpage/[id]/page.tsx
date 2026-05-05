@@ -381,10 +381,8 @@ export default function DetailPage({
             <hr className="detailDivider" />
 
             {/* DE KNOP NAAR GOOGLE PLAY BOOKS PREVIEW */}
-            <div className="detailPreviewSection my-6">
-              <h3 className="font-semibold text-gray-800 mb-3">
-                Leesvoorbeeld
-              </h3>
+            <div className="detailPreviewSection">
+              <h2>Leesvoorbeeld</h2>
 
               {displayLink ? (
                 <a
@@ -396,10 +394,10 @@ export default function DetailPage({
                   Bekijk de eerste pagina's
                 </a>
               ) : (
-                <div className="p-4 bg-gray-50 border border-gray-200 text-gray-500 rounded-lg">
+                <p className="detailPreviewEmpty">
                   Voor dit boek is helaas geen digitaal leesvoorbeeld
                   beschikbaar.
-                </div>
+                </p>
               )}
             </div>
 
