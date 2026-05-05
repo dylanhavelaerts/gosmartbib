@@ -50,18 +50,15 @@ class LoanControllerTest {
 
     @Test
     void givenValidPrincipal_whenGetActiveLoans_thenReturnsOkWithLoans() {
-        // Arrange
         String uid = "uid-123";
         List<ActiveLoanDTO> expectedLoans = List.of(mock(ActiveLoanDTO.class));
 
-        // Vertel de mock wat hij moet doen als de controller het ID opvraagt
         when(principal.getAttribute("userID")).thenReturn(uid);
         when(loanService.getActiveLoansByUser(uid)).thenReturn(expectedLoans);
 
-        // Act: geef de principal mee in plaats van de string
-        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(principal);
+        // null = geen smartschoolUserId meegegeven (student bekijkt eigen leningen)
+        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(principal, null);
 
-        // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expectedLoans, response.getBody());
         verify(loanService, times(1)).getActiveLoansByUser(uid);
@@ -69,12 +66,43 @@ class LoanControllerTest {
 
     @Test
     void givenNullPrincipal_whenGetActiveLoans_thenReturnsUnauthorized() {
-        // Act
-        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(null);
+        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(null, null);
 
-        // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(loanService);
+    }
+
+    @Test
+    void givenAdminWithOtherUserId_whenGetActiveLoans_thenCallsGetActiveLoansAsAdmin() {
+        String adminUid = "beheerder-123";
+        String targetUid = "lener-456";
+        List<ActiveLoanDTO> expectedLoans = List.of(mock(ActiveLoanDTO.class));
+
+        when(principal.getAttribute("userID")).thenReturn(adminUid);
+        when(loanService.getActiveLoansAsAdmin(adminUid, targetUid)).thenReturn(expectedLoans);
+
+        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(principal, targetUid);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedLoans, response.getBody());
+        verify(loanService, times(1)).getActiveLoansAsAdmin(adminUid, targetUid);
+        verify(loanService, never()).getActiveLoansByUser(any());
+    }
+
+    @Test
+    void givenAdminWithOwnUserId_whenGetActiveLoans_thenCallsGetActiveLoansByUser() {
+        String uid = "beheerder-123";
+        List<ActiveLoanDTO> expectedLoans = List.of(mock(ActiveLoanDTO.class));
+
+        when(principal.getAttribute("userID")).thenReturn(uid);
+        when(loanService.getActiveLoansByUser(uid)).thenReturn(expectedLoans);
+
+        // smartschoolUserId == eigen uid → geen admin-pad nodig
+        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(principal, uid);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(loanService, times(1)).getActiveLoansByUser(uid);
+        verify(loanService, never()).getActiveLoansAsAdmin(any(), any());
     }
 
     // --- Tests voor Return endpoints ---

@@ -32,17 +32,26 @@ public class LoanController {
     // AANGEPAST: Actieve leningen ophalen voor de frontend kolom (Veilig via
     // sessie)
     @GetMapping("/active")
-    public ResponseEntity<List<ActiveLoanDTO>> getActiveLoans(@AuthenticationPrincipal OAuth2User principal) {
-        // Controleer of de gebruiker is ingelogd
+    public ResponseEntity<List<ActiveLoanDTO>> getActiveLoans(
+            @AuthenticationPrincipal OAuth2User principal,
+            @RequestParam(required = false) String smartschoolUserId) {
+
         if (principal == null || principal.getAttribute("userID") == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // Haal het Smartschool UID veilig op uit de sessie
-        String smartschoolUid = principal.getAttribute("userID");
+        String loggedInUid = (String) principal.getAttribute("userID");
 
-        return ResponseEntity.ok(loanService.getActiveLoansByUser(smartschoolUid));
+        // Als er een andere gebruiker wordt opgevraagd, controleer dan of de ingelogde
+        // gebruiker een bibliotheekbeheerder is
+        if (smartschoolUserId != null && !smartschoolUserId.isBlank()
+                && !smartschoolUserId.equals(loggedInUid)) {
+            return ResponseEntity.ok(loanService.getActiveLoansAsAdmin(loggedInUid, smartschoolUserId));
+        }
+
+        return ResponseEntity.ok(loanService.getActiveLoansByUser(loggedInUid));
     }
+
 
     // Student/leerkracht vraagt verlenging aan voor eigen lening
     @PostMapping("/{loanId}/extension-request")

@@ -163,6 +163,11 @@ public class LoanService {
                     returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId(), loan.getQuantity());
         }
     }
+    public List<ActiveLoanDTO> getActiveLoansAsAdmin(String actorUid, String targetUid) {
+        requireBibliotheekbeheerder(actorUid); // gooit exception als de caller geen beheerder is
+        return getActiveLoansByUser(targetUid);
+    }
+
 
     // --- ACTIEVE LENINGEN OPHALEN ---
     public List<ActiveLoanDTO> getActiveLoansByUser(String smartschoolUserId) {

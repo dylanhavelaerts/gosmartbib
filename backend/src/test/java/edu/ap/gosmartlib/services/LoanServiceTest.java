@@ -365,6 +365,40 @@ class LoanServiceTest {
         assertNotNull(results.get(0).book());
         assertEquals("Test Book", results.get(0).book().title());
     }
+// --- getActiveLoansAsAdmin ---
+
+    @Test
+    void givenBeheerder_whenGetActiveLoansAsAdmin_thenReturnsMappedDTOs() {
+        SchoolEntity school = buildSchool(5L);
+        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.BIBLIOTHEEKBEHEERDER);
+
+        LoanEntity loan = buildLoan(1L, "lener-1", "9780000000001", 2);
+        BookEntity book = buildBookWithInventory("9780000000001", 5, buildInventory(school, 5));
+        book.setId(10L);
+        book.setTitle("Test Book");
+
+        when(userRepository.findBySmartschoolUid("beheerder-1")).thenReturn(Optional.of(beheerder));
+        when(loanRepository.findBySmartschoolUserId("lener-1")).thenReturn(List.of(loan));
+        when(bookRepository.findByIsbn("9780000000001")).thenReturn(Optional.of(book));
+
+        var results = loanService.getActiveLoansAsAdmin("beheerder-1", "lener-1");
+
+        assertEquals(1, results.size());
+        assertEquals("lener-1", results.get(0).smartschoolUserId());
+    }
+
+    @Test
+    void givenNonBeheerder_whenGetActiveLoansAsAdmin_thenThrowsException() {
+        SchoolEntity school = buildSchool(5L);
+        UserEntity student = buildUserWithRole(1L, "uid-1", school, UserRoles.STUDENT);
+
+        when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(student));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> loanService.getActiveLoansAsAdmin("uid-1", "lener-2"));
+
+        verify(loanRepository, never()).findBySmartschoolUserId(any());
+    }
 
     // --- verlengingsaanvragen ---
 
