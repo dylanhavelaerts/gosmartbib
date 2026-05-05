@@ -73,6 +73,9 @@ export default function SchoolIntegrationPage() {
   const [smartschoolAccesscode, setSmartschoolAccesscode] = useState("");
   const [senderIdentifier, setSenderIdentifier] = useState("");
 
+  const [showClientSecret, setShowClientSecret] = useState(false);
+  const [showAccesscode, setShowAccesscode] = useState(false);
+
   const canUsePage = useMemo(() => {
     return me?.role === "ADMIN" && !!schoolId;
   }, [me, schoolId]);
@@ -553,7 +556,7 @@ export default function SchoolIntegrationPage() {
 
             <div className="form">
               <label className="field">
-                <span>OneRoster base URL</span>
+                <span>Schoolbase URL</span>
                 <input
                   type="text"
                   value={baseUrl}
@@ -571,33 +574,76 @@ export default function SchoolIntegrationPage() {
                   placeholder="Client ID"
                 />
               </label>
-
               <label className="field">
                 <span>Client secret</span>
-                <input
-                  type="password"
-                  value={clientSecret}
-                  onChange={(e) => setClientSecret(e.target.value)}
-                  placeholder={
-                    integration?.clientSecretConfigured
-                      ? "Laat leeg om het huidige secret te behouden"
-                      : "Client secret"
-                  }
-                />
+                <div className="passwordFieldWrapper">
+                  <input
+                    type={showClientSecret ? "text" : "password"}
+                    value={clientSecret}
+                    onChange={(e) => setClientSecret(e.target.value)}
+                    placeholder={
+                      integration?.clientSecretConfigured
+                        ? "Laat leeg om het huidige secret te behouden"
+                        : "Client secret"
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="togglePasswordBtn"
+                    onClick={() => setShowClientSecret((v) => !v)}
+                    aria-label={
+                      showClientSecret
+                        ? "Verberg wachtwoord"
+                        : "Toon wachtwoord"
+                    }
+                  >
+                    <img
+                      src={
+                        showClientSecret
+                          ? "/passwordeye/eye-crossed.png"
+                          : "/passwordeye/eye.png"
+                      }
+                      alt=""
+                      width={18}
+                      height={18}
+                    />
+                  </button>
+                </div>
               </label>
 
               <label className="field">
-                <span>Smartschool accesscode</span>
-                <input
-                  type="password"
-                  value={smartschoolAccesscode}
-                  onChange={(e) => setSmartschoolAccesscode(e.target.value)}
-                  placeholder={
-                    integration?.smartschoolAccesscodeConfigured
-                      ? "Laat leeg om de huidige accesscode te behouden"
-                      : "Webservices Accesscode"
-                  }
-                />
+                <span>Smartschool Webservices accesscode</span>
+                <div className="passwordFieldWrapper">
+                  <input
+                    type={showAccesscode ? "text" : "password"}
+                    value={smartschoolAccesscode}
+                    onChange={(e) => setSmartschoolAccesscode(e.target.value)}
+                    placeholder={
+                      integration?.smartschoolAccesscodeConfigured
+                        ? "Laat leeg om de huidige accesscode te behouden"
+                        : "Webservices Accesscode"
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="togglePasswordBtn"
+                    onClick={() => setShowAccesscode((v) => !v)}
+                    aria-label={
+                      showAccesscode ? "Verberg wachtwoord" : "Toon wachtwoord"
+                    }
+                  >
+                    <img
+                      src={
+                        showAccesscode
+                          ? "/passwordeye/eye-crossed.png"
+                          : "/passwordeye/eye.png"
+                      }
+                      alt=""
+                      width={18}
+                      height={18}
+                    />
+                  </button>
+                </div>
               </label>
 
               <label className="field">

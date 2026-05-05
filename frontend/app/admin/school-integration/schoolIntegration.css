@@ -73,6 +73,35 @@
   font: inherit;
 }
 
+
+.passwordFieldWrapper {
+  position: relative;
+}
+
+.passwordFieldWrapper input {
+  width: 100%;
+  padding-right: 4.5rem;
+  box-sizing: border-box;
+}
+
+.togglePasswordBtn {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #8e2446;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+}
+
+.togglePasswordBtn:hover {
+  text-decoration: underline;
+}
+
 .checkbox {
   display: flex;
   align-items: center;
