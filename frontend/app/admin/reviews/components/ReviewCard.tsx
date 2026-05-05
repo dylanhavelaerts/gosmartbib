@@ -116,7 +116,9 @@ export default function ReviewCard({
       className={`adminReviewCard ${review.adminDeleted ? "adminDeletedCard" : ""}`}
     >
       <div className="reviewUserBlock">
-        <p className="reviewUid">{review.userSmartschoolUid}</p>
+        <p className="reviewUid">
+          {review.reviewerName ?? review.userSmartschoolUid}
+        </p>
         <p className="reviewMeta">{review.userRole}</p>
         <p className="reviewMeta">{formatSchoolLabel(review.schoolName)}</p>
       </div>

@@ -22,6 +22,7 @@ export interface ModerationReview {
   id: number;
   userId: number;
   userSmartschoolUid: string;
+  reviewerName: string | null;
   userRole: string;
   schoolId: number;
   schoolName: string;
