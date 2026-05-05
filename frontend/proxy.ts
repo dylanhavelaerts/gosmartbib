@@ -27,29 +27,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
-  if (!apiUrl) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  try {
-    const meResponse = await fetch(`${apiUrl}/auth/me`, {
-      method: "GET",
-      headers: {
-        cookie: request.headers.get("cookie") ?? "",
-      },
-      cache: "no-store",
-      redirect: "manual",
-    });
-
-    if (!meResponse.ok) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-  } catch {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
   return NextResponse.next();
 }
 
