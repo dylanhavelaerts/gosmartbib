@@ -194,34 +194,7 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Tab bar */}
-        <ul>
-          {(user?.role === "TEACHER" ||
-            user?.role === "BIBLIOTHEEKBEHEERDER" ||
-            user?.role === "ADMIN") && (
-            <li
-              className={activeTab === "Boek toevoegen" ? "active" : ""}
-              onClick={() => {
-                setActiveTab("Boek toevoegen");
-                router.push("/catalog/admin");
-              }}
-            >
-              Boeken selecteren
-            </li>
-          )}
-          {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
-            user?.role === "ADMIN") && (
-            <li
-              className={activeTab === "Beheer catalogus" ? "active" : ""}
-              onClick={() => {
-                setActiveTab("Beheer catalogus");
-                router.push("/admin/manageCatalog");
-              }}
-            >
-              Beheer catalogus
-            </li>
-          )}
-        </ul>
+        <ul></ul>
       </section>
 
       <section className="pageLayout">
