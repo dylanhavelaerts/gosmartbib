@@ -350,10 +350,10 @@ export default function DetailPage({
             <hr className="detailDivider" />
 
             <div className="detailMetaRow">
-              {book.ageRange && (
+              {book.readingLevel && (
                 <div className="metaCol">
-                  <span className="metaLabel">Leeftijd</span>
-                  <span className="metaValue">{book.ageRange}</span>
+                  <span className="metaLabel">Leesniveau</span>
+                  <span className="metaValue">{book.readingLevel}</span>
                 </div>
               )}
               {book.categories?.length > 0 && (
