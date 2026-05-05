@@ -66,7 +66,9 @@ export default function ManageCatalogPage() {
     if (!selectedId) return;
     fetch(`${apiUrl}/books/${selectedId}`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((book) => { if (book) setSelectedBook(book); })
+      .then((book) => {
+        if (book) setSelectedBook(book);
+      })
       .catch(() => {});
   }, [apiUrl, searchParams]);
 
@@ -341,6 +343,17 @@ export default function ManageCatalogPage() {
                   <ul className="book-list">
                     {books.map((book) => {
                       const isSelected = selectedBook?.id === book.id;
+                      const schoolInventory = book.inventories?.find(
+                        (inv) => inv.schoolId === me?.school?.id,
+                      );
+                      const displayAvailable =
+                        schoolInventory !== undefined
+                          ? schoolInventory.availableCopies
+                          : book.availableCopies;
+                      const displayTotal =
+                        schoolInventory !== undefined
+                          ? schoolInventory.totalCopies
+                          : book.totalCopies;
                       return (
                         <li
                           key={book.id}
@@ -367,12 +380,12 @@ export default function ManageCatalogPage() {
                             </p>
                             <div className="copies-container">
                               <span
-                                className={`copies-pill ${book.availableCopies === 0 ? "copies-pill--empty" : "copies-pill--available"}`}
+                                className={`copies-pill ${displayAvailable === 0 ? "copies-pill--empty" : "copies-pill--available"}`}
                               >
-                                {book.availableCopies ?? "-"} beschikbaar
+                                {displayAvailable ?? "-"} beschikbaar
                               </span>
                               <span className="copies-pill copies-pill--total">
-                                {book.totalCopies ?? "-"} totaal
+                                {displayTotal ?? "-"} totaal
                               </span>
                             </div>
                           </div>
