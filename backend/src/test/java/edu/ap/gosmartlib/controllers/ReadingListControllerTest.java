@@ -64,6 +64,7 @@ class ReadingListControllerTest {
                 null,
                 "user-1",
                 1,
+                List.of(),
                 ReadingListType.PERSONAL,
                 true,
                 false,
