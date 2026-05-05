@@ -161,7 +161,7 @@ export default function SchoolIntegrationPage() {
 
       const data: SchoolIntegrationDTO = await response.json();
       setIntegration(data);
-      setBaseUrl(data.onerosterBaseUrl ?? "");
+      setBaseUrl(data.schoolBaseUrl ?? "");
       setClientId(data.onerosterClientId ?? "");
       setClientSecret("");
       setSmartschoolAccesscode(""); //altijd leeg na het laden als successvol
@@ -281,7 +281,7 @@ export default function SchoolIntegrationPage() {
       setSuccess("");
 
       const payload: UpsertSchoolIntegrationRequest = {
-        onerosterBaseUrl: baseUrl.trim(),
+        schoolBaseUrl: baseUrl.trim(),
         onerosterClientId: clientId.trim(),
         onerosterClientSecret: clientSecret,
         onerosterEnabled: enabled,
@@ -308,7 +308,7 @@ export default function SchoolIntegrationPage() {
 
       const data: SchoolIntegrationDTO = await response.json();
       setIntegration(data);
-      setBaseUrl(data.onerosterBaseUrl ?? "");
+      setBaseUrl(data.schoolBaseUrl ?? "");
       setClientId(data.onerosterClientId ?? "");
       setEnabled(Boolean(data.onerosterEnabled));
       setClientSecret("");

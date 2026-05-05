@@ -1,6 +1,6 @@
 export interface SchoolIntegrationDTO {
   schoolId: number;
-  onerosterBaseUrl: string;
+  schoolBaseUrl: string;
   onerosterClientId: string;
   onerosterEnabled: boolean;
   clientSecretConfigured: boolean;
@@ -12,7 +12,7 @@ export interface SchoolIntegrationDTO {
 }
 
 export interface UpsertSchoolIntegrationRequest {
-  onerosterBaseUrl: string;
+  schoolBaseUrl: string;
   onerosterClientId: string;
   onerosterClientSecret: string;
   onerosterEnabled: boolean;
