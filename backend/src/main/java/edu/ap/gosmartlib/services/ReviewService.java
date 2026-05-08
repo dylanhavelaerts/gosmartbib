@@ -110,6 +110,9 @@ public class ReviewService {
         UserEntity moderator = userRepository.findBySmartschoolUid(smartschoolUid)
                 .orElseThrow(() -> new EntityNotFoundException("Gebruiker niet gevonden"));
 
+        if (moderator.getSchool() == null) {
+            throw new IllegalStateException("Moderator heeft geen school gekoppeld");
+        }
         List<ReviewEntity> reviews = reviewRepository.findByUser_School_Id(moderator.getSchool().getId());
         Map<String, String> displayNames = resolveDisplayNamesMap(smartschoolUid, reviews);
 
@@ -441,8 +444,8 @@ public class ReviewService {
                 review.getUser().getSmartschoolUid(),
                 resolveReviewerName(review, displayNames),
                 review.getUser().getRole(),
-                review.getUser().getSchool().getId(),
-                review.getUser().getSchool().getName(),
+                review.getUser().getSchool() != null ? review.getUser().getSchool().getId() : null,
+                review.getUser().getSchool() != null ? review.getUser().getSchool().getName() : null,
                 review.getBook().getIsbn(),
                 review.getBook().getTitle(),
                 review.getText(),

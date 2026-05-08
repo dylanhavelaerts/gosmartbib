@@ -40,6 +40,15 @@ services:
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: https://gosmartbib.tech/api
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`gosmartbib.tech`)"
@@ -54,7 +63,16 @@ services:
   backend:
     build: ./backend
     container_name: backend
-    restart: on-failure
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       SPRING_PROFILES_ACTIVE: prod
 
@@ -87,6 +105,15 @@ services:
     image: mysql:8.0
     container_name: database
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/DB_ROOT_PASSWORD
       MYSQL_DATABASE: gosmartlib
