@@ -638,6 +638,7 @@ public class BookService {
 
     @Transactional(readOnly = true)
     public List<SnowballSectionDTO> getSnowballSections(Long bookId, UserRoles callerRole, String currentUserUid) {
+        Pageable top12 = PageRequest.of(0, 12);
         BookEntity book = bookRepository.findDetailedById(bookId)
                 .orElseThrow(() -> new BookNotFoundException(bookId));
 
@@ -646,7 +647,7 @@ public class BookService {
         if (!book.getAuthors().isEmpty()) {
             String mainAuthor = book.getAuthors().get(0);
             List<BookDTO> authorBooks = bookRepository
-                    .findByAuthorsInAndIdNot(book.getAuthors(), bookId)
+                    .findByAuthorsInAndIdNot(book.getAuthors(), bookId,top12)
                     .stream()
                     .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
                     .filter(Objects::nonNull)
@@ -665,7 +666,7 @@ public class BookService {
         if (!book.getCategories().isEmpty()) {
             String mainCategory = book.getCategories().get(0);
             List<BookDTO> categoryBooks = bookRepository
-                    .findByCategoriesInAndIdNot(book.getCategories(), bookId)
+                    .findByCategoriesInAndIdNot(book.getCategories(), bookId,top12)
                     .stream()
                     .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
                     .filter(Objects::nonNull)

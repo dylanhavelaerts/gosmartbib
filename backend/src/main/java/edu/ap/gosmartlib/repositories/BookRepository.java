@@ -215,18 +215,18 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                         Pageable pageable);
 
 //  Snowball effect voor boeken van dezelfde auteurs, maar niet hetzelfde boek (om te voorkomen dat het boek zelf als aanbeveling verschijnt)
-    @EntityGraph(attributePaths = { "inventories", "inventories.school" })
-    @Query("""
+@EntityGraph(attributePaths = { "inventories", "inventories.school" })
+@Query("""
     SELECT DISTINCT b FROM BookEntity b
     JOIN b.authors a
     WHERE a IN :authors AND b.id != :excludeId
     ORDER BY b.rating DESC
-    LIMIT 12
 """)
-    List<BookEntity> findByAuthorsInAndIdNot(
-            @Param("authors") List<String> authors,
-            @Param("excludeId") Long excludeId
-    );
+List<BookEntity> findByAuthorsInAndIdNot(
+        @Param("authors") List<String> authors,
+        @Param("excludeId") Long excludeId,
+        Pageable pageable
+);
 
 //  Snowball effect voor boeken in dezelfde categorieën, maar niet hetzelfde boek (om te voorkomen dat het boek zelf als aanbeveling verschijnt)
     @EntityGraph(attributePaths = { "inventories", "inventories.school" })
@@ -235,8 +235,12 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
     JOIN b.categories c
     WHERE c IN :categories AND b.id != :excludeId
     ORDER BY b.rating DESC
-    LIMIT 12
 """)
+    List<BookEntity> findByCategoriesInAndIdNot(
+            @Param("categories") List<String> categories,
+            @Param("excludeId") Long excludeId,
+            Pageable pageable
+    );
     List<BookEntity> findByCategoriesInAndIdNot(
             @Param("categories") List<String> categories,
             @Param("excludeId") Long excludeId
