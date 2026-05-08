@@ -22,6 +22,10 @@ public class SmartschoolMessageService {
     private final SmartschoolSoapClient soapClient;
 
     public void sendMessage(UserEntity user, String title, String body) {
+        if (user.getSchool() == null) {
+            log.warn("Gebruiker {} heeft geen school gekoppeld, bericht niet verstuurd", user.getId());
+            return;
+        }
         SchoolIntegrationEntity integration = schoolIntegrationRepository
                 .findBySchool_Id(user.getSchool().getId())
                 .orElseThrow(() -> new IllegalStateException(

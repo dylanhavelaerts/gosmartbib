@@ -19,6 +19,7 @@ import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -47,6 +48,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -646,10 +648,10 @@ public class BookService {
                 .queryParam("key", googleBooksApiKey)
                 .toUriString();
 
-        System.out.println("Zoeken naar ISBN: " + isbn + " met key suffix: " +
-                (googleBooksApiKey.length() >= 4
+        log.info("Zoeken naar ISBN: {} met key suffix: {}", isbn,
+                googleBooksApiKey.length() >= 4
                         ? googleBooksApiKey.substring(googleBooksApiKey.length() - 4)
-                        : "too-short"));
+                        : "too-short");
 
         GoogleBooksResponse response = null;
         
@@ -658,11 +660,10 @@ public class BookService {
             response = restTemplate.getForObject(url, GoogleBooksResponse.class);
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             // Dit vangt fouten zoals 429 (Too Many Requests) of 403 (Quota Exceeded) netjes af
-            System.err.println("CRASH: Google API weigerde het verzoek! Status: " + e.getStatusCode());
-            System.err.println("Reden: " + e.getResponseBodyAsString());
+            log.error("Google API weigerde het verzoek! Status: {}, Reden: {}", e.getStatusCode(), e.getResponseBodyAsString());
             throw new RuntimeException("De Google API weigert het verzoek tijdelijk (Status " + e.getStatusCode() + "). Wacht even en probeer het opnieuw.");
         } catch (Exception e) {
-            System.err.println("CRASH: Onverwachte fout bij ophalen ISBN: " + e.getMessage());
+            log.error("Onverwachte fout bij ophalen ISBN: {}", e.getMessage(), e);
             throw new RuntimeException("Er ging iets mis bij het communiceren met Google Books.");
         }
 
@@ -762,7 +763,7 @@ public class BookService {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Fout bij ophalen e-book editie op de achtergrond: " + e.getMessage());
+            log.error("Fout bij ophalen e-book editie op de achtergrond: {}", e.getMessage(), e);
         }
 
         book.setPreviewLink(finalReaderLink);

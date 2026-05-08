@@ -137,6 +137,7 @@ public class LoanService {
 
             userRepository.findBySmartschoolUid(loan.getSmartschoolUserId())
                     .ifPresent(borrower -> {
+                        if (borrower.getSchool() == null) return;
                         Long schoolId = borrower.getSchool().getId();
                         book.getInventories().stream()
                                 .filter(inv -> inv.getSchool().getId().equals(schoolId))
