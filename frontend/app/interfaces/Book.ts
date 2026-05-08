@@ -73,6 +73,5 @@ export interface BookInventory {
 
 export interface SnowballSection {
   title: string;
-  filterLabel: string;
   books: Book[];
 }
