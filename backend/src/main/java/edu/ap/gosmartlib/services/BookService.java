@@ -1,10 +1,6 @@
 package edu.ap.gosmartlib.services;
 
-import edu.ap.gosmartlib.dto.BookDTO;
-import edu.ap.gosmartlib.dto.BookFilterRequest;
-import edu.ap.gosmartlib.dto.BookInventoryDTO;
-import edu.ap.gosmartlib.dto.CreateBookInventoryRequestDTO;
-import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
+import edu.ap.gosmartlib.dto.*;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
 import edu.ap.gosmartlib.entities.BookEntity;
@@ -638,6 +634,53 @@ public class BookService {
             throw new IllegalArgumentException(
                     "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<SnowballSectionDTO> getSnowballSections(Long bookId, UserRoles callerRole, String currentUserUid) {
+        BookEntity book = bookRepository.findDetailedById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(bookId));
+
+        List<SnowballSectionDTO> sections = new ArrayList<>();
+
+        if (!book.getAuthors().isEmpty()) {
+            String mainAuthor = book.getAuthors().get(0);
+            List<BookDTO> authorBooks = bookRepository
+                    .findByAuthorsInAndIdNot(book.getAuthors(), bookId)
+                    .stream()
+                    .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            if (!authorBooks.isEmpty()) {
+                sections.add(new SnowballSectionDTO(
+                        "Meer van " + mainAuthor,
+                        "Alle werken van " + mainAuthor,
+                        authorBooks
+                ));
+            }
+        }
+
+
+//        categorieeen
+        if (!book.getCategories().isEmpty()) {
+            String mainCategory = book.getCategories().get(0);
+            List<BookDTO> categoryBooks = bookRepository
+                    .findByCategoriesInAndIdNot(book.getCategories(), bookId)
+                    .stream()
+                    .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            if (!categoryBooks.isEmpty()) {
+                sections.add(new SnowballSectionDTO(
+                        "Meer " + mainCategory,
+                        "Alle boeken in " + mainCategory,
+                        categoryBooks
+                ));
+            }
+        }
+        return sections;
     }
 
 // region Helper functies

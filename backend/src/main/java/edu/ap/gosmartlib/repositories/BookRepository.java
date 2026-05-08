@@ -214,6 +214,34 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                         @Param("schoolId") Long schoolId,
                         Pageable pageable);
 
+//  Snowball effect voor boeken van dezelfde auteurs, maar niet hetzelfde boek (om te voorkomen dat het boek zelf als aanbeveling verschijnt)
+    @EntityGraph(attributePaths = { "inventories", "inventories.school" })
+    @Query("""
+    SELECT DISTINCT b FROM BookEntity b
+    JOIN b.authors a
+    WHERE a IN :authors AND b.id != :excludeId
+    ORDER BY b.rating DESC
+    LIMIT 12
+""")
+    List<BookEntity> findByAuthorsInAndIdNot(
+            @Param("authors") List<String> authors,
+            @Param("excludeId") Long excludeId
+    );
+
+//  Snowball effect voor boeken in dezelfde categorieën, maar niet hetzelfde boek (om te voorkomen dat het boek zelf als aanbeveling verschijnt)
+    @EntityGraph(attributePaths = { "inventories", "inventories.school" })
+    @Query("""
+    SELECT DISTINCT b FROM BookEntity b
+    JOIN b.categories c
+    WHERE c IN :categories AND b.id != :excludeId
+    ORDER BY b.rating DESC
+    LIMIT 12
+""")
+    List<BookEntity> findByCategoriesInAndIdNot(
+            @Param("categories") List<String> categories,
+            @Param("excludeId") Long excludeId
+    );
+
         @Query(value = """
                         SELECT DISTINCT b FROM BookEntity b
                         LEFT JOIN b.authors a

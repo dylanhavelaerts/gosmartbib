@@ -70,3 +70,9 @@ export interface BookInventory {
   totalCopies: number;
   availableCopies: number;
 }
+
+export interface SnowballSection {
+  title: string;
+  filterLabel: string;
+  books: Book[];
+}

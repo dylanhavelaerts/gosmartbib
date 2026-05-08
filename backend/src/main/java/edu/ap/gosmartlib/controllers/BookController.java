@@ -3,6 +3,7 @@ package edu.ap.gosmartlib.controllers;
 import edu.ap.gosmartlib.dto.BookDTO;
 import edu.ap.gosmartlib.dto.BookFilterRequest;
 import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
+import edu.ap.gosmartlib.dto.SnowballSectionDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.UserRepository;
@@ -184,6 +185,15 @@ public class BookController {
         BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
         return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
     }
+    @GetMapping("/{id}/snowball")
+    public ResponseEntity<List<SnowballSectionDTO>> getSnowball(
+            @PathVariable Long id,
+            @AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.ok(
+                bookService.getSnowballSections(id, callerRole(principal), authHelper.extractUidOrNull(principal))
+        );
+    }
+
 
     private UserRoles callerRole(OAuth2User principal) {
         if (principal == null) return UserRoles.STUDENT;

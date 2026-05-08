@@ -8,12 +8,13 @@ import {
   useRef,
   useState,
 } from "react";
-import { Book } from "../../interfaces/Book";
+import { Book, SnowballSection } from "../../interfaces/Book";
 import { MeResponse } from "../../interfaces/user";
 import Link from "next/link";
 import "./detailpage.css";
 import ReviewSection from "@/app/components/reviewsection/reviewsection";
 import NotificationBell from "@/app/components/Notifications/Notification";
+import BookCarousel from "@/app/components/BookCarousel";
 
 interface ReviewWithRating {
   rating: number;
@@ -48,6 +49,9 @@ export default function DetailPage({
     text: string;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [snowballSections, setSnowballSections] = useState<SnowballSection[]>(
+    [],
+  );
 
   const isStaff =
     currentUser?.role === "TEACHER" ||
@@ -140,6 +144,17 @@ export default function DetailPage({
       })
       .catch((error) => console.error(error));
   }, [id, fetchAverageReviewRating]);
+
+  // Ophalen van de snowball-secties beppald boek
+  useEffect(() => {
+    if (!book) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${book.id}/snowball`, {
+      credentials: "include",
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setSnowballSections)
+      .catch(() => {});
+  }, [book]);
 
   const handleAddToList = async (list: PersonalList) => {
     if (!book) return;
@@ -412,6 +427,13 @@ export default function DetailPage({
           </div>
         </div>
       </div>
+      {snowballSections.length > 0 && (
+        <div className="snowballContainer">
+          {snowballSections.map((section, i) => (
+            <BookCarousel key={i} section={section} />
+          ))}
+        </div>
+      )}
     </main>
   );
 }
