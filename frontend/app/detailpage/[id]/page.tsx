@@ -134,7 +134,10 @@ export default function DetailPage({
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${id}`, {
       credentials: "include",
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Book not found");
+        return res.json();
+      })
       .then((data: ExtendedBook) => {
         setBook(data);
         setImgSrc(
@@ -145,7 +148,7 @@ export default function DetailPage({
       .catch((error) => console.error(error));
   }, [id, fetchAverageReviewRating]);
 
-  // Ophalen van de snowball-secties beppald boek
+  // Ophalen van de snowball-secties bepaald boek
   useEffect(() => {
     if (!book) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/${book.id}/snowball`, {
@@ -153,10 +156,10 @@ export default function DetailPage({
     })
       .then((res) => (res.ok ? res.json() : []))
       .then((data: SnowballSection[]) => {
-        const category = data.find((s) => s.type === "CATEGORY");
+        const category = data.filter((s) => s.type === "CATEGORY");
         const author = data.find((s) => s.type === "AUTHOR");
         setSnowballSections(
-          [category, author].filter(Boolean) as SnowballSection[],
+          [...category, author].filter(Boolean) as SnowballSection[],
         );
       })
       .catch(() => {});

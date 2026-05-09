@@ -650,6 +650,7 @@ public class BookService {
             List<BookDTO> authorBooks = bookRepository
                     .findByAuthorsInAndIdNot(book.getAuthors(), bookId,top12)
                     .stream()
+                    .filter(b -> canSeeDidactic(callerRole) || !b.isDidacticTag())
                     .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
                     .filter(Objects::nonNull)
                     .toList();
@@ -664,18 +665,18 @@ public class BookService {
 
 //        categorieeen
         if (!book.getCategories().isEmpty()) {
-            String mainCategory = book.getCategories().get(0);
-            List<BookDTO> categoryBooks = bookRepository
-                    .findByCategoriesInAndIdNot(book.getCategories(), bookId,top12)
-                    .stream()
-                    .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
-                    .filter(Objects::nonNull)
-                    .toList();
+            for (String category : book.getCategories()) {
+                List<BookDTO> categoryBooks = bookRepository
+                        .findByCategoriesInAndIdNot(List.of(category), bookId, top12)
+                        .stream()
+                        .filter(b -> canSeeDidactic(callerRole) || !b.isDidacticTag())
+                        .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
+                        .filter(Objects::nonNull)
+                        .toList();
 
-            if (!categoryBooks.isEmpty()) {
-                sections.add(new SnowballSectionDTO(
-                        "CATEGORY", mainCategory, categoryBooks
-                ));
+                if (!categoryBooks.isEmpty()) {
+                    sections.add(new SnowballSectionDTO("CATEGORY", category, categoryBooks));
+                }
             }
         }
         return sections;
