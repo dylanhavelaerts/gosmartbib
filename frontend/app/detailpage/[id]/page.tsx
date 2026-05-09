@@ -152,7 +152,13 @@ export default function DetailPage({
       credentials: "include",
     })
       .then((res) => (res.ok ? res.json() : []))
-      .then(setSnowballSections)
+      .then((data: SnowballSection[]) => {
+        const category = data.find((s) => s.type === "CATEGORY");
+        const author = data.find((s) => s.type === "AUTHOR");
+        setSnowballSections(
+          [category, author].filter(Boolean) as SnowballSection[],
+        );
+      })
       .catch(() => {});
   }, [book]);
 

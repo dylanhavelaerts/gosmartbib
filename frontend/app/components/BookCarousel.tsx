@@ -1,7 +1,7 @@
 "use client";
 import { useRef } from "react";
-import Link from "next/link";
 import { SnowballSection } from "@/app/interfaces/Book";
+import BookCard from "@/app/catalog/bookCard";
 import "./BookCarousel.css";
 
 export default function BookCarousel({
@@ -20,9 +20,14 @@ export default function BookCarousel({
     });
   };
 
+  const title =
+    section.type === "AUTHOR"
+      ? `Meer van ${section.value}`
+      : `Meer ${section.value}`;
+
   return (
     <section className="snowball-section">
-      <h2 className="snowball-title">{section.title}</h2>
+      <h2 className="snowball-title">{title}</h2>
       <div className="snowball-wrapper">
         <button
           className="snowball-btn snowball-btn--left"
@@ -33,25 +38,14 @@ export default function BookCarousel({
         </button>
         <div className="snowball-track" ref={trackRef}>
           {section.books.map((book) => (
-            <Link
-              key={book.id}
-              href={`/detailpage/${book.id}`}
-              className="snowball-card"
-            >
-              <div className="snowball-cover-wrapper">
-                <img
-                  src={book.thumbnail || "/No-Image-Available-Placeholder.png"}
-                  alt={book.title}
-                  className="snowball-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "/No-Image-Available-Placeholder.png";
-                  }}
-                />
-              </div>
-              <p className="snowball-card-title">{book.title}</p>
-              <p className="snowball-card-author">{book.authors?.join(", ")}</p>
-            </Link>
+            <div key={book.id} className="snowball-card">
+              <BookCard
+                book={book}
+                isSelected={false}
+                onToggle={() => {}}
+                withCheckbox={false}
+              />
+            </div>
           ))}
         </div>
         <button

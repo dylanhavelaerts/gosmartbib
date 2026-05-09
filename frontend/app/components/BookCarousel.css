@@ -1,9 +1,9 @@
 .snowball-section {
   background: #fff;
-  border: 1px solid #e4d5de;
-  border-radius: 12px;
+  border: none;
+  border-radius: 0;
   padding: 1.5rem 1.75rem 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
 }
 
 .snowball-title {
@@ -34,6 +34,11 @@
   display: none;
 }
 
+.snowball-card {
+  flex: 0 0 130px;
+  scroll-snap-align: start;
+}
+
 .snowball-btn {
   flex-shrink: 0;
   width: 36px;
@@ -57,76 +62,12 @@
   border-color: #8e2446;
 }
 
-.snowball-card {
-  flex: 0 0 130px;
-  scroll-snap-align: start;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  text-decoration: none;
-  color: inherit;
-}
-
-.snowball-cover-wrapper {
-  width: 130px;
-  height: 182px;
-  overflow: hidden;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.snowball-cover {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform 0.2s ease;
-}
-
-.snowball-card:hover .snowball-cover {
-  transform: scale(1.03);
-}
-
-.snowball-card-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin: 0;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.snowball-card-author {
-  font-size: 12px;
-  color: #777;
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.snowball-filter-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #8e2446;
-  text-align: right;
-  margin: 0.75rem 0 0;
-}
-
 @media (max-width: 750px) {
   .snowball-section {
     padding: 1rem;
-    border-radius: 8px;
   }
 
   .snowball-card {
     flex: 0 0 110px;
-  }
-
-  .snowball-cover-wrapper {
-    width: 110px;
-    height: 154px;
   }
 }

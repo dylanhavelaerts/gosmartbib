@@ -4,6 +4,7 @@ package edu.ap.gosmartlib.dto;
 import java.util.List;
 
 public record SnowballSectionDTO(
-        String title,
+        String type,
+        String value,
         List<BookDTO> books
 ) {}

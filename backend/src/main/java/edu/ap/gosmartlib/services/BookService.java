@@ -656,8 +656,7 @@ public class BookService {
 
             if (!authorBooks.isEmpty()) {
                 sections.add(new SnowballSectionDTO(
-                        "Meer van " + mainAuthor,
-                        authorBooks
+                        "AUTHOR", mainAuthor, authorBooks
                 ));
             }
         }
@@ -675,8 +674,7 @@ public class BookService {
 
             if (!categoryBooks.isEmpty()) {
                 sections.add(new SnowballSectionDTO(
-                        "Meer " + mainCategory,
-                        categoryBooks
+                        "CATEGORY", mainCategory, categoryBooks
                 ));
             }
         }

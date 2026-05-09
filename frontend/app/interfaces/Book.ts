@@ -72,6 +72,7 @@ export interface BookInventory {
 }
 
 export interface SnowballSection {
-  title: string;
+  type: "AUTHOR" | "CATEGORY";
+  value: string;
   books: Book[];
 }
