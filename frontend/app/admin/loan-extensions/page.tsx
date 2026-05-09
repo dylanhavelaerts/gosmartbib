@@ -17,7 +17,12 @@ interface LoanExtensionRequestDTO {
   loanId: number;
   smartschoolUserId: string;
   borrowerDisplayName: string | null;
-  borrowerRole: "STUDENT" | "TEACHER" | "BIBLIOTHEEKBEHEERDER" | "ADMIN" | string;
+  borrowerRole:
+    | "STUDENT"
+    | "TEACHER"
+    | "BIBLIOTHEEKBEHEERDER"
+    | "ADMIN"
+    | string;
   quantity: number;
   loanDate: string;
   currentDueDate: string;
@@ -44,13 +49,15 @@ export default function LoanExtensionsPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Kon verlengingsaanvragen niet ophalen.");
+        throw new Error(
+          data?.message || "Kon verlengingsaanvragen niet ophalen",
+        );
       }
 
       const data = await res.json();
       setRequests(data);
     } catch (err: any) {
-      setMessage(err.message || "Er ging iets mis bij het ophalen.");
+      setMessage(err.message || "Er ging iets mis bij het ophalen");
     } finally {
       setIsLoading(false);
     }
@@ -82,31 +89,39 @@ export default function LoanExtensionsPage() {
     }
   };
 
-  const decideRequest = async (loanId: number, decision: "approve" | "deny") => {
+  const decideRequest = async (
+    loanId: number,
+    decision: "approve" | "deny",
+  ) => {
     try {
       setWorkingLoanId(loanId);
       setMessage(null);
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const res = await fetch(`${apiUrl}/loans/${loanId}/extension-request/${decision}`, {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${apiUrl}/loans/${loanId}/extension-request/${decision}`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Kon de aanvraag niet verwerken.");
+        throw new Error(data?.message || "Kon de aanvraag niet verwerken");
       }
 
-      setRequests((current) => current.filter((request) => request.loanId !== loanId));
+      setRequests((current) =>
+        current.filter((request) => request.loanId !== loanId),
+      );
 
       setMessage(
         decision === "approve"
           ? "De verlenging werd goedgekeurd."
-          : "De verlenging werd geweigerd."
+          : "De verlenging werd geweigerd.",
       );
     } catch (err: any) {
-      setMessage(err.message || "Er ging iets mis bij het verwerken.");
+      setMessage(err.message || "Er ging iets mis bij het verwerken");
     } finally {
       setWorkingLoanId(null);
     }
@@ -119,11 +134,16 @@ export default function LoanExtensionsPage() {
           <div>
             <h1>Verlengingsaanvragen</h1>
             <p>
-              Keur verlengingen van leerlingen en leerkrachten van je eigen school goed of af.
+              Keur verlengingen van leerlingen en leerkrachten van je eigen
+              school goed of af
             </p>
           </div>
 
-          <button className="refreshButton" onClick={fetchRequests} disabled={isLoading}>
+          <button
+            className="refreshButton"
+            onClick={fetchRequests}
+            disabled={isLoading}
+          >
             Vernieuwen
           </button>
         </div>
@@ -134,7 +154,7 @@ export default function LoanExtensionsPage() {
           <div className="loanExtensionsState">Aanvragen ophalen...</div>
         ) : requests.length === 0 ? (
           <div className="loanExtensionsState">
-            Er zijn momenteel geen open verlengingsaanvragen.
+            Er zijn momenteel geen open verlengingsaanvragen
           </div>
         ) : (
           <div className="loanExtensionsList">
@@ -159,19 +179,25 @@ export default function LoanExtensionsPage() {
                     <div>
                       <h2>{request.book?.title || "Onbekend boek"}</h2>
                       <p className="loanExtensionAuthor">
-                        {request.book?.authors && request.book.authors.length > 0
+                        {request.book?.authors &&
+                        request.book.authors.length > 0
                           ? request.book.authors.join(", ")
                           : "Auteur onbekend"}
                       </p>
                     </div>
 
-                    <span className="roleBadge">{getRoleLabel(request.borrowerRole)}</span>
+                    <span className="roleBadge">
+                      {getRoleLabel(request.borrowerRole)}
+                    </span>
                   </div>
 
                   <div className="loanExtensionMetaGrid">
                     <div>
                       <span>Gebruiker</span>
-                      <strong>{request.borrowerDisplayName || getRoleLabel(request.borrowerRole)}</strong>
+                      <strong>
+                        {request.borrowerDisplayName ||
+                          getRoleLabel(request.borrowerRole)}
+                      </strong>
                     </div>
                     <div>
                       <span>Aantal</span>

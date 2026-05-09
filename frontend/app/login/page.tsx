@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import "./login.css";
 
 export default function LoginPage() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
-  const searchParams = useSearchParams();
-  const hasError = searchParams.get("error") === "true";
+  const [hasError] = useState(() =>
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("error") === "true"
+      : false
+  );
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -37,7 +39,7 @@ export default function LoginPage() {
             />
           </div>
           <p className="loginSubtitle">
-            Meld je aan met je Smartschool-account om verder te gaan.
+            Meld je aan met je Smartschool-account om verder te gaan
           </p>
           <button
             type="button"

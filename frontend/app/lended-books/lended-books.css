@@ -1,33 +1,35 @@
 /* --- LAYOUT & HEADER --- */
-.pageLayout {
+.lendedBooksPage.pageLayout {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 4.5rem);
   box-sizing: border-box;
   padding: 1rem 2.5rem 2rem;
   margin-top: 4.5rem;
+  overflow: visible;
+  height: auto;
 }
 
-.pageHeader {
+.lendedBooksPage .pageHeader {
   display: flex;
   align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
 }
 
-.pageHeader h1 {
+.lendedBooksPage .pageHeader h1 {
   margin: 0;
   color: #3e0c1c;
   font-size: 2rem;
 }
 
-.pageSubtitle {
+.lendedBooksPage .pageSubtitle {
   color: #7b6870;
   margin-top: 0.25rem;
   font-size: 0.95rem;
 }
 
-.contentGrid {
+.lendedBooksPage .contentGrid {
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
@@ -35,11 +37,11 @@
 }
 
 /* --- SECTIE HEADERS --- */
-.sectieHeader {
+.lendedBooksPage .sectieHeader {
   margin-bottom: 1rem;
 }
 
-.sectieHeader h2 {
+.lendedBooksPage .sectieHeader h2 {
   font-size: 1.15rem;
   margin: 0;
   color: #3e0c1c;
@@ -50,7 +52,7 @@
   gap: 0.75rem;
 }
 
-.badge {
+.lendedBooksPage .badge {
   background-color: #e4d9dc;
   color: #8e2446;
   padding: 0.1rem 0.6rem;
@@ -60,7 +62,7 @@
 }
 
 /* --- ACTIEVE UITLENINGEN (KAARTEN) --- */
-.resultsFrame {
+.lendedBooksPage .resultsFrame {
   border: 1px solid #ece6f0;
   border-radius: 0.5rem;
   background-color: #fdfcfd;
@@ -70,11 +72,12 @@
   gap: 1.5rem;
 }
 
-.bookCard {
+.lendedBooksPage .bookCard {
   display: flex;
   flex-direction: column;
   width: calc(25% - 1.125rem);
   min-width: 220px;
+  height: 420px;
   background-color: #fff;
   border: 1px solid #ece6f0;
   border-radius: 0.5rem;
@@ -84,13 +87,13 @@
     transform 0.2s;
 }
 
-.bookCard:hover {
+.lendedBooksPage .bookCard:hover {
   box-shadow: 0 4px 12px rgba(142, 36, 70, 0.1);
   transform: translateY(-2px);
   border-color: #d8cdd1;
 }
 
-.bookCardCover {
+.lendedBooksPage .bookCardCover {
   width: 100%;
   height: 220px;
   background-color: #fdfafb;
@@ -103,7 +106,7 @@
   position: relative;
 }
 
-.bookCardCover img {
+.lendedBooksPage .bookCardCover img {
   max-height: 100%;
   max-width: 100%;
   object-fit: contain;
@@ -111,7 +114,7 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.noCover {
+.lendedBooksPage .noCover {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -119,14 +122,14 @@
   font-size: 0.85rem;
 }
 
-.noCover svg {
+.lendedBooksPage .noCover svg {
   width: 2rem;
   height: 2rem;
   margin-bottom: 0.5rem;
 }
 
 /* Statussen */
-.statusBadge {
+.lendedBooksPage .statusBadge {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
@@ -137,32 +140,32 @@
   z-index: 10;
 }
 
-.status-late {
+.lendedBooksPage .status-late {
   background-color: #ffebee;
   color: #c62828;
   border: 1px solid #ffcdd2;
 }
 
-.status-soon {
+.lendedBooksPage .status-soon {
   background-color: #fff3e0;
   color: #e65100;
   border: 1px solid #ffe0b2;
 }
 
-.status-ok {
+.lendedBooksPage .status-ok {
   background-color: #e8f5e9;
   color: #2e7d32;
   border: 1px solid #c8e6c9;
 }
 
-.bookCardDetails {
+.lendedBooksPage .bookCardDetails {
   padding: 1rem;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
 }
 
-.bookCardTitle {
+.lendedBooksPage .bookCardTitle {
   font-size: 1.05rem;
   font-weight: bold;
   color: #3e0c1c;
@@ -174,7 +177,7 @@
   overflow: hidden;
 }
 
-.bookCardAuthor {
+.lendedBooksPage .bookCardAuthor {
   font-size: 0.85rem;
   color: #666;
   margin: 0 0 1rem 0;
@@ -184,7 +187,7 @@
   overflow: hidden;
 }
 
-.bookCardDates {
+.lendedBooksPage .bookCardDates {
   margin-top: auto;
   background-color: #fdfcfd;
   border: 1px solid #ece6f0;
@@ -196,32 +199,32 @@
   gap: 0.35rem;
 }
 
-.dateRow {
+.lendedBooksPage .dateRow {
   display: flex;
   justify-content: space-between;
   color: #555;
 }
 
-.dateRow strong {
+.lendedBooksPage .dateRow strong {
   color: #222;
 }
 
 /* --- GESCHIEDENIS TABEL --- */
-.historyTableWrapper {
+.lendedBooksPage .historyTableWrapper {
   border: 1px solid #ece6f0;
   border-radius: 0.5rem;
   overflow-x: auto;
   background-color: #fff;
 }
 
-.historyTable {
+.lendedBooksPage .historyTable {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
   min-width: 600px;
 }
 
-.historyTable th {
+.lendedBooksPage .historyTable th {
   background-color: #fdfafb;
   color: #8e2446;
   font-weight: bold;
@@ -232,33 +235,40 @@
   letter-spacing: 0.05em;
 }
 
-.historyTable td {
+.lendedBooksPage .historyTable td {
   padding: 1rem;
   border-bottom: 1px solid #ece6f0;
   color: #333;
   font-size: 0.95rem;
 }
 
-.historyTable tr:last-child td {
+.lendedBooksPage .historyTable th:nth-child(2),
+.lendedBooksPage .historyTable th:nth-child(3),
+.lendedBooksPage .historyTable td:nth-child(2),
+.lendedBooksPage .historyTable td:nth-child(3) {
+  text-align: center;
+}
+
+.lendedBooksPage .historyTable tr:last-child td {
   border-bottom: none;
 }
 
-.historyTable tr:hover {
+.lendedBooksPage .historyTable tr:hover {
   background-color: #fdfcfd;
 }
 
-.bookTitleCell {
+.lendedBooksPage .bookTitleCell {
   font-weight: bold;
   color: #222;
   margin-bottom: 0.2rem;
 }
 
-.bookAuthorCell {
+.lendedBooksPage .bookAuthorCell {
   font-size: 0.8rem;
   color: #666;
 }
 
-.statusReturned {
+.lendedBooksPage .statusReturned {
   background-color: #e8f5e9;
   color: #2e7d32;
   padding: 0.2rem 0.6rem;
@@ -268,7 +278,7 @@
   border: 1px solid #c8e6c9;
 }
 
-.qtyBadge {
+.lendedBooksPage .qtyBadge {
   background-color: #ece6f0;
   color: #555;
   width: 28px;
@@ -282,7 +292,7 @@
 }
 
 /* --- EMPTY / ERROR STATES --- */
-.emptyState {
+.lendedBooksPage .emptyState {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -295,26 +305,26 @@
   text-align: center;
 }
 
-.emptyState svg {
+.lendedBooksPage .emptyState svg {
   width: 3rem;
   height: 3rem;
   margin-bottom: 1rem;
   color: #d8cdd1;
 }
 
-.emptyTitle {
+.lendedBooksPage .emptyTitle {
   font-weight: bold;
   color: #3e0c1c;
   margin-bottom: 0.25rem;
   font-size: 1.05rem;
 }
 
-.emptyText {
+.lendedBooksPage .emptyText {
   font-size: 0.9rem;
   max-width: 400px;
 }
 
-.errorState {
+.lendedBooksPage .errorState {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -328,12 +338,12 @@
   margin-top: 2rem;
 }
 
-.errorState h3 {
+.lendedBooksPage .errorState h3 {
   margin: 0 0 0.5rem 0;
   color: #b71c1c;
 }
 
-.errorState button {
+.lendedBooksPage .errorState button {
   margin-top: 1rem;
   background-color: #c62828;
   color: white;
@@ -344,11 +354,11 @@
   font-weight: bold;
 }
 
-.errorState button:hover {
+.lendedBooksPage .errorState button:hover {
   background-color: #b71c1c;
 }
 
-.loanActionMessage {
+.lendedBooksPage .loanActionMessage {
   margin: 0 0 1rem;
   padding: 0.85rem 1rem;
   border-radius: 14px;
@@ -360,7 +370,7 @@
   box-shadow: 0 8px 20px rgba(122, 47, 50, 0.08);
 }
 
-.extensionStatus {
+.lendedBooksPage .extensionStatus {
   margin-top: 0.65rem;
   padding: 0.45rem 0.65rem;
   border-radius: 999px;
@@ -369,25 +379,25 @@
   text-align: center;
 }
 
-.extension-pending {
+.lendedBooksPage .extension-pending {
   background: #fff7ed;
   color: #9a3412;
   border: 1px solid #fed7aa;
 }
 
-.extension-approved {
+.lendedBooksPage .extension-approved {
   background: #ecfdf3;
   color: #166534;
   border: 1px solid #bbf7d0;
 }
 
-.extension-denied {
+.lendedBooksPage .extension-denied {
   background: #fef2f2;
   color: #991b1b;
   border: 1px solid #fecaca;
 }
 
-.extensionButton {
+.lendedBooksPage .extensionButton {
   width: 100%;
   margin-top: 0.65rem;
   padding: 0.6rem 0.8rem;
@@ -406,38 +416,41 @@
     opacity 0.16s ease;
 }
 
-.extensionButton:hover:not(:disabled) {
+.lendedBooksPage .extensionButton:hover:not(:disabled) {
   background: #7a1e3b;
   transform: translateY(-1px);
   box-shadow: 0 10px 22px rgba(142, 36, 70, 0.24);
 }
 
-.extensionButton:disabled {
+.lendedBooksPage .extensionButton:disabled {
   cursor: not-allowed;
   opacity: 0.65;
 }
 
 /* --- RESPONSIVE --- */
 @media (max-width: 1000px) {
-  .bookCard {
+  .lendedBooksPage .bookCard {
     width: calc(33.333% - 1rem);
+    height: 420px;
   }
 }
 
 @media (max-width: 768px) {
-  .bookCard {
+  .lendedBooksPage .bookCard {
     width: calc(50% - 0.75rem);
+    height: 400px;
   }
-  .pageLayout {
+  .lendedBooksPage.pageLayout {
     padding: 1rem 1.5rem 2rem;
   }
 }
 
 @media (max-width: 480px) {
-  .bookCard {
+  .lendedBooksPage .bookCard {
     width: 100%;
+    height: 380px;
   }
-  .resultsFrame {
+  .lendedBooksPage .resultsFrame {
     padding: 1rem;
   }
 }

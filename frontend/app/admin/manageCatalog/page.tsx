@@ -9,7 +9,7 @@ import {
   fetchSchoolCampuses,
   getCampusSelectOptions,
 } from "../../utils/schoolCampuses";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import "../../catalog/bookList.css";
 import "./editbook.css";
 import ProtectedRoute from "../../components/ProtectedRoute";
@@ -22,7 +22,7 @@ export default function ManageCatalogPage() {
   const [formData, setFormData] = useState<Partial<Book>>({});
   const [error, setError] = useState<string | null>(null);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-  const searchParams = useSearchParams();
+
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [labelDropdownOpen, setLabelDropdownOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -62,7 +62,9 @@ export default function ManageCatalogPage() {
 
   // Handle ?selectedId param — fetch the specific book by ID
   useEffect(() => {
-    const selectedId = searchParams.get("selectedId");
+    const selectedId = new URLSearchParams(window.location.search).get(
+      "selectedId",
+    );
     if (!selectedId) return;
     fetch(`${apiUrl}/books/${selectedId}`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
@@ -70,7 +72,7 @@ export default function ManageCatalogPage() {
         if (book) setSelectedBook(book);
       })
       .catch(() => {});
-  }, [apiUrl, searchParams]);
+  }, [apiUrl]);
 
   useEffect(() => {
     async function loadMeAndCampuses() {

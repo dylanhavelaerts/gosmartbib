@@ -108,7 +108,7 @@ export default function StudentTargetSearch({
       />
 
       <p className="student-target-search-help">
-        Typ minstens 2 tekens. Je ziet alleen leerlingen van je eigen school.
+        Typ minstens 2 tekens. Je ziet alleen leerlingen van je eigen school
       </p>
 
       {loading && (
@@ -122,7 +122,7 @@ export default function StudentTargetSearch({
         availableResults.length === 0 &&
         !error && (
           <p className="student-target-search-status">
-            Geen leerlingen gevonden.
+            Geen leerlingen gevonden
           </p>
         )}
 

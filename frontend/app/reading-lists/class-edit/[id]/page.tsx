@@ -63,13 +63,13 @@ export default function EditClassReadingListPage() {
     number[]
   >([]);
   const [selectedTargetStudents, setSelectedTargetStudents] = useState<
-  ReadingListStudentTarget[]
+    ReadingListStudentTarget[]
   >([]);
   const [selectedTargetClassIds, setSelectedTargetClassIds] = useState<
     number[]
   >([]);
   const [selectedTargetClasses, setSelectedTargetClasses] = useState<
-  ReadingListClassTarget[]
+    ReadingListClassTarget[]
   >([]);
   const [selectedTargetYears, setSelectedTargetYears] = useState<number[]>([]);
   const [selectedTargetGrades, setSelectedTargetGrades] = useState<number[]>(
@@ -124,18 +124,18 @@ export default function EditClassReadingListPage() {
       .then(async (res) => {
         if (!res.ok) {
           const body = await res.text();
-          throw new Error(body || "Kon leeslijst niet laden.");
+          throw new Error(body || "Kon leeslijst niet laden");
         }
         return res.json();
       })
       .then((data: ReadingListDetailResponse) => {
         if (data.listType !== "CLASS") {
-          throw new Error("Alleen klaslijsten kunnen hier bewerkt worden.");
+          throw new Error("Alleen klaslijsten kunnen hier bewerkt worden");
         }
 
         if (!data.ownList) {
           throw new Error(
-            "Je kan alleen klasleeslijsten bewerken die je zelf hebt aangemaakt.",
+            "Je kan alleen klasleeslijsten bewerken die je zelf hebt aangemaakt",
           );
         }
 
@@ -149,21 +149,29 @@ export default function EditClassReadingListPage() {
           : (data.targetStudentIds ?? []).map((studentId, index) => ({
               id: studentId,
               displayName:
-                data.targetStudentDisplayNames?.[index] ?? `Leerling ${studentId}`,
+                data.targetStudentDisplayNames?.[index] ??
+                `Leerling ${studentId}`,
               classNames: [],
             }));
 
-        setSelectedTargetStudentIds(initialStudents.map((student) => student.id));
+        setSelectedTargetStudentIds(
+          initialStudents.map((student) => student.id),
+        );
         setSelectedTargetStudents(initialStudents);
-        const initialClasses = (data.targetClassIds ?? []).map((classId, index) => ({
-          id: classId,
-          name: data.targetClassNames?.[index] ?? `Klas ${classId}`,
-          year: null,
-          grade: null,
-        }));
+        const initialClasses = (data.targetClassIds ?? []).map(
+          (classId, index) => ({
+            id: classId,
+            name: data.targetClassNames?.[index] ?? `Klas ${classId}`,
+            year: null,
+            grade: null,
+          }),
+        );
 
-        setSelectedTargetClassIds(initialClasses.map((schoolClass) => schoolClass.id));
-        setSelectedTargetClasses(initialClasses);        setSelectedTargetYears(data.targetYears ?? []);
+        setSelectedTargetClassIds(
+          initialClasses.map((schoolClass) => schoolClass.id),
+        );
+        setSelectedTargetClasses(initialClasses);
+        setSelectedTargetYears(data.targetYears ?? []);
         setSelectedTargetGrades(data.targetGrades ?? []);
         setTargetAllSchools(Boolean(data.targetAllSchools));
       })
@@ -174,7 +182,7 @@ export default function EditClassReadingListPage() {
           text:
             err instanceof Error && err.message
               ? err.message
-              : "Kon klasleeslijst niet laden.",
+              : "Kon klasleeslijst niet laden",
         });
       })
       .finally(() => setInitialLoading(false));
@@ -245,35 +253,35 @@ export default function EditClassReadingListPage() {
   };
 
   const removeTargetClass = (classId: number) => {
-  setSelectedTargetClassIds((prev) =>
-    prev.filter((currentClassId) => currentClassId !== classId),
-  );
+    setSelectedTargetClassIds((prev) =>
+      prev.filter((currentClassId) => currentClassId !== classId),
+    );
 
-  setSelectedTargetClasses((prev) =>
-    prev.filter((schoolClass) => schoolClass.id !== classId),
-  );
-};
+    setSelectedTargetClasses((prev) =>
+      prev.filter((schoolClass) => schoolClass.id !== classId),
+    );
+  };
 
-const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
-  if (selectedTargetClassIds.includes(schoolClass.id)) {
-    removeTargetClass(schoolClass.id);
-    return;
-  }
-
-  setSelectedTargetClassIds((prev) =>
-    [...prev, schoolClass.id].sort((a, b) => a - b),
-  );
-
-  setSelectedTargetClasses((prev) => {
-    if (prev.some((selectedClass) => selectedClass.id === schoolClass.id)) {
-      return prev;
+  const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
+    if (selectedTargetClassIds.includes(schoolClass.id)) {
+      removeTargetClass(schoolClass.id);
+      return;
     }
 
-    return [...prev, schoolClass].sort((a, b) =>
-      a.name.localeCompare(b.name, "nl", { sensitivity: "base" }),
+    setSelectedTargetClassIds((prev) =>
+      [...prev, schoolClass.id].sort((a, b) => a - b),
     );
-  });
-};
+
+    setSelectedTargetClasses((prev) => {
+      if (prev.some((selectedClass) => selectedClass.id === schoolClass.id)) {
+        return prev;
+      }
+
+      return [...prev, schoolClass].sort((a, b) =>
+        a.name.localeCompare(b.name, "nl", { sensitivity: "base" }),
+      );
+    });
+  };
 
   const selectTargetType = (nextTargetType: ReadingListTargetType) => {
     setTargetType(nextTargetType);
@@ -305,19 +313,19 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
   const targetSelectionError = () => {
     switch (targetType) {
       case "STUDENTS":
-        return "Kies minstens één leerling als doelgroep.";
+        return "Kies minstens één leerling als doelgroep";
 
       case "CLASSES":
-        return "Kies minstens één klas als doelgroep.";
+        return "Kies minstens één klas als doelgroep";
 
       case "YEARS":
-        return "Kies minstens één jaar als doelgroep.";
+        return "Kies minstens één jaar als doelgroep";
 
       case "GRADES":
-        return "Kies minstens één graad als doelgroep.";
+        return "Kies minstens één graad als doelgroep";
 
       default:
-        return "Kies een doelgroep.";
+        return "Kies een doelgroep";
     }
   };
 
@@ -325,12 +333,12 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
     e.preventDefault();
 
     if (!user) {
-      setMessage({ type: "error", text: "Je bent niet correct ingelogd." });
+      setMessage({ type: "error", text: "Je bent niet correct ingelogd" });
       return;
     }
 
     if (!title.trim()) {
-      setMessage({ type: "error", text: "Titel is verplicht." });
+      setMessage({ type: "error", text: "Titel is verplicht" });
       return;
     }
 
@@ -345,7 +353,7 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
     if (selectedBooks.length === 0) {
       setMessage({
         type: "error",
-        text: "Voeg minstens één boek toe aan de leeslijst.",
+        text: "Voeg minstens één boek toe aan de leeslijst",
       });
       return;
     }
@@ -373,7 +381,7 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
           : deadline
         : null,
       bookIds: selectedBooks.map((b) => b.id),
-      ...cleanedTargetPayload
+      ...cleanedTargetPayload,
     };
 
     try {
@@ -391,7 +399,7 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
 
       setMessage({
         type: "success",
-        text: "Klasleeslijst succesvol bijgewerkt.",
+        text: "Klasleeslijst succesvol bijgewerkt",
       });
 
       setTimeout(() => router.push("/reading-lists/" + id), 700);
@@ -401,7 +409,7 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
         text:
           error instanceof Error && error.message
             ? error.message
-            : "Kon de klasleeslijst niet bijwerken. Probeer opnieuw.",
+            : "Kon de klasleeslijst niet bijwerken. Probeer opnieuw",
       });
     } finally {
       setLoading(false);
@@ -670,7 +678,7 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
                   {allBooks.length === 0 ? (
                     <p className="loading-text">Catalogus laden...</p>
                   ) : filteredBooks.length === 0 ? (
-                    <p className="loading-text">Geen boeken gevonden.</p>
+                    <p className="loading-text">Geen boeken gevonden</p>
                   ) : (
                     <ul className="book-list">
                       {filteredBooks.map((book) => {
@@ -729,7 +737,7 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
                       <div className="selected-empty-state">
                         <p className="selected-empty-state-text">
                           Gebruik de linkerlijst om boeken aan deze leeslijst
-                          toe te voegen.
+                          toe te voegen
                         </p>
                       </div>
                     ) : (

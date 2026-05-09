@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { Book } from "../../interfaces/Book";
 import ProtectedRoute from "../../components/ProtectedRoute";
@@ -39,7 +39,6 @@ type ViewState = "overview" | "create";
 export default function MyReadingListPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   const [view, setView] = useState<ViewState>("overview");
@@ -89,7 +88,7 @@ export default function MyReadingListPage() {
   }, [fetchMyLists]);
 
   useEffect(() => {
-    const editId = Number(searchParams.get("edit"));
+    const editId = Number(new URLSearchParams(window.location.search).get("edit"));
     if (!editId || myLists.length === 0) return;
 
     const list = myLists.find((l) => l.id === editId);
@@ -97,7 +96,7 @@ export default function MyReadingListPage() {
     if (list) {
       void openEdit(list);
     }
-  }, [searchParams, myLists]);
+  }, [myLists]);
 
   const openEdit = async (list: PersonalList) => {
     setFormMsg(null);
@@ -109,13 +108,13 @@ export default function MyReadingListPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Kon leeslijst niet laden.");
+        throw new Error("Kon leeslijst niet laden");
       }
 
       const detail: PersonalListDetailResponse = await res.json();
 
       if (detail.listType !== "PERSONAL" || !detail.ownList) {
-        throw new Error("Deze persoonlijke leeslijst kan niet bewerkt worden.");
+        throw new Error("Deze persoonlijke leeslijst kan niet bewerkt worden");
       }
 
       const books = Array.isArray(detail.books) ? detail.books : [];
@@ -138,7 +137,7 @@ export default function MyReadingListPage() {
         text:
           err instanceof Error && err.message
             ? err.message
-            : "Kon leeslijst niet laden.",
+            : "Kon leeslijst niet laden",
       });
     } finally {
       setFormLoading(false);
@@ -177,7 +176,7 @@ export default function MyReadingListPage() {
     e.preventDefault();
 
     if (!formTitle.trim()) {
-      setFormMsg({ type: "error", text: "Een titel is verplicht." });
+      setFormMsg({ type: "error", text: "Een titel is verplicht" });
       return;
     }
 
@@ -207,7 +206,7 @@ export default function MyReadingListPage() {
 
       setFormMsg({
         type: "success",
-        text: isEdit ? "Leeslijst bijgewerkt." : "Leeslijst aangemaakt.",
+        text: isEdit ? "Leeslijst bijgewerkt" : "Leeslijst aangemaakt",
       });
 
       fetchMyLists();
@@ -222,7 +221,7 @@ export default function MyReadingListPage() {
         }, 1200);
       }
     } catch {
-      setFormMsg({ type: "error", text: "Opslaan mislukt. Probeer opnieuw." });
+      setFormMsg({ type: "error", text: "Opslaan mislukt. Probeer opnieuw" });
     } finally {
       setFormLoading(false);
     }
@@ -254,7 +253,7 @@ export default function MyReadingListPage() {
             <div className="mrl-header">
               <div>
                 <h1>Mijn leeslijsten</h1>
-                <p>Maak persoonlijke lijsten met boeken die jij wilt lezen.</p>
+                <p>Maak persoonlijke lijsten met boeken die jij wilt lezen</p>
               </div>
               <div className="mrl-header-actions">
                 <button
@@ -279,7 +278,7 @@ export default function MyReadingListPage() {
             {!listsLoading && myLists.length === 0 && (
               <div className="mrl-state mrl-state--empty">
                 <h2>Je hebt nog geen leeslijsten</h2>
-                <p>Begin met jouw eerste persoonlijke leeslijst.</p>
+                <p>Begin met jouw eerste persoonlijke leeslijst</p>
                 <button className="mrl-btn-primary" onClick={openCreate}>
                   Maak mijn eerste lijst
                 </button>
@@ -399,7 +398,7 @@ export default function MyReadingListPage() {
                     <p className="mrl-hint">Catalogus laden...</p>
                   )}
                   {allBooks.length > 0 && filteredBooks.length === 0 && (
-                    <p className="mrl-hint">Geen boeken gevonden.</p>
+                    <p className="mrl-hint">Geen boeken gevonden</p>
                   )}
 
                   {filteredBooks.map((book) => {
@@ -468,7 +467,7 @@ export default function MyReadingListPage() {
                 <div className="mrl-selected-list">
                   {formBooks.length === 0 ? (
                     <div className="mrl-selected-empty">
-                      <p>Gebruik de zoekbalk links om boeken toe te voegen.</p>
+                      <p>Gebruik de zoekbalk links om boeken toe te voegen</p>
                     </div>
                   ) : (
                     formBooks.map((book) => (

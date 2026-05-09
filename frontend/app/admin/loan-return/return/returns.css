@@ -1,6 +1,6 @@
 /* --- LAYOUT & HEADER --- */
 
-main.pageLayout {
+main.returnsPageLayout {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 4.5rem);
@@ -199,7 +199,7 @@ main.pageLayout {
 }
 
 /* VAST KADER VOOR RESULTATEN */
-.resultsFrame {
+main.returnsPageLayout .resultsFrame {
   flex: 1;
   min-height: 0;
   border: 1px solid #ece6f0;
@@ -217,10 +217,10 @@ main.pageLayout {
 }
 
 /* Subtiele styling voor scrollbar */
-.resultsFrame::-webkit-scrollbar {
+main.returnsPageLayout .resultsFrame::-webkit-scrollbar {
   width: 6px;
 }
-.resultsFrame::-webkit-scrollbar-thumb {
+main.returnsPageLayout .resultsFrame::-webkit-scrollbar-thumb {
   background-color: #d1c8cb;
   border-radius: 4px;
 }

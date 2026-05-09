@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Book, BOOK_CATEGORIES, BOOK_LABELS } from "../interfaces/Book";
 import BookCard from "./bookCard";
@@ -41,7 +41,6 @@ export default function Home() {
   const [labelOpen, setLabelOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
@@ -51,7 +50,7 @@ export default function Home() {
   // Slaat de zoekquery ook op in sessionStorage zodat deze behouden blijft bij page-refresh.
 
   useEffect(() => {
-    const incoming = searchParams.get("search");
+    const incoming = new URLSearchParams(window.location.search).get("search");
     if (incoming) {
       setQuery(incoming);
       sessionStorage.setItem("catalogSearch", incoming);
@@ -60,7 +59,7 @@ export default function Home() {
       const saved = sessionStorage.getItem("catalogSearch");
       if (saved) setQuery(saved);
     }
-  }, [searchParams]);
+  }, []);
 
   // -- Fetch boeken ------------------------------------------------------------------------------------------------------------------------------
   // Rent filters en zoekquery uit als dependencies zodat er automatisch een nieuwe fetch wordt gedaan bij verandering.

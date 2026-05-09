@@ -1,6 +1,6 @@
 /* --- LAYOUT & HEADER --- */
 
-main.pageLayout {
+main.lendingPageLayout {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 4.5rem);
@@ -47,7 +47,7 @@ main.pageLayout {
 
 /* Only use the 3-column layout when there is enough horizontal space */
 @media (min-width: 1200px) {
-  main.pageLayout {
+  main.lendingPageLayout {
     height: calc(100vh - 4.5rem);
     min-height: 0;
     overflow: hidden;
@@ -208,7 +208,7 @@ main.pageLayout {
 }
 
 /* VAST KADER VOOR RESULTATEN */
-.resultsFrame {
+main.lendingPageLayout .resultsFrame {
   flex: 1;
   min-height: 0;
   border: 1px solid #ece6f0;
@@ -226,10 +226,10 @@ main.pageLayout {
 }
 
 /* Subtiele styling voor scrollbar */
-.resultsFrame::-webkit-scrollbar {
+main.lendingPageLayout .resultsFrame::-webkit-scrollbar {
   width: 6px;
 }
-.resultsFrame::-webkit-scrollbar-thumb {
+main.lendingPageLayout .resultsFrame::-webkit-scrollbar-thumb {
   background-color: #d1c8cb;
   border-radius: 4px;
 }
@@ -467,7 +467,7 @@ main.pageLayout {
 
 /* --- RESPONSIVE FIXES --- */
 @media (max-width: 1199px) {
-  main.pageLayout {
+  main.lendingPageLayout {
     height: auto;
     overflow: visible;
   }
@@ -493,7 +493,7 @@ main.pageLayout {
     padding: 0;
   }
 
-  .resultsFrame {
+  main.lendingPageLayout .resultsFrame {
     flex: initial;
     max-height: 420px;
   }
@@ -504,7 +504,7 @@ main.pageLayout {
 }
 
 @media (max-width: 700px) {
-  main.pageLayout {
+  main.lendingPageLayout {
     padding: 1rem 1rem 1.5rem;
   }
 

@@ -8,7 +8,8 @@ import NotificationBell from "@/app/components/Notifications/Notification";
 import type {
   ReadingListDetail,
   UpdateReadingListVisibilityPayload,
-} from "@/app/interfaces/ReadingList";import { formatReadingListTargets } from "@/app/utils/readingListTargets";
+} from "@/app/interfaces/ReadingList";
+import { formatReadingListTargets } from "@/app/utils/readingListTargets";
 
 const STAFF_ROLES = ["TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"];
 
@@ -58,7 +59,7 @@ export default function ReadingListDetailPage() {
 
     setLoading(true);
     setError(null);
-    
+
     fetch(`${apiUrl}/reading-lists/${id}`, { credentials: "include" })
       .then(async (res) => {
         if (!res.ok) {
@@ -72,7 +73,7 @@ export default function ReadingListDetailPage() {
         console.error(err);
         setError(
           String(
-            err.message || "Er ging iets mis bij het laden van de leeslijst.",
+            err.message || "Er ging iets mis bij het laden van de leeslijst",
           ),
         );
       })
@@ -92,66 +93,66 @@ export default function ReadingListDetailPage() {
   };
 
   const togglePublicVisibility = async () => {
-  if (!detail || !detail.ownList || detail.listType !== "PERSONAL") {
-    return;
-  }
-
-  const nextPublicVisible = !Boolean(detail.publicVisible);
-
-  const payload: UpdateReadingListVisibilityPayload = {
-    publicVisible: nextPublicVisible,
-  };
-
-  setVisibilityLoading(true);
-  setShareFeedback(null);
-
-  try {
-    const response = await fetch(
-      `${apiUrl}/reading-lists/personal/${detail.id}/visibility`,
-      {
-        method: "PATCH",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      },
-    );
-
-    if (!response.ok) {
-      const message = await response.text();
-      throw new Error(message || "Kon deelinstelling niet aanpassen.");
+    if (!detail || !detail.ownList || detail.listType !== "PERSONAL") {
+      return;
     }
 
-    const updated = await response.json();
+    const nextPublicVisible = !Boolean(detail.publicVisible);
 
-    setDetail((current) => {
-      if (!current) {
-        return current;
+    const payload: UpdateReadingListVisibilityPayload = {
+      publicVisible: nextPublicVisible,
+    };
+
+    setVisibilityLoading(true);
+    setShareFeedback(null);
+
+    try {
+      const response = await fetch(
+        `${apiUrl}/reading-lists/personal/${detail.id}/visibility`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Kon deelinstelling niet aanpassen");
       }
 
-      return {
-        ...current,
-        publicUid: updated.publicUid ?? current.publicUid,
-        publicVisible: Boolean(updated.publicVisible),
-      };
-    });
+      const updated = await response.json();
 
-    setShareFeedback(
-      nextPublicVisible
-        ? "Deze leeslijst is nu deelbaar via de link."
-        : "Deze leeslijst is weer privé.",
-    );
-  } catch (err) {
-    setShareFeedback(
-      err instanceof Error
-        ? err.message
-        : "Kon deelinstelling niet aanpassen.",
-    );
-  } finally {
-    setVisibilityLoading(false);
-  }
-};
+      setDetail((current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          publicUid: updated.publicUid ?? current.publicUid,
+          publicVisible: Boolean(updated.publicVisible),
+        };
+      });
+
+      setShareFeedback(
+        nextPublicVisible
+          ? "Deze leeslijst is nu deelbaar via de link"
+          : "Deze leeslijst is weer privé",
+      );
+    } catch (err) {
+      setShareFeedback(
+        err instanceof Error
+          ? err.message
+          : "Kon deelinstelling niet aanpassen",
+      );
+    } finally {
+      setVisibilityLoading(false);
+    }
+  };
 
   const removeBook = async (bookId: number) => {
     if (!detail) return;
@@ -187,10 +188,12 @@ export default function ReadingListDetailPage() {
       });
       if (!res.ok) throw new Error();
       setDetail((prev) =>
-        prev ? { ...prev, books: prev.books.filter((b) => b.id !== bookId) } : prev,
+        prev
+          ? { ...prev, books: prev.books.filter((b) => b.id !== bookId) }
+          : prev,
       );
     } catch {
-      setError("Kon het boek niet verwijderen uit de leeslijst.");
+      setError("Kon het boek niet verwijderen uit de leeslijst");
     }
   };
 
@@ -228,7 +231,10 @@ export default function ReadingListDetailPage() {
   const readCount = detail?.books.filter((b) => readStatus[b.id]).length ?? 0;
   const totalCount = detail?.books.length ?? 0;
   const deadline = formatDeadline(detail?.deadline);
-  const showTargetSummary = detail?.listType === "CLASS" && detail.targetType !== null && detail.targetType !== undefined;
+  const showTargetSummary =
+    detail?.listType === "CLASS" &&
+    detail.targetType !== null &&
+    detail.targetType !== undefined;
 
   return (
     <div className="rld-page">
@@ -271,9 +277,7 @@ export default function ReadingListDetailPage() {
                     : "Eigen leeslijst"}
                 </span>
                 {detail.listType === "PERSONAL" && detail.publicVisible && (
-                  <span className="rld-badge rld-badge--shared">
-                    Deelbaar
-                  </span>
+                  <span className="rld-badge rld-badge--shared">Deelbaar</span>
                 )}
               </div>
               {hasUnavailableBooks && (
@@ -332,8 +336,8 @@ export default function ReadingListDetailPage() {
                     <h2>Delen via link</h2>
                     <p>
                       {detail.publicVisible
-                        ? "Iedere ingelogde gebruiker met deze link kan deze leeslijst bekijken."
-                        : "Deze persoonlijke leeslijst is momenteel alleen zichtbaar voor jou."}
+                        ? "Iedere ingelogde gebruiker met deze link kan deze leeslijst bekijken"
+                        : "Deze persoonlijke leeslijst is momenteel alleen zichtbaar voor jou"}
                     </p>
                   </div>
 
@@ -402,7 +406,7 @@ export default function ReadingListDetailPage() {
           {/* ── Books ── */}
           {totalCount === 0 ? (
             <div className="rld-state rld-state--empty">
-              <p>Deze leeslijst bevat nog geen boeken.</p>
+              <p>Deze leeslijst bevat nog geen boeken</p>
             </div>
           ) : (
             <div className="rld-book-grid">

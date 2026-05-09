@@ -24,8 +24,12 @@ export default function ReturnsPage() {
 
   // --- Kolom 1: Lener States ---
   const [userQuery, setUserQuery] = useState("");
-  const [userSearchResults, setUserSearchResults] = useState<SmartschoolUser[]>([]);
-  const [selectedUser, setSelectedUser] = useState<SmartschoolUser | null>(null);
+  const [userSearchResults, setUserSearchResults] = useState<SmartschoolUser[]>(
+    [],
+  );
+  const [selectedUser, setSelectedUser] = useState<SmartschoolUser | null>(
+    null,
+  );
 
   // --- Kolom 2: Uitgeleende boeken States ---
   const [borrowedBooks, setBorrowedBooks] = useState<BorrowedItem[]>([]);
@@ -44,7 +48,7 @@ export default function ReturnsPage() {
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/smartschool/users?query=${encodeURIComponent(userQuery.trim())}`,
-        { credentials: "include" }
+        { credentials: "include" },
       );
 
       if (!response.ok) throw new Error("Failed to fetch Smartschool users");
@@ -73,10 +77,9 @@ export default function ReturnsPage() {
   // --- 2. Ophalen van actieve leningen via Backend ---
   const fetchUserLoans = async (smartschoolUserId: string) => {
     try {
-      // LET OP: Pas deze URL aan naar jouw backend endpoint voor actieve leningen per user!
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/loans/active?smartschoolUserId=${smartschoolUserId}`,
-        { credentials: "include" }
+        { credentials: "include" },
       );
       if (!response.ok) throw new Error("Kan leningen niet ophalen");
 
@@ -96,14 +99,19 @@ export default function ReturnsPage() {
       setBorrowedBooks(Object.values(groupedBooks));
     } catch (err) {
       console.error(err);
-      alert("Fout bij het ophalen van de uitgeleende boeken voor deze gebruiker.");
+      alert(
+        "Fout bij het ophalen van de uitgeleende boeken voor deze gebruiker.",
+      );
     }
   };
 
   // Lokale zoekfilter voor de uitgeleende boeken (want we hebben ze al opgehaald)
-  const filteredBorrowedBooks = borrowedBooks.filter(item =>
-    item.book.title.toLowerCase().includes(bookQuery.toLowerCase()) ||
-    item.book.authors?.some(a => a.toLowerCase().includes(bookQuery.toLowerCase()))
+  const filteredBorrowedBooks = borrowedBooks.filter(
+    (item) =>
+      item.book.title.toLowerCase().includes(bookQuery.toLowerCase()) ||
+      item.book.authors?.some((a) =>
+        a.toLowerCase().includes(bookQuery.toLowerCase()),
+      ),
   );
 
   // --- 3. Return Cart Handlers ---
@@ -134,7 +142,7 @@ export default function ReturnsPage() {
           }
         }
         return item;
-      })
+      }),
     );
   };
 
@@ -159,46 +167,53 @@ export default function ReturnsPage() {
     const payload = returnCart.map((item) => ({
       bookId: item.book.id,
       quantity: item.quantityToReturn,
-      smartschoolUserId: selectedUser.smartschoolUserId
+      smartschoolUserId: selectedUser.smartschoolUserId,
     }));
 
     try {
-      // LET OP: Pas deze URL aan naar jouw return endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/loans/return`, {
-        method: "POST", // of PUT afhankelijk van jullie backend design
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/loans/return`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        },
+      );
 
-      if (!response.ok) throw new Error("Fout bij het registreren van de retour.");
+      if (!response.ok)
+        throw new Error("Fout bij het registreren van de retour.");
 
-      alert(`Succes! De boeken van ${selectedUser.name} zijn succesvol ingeleverd.`);
+      alert(
+        `Succes! De boeken van ${selectedUser.name} zijn succesvol ingeleverd.`,
+      );
 
       // Mandje leegmaken en de lijst met uitgeleende boeken opnieuw inladen
       setReturnCart([]);
       fetchUserLoans(selectedUser.smartschoolUserId);
       setBookQuery("");
-
     } catch (err) {
       console.error(err);
-      alert("Er ging iets mis bij het inleveren van de boeken. Controleer de verbinding.");
+      alert(
+        "Er ging iets mis bij het inleveren van de boeken. Controleer de verbinding.",
+      );
     }
   };
 
   return (
-    <main className="pageLayout">
+    <main className="returnsPageLayout">
       <div className="pageHeader">
-        <button className="backButton" onClick={() => router.back()}>←</button>
+        <button className="backButton" onClick={() => router.back()}>
+          ←
+        </button>
         <h1>Boeken Inleveren</h1>
       </div>
 
       <div className="uitleenGrid driekolomsGrid">
-
         {/* --- KOLOM 1: LENER SELECTEREN --- */}
         <div className="gridColumn borderRight">
           <div className="sectieHeader">
-            <h2>Lener (Retour)</h2>
+            <h2>Lener (retour)</h2>
           </div>
 
           <div className="userProfileCard">
@@ -212,13 +227,22 @@ export default function ReturnsPage() {
                 */}
                 <div className="userInfo">
                   <p className="userName">{selectedUser.name}</p>
-                  <p><strong>ID:</strong> {selectedUser.smartschoolUserId}</p>
-                  <p><strong>Klas:</strong> {selectedUser.classGroup}</p>
+                  <p>
+                    <strong>ID:</strong> {selectedUser.smartschoolUserId}
+                  </p>
+                  <p>
+                    <strong>Klas:</strong> {selectedUser.classGroup}
+                  </p>
                 </div>
-                <button className="actionBtn removeBtn" onClick={handleRemoveUser}>✕</button>
+                <button
+                  className="actionBtn removeBtn"
+                  onClick={handleRemoveUser}
+                >
+                  ✕
+                </button>
               </>
             ) : (
-              <p className="placeholderText">Nog geen lener geselecteerd.</p>
+              <p className="placeholderText">Nog geen lener geselecteerd</p>
             )}
           </div>
 
@@ -231,14 +255,20 @@ export default function ReturnsPage() {
               placeholder="Naam of ID..."
               value={userQuery}
               onChange={(e) => setUserQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearchSmartschoolUser()}
+              onKeyDown={(e) =>
+                e.key === "Enter" && handleSearchSmartschoolUser()
+              }
             />
-            <button id="searchButton" onClick={handleSearchSmartschoolUser}>🔎︎</button>
+            <button id="searchButton" onClick={handleSearchSmartschoolUser}>
+              🔎︎
+            </button>
           </div>
 
           <div className="resultsFrame">
             {userSearchResults.length === 0 ? (
-              <p className="placeholderText centered">Typ een deel van de naam in.</p>
+              <p className="placeholderText centered">
+                Typ een deel van de naam in
+              </p>
             ) : (
               userSearchResults.map((user, idx) => (
                 <div key={idx} className="listItem">
@@ -253,8 +283,13 @@ export default function ReturnsPage() {
                     <strong>{user.name}</strong>
                     <span>{user.classGroup}</span>
                   </div>
-                  <button className="actionBtn addBtn" onClick={() => handleSelectUser(user)}>
-                    {selectedUser?.smartschoolUserId === user.smartschoolUserId ? "✓" : "+"}
+                  <button
+                    className="actionBtn addBtn"
+                    onClick={() => handleSelectUser(user)}
+                  >
+                    {selectedUser?.smartschoolUserId === user.smartschoolUserId
+                      ? "✓"
+                      : "+"}
                   </button>
                 </div>
               ))
@@ -265,7 +300,7 @@ export default function ReturnsPage() {
         {/* --- KOLOM 2: UITGELEENDE BOEKEN LIJST --- */}
         <div className="gridColumn borderRight">
           <div className="sectieHeader">
-            <h2>Uitgeleende Boeken</h2>
+            <h2>Uitgeleende boeken</h2>
           </div>
 
           <div className="searchbar">
@@ -280,18 +315,30 @@ export default function ReturnsPage() {
 
           <div className="resultsFrame">
             {!selectedUser ? (
-              <p className="placeholderText centered">Selecteer eerst een lener.</p>
+              <p className="placeholderText centered">
+                Selecteer eerst een lener
+              </p>
             ) : borrowedBooks.length === 0 ? (
-              <p className="placeholderText centered">Deze persoon heeft geen boeken in bezit.</p>
+              <p className="placeholderText centered">
+                Deze persoon heeft geen boeken in bezit
+              </p>
             ) : filteredBorrowedBooks.length === 0 ? (
-              <p className="placeholderText centered">Geen boeken gevonden met deze filter.</p>
+              <p className="placeholderText centered">
+                Geen boeken gevonden met deze filter
+              </p>
             ) : (
               filteredBorrowedBooks.map((item) => {
-                const isSelectedForReturn = returnCart.find((c) => c.book.id === item.book.id);
+                const isSelectedForReturn = returnCart.find(
+                  (c) => c.book.id === item.book.id,
+                );
 
                 return (
                   <div key={item.book.id} className="listItem">
-                    <img src={item.book.thumbnail || "/book-closed.png"} alt="cover" className="itemThumbnail"/>
+                    <img
+                      src={item.book.thumbnail || "/book-closed.png"}
+                      alt="cover"
+                      className="itemThumbnail"
+                    />
                     <div className="itemDetails">
                       <strong>{item.book.title}</strong>
                       <span>{item.book.authors?.join(", ")}</span>
@@ -299,17 +346,41 @@ export default function ReturnsPage() {
 
                     {isSelectedForReturn ? (
                       <div className="addArea">
-                        <span className="stock-ok">{item.quantityBorrowed} in bezit</span>
+                        <span className="stock-ok">
+                          {item.quantityBorrowed} in bezit
+                        </span>
                         <div className="quantityControl syncedControl">
-                          <button className="qtyBtn" onClick={() => updateReturnQuantity(item.book.id, -1)}>-</button>
-                          <span className="qtyDisplay">{isSelectedForReturn.quantityToReturn}</span>
-                          <button className="qtyBtn" onClick={() => updateReturnQuantity(item.book.id, 1)}>+</button>
+                          <button
+                            className="qtyBtn"
+                            onClick={() =>
+                              updateReturnQuantity(item.book.id, -1)
+                            }
+                          >
+                            -
+                          </button>
+                          <span className="qtyDisplay">
+                            {isSelectedForReturn.quantityToReturn}
+                          </span>
+                          <button
+                            className="qtyBtn"
+                            onClick={() =>
+                              updateReturnQuantity(item.book.id, 1)
+                            }
+                          >
+                            +
+                          </button>
                         </div>
                       </div>
                     ) : (
                       <div className="addArea">
-                        <span className="stock-ok">{item.quantityBorrowed} in bezit</span>
-                        <button className="actionBtn addBtn" onClick={() => handleAddToReturnCart(item)} title="Voeg toe aan retour">
+                        <span className="stock-ok">
+                          {item.quantityBorrowed} in bezit
+                        </span>
+                        <button
+                          className="actionBtn addBtn"
+                          onClick={() => handleAddToReturnCart(item)}
+                          title="Voeg toe aan retour"
+                        >
                           +
                         </button>
                       </div>
@@ -326,27 +397,54 @@ export default function ReturnsPage() {
           <div className="flexColumnGrow">
             <div className="sectieHeader">
               <h2>
-                Terug te brengen ({returnCart.reduce((total, item) => total + item.quantityToReturn, 0)})
+                Terugbrengen (
+                {returnCart.reduce(
+                  (total, item) => total + item.quantityToReturn,
+                  0,
+                )}
+                )
               </h2>
             </div>
 
             {/* Hier is de class 'extraMargin' aan toegevoegd voor uitlijning */}
             <div className="resultsFrame extraMargin">
               {returnCart.length === 0 ? (
-                <p className="placeholderText centered">Geen boeken geselecteerd voor inlevering.</p>
+                <p className="placeholderText centered">
+                  Geen boeken geselecteerd voor inlevering
+                </p>
               ) : (
                 returnCart.map((item) => (
                   <div key={item.book.id} className="listItem selectedItem">
-                    <img src={item.book.thumbnail || "/book-closed.png"} alt="cover" className="itemThumbnail"/>
+                    <img
+                      src={item.book.thumbnail || "/book-closed.png"}
+                      alt="cover"
+                      className="itemThumbnail"
+                    />
                     <div className="itemDetails">
                       <strong>{item.book.title}</strong>
                       <div className="quantityControl">
-                        <button className="qtyBtn" onClick={() => updateReturnQuantity(item.book.id, -1)}>-</button>
-                        <span className="qtyDisplay">{item.quantityToReturn}</span>
-                        <button className="qtyBtn" onClick={() => updateReturnQuantity(item.book.id, 1)}>+</button>
+                        <button
+                          className="qtyBtn"
+                          onClick={() => updateReturnQuantity(item.book.id, -1)}
+                        >
+                          -
+                        </button>
+                        <span className="qtyDisplay">
+                          {item.quantityToReturn}
+                        </span>
+                        <button
+                          className="qtyBtn"
+                          onClick={() => updateReturnQuantity(item.book.id, 1)}
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
-                    <button className="actionBtn removeBtn" onClick={() => handleRemoveFromReturnCart(item.book.id)} title="Verwijder uit selectie">
+                    <button
+                      className="actionBtn removeBtn"
+                      onClick={() => handleRemoveFromReturnCart(item.book.id)}
+                      title="Verwijder uit selectie"
+                    >
                       ✕
                     </button>
                   </div>
@@ -356,10 +454,23 @@ export default function ReturnsPage() {
           </div>
 
           <div className="actionFooter">
-            <button className="primaryBtn" onClick={handleRegisterReturn} disabled={returnCart.length === 0 || !selectedUser}>
+            <button
+              className="primaryBtn"
+              onClick={handleRegisterReturn}
+              disabled={returnCart.length === 0 || !selectedUser}
+            >
               Geselecteerde boeken inleveren
             </button>
-            <button className="secondaryBtn" onClick={handleCancel} disabled={returnCart.length === 0 && !selectedUser && bookQuery === "" && userQuery === ""}>
+            <button
+              className="secondaryBtn"
+              onClick={handleCancel}
+              disabled={
+                returnCart.length === 0 &&
+                !selectedUser &&
+                bookQuery === "" &&
+                userQuery === ""
+              }
+            >
               Uitlenen annuleren
             </button>
           </div>

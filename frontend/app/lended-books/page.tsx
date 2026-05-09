@@ -44,8 +44,8 @@ export default function MijnBoekenPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [requestingLoanId, setRequestingLoanId] = useState<number | null>(null);
 
-  const canRequestExtension = user?.role === "STUDENT" || user?.role === "TEACHER";
-
+  const canRequestExtension =
+    user?.role === "STUDENT" || user?.role === "TEACHER";
 
   useEffect(() => {
     const fetchAllLoans = async () => {
@@ -66,7 +66,7 @@ export default function MijnBoekenPage() {
         setActiveLoans(activeData);
         setLoanHistory(historyData);
       } catch (err: any) {
-        setError(err.message || "Er is een onbekende fout opgetreden.");
+        setError(err.message || "Er is een onbekende fout opgetreden");
       } finally {
         setIsLoading(false);
       }
@@ -96,7 +96,10 @@ export default function MijnBoekenPage() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
-      return { text: `${Math.abs(diffDays)} dagen te laat`, statusClass: "status-late" };
+      return {
+        text: `${Math.abs(diffDays)} dagen te laat`,
+        statusClass: "status-late",
+      };
     } else if (diffDays <= 3) {
       return { text: `Nog ${diffDays} dagen`, statusClass: "status-soon" };
     } else {
@@ -130,28 +133,31 @@ export default function MijnBoekenPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Kon de verlengingsaanvraag niet versturen.");
+        throw new Error(
+          data?.message || "Kon de verlengingsaanvraag niet versturen",
+        );
       }
 
       setActiveLoans((current) =>
         current.map((loan) =>
-          loan.loanId === loanId ? { ...loan, extensionStatus: "PENDING" } : loan
-        )
+          loan.loanId === loanId
+            ? { ...loan, extensionStatus: "PENDING" }
+            : loan,
+        ),
       );
 
-      setActionMessage("Je verlengingsaanvraag werd verstuurd.");
+      setActionMessage("Je verlengingsaanvraag werd verstuurd");
     } catch (err: any) {
-      setActionMessage(err.message || "Er ging iets mis bij het aanvragen.");
+      setActionMessage(err.message || "Er ging iets mis bij het aanvragen");
     } finally {
       setRequestingLoanId(null);
     }
   };
 
-
   // --- UI Components ---
   if (isLoading) {
     return (
-      <main className="pageLayout">
+      <main className="lendedBooksPage pageLayout">
         <div className="pageHeader">
           <div>
             <h1>Mijn Bibliotheek</h1>
@@ -164,32 +170,38 @@ export default function MijnBoekenPage() {
 
   if (error) {
     return (
-      <main className="pageLayout">
+      <main className="lendedBooksPage pageLayout">
         <div className="errorState">
           <h3>Fout bij ophalen</h3>
           <p>{error}</p>
-          <button onClick={() => window.location.reload()}>Probeer opnieuw</button>
+          <button onClick={() => window.location.reload()}>
+            Probeer opnieuw
+          </button>
         </div>
       </main>
     );
   }
 
   // Bereken het totaal aantal boeken (som van alle aantallen)
-  const totalActiveBooks = activeLoans.reduce((sum, loan) => sum + loan.quantity, 0);
+  const totalActiveBooks = activeLoans.reduce(
+    (sum, loan) => sum + loan.quantity,
+    0,
+  );
 
   return (
-    <main className="pageLayout">
+    <main className="lendedBooksPage pageLayout">
       <div className="pageHeader">
         <div>
           <h1>Mijn Bibliotheek</h1>
           <p className="pageSubtitle">
-            Beheer je uitleningen en bekijk je leesgeschiedenis op één plek.
+            Beheer je ontleningen en bekijk je leesgeschiedenis op één plek
           </p>
         </div>
       </div>
 
-      {actionMessage && <div className="loanActionMessage">{actionMessage}</div>}
-
+      {actionMessage && (
+        <div className="loanActionMessage">{actionMessage}</div>
+      )}
 
       <div className="contentGrid">
         {/* --- ACTIEVE UITLENINGEN --- */}
@@ -213,7 +225,7 @@ export default function MijnBoekenPage() {
               </svg>
               <p className="emptyTitle">Geen actieve leningen</p>
               <p className="emptyText">
-                Je hebt op dit moment geen boeken ontleend uit de bibliotheek.
+                Je hebt op dit moment geen boeken ontleend uit de bibliotheek
               </p>
             </div>
           ) : (
@@ -222,8 +234,7 @@ export default function MijnBoekenPage() {
                 const status = getDueDateStatus(loan.dueDate);
                 const extensionText = getExtensionText(loan.extensionStatus);
                 const showRequestButton =
-                  canRequestExtension &&
-                  (loan.extensionStatus === "NONE");
+                  canRequestExtension && loan.extensionStatus === "NONE";
 
                 return (
                   <div key={loan.loanId} className="bookCard">
@@ -241,7 +252,11 @@ export default function MijnBoekenPage() {
                         />
                       ) : (
                         <div className="noCover">
-                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -255,13 +270,16 @@ export default function MijnBoekenPage() {
                     </div>
 
                     <div className="bookCardDetails">
-                      <h3 className="bookCardTitle" title={loan.book?.title || "Onbekend"}>
+                      <h3
+                        className="bookCardTitle"
+                        title={loan.book?.title || "Onbekend"}
+                      >
                         {loan.book?.title || "Onbekend boek"}
                       </h3>
-                      
+
                       <p className="bookCardAuthor">
-                        {loan.book?.authors && loan.book.authors.length > 0 
-                          ? loan.book.authors.join(", ") 
+                        {loan.book?.authors && loan.book.authors.length > 0
+                          ? loan.book.authors.join(", ")
                           : "Auteur onbekend"}
                       </p>
 
@@ -275,9 +293,18 @@ export default function MijnBoekenPage() {
                           <strong>{formatDate(loan.dueDate)}</strong>
                         </div>
                         {loan.quantity > 1 && (
-                          <div className="dateRow" style={{ borderTop: "1px solid #ece6f0", paddingTop: "0.25rem", marginTop: "0.25rem" }}>
+                          <div
+                            className="dateRow"
+                            style={{
+                              borderTop: "1px solid #ece6f0",
+                              paddingTop: "0.25rem",
+                              marginTop: "0.25rem",
+                            }}
+                          >
                             <span>Aantal:</span>
-                            <strong style={{ color: "#8e2446" }}>{loan.quantity}</strong>
+                            <strong style={{ color: "#8e2446" }}>
+                              {loan.quantity}
+                            </strong>
                           </div>
                         )}
 
@@ -296,7 +323,8 @@ export default function MijnBoekenPage() {
                             onClick={() => requestExtension(loan.loanId)}
                           >
                             {requestingLoanId === loan.loanId
-                              ? "Aanvragen..." : "Verlenging aanvragen"}
+                              ? "Aanvragen..."
+                              : "Verlenging aanvragen"}
                           </button>
                         )}
                       </div>
@@ -308,10 +336,10 @@ export default function MijnBoekenPage() {
           )}
         </section>
 
-        {/* --- UITLEENGESCHIEDENIS --- */}
+        {/* --- ONTLEENGESCHIEDENIS --- */}
         <section>
           <div className="sectieHeader">
-            <h2>Uitleengeschiedenis</h2>
+            <h2>Ontleengeschiedenis</h2>
           </div>
 
           {loanHistory.length === 0 ? (
@@ -326,7 +354,7 @@ export default function MijnBoekenPage() {
               </svg>
               <p className="emptyTitle">Geen geschiedenis</p>
               <p className="emptyText">
-                Je hebt nog geen boeken afgerond en ingeleverd.
+                Je hebt nog geen boeken afgerond en ingeleverd
               </p>
             </div>
           ) : (
