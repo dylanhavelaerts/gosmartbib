@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { Book } from "../../interfaces/Book";
 import ProtectedRoute from "../../components/ProtectedRoute";
@@ -39,7 +39,6 @@ type ViewState = "overview" | "create";
 export default function MyReadingListPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   const [view, setView] = useState<ViewState>("overview");
@@ -89,7 +88,7 @@ export default function MyReadingListPage() {
   }, [fetchMyLists]);
 
   useEffect(() => {
-    const editId = Number(searchParams.get("edit"));
+    const editId = Number(new URLSearchParams(window.location.search).get("edit"));
     if (!editId || myLists.length === 0) return;
 
     const list = myLists.find((l) => l.id === editId);
@@ -97,7 +96,7 @@ export default function MyReadingListPage() {
     if (list) {
       void openEdit(list);
     }
-  }, [searchParams, myLists]);
+  }, [myLists]);
 
   const openEdit = async (list: PersonalList) => {
     setFormMsg(null);
