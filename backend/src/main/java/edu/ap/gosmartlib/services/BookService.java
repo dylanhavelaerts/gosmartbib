@@ -13,6 +13,7 @@ import edu.ap.gosmartlib.exceptions.NegativeValueException;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.repositories.SchoolRepository;
+import org.springframework.data.domain.Sort;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -638,7 +639,7 @@ public class BookService {
 
     @Transactional(readOnly = true)
     public List<SnowballSectionDTO> getSnowballSections(Long bookId, UserRoles callerRole, String currentUserUid) {
-        Pageable top12 = PageRequest.of(0, 12);
+        Pageable top12 = PageRequest.of(0, 12, Sort.by(Sort.Direction.DESC, "rating"));
         BookEntity book = bookRepository.findDetailedById(bookId)
                 .orElseThrow(() -> new BookNotFoundException(bookId));
 

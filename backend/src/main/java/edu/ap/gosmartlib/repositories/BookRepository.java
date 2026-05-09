@@ -220,7 +220,6 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
     SELECT DISTINCT b FROM BookEntity b
     JOIN b.authors a
     WHERE a IN :authors AND b.id != :excludeId
-    ORDER BY b.rating DESC
 """)
 List<BookEntity> findByAuthorsInAndIdNot(
         @Param("authors") List<String> authors,
@@ -234,16 +233,11 @@ List<BookEntity> findByAuthorsInAndIdNot(
     SELECT DISTINCT b FROM BookEntity b
     JOIN b.categories c
     WHERE c IN :categories AND b.id != :excludeId
-    ORDER BY b.rating DESC
 """)
     List<BookEntity> findByCategoriesInAndIdNot(
             @Param("categories") List<String> categories,
             @Param("excludeId") Long excludeId,
             Pageable pageable
-    );
-    List<BookEntity> findByCategoriesInAndIdNot(
-            @Param("categories") List<String> categories,
-            @Param("excludeId") Long excludeId
     );
 
         @Query(value = """
