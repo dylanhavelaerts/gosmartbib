@@ -23,7 +23,7 @@ export default function GeneralLoanReturn() {
             <p className="action-title">Boek uitlenen</p>
             <p className="action-description">
               Registreer een nieuw boek dat wordt meegegeven aan een leerling of
-              leerkracht.
+              leerkracht
             </p>
           </div>
         </a>
@@ -39,8 +39,7 @@ export default function GeneralLoanReturn() {
           <div className="action-body">
             <p className="action-title">Boek terugbrengen</p>
             <p className="action-description">
-              Verwerk de terugbreng van een geleend boek en werk de voorraad
-              bij.
+              Verwerk de terugbreng van een geleend boek en werk de voorraad bij
             </p>
           </div>
         </a>

@@ -37,7 +37,7 @@ export default function LoginPage() {
             />
           </div>
           <p className="loginSubtitle">
-            Meld je aan met je Smartschool-account om verder te gaan.
+            Meld je aan met je Smartschool-account om verder te gaan
           </p>
           <button
             type="button"

@@ -66,7 +66,7 @@ export default function MijnBoekenPage() {
         setActiveLoans(activeData);
         setLoanHistory(historyData);
       } catch (err: any) {
-        setError(err.message || "Er is een onbekende fout opgetreden.");
+        setError(err.message || "Er is een onbekende fout opgetreden");
       } finally {
         setIsLoading(false);
       }
@@ -134,7 +134,7 @@ export default function MijnBoekenPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(
-          data?.message || "Kon de verlengingsaanvraag niet versturen.",
+          data?.message || "Kon de verlengingsaanvraag niet versturen",
         );
       }
 
@@ -146,9 +146,9 @@ export default function MijnBoekenPage() {
         ),
       );
 
-      setActionMessage("Je verlengingsaanvraag werd verstuurd.");
+      setActionMessage("Je verlengingsaanvraag werd verstuurd");
     } catch (err: any) {
-      setActionMessage(err.message || "Er ging iets mis bij het aanvragen.");
+      setActionMessage(err.message || "Er ging iets mis bij het aanvragen");
     } finally {
       setRequestingLoanId(null);
     }
@@ -157,7 +157,7 @@ export default function MijnBoekenPage() {
   // --- UI Components ---
   if (isLoading) {
     return (
-      <main className="pageLayout">
+      <main className="lendedBooksPage pageLayout">
         <div className="pageHeader">
           <div>
             <h1>Mijn Bibliotheek</h1>
@@ -170,7 +170,7 @@ export default function MijnBoekenPage() {
 
   if (error) {
     return (
-      <main className="pageLayout">
+      <main className="lendedBooksPage pageLayout">
         <div className="errorState">
           <h3>Fout bij ophalen</h3>
           <p>{error}</p>
@@ -189,7 +189,7 @@ export default function MijnBoekenPage() {
   );
 
   return (
-    <main className="pageLayout">
+    <main className="lendedBooksPage pageLayout">
       <div className="pageHeader">
         <div>
           <h1>Mijn Bibliotheek</h1>

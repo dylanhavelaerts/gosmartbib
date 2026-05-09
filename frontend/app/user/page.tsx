@@ -8,21 +8,22 @@ const widgets = [
     iconSrc: "/book-icon.png",
     iconAlt: "Leeslijsten",
     title: "Leeslijsten",
-    description: "Bekijk en beheer je persoonlijke leeslijsten.",
+    description: "Bekijk en beheer je persoonlijke leeslijsten",
     href: "/reading-lists",
   },
   {
     iconSrc: "/checl.png",
     iconAlt: "Mijn uitleningen",
     title: "Mijn uitleningen",
-    description: "Overzicht van boeken die je momenteel en in het verleden hebt geleend.",
+    description:
+      "Overzicht van boeken die je momenteel en in het verleden hebt geleend",
     href: "/lended-books",
   },
   {
     iconSrc: "/user.png",
     iconAlt: "Account info",
     title: "Account info",
-    description: "Bekijk en bewerk je profielgegevens.",
+    description: "Bekijk en bewerk je profielgegevens",
     href: "/account",
   },
 ];

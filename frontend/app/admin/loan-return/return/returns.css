@@ -1,6 +1,6 @@
 /* --- LAYOUT & HEADER --- */
 
-main.pageLayout {
+main.returnsPageLayout {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 4.5rem);

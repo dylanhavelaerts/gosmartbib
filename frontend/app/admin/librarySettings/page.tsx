@@ -215,7 +215,7 @@ export default function LibrarySettings() {
 
             <section className="card">
               <h2>Schooloverzicht</h2>
-              <p className="help">Huidige opgeslagen instellingen.</p>
+              <p className="help">Huidige opgeslagen instellingen</p>
 
               <div className="infoPanel" style={{ marginBottom: "0.75rem" }}>
                 <p className="infoPanelTitle">School</p>

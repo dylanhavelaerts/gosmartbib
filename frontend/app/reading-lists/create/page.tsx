@@ -40,13 +40,13 @@ export default function CreateReadingListPage() {
     number[]
   >([]);
   const [selectedTargetStudents, setSelectedTargetStudents] = useState<
-  ReadingListStudentTarget[]
+    ReadingListStudentTarget[]
   >([]);
   const [selectedTargetClassIds, setSelectedTargetClassIds] = useState<
     number[]
   >([]);
   const [selectedTargetClasses, setSelectedTargetClasses] = useState<
-  ReadingListClassTarget[]
+    ReadingListClassTarget[]
   >([]);
   const [selectedTargetYears, setSelectedTargetYears] = useState<number[]>([]);
   const [selectedTargetGrades, setSelectedTargetGrades] = useState<number[]>(
@@ -134,36 +134,36 @@ export default function CreateReadingListPage() {
     });
   };
 
-const removeTargetClass = (classId: number) => {
-  setSelectedTargetClassIds((prev) =>
-    prev.filter((currentClassId) => currentClassId !== classId),
-  );
+  const removeTargetClass = (classId: number) => {
+    setSelectedTargetClassIds((prev) =>
+      prev.filter((currentClassId) => currentClassId !== classId),
+    );
 
-  setSelectedTargetClasses((prev) =>
-    prev.filter((schoolClass) => schoolClass.id !== classId),
-  );
-};
+    setSelectedTargetClasses((prev) =>
+      prev.filter((schoolClass) => schoolClass.id !== classId),
+    );
+  };
 
-const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
-  if (selectedTargetClassIds.includes(schoolClass.id)) {
-    removeTargetClass(schoolClass.id);
-    return;
-  }
-
-  setSelectedTargetClassIds((prev) =>
-    [...prev, schoolClass.id].sort((a, b) => a - b),
-  );
-
-  setSelectedTargetClasses((prev) => {
-    if (prev.some((selectedClass) => selectedClass.id === schoolClass.id)) {
-      return prev;
+  const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
+    if (selectedTargetClassIds.includes(schoolClass.id)) {
+      removeTargetClass(schoolClass.id);
+      return;
     }
 
-    return [...prev, schoolClass].sort((a, b) =>
-      a.name.localeCompare(b.name, "nl", { sensitivity: "base" }),
+    setSelectedTargetClassIds((prev) =>
+      [...prev, schoolClass.id].sort((a, b) => a - b),
     );
-  });
-};
+
+    setSelectedTargetClasses((prev) => {
+      if (prev.some((selectedClass) => selectedClass.id === schoolClass.id)) {
+        return prev;
+      }
+
+      return [...prev, schoolClass].sort((a, b) =>
+        a.name.localeCompare(b.name, "nl", { sensitivity: "base" }),
+      );
+    });
+  };
 
   const selectTargetType = (nextTargetType: ReadingListTargetType) => {
     setTargetType(nextTargetType);
@@ -195,19 +195,19 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
   const targetSelectionError = () => {
     switch (targetType) {
       case "STUDENTS":
-        return "Kies minstens één leerling als doelgroep.";
+        return "Kies minstens één leerling als doelgroep";
 
       case "CLASSES":
-        return "Kies minstens één klas als doelgroep.";
+        return "Kies minstens één klas als doelgroep";
 
       case "YEARS":
-        return "Kies minstens één jaar als doelgroep.";
+        return "Kies minstens één jaar als doelgroep";
 
       case "GRADES":
-        return "Kies minstens één graad als doelgroep.";
+        return "Kies minstens één graad als doelgroep";
 
       default:
-        return "Kies een doelgroep.";
+        return "Kies een doelgroep";
     }
   };
 
@@ -236,12 +236,12 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
     e.preventDefault();
 
     if (!user) {
-      setMessage({ type: "error", text: "Je bent niet correct ingelogd." });
+      setMessage({ type: "error", text: "Je bent niet correct ingelogd" });
       return;
     }
 
     if (!title.trim()) {
-      setMessage({ type: "error", text: "Titel is verplicht." });
+      setMessage({ type: "error", text: "Titel is verplicht" });
       return;
     }
 
@@ -251,12 +251,12 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
         text: targetSelectionError(),
       });
       return;
-}
+    }
 
     if (selectedBooks.length === 0) {
       setMessage({
         type: "error",
-        text: "Voeg minstens één boek toe aan de leeslijst.",
+        text: "Voeg minstens één boek toe aan de leeslijst",
       });
       return;
     }
@@ -302,21 +302,21 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
 
       setMessage({
         type: "success",
-        text: "Klasleeslijst succesvol aangemaakt.",
+        text: "Klasleeslijst succesvol aangemaakt",
       });
 
       resetForm();
 
       setTimeout(() => setMessage(null), 5000);
     } catch (error) {
-        setMessage({
-          type: "error",
-          text:
-            error instanceof Error && error.message
-              ? error.message
-              : "Kon de klasleeslijst niet aanmaken. Probeer opnieuw.",
-        });
-      } finally {
+      setMessage({
+        type: "error",
+        text:
+          error instanceof Error && error.message
+            ? error.message
+            : "Kon de klasleeslijst niet aanmaken. Probeer opnieuw.",
+      });
+    } finally {
       setLoading(false);
     }
   };
@@ -637,7 +637,7 @@ const toggleTargetClass = (schoolClass: ReadingListClassTarget) => {
                     <div className="selected-empty-state">
                       <p className="selected-empty-state-text">
                         Gebruik de linkerlijst om boeken aan deze leeslijst toe
-                        te voegen.
+                        te voegen
                       </p>
                     </div>
                   ) : (

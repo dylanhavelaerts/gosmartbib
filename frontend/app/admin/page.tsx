@@ -7,14 +7,6 @@ import "./admin.css";
 
 const teacherWidgets = [
   {
-    iconSrc: "/save.png",
-    iconAlt: "InDeKijker",
-    title: "In de kijker",
-    description:
-      "Beheer welke boeken in de bibliotheek in de kijker staan en promoot bepaalde titels.",
-    href: "/admin/spotlight",
-  },
-  {
     iconSrc: "/smartschool/Module iconen/enquete_512x512.png",
     iconAlt: "Reviewmoderatie",
     title: "Reviewmoderatie",
@@ -27,7 +19,7 @@ const teacherWidgets = [
     iconAlt: "Aankoopsuggesties",
     title: "Aankoopsuggesties",
     description:
-      "Bekijk suggesties voor nieuwe boeken op basis van gebruikersfeedback.",
+      "Bekijk suggesties voor nieuwe boeken op basis van gebruikersfeedback",
     href: "/admin/purchase-request",
   },
   {
@@ -35,17 +27,25 @@ const teacherWidgets = [
     iconAlt: "Statistieken",
     title: "Statistieken",
     description:
-      "Bekijk statistieken over populaire boeken en gebruikersactiviteit.",
+      "Bekijk statistieken over populaire boeken en gebruikersactiviteit",
     href: "/admin",
   },
 ];
 
 const beheerderWidgets = [
   {
+    iconSrc: "/save.png",
+    iconAlt: "InDeKijker",
+    title: "In de kijker",
+    description:
+      "Beheer welke boeken in de bibliotheek in de kijker staan en promoot bepaalde titels",
+    href: "/admin/spotlight",
+  },
+  {
     iconSrc: "/admin/settings.png",
     iconAlt: "Bibliotheekinstellingen",
     title: "Bibliotheekinstellingen",
-    description: "Beheer uitleentermijnen en algemene bibliotheekinstellingen.",
+    description: "Beheer uitleentermijnen en algemene bibliotheekinstellingen",
     href: "/admin/librarySettings",
   },
   {
@@ -53,7 +53,7 @@ const beheerderWidgets = [
     iconAlt: "Catalogusbeheer",
     title: "Catalogusbeheer",
     description:
-      "Voeg nieuwe boeken toe, pas bestaande boeken aan of verwijder oude.",
+      "Voeg nieuwe boeken toe, pas bestaande boeken aan of verwijder oude",
     href: "/admin/manageCatalog",
   },
   {
@@ -61,7 +61,7 @@ const beheerderWidgets = [
     iconAlt: "Uitleningen",
     title: "Uitleningen",
     description:
-      "Beheer hier nieuwe uitleningen en terugbrengingen van boeken in de bibliotheek.",
+      "Beheer hier nieuwe uitleningen en terugbrengingen van boeken in de bibliotheek",
     href: "/admin/loan-return",
   },
   {
@@ -69,7 +69,7 @@ const beheerderWidgets = [
     iconAlt: "Verlengingsaanvragen",
     title: "Verlengingsaanvragen",
     description:
-      "Keur aanvragen van leerlingen en leerkrachten goed of wijs ze af.",
+      "Keur aanvragen van leerlingen en leerkrachten goed of wijs ze af",
     href: "/admin/loan-extensions",
   },
 ];
@@ -79,7 +79,7 @@ const adminWidgets = [
     iconSrc: "/admin/settings.png",
     iconAlt: "Gebruikersbeheer",
     title: "Gebruikersbeheer",
-    description: "Beheer gebruikers en hun rollen binnen het systeem.",
+    description: "Beheer gebruikers en hun rollen binnen het systeem",
     href: "/admin/users",
   },
 ];

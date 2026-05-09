@@ -1,6 +1,6 @@
 /* --- LAYOUT & HEADER --- */
 
-main.pageLayout {
+main.lendingPageLayout {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 4.5rem);
@@ -47,7 +47,7 @@ main.pageLayout {
 
 /* Only use the 3-column layout when there is enough horizontal space */
 @media (min-width: 1200px) {
-  main.pageLayout {
+  main.lendingPageLayout {
     height: calc(100vh - 4.5rem);
     min-height: 0;
     overflow: hidden;
@@ -467,7 +467,7 @@ main.pageLayout {
 
 /* --- RESPONSIVE FIXES --- */
 @media (max-width: 1199px) {
-  main.pageLayout {
+  main.lendingPageLayout {
     height: auto;
     overflow: visible;
   }
@@ -504,7 +504,7 @@ main.pageLayout {
 }
 
 @media (max-width: 700px) {
-  main.pageLayout {
+  main.lendingPageLayout {
     padding: 1rem 1rem 1.5rem;
   }
 

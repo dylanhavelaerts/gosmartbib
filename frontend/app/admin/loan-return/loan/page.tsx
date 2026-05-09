@@ -184,7 +184,7 @@ export default function LendingPage() {
   };
 
   return (
-    <main className="pageLayout">
+    <main className="lendingPageLayout">
       <div className="pageHeader">
         <button className="backButton" onClick={() => router.back()}>
           ←

@@ -66,7 +66,7 @@ export default function SharedReadingListPage() {
     }
 
     if (!publicUid) {
-      setError("Publieke leeslijst niet gevonden.");
+      setError("Publieke leeslijst niet gevonden");
       setLoading(false);
       return;
     }
@@ -82,10 +82,10 @@ export default function SharedReadingListPage() {
           const body = await res.text();
 
           if (res.status === 404) {
-            throw new Error("Publieke leeslijst niet gevonden.");
+            throw new Error("Publieke leeslijst niet gevonden");
           }
 
-          throw new Error(body || "Kon gedeelde leeslijst niet laden.");
+          throw new Error(body || "Kon gedeelde leeslijst niet laden");
         }
 
         return res.json();
@@ -98,7 +98,7 @@ export default function SharedReadingListPage() {
         setError(
           err instanceof Error
             ? err.message
-            : "Kon gedeelde leeslijst niet laden.",
+            : "Kon gedeelde leeslijst niet laden",
         );
       })
       .finally(() => {
@@ -177,7 +177,7 @@ export default function SharedReadingListPage() {
 
           {totalCount === 0 ? (
             <div className="rld-state rld-state--empty">
-              <p>Deze leeslijst bevat nog geen boeken.</p>
+              <p>Deze leeslijst bevat nog geen boeken</p>
             </div>
           ) : (
             <div className="rld-book-grid">

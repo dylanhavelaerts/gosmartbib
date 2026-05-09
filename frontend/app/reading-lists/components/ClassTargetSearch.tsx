@@ -56,7 +56,7 @@ export default function ClassTargetSearch({
         );
 
         if (!response.ok) {
-          throw new Error("Kon klassen niet zoeken.");
+          throw new Error("Kon klassen niet zoeken");
         }
 
         const data: ReadingListClassTarget[] = await response.json();
@@ -123,7 +123,7 @@ export default function ClassTargetSearch({
       />
 
       <p className="student-target-search-help">
-        Typ minstens 2 tekens. Je ziet alleen klassen van je eigen school.
+        Typ minstens 2 tekens. Je ziet alleen klassen van je eigen school
       </p>
 
       {loading && (
@@ -136,9 +136,7 @@ export default function ClassTargetSearch({
         query.trim().length >= 2 &&
         availableResults.length === 0 &&
         !error && (
-          <p className="student-target-search-status">
-            Geen klassen gevonden.
-          </p>
+          <p className="student-target-search-status">Geen klassen gevonden</p>
         )}
 
       {availableResults.length > 0 && (

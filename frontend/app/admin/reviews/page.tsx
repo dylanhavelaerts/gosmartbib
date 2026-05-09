@@ -132,7 +132,7 @@ export default function AdminReviewsPage() {
       <main className="adminReviewPage">
         <h1 className="adminReviewTitle">Reviewmoderatie</h1>
         <p className="adminReviewSubtitle">
-          Overzicht van alle reviews van bijhorende school.
+          Overzicht van alle reviews van bijhorende school
         </p>
 
         {me?.school?.name && (
@@ -179,7 +179,7 @@ export default function AdminReviewsPage() {
         )}
         {!loading && !error && filteredAndSorted.length === 0 && (
           <p className="adminReviewInfo">
-            Geen reviews gevonden voor deze filter.
+            Geen reviews gevonden voor deze filter
           </p>
         )}
 
