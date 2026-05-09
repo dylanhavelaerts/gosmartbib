@@ -1,10 +1,6 @@
 package edu.ap.gosmartlib.services;
 
-import edu.ap.gosmartlib.dto.BookDTO;
-import edu.ap.gosmartlib.dto.BookFilterRequest;
-import edu.ap.gosmartlib.dto.BookInventoryDTO;
-import edu.ap.gosmartlib.dto.CreateBookInventoryRequestDTO;
-import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
+import edu.ap.gosmartlib.dto.*;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBookItem;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
@@ -1821,7 +1817,138 @@ class BookServiceTest {
                 assertEquals("Campus A", result.inventories().get(0).campus());
                 assertEquals("Campus B", result.inventories().get(1).campus());
         }
-        // --- Helpers ---
+    // --- Snowball Tests ---
+
+    @Test
+    void givenBookNotFound_whenGetSnowballSections_thenThrowsBookNotFoundException() {
+        when(bookRepository.findDetailedById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(BookNotFoundException.class,
+                () -> bookService.getSnowballSections(99L, UserRoles.TEACHER, null));
+    }
+
+    @Test
+    void givenBookWithAuthors_whenGetSnowballSections_thenReturnsAuthorSection() {
+        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
+        BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
+
+        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByAuthorsInAndIdNot(eq(List.of("Auteur X")), eq(1L), any(Pageable.class)))
+                .thenReturn(List.of(related));
+
+        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+
+        assertEquals(1, result.size());
+        assertEquals("AUTHOR", result.get(0).type());
+        assertEquals("Auteur X", result.get(0).value());
+        assertEquals(1, result.get(0).books().size());
+    }
+
+    @Test
+    void givenBookWithCategories_whenGetSnowballSections_thenReturnsCategorySection() {
+        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of("Fictie"));
+        BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of(), List.of("Fictie"));
+
+        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Fictie")), eq(1L), any(Pageable.class)))
+                .thenReturn(List.of(related));
+
+        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+
+        assertEquals(1, result.size());
+        assertEquals("CATEGORY", result.get(0).type());
+        assertEquals("Fictie", result.get(0).value());
+        assertEquals(1, result.get(0).books().size());
+    }
+
+    @Test
+    void givenBookWithAuthorsAndCategories_whenGetSnowballSections_thenReturnsTwoSections() {
+        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of("Fictie"));
+        BookEntity relatedByAuthor = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
+        BookEntity relatedByCategory = buildBookEntityForSnowball(3L, "Boek C", List.of(), List.of("Fictie"));
+
+        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByAuthorsInAndIdNot(eq(List.of("Auteur X")), eq(1L), any(Pageable.class)))
+                .thenReturn(List.of(relatedByAuthor));
+        when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Fictie")), eq(1L), any(Pageable.class)))
+                .thenReturn(List.of(relatedByCategory));
+
+        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+
+        assertEquals(2, result.size());
+        assertEquals("AUTHOR", result.get(0).type());
+        assertEquals("Auteur X", result.get(0).value());
+        assertEquals("CATEGORY", result.get(1).type());
+        assertEquals("Fictie", result.get(1).value());
+    }
+
+    @Test
+    void givenBookWithNoAuthorsAndNoCategories_whenGetSnowballSections_thenReturnsEmptyList() {
+        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of());
+        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+
+        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+
+        assertTrue(result.isEmpty());
+        verify(bookRepository, never()).findByAuthorsInAndIdNot(any(), any(), any());
+        verify(bookRepository, never()).findByCategoriesInAndIdNot(any(), any(), any());
+    }
+
+    @Test
+    void givenAuthorWithOnlyOneBook_whenGetSnowballSections_thenNoAuthorSection() {
+        BookEntity book = buildBookEntityForSnowball(1L, "Enig Boek", List.of("Auteur X"), List.of());
+        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of());
+
+        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void givenNoRelatedBooksByCategory_whenGetSnowballSections_thenNoCategorySection() {
+        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of("Fictie"));
+        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByCategoriesInAndIdNot(any(), any(), any())).thenReturn(List.of());
+
+        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void givenStudentWithNoMatchingSchool_whenGetSnowballSections_thenBooksAreFiltered() {
+        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
+        BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
+
+        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of(related));
+        when(userRepository.findDetailedBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+
+        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.STUDENT, STUDENT_UID);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void givenStudentWithMatchingSchool_whenGetSnowballSections_thenReturnsVisibleBooks() {
+        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
+        BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
+        BookInventoryEntity inv = buildInventory(school, "Campus Zuid", 2, 1);
+        related.setInventories(List.of(inv));
+
+        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of(related));
+        when(userRepository.findDetailedBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+
+        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.STUDENT, STUDENT_UID);
+
+        assertEquals(1, result.size());
+        assertEquals("AUTHOR", result.get(0).type());
+        assertEquals("Auteur X", result.get(0).value());
+        assertEquals(1, result.get(0).books().size());
+    }
+//       region Helpers
 
         private void stubStudentSchoolLookup() {
                 when(userRepository.findDetailedBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
@@ -1913,4 +2040,17 @@ class BookServiceTest {
                 inventory.setAvailableCopies(availableCopies);
                 return inventory;
         }
+    private BookEntity buildBookEntityForSnowball(Long id, String title, List<String> authors, List<String> categories) {
+        BookEntity b = new BookEntity();
+        b.setId(id);
+        b.setTitle(title);
+        b.setAuthors(new ArrayList<>(authors));
+        b.setCategories(new ArrayList<>(categories));
+        b.setInventories(new ArrayList<>());
+        b.setIsbn("978-" + id);
+        b.setRating(4.0);
+        return b;
+    }
+
+//    endregion
 }

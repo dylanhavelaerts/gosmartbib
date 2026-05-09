@@ -1,10 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.dto.BookDTO;
-import edu.ap.gosmartlib.dto.BookFilterRequest;
-import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
-import edu.ap.gosmartlib.dto.BookInventoryDTO;
-import edu.ap.gosmartlib.dto.CreateBookInventoryRequestDTO;
+import edu.ap.gosmartlib.dto.*;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
@@ -866,6 +862,61 @@ class BookControllerTest {
         assertEquals(400, result.getStatusCode().value());
         assertEquals("Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren", result.getBody());
         verify(bookService).addManualBook(request, "uid-123");
+    }
+    // --- Snowball Tests ---
+
+    @Test
+    void givenSnowballSectionsExist_whenGetSnowball_thenReturns200WithSections() {
+        List<SnowballSectionDTO> sections = List.of(
+                new SnowballSectionDTO("AUTHOR", "Auteur X", List.of(buildDTO(2L, "Boek B")))
+        );
+        when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null)).thenReturn(sections);
+
+        ResponseEntity<List<SnowballSectionDTO>> result = bookController.getSnowball(1L, null);
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals(1, result.getBody().size());
+        assertEquals("AUTHOR", result.getBody().get(0).type());
+        assertEquals("Auteur X", result.getBody().get(0).value());
+        verify(bookService, times(1)).getSnowballSections(1L, UserRoles.STUDENT, null);
+    }
+
+    @Test
+    void givenNoSnowballSections_whenGetSnowball_thenReturns200WithEmptyList() {
+        when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null)).thenReturn(List.of());
+
+        ResponseEntity<List<SnowballSectionDTO>> result = bookController.getSnowball(1L, null);
+
+        assertEquals(200, result.getStatusCode().value());
+        assertNotNull(result.getBody());
+        assertTrue(result.getBody().isEmpty());
+    }
+
+    @Test
+    void givenNullPrincipal_whenGetSnowball_thenUsesStudentRole() {
+        when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null)).thenReturn(List.of());
+
+        bookController.getSnowball(1L, null);
+
+        verify(bookService, times(1)).getSnowballSections(1L, UserRoles.STUDENT, null);
+    }
+
+    @Test
+    void givenBookNotFound_whenGetSnowball_thenThrowsException() {
+        when(bookService.getSnowballSections(eq(99L), any(), any()))
+                .thenThrow(new BookNotFoundException(99L));
+
+        assertThrows(BookNotFoundException.class, () -> bookController.getSnowball(99L, null));
+    }
+
+    @Test
+    void givenSnowball_whenGetSnowball_thenDelegatesOnlyToService() {
+        when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null)).thenReturn(List.of());
+
+        bookController.getSnowball(1L, null);
+
+        verify(bookService, times(1)).getSnowballSections(1L, UserRoles.STUDENT, null);
+        verifyNoMoreInteractions(bookService);
     }
 
     // -- helper
