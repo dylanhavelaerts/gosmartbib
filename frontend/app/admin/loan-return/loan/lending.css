@@ -208,7 +208,7 @@ main.lendingPageLayout {
 }
 
 /* VAST KADER VOOR RESULTATEN */
-.resultsFrame {
+main.lendingPageLayout .resultsFrame {
   flex: 1;
   min-height: 0;
   border: 1px solid #ece6f0;
@@ -226,10 +226,10 @@ main.lendingPageLayout {
 }
 
 /* Subtiele styling voor scrollbar */
-.resultsFrame::-webkit-scrollbar {
+main.lendingPageLayout .resultsFrame::-webkit-scrollbar {
   width: 6px;
 }
-.resultsFrame::-webkit-scrollbar-thumb {
+main.lendingPageLayout .resultsFrame::-webkit-scrollbar-thumb {
   background-color: #d1c8cb;
   border-radius: 4px;
 }
@@ -493,7 +493,7 @@ main.lendingPageLayout {
     padding: 0;
   }
 
-  .resultsFrame {
+  main.lendingPageLayout .resultsFrame {
     flex: initial;
     max-height: 420px;
   }
