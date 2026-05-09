@@ -1948,6 +1948,43 @@ class BookServiceTest {
         assertEquals("Auteur X", result.get(0).value());
         assertEquals(1, result.get(0).books().size());
     }
+
+    @Test
+    void givenBookWithMultipleCategories_whenGetSnowballSections_thenEachCategoryGetsOwnSection() {
+        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of("Fantasy", "Coming of age"));
+        BookEntity fantasyBook = buildBookEntityForSnowball(2L, "Boek B", List.of(), List.of("Fantasy"));
+        BookEntity comingOfAgeBook = buildBookEntityForSnowball(3L, "Boek C", List.of(), List.of("Coming of age"));
+
+        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Fantasy")), eq(1L), any(Pageable.class)))
+                .thenReturn(List.of(fantasyBook));
+        when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Coming of age")), eq(1L), any(Pageable.class)))
+                .thenReturn(List.of(comingOfAgeBook));
+
+        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+
+        assertEquals(2, result.size());
+        assertEquals("Fantasy", result.get(0).value());
+        assertEquals(1, result.get(0).books().size());
+        assertEquals("Coming of age", result.get(1).value());
+        assertEquals(1, result.get(1).books().size());
+    }
+    @Test
+    void givenStudentRole_whenSnowballContainsDidacticBook_thenDidacticBookIsFilteredOut() {
+        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
+        BookEntity didacticBook = buildBookEntityForSnowball(2L, "Didactisch Boek", List.of("Auteur X"), List.of());
+        didacticBook.setDidacticTag(true);
+        BookInventoryEntity inv = buildInventory(school, "Campus Zuid", 2, 1);
+        didacticBook.setInventories(List.of(inv));
+
+        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of(didacticBook));
+
+        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.STUDENT, STUDENT_UID);
+
+        assertTrue(result.isEmpty());
+    }
+
 //       region Helpers
 
         private void stubStudentSchoolLookup() {
