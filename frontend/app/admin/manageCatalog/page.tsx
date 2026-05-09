@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
 import type { Book, BookInventory } from "../../interfaces/Book";
