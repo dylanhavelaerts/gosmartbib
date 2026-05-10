@@ -1,0 +1,146 @@
+.statisticsPage {
+  min-height: calc(100vh - 4.5rem);
+  margin-top: 4.5rem;
+  padding: 1.5rem 2.5rem 3rem;
+  box-sizing: border-box;
+  color: #8e2446;
+}
+
+.statisticsHeader {
+  margin-bottom: 2rem;
+}
+
+.statisticsHeader h1 {
+  margin: 0;
+  color: #8e2446;
+  font-size: 2rem;
+}
+
+.statisticsHeader p {
+  margin: 0.35rem 0 0;
+  color: #7b6870;
+  font-size: 0.95rem;
+}
+
+.statsSection {
+  background: #fff;
+  border: 1px solid #ece6f0;
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(62, 12, 28, 0.05);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.statsSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #ece6f0;
+  margin-bottom: 1.25rem;
+}
+
+.statsSection h2 {
+  margin: 0;
+  color: #8e2446;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.statsViewToggle {
+  display: flex;
+  border: 1px solid #ece6f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.statsViewBtn {
+  border: none;
+  background: none;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #7b6870;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.statsViewBtn:hover:not(.active) {
+  background: #fdf2f5;
+  color: #3e0c1c;
+}
+
+.statsViewBtn.active {
+  background: #8e2446;
+  color: #fff;
+}
+
+.statsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: stats-counter;
+}
+
+.statsItem {
+  counter-increment: stats-counter;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #fdfcfd;
+}
+
+.statsItem:last-child {
+  border-bottom: none;
+}
+
+.statsItem::before {
+  content: counter(stats-counter) ".";
+  font-weight: 700;
+  color: #8e2446;
+  min-width: 1.5rem;
+}
+
+.statsName {
+  flex: 1;
+  font-weight: 500;
+  color: #201713;
+}
+
+.statsSubtext {
+  font-weight: 400;
+  color: #7b6870;
+  font-size: 0.9rem;
+}
+
+.statsCount {
+  font-size: 0.875rem;
+  color: #7b6870;
+  white-space: nowrap;
+}
+
+.statsEmpty {
+  color: #9b8a91;
+  font-style: italic;
+  margin: 0;
+}
+
+.statsState {
+  padding: 4rem 2rem;
+  border: 1px dashed #d8cdd1;
+  border-radius: 14px;
+  background: #fdfcfd;
+  color: #7b6870;
+  text-align: center;
+  font-weight: 600;
+  margin: 1.5rem 2.5rem;
+}
+
+@media (max-width: 800px) {
+  .statisticsPage {
+    padding: 1rem 1.5rem 2rem;
+  }
+}
