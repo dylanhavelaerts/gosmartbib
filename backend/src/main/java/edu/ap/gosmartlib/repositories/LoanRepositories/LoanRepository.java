@@ -11,7 +11,6 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
-import org.springframework.data.repository.query.Param;
 
 public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
     List<LoanEntity> findBySmartschoolUserId(String smartschoolUserId);
