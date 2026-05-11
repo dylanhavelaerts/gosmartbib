@@ -1,0 +1,244 @@
+.spotlightAdminPage {
+  min-height: calc(100vh - 6.5rem);
+  margin-top: 6.5rem;
+  padding: 1.5rem 2.5rem 3rem;
+  box-sizing: border-box;
+  color: #201713;
+}
+
+.spotlightAdminHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.spotlightAdminEyebrow {
+  margin: 0 0 0.25rem;
+  color: #8e2446;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.spotlightAdminHeader h1 {
+  margin: 0;
+  color: #3e0c1c;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.spotlightAdminHeader p:not(.spotlightAdminEyebrow) {
+  margin: 0.35rem 0 0;
+  color: #7b6870;
+  font-size: 0.95rem;
+  max-width: 720px;
+  line-height: 1.5;
+}
+
+.spotlightToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #ece6f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(62, 12, 28, 0.05);
+}
+
+.spotlightToolbarLeft {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.spotlightSelectAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #4d3b42;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.spotlightSelectAll input {
+  width: 15px;
+  height: 15px;
+  accent-color: #8e2446;
+  cursor: pointer;
+}
+
+.spotlightBookCount {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #fdf2f5;
+  border: 1px solid #f0c7d2;
+  color: #8e2446;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.spotlightDeleteButton {
+  border: none;
+  border-radius: 999px;
+  background: #8e2446;
+  color: #fff;
+  padding: 0.65rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(142, 36, 70, 0.18);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.spotlightDeleteButton:hover {
+  background: #7a1e3b;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(142, 36, 70, 0.24);
+}
+
+.spotlightReadingLevelSections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.spotlightReadingLevelSection {
+  padding: 1rem;
+  border: 1px solid #ece6f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(62, 12, 28, 0.05);
+}
+
+.spotlightReadingLevelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #eadde2;
+}
+
+.spotlightReadingLevelHeader h2 {
+  margin: 0;
+  color: #3e0c1c;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.spotlightReadingLevelHeader span {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: #fdfafb;
+  border: 1px solid #ece6f0;
+  color: #7b6870;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.spotlightReadingLevelBookGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 155px);
+  justify-content: start;
+  gap: 1.25rem;
+}
+
+.spotlightReadingLevelBookGrid .bookCard {
+  width: 155px;
+  min-height: 0;
+  box-shadow: 0 6px 16px rgba(122, 29, 63, 0.08);
+}
+
+.spotlightReadingLevelBookGrid .bookCard:hover {
+  box-shadow: 0 10px 22px rgba(122, 29, 63, 0.13);
+}
+
+.spotlightReadingLevelBookGrid .bookTitle {
+  font-size: 0.82rem;
+}
+
+.spotlightReadingLevelBookGrid .bookCheckBox {
+  width: 15px;
+  height: 15px;
+  accent-color: #8e2446;
+}
+
+.spotlightEmptyState {
+  padding: 4rem 2rem;
+  border: 1px dashed #d8cdd1;
+  border-radius: 16px;
+  background: #fdfcfd;
+  text-align: center;
+}
+
+.spotlightEmptyState h2 {
+  margin: 0;
+  color: #3e0c1c;
+  font-size: 1.2rem;
+}
+
+.spotlightEmptyState p {
+  margin: 0.35rem 0 0;
+  color: #7b6870;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 900px) {
+  .spotlightAdminPage {
+    margin-top: 6.5rem;
+    padding: 1.25rem;
+  }
+
+  .spotlightToolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .spotlightAdminPage {
+    margin-top: 6rem;
+    padding: 1rem;
+  }
+
+  .spotlightAdminHeader h1 {
+    font-size: 1.5rem;
+  }
+
+  .spotlightReadingLevelSection {
+    padding: 0.85rem;
+  }
+
+  .spotlightReadingLevelHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.4rem;
+  }
+
+  .spotlightReadingLevelBookGrid {
+    grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+    gap: 0.85rem;
+  }
+
+  .spotlightReadingLevelBookGrid .bookCard {
+    width: 100%;
+  }
+}

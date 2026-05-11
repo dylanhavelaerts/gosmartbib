@@ -4,10 +4,6 @@
   min-height: 100vh;
 }
 
-#spotlightPage {
-  margin-top: 4.5rem;
-}
-
 .mainContent {
   flex: 1;
   min-width: 0;
@@ -558,8 +554,6 @@
   justify-content: space-between;
 }
 
-
-
 /* ── Modal ── */
 .modalOverlay {
   position: fixed;
@@ -657,21 +651,4 @@
 
 .filterRatingGroup .star.interactive:hover {
   transform: scale(1.1);
-}
-
-/* Spotlight Action Button */
-.spotlightActionBtn {
-  border: 1px solid #8e2446;
-  background: #8e2446;
-  color: #fff;
-  border-radius: 6px;
-  padding: 0.35rem 0.65rem;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.spotlightActionBtn:hover {
-  background: #6b1a34;
-  border-color: #6b1a34;
 }

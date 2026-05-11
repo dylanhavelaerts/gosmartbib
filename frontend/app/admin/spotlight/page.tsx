@@ -1,36 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Book } from "../../interfaces/Book";
+import { useEffect, useMemo, useState } from "react";
+import type { Book } from "../../interfaces/Book";
 import BookCard from "../../catalog/bookCard";
-import "../../catalog/bookList.css";
+import {
+  formatReadingLevelTitle,
+  groupBooksByReadingLevel,
+} from "@/app/utils/bookReadingLevels";
+import "./spotlight.css";
 
-export default function Home() {
+export default function SpotlightPage() {
   const [books, setBooks] = useState<Book[]>([]);
-
-  //houdt bij welk boeken de gebruiker wil verwijderen -> als dit op null staat is er geen boek geselecteerd en is de extra modal gesloten
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [selectAllBox, setSelectAllBox] = useState(false);
+
+  const booksByReadingLevel = useMemo(
+    () => groupBooksByReadingLevel(books),
+    [books],
+  );
+
+  const allBooksSelected = books.length > 0 && selectedIds.size === books.length;
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/spotlight/all`, {
       credentials: "include",
     })
       .then((res) => res.json())
-      .then((data: Book[]) => setBooks(data));
+      .then((data: Book[]) => setBooks(data))
+      .catch((error) => console.error(error));
   }, []);
 
-  //voegt een boek toe aan de selectie die verwijderd moet worden (selectedIds) als deze er al in zit wordt het boek verwijdert uit de selectie
   const toggleSelect = (id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
+    setSelectedIds((previousSelectedIds) => {
+      const nextSelectedIds = new Set(previousSelectedIds);
+
+      if (nextSelectedIds.has(id)) {
+        nextSelectedIds.delete(id);
       } else {
-        next.add(id);
+        nextSelectedIds.add(id);
       }
-      return next;
+
+      return nextSelectedIds;
     });
+  };
+
+  const selectAll = () => {
+    if (allBooksSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(books.map((book) => book.id)));
+    }
   };
 
   const tryDelete = async () => {
@@ -47,50 +65,84 @@ export default function Home() {
         ),
       );
 
-      //haalt boek weg zonder full page refresh
-      setBooks((prev) => prev.filter((b) => !selectedIds.has(b.id)));
+      setBooks((previousBooks) =>
+        previousBooks.filter((book) => !selectedIds.has(book.id)),
+      );
+
       setSelectedIds(new Set());
     } catch (error) {
       console.error(error);
-    } finally {
-      setSelectAllBox(false);
-    }
-  };
-
-  const selectAll = () => {
-    if (!selectAllBox) {
-      setSelectedIds(new Set(books.map((book) => book.id)));
-      setSelectAllBox(true);
-    } else {
-      setSelectedIds(new Set());
-      setSelectAllBox(false);
     }
   };
 
   return (
-    <main id="spotlightPage">
-      <h1>In de kijker</h1>
-      <ul>
+    <main className="spotlightAdminPage">
+      <header className="spotlightAdminHeader">
+        <div>
+          <p className="spotlightAdminEyebrow">Beheer</p>
+          <h1>In de kijker</h1>
+        </div>
+      </header>
+
+      <section className="spotlightToolbar">
+        <div className="spotlightToolbarLeft">
+          <label className="spotlightSelectAll">
+            <input
+              type="checkbox"
+              checked={allBooksSelected}
+              onChange={selectAll}
+            />
+            <span>Alles selecteren</span>
+          </label>
+        </div>
+
         {selectedIds.size > 0 && (
-          <li onClick={() => tryDelete()}>
-            Verwijder {selectedIds.size} boek(en) uit de kijker
-          </li>
+          <button
+            type="button"
+            className="spotlightDeleteButton"
+            onClick={tryDelete}
+          >
+            Verwijder {selectedIds.size} boek
+            {selectedIds.size === 1 ? "" : "en"}
+          </button>
         )}
-      </ul>
-      <div className="selectAllCheckbox">
-        <input type="checkbox" checked={selectAllBox} onChange={selectAll} />{" "}
-        <p>Select all</p>
-      </div>
-      <div id="bookList">
-        {books.map((book) => (
-          <BookCard
-            key={book.id}
-            book={book}
-            isSelected={selectedIds.has(book.id)}
-            onToggle={() => toggleSelect(book.id)}
-          />
-        ))}
-      </div>
+      </section>
+
+      {booksByReadingLevel.length > 0 ? (
+        <div className="spotlightReadingLevelSections">
+          {booksByReadingLevel.map((section) => (
+            <section
+              key={section.readingLevel}
+              className="spotlightReadingLevelSection"
+            >
+              <div className="spotlightReadingLevelHeader">
+                <h2>{formatReadingLevelTitle(section.readingLevel)}</h2>
+
+                <span>
+                  {section.books.length} boek
+                  {section.books.length === 1 ? "" : "en"}
+                </span>
+              </div>
+
+              <div className="spotlightReadingLevelBookGrid">
+                {section.books.map((book) => (
+                  <BookCard
+                    key={book.id}
+                    book={book}
+                    isSelected={selectedIds.has(book.id)}
+                    onToggle={() => toggleSelect(book.id)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <section className="spotlightEmptyState">
+          <h2>Geen boeken in de kijker</h2>
+          <p>Er zijn momenteel geen boeken toegevoegd aan deze selectie.</p>
+        </section>
+      )}
     </main>
   );
 }
