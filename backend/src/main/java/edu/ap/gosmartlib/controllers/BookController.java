@@ -77,8 +77,8 @@ public class BookController {
      * Alle filterparameters zijn optioneel.
      * Ongeldige combinaties (bv. minRating > maxRating) geven een 400 terug.
      *
-     * @param filter         de filtercriteria (taal, categorieën, labels, pagina's,
-     *                       publicatiejaar, beoordeling)
+     * @param filter    de filtercriteria (taal, categorieën, labels, pagina's,
+     *                  publicatiejaar, beoordeling)
      * @param principal de ingelogde gebruiker
      */
     @GetMapping("/filter")
@@ -95,7 +95,8 @@ public class BookController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<BookDTO> getBookById(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(bookService.getBookById(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
+        return ResponseEntity
+                .ok(bookService.getBookById(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
     }
 
     /**
@@ -109,6 +110,7 @@ public class BookController {
     /**
      * Geeft alle boeken terug met spotlight = true
      */
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     @GetMapping("/spotlight/all")
     public List<BookDTO> getAllBooksInSpotlight(@AuthenticationPrincipal OAuth2User principal) {
         return bookService.getAllBooksInSpotlight(callerRole(principal), authHelper.extractUidOrNull(principal));
@@ -147,12 +149,10 @@ public class BookController {
         return new ResponseEntity<>(bookService.searchBookByIsbn(isbn), HttpStatus.OK);
     }
 
-
-
     /**
      * Past de spotlight status aan van een boek.
      */
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER')")
     @PatchMapping("/{id}/spotlight")
     public ResponseEntity<Void> updateSpotlight(
             @PathVariable Long id,
@@ -167,7 +167,8 @@ public class BookController {
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BulkImportResponseDTO> importBooks(@RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String campus, @AuthenticationPrincipal OAuth2User principal) {
-        BulkImportResponseDTO result = bookService.importBooksFromExcel(file, authHelper.extractUidOrNull(principal), campus);
+        BulkImportResponseDTO result = bookService.importBooksFromExcel(file, authHelper.extractUidOrNull(principal),
+                campus);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
@@ -181,24 +182,26 @@ public class BookController {
      * Voegt boek toe aan database
      */
     @PostMapping("/add")
-    public ResponseEntity<BookDTO> addManualBook(@RequestBody CreateBookRequestDTO request, @AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<BookDTO> addManualBook(@RequestBody CreateBookRequestDTO request,
+            @AuthenticationPrincipal OAuth2User principal) {
         BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
         return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
     }
+
     @GetMapping("/{id}/snowball")
     public ResponseEntity<List<SnowballSectionDTO>> getSnowball(
             @PathVariable Long id,
             @AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(
-                bookService.getSnowballSections(id, callerRole(principal), authHelper.extractUidOrNull(principal))
-        );
+                bookService.getSnowballSections(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
     }
 
-
     private UserRoles callerRole(OAuth2User principal) {
-        if (principal == null) return UserRoles.STUDENT;
+        if (principal == null)
+            return UserRoles.STUDENT;
         String uid = principal.getAttribute("userID");
-        if (uid == null) return UserRoles.STUDENT;
+        if (uid == null)
+            return UserRoles.STUDENT;
         return userRepository.findBySmartschoolUid(uid)
                 .map(UserEntity::getRole)
                 .orElse(UserRoles.STUDENT);

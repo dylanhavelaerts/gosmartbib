@@ -532,7 +532,9 @@ export default function Home() {
                 >
                   {addingToSpotlight
                     ? "Toevoegen..."
-                    : `${selectedSpotlightIds.size} boek(en) toevoegen aan kijker`}
+                    : `${selectedSpotlightIds.size} ${
+                        selectedSpotlightIds.size === 1 ? "boek" : "boeken"
+                      } toevoegen aan kijker`}
                 </button>
               )}
             </div>

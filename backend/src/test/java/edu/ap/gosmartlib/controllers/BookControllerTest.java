@@ -556,12 +556,21 @@ class BookControllerTest {
     }
 
     @Test
+    void getAllBooksInSpotlight_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
+        Method method = BookController.class.getMethod("getAllBooksInSpotlight", OAuth2User.class);
+        PreAuthorize preAuthorize = method.getAnnotation(PreAuthorize.class);
+
+        assertNotNull(preAuthorize);
+        assertEquals("hasRole('BIBLIOTHEEKBEHEERDER')", preAuthorize.value());
+    }
+
+    @Test
     void updateSpotlight_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
         Method method = BookController.class.getMethod("updateSpotlight", Long.class, boolean.class);
         PreAuthorize preAuthorize = method.getAnnotation(PreAuthorize.class);
 
         assertNotNull(preAuthorize);
-        assertEquals("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')", preAuthorize.value());
+        assertEquals("hasRole('BIBLIOTHEEKBEHEERDER')", preAuthorize.value());
     }
 
     @Test
@@ -861,6 +870,7 @@ class BookControllerTest {
         assertEquals("Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren", result.getBody());
         verify(bookService).addManualBook(request, "uid-123");
     }
+
     // --- Snowball Tests ---
 
     @Test
