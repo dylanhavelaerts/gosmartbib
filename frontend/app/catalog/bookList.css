@@ -652,3 +652,103 @@
 .filterRatingGroup .star.interactive:hover {
   transform: scale(1.1);
 }
+
+/* ── Bibliotheekbeheerder: boeken toevoegen aan In de kijker ── */
+
+.bookListToolbarManage {
+  gap: 1rem;
+}
+
+.catalogToolbarLeft {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.catalogSpotlightAddButton {
+  border: none;
+  border-radius: 999px;
+  background: #8e2446;
+  color: #fff;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(142, 36, 70, 0.18);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease,
+    opacity 0.16s ease;
+}
+
+.catalogSpotlightAddButton:hover:not(:disabled) {
+  background: #7a1e3b;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(142, 36, 70, 0.24);
+}
+
+.catalogSpotlightAddButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.catalogSpotlightFeedback {
+  width: fit-content;
+  margin: 0.25rem 1rem 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.catalogSpotlightFeedback.success {
+  border: 1px solid #f0c7d2;
+  background: #fdf2f5;
+  color: #8e2446;
+}
+
+.catalogSpotlightFeedback.error {
+  border: 1px solid #f1b5b5;
+  background: #fff4f4;
+  color: #a73535;
+}
+
+.catalogManageBookList .bookCard {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.catalogManageBookList .bookCard.selected {
+  border-color: #8e2446;
+  box-shadow: 0 10px 24px rgba(142, 36, 70, 0.2);
+  transform: translateY(-2px);
+}
+
+.catalogManageBookList .bookCheckBox {
+  top: 10px;
+  left: 10px;
+  width: 18px;
+  height: 18px;
+  accent-color: #8e2446;
+  cursor: pointer;
+  z-index: 2;
+}
+
+@media (max-width: 768px) {
+  .bookListToolbarManage {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .catalogToolbarLeft {
+    width: 100%;
+  }
+
+  .catalogSpotlightAddButton {
+    width: 100%;
+  }
+}

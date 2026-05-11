@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Book, BOOK_CATEGORIES, BOOK_LABELS } from "../interfaces/Book";
+import { Book, BOOK_CATEGORIES, BOOK_LABELS, BOOK_READING_LEVELS } from "../interfaces/Book";
 import BookCard from "./bookCard";
 import Pagination from "./pagination";
 import "./bookList.css";
@@ -24,6 +24,7 @@ export default function Home() {
 
   // Filters
   const [language, setLanguage] = useState("");
+  const [readingLevel, setReadingLevel] = useState("");
   const [categories, setCategories] = useState<Set<string>>(new Set());
   const [labels, setLabels] = useState<Set<string>>(new Set());
   const [minPages, setMinPages] = useState("");
@@ -34,9 +35,15 @@ export default function Home() {
   const [maxRating, setMaxRating] = useState<number | null>(null);
   // leerlingen zien didactische boeken sowieso niet maar UX-wise maakt het clean dat ze niet zien dat er een filter is voor iets wat ze toch niet kunnen zien.
   const [didacticOnly, setDidacticOnly] = useState(false);
+  // In de kijker beheer voor bibliotheekbeheerders
+  const [selectedSpotlightIds, setSelectedSpotlightIds] = useState<Set<number>>(
+    new Set(),
+  );
+  const [addingToSpotlight, setAddingToSpotlight] = useState(false);
+  const [spotlightSuccess, setSpotlightSuccess] = useState("");
+  const [spotlightError, setSpotlightError] = useState("");
 
   // UI state
-  const [activeTab, setActiveTab] = useState("Catalogus");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [labelOpen, setLabelOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,6 +51,7 @@ export default function Home() {
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
+  const canManageSpotlight = user?.role === "BIBLIOTHEEKBEHEERDER";
 
   // -- URL zoek aspect --------------------------------------------------------------------------------------------------------------------
   // Leest de ?search query param bij het laden van de pagina en zet deze als zoekquery.
@@ -74,6 +82,7 @@ export default function Home() {
     const isSearching = query && query.trim() !== "";
     const hasFilters =
       language ||
+      readingLevel ||
       categories.size > 0 ||
       labels.size > 0 ||
       minPages ||
@@ -89,6 +98,7 @@ export default function Home() {
     if (isSearching || hasFilters) {
       if (isSearching) params.append("query", query.trim());
       if (language) params.append("language", language);
+      if (readingLevel) params.append("readingLevel", readingLevel);
       categories.forEach((cat) => params.append("categories", cat));
       labels.forEach((label) => params.append("labels", label));
       if (minPages) params.append("minPageCount", minPages);
@@ -111,12 +121,16 @@ export default function Home() {
           setBooks(data.content);
           setTotalPages(data.totalPages);
           setTotalElements(data.totalElements);
+          setSelectedSpotlightIds(new Set());
+          setSpotlightSuccess("");
+          setSpotlightError("");
         });
     }, delay);
 
     return () => clearTimeout(timer);
   }, [
     language,
+    readingLevel,
     categories,
     labels,
     minPages,
@@ -162,6 +176,73 @@ export default function Home() {
       sessionStorage.removeItem("catalogSearch");
     }
   };
+
+  const toggleSpotlightSelection = (bookId: number) => {
+    setSpotlightSuccess("");
+    setSpotlightError("");
+
+    setSelectedSpotlightIds((previousSelectedIds) => {
+      const nextSelectedIds = new Set(previousSelectedIds);
+
+      if (nextSelectedIds.has(bookId)) {
+        nextSelectedIds.delete(bookId);
+      } else {
+        nextSelectedIds.add(bookId);
+      }
+
+      return nextSelectedIds;
+    });
+  };
+
+  const addSelectedBooksToSpotlight = async () => {
+    if (selectedSpotlightIds.size === 0) return;
+
+    const idsToAdd = Array.from(selectedSpotlightIds);
+
+    try {
+      setAddingToSpotlight(true);
+      setSpotlightSuccess("");
+      setSpotlightError("");
+
+      await Promise.all(
+        idsToAdd.map(async (id) => {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/books/${id}/spotlight?value=true`,
+            {
+              credentials: "include",
+              method: "PATCH",
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error("Kon een boek niet toevoegen aan de kijker.");
+          }
+        }),
+      );
+
+      setBooks((previousBooks) =>
+        previousBooks.map((book) =>
+          selectedSpotlightIds.has(book.id)
+            ? { ...book, spotlight: true }
+            : book,
+        ),
+      );
+
+      setSelectedSpotlightIds(new Set());
+      setSpotlightSuccess(
+        `${idsToAdd.length} boek${
+          idsToAdd.length === 1 ? "" : "en"
+        } toegevoegd aan de kijker.`,
+      );
+    } catch (error) {
+      console.error(error);
+      setSpotlightError(
+        "Er ging iets mis bij het toevoegen van de boeken aan de kijker.",
+      );
+    } finally {
+      setAddingToSpotlight(false);
+    }
+  }; 
 
   // -- Visueel aspect ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -230,6 +311,26 @@ export default function Home() {
               >
                 <option value="">Alle talen</option>
                 <option value="en">EN</option>
+              </select>
+            </div>
+
+            <div className="filterGroup">
+              <span className="filterGroupLabel">Leesniveau</span>
+
+              <select
+                value={readingLevel}
+                onChange={(e) => {
+                  setReadingLevel(e.target.value);
+                  resetPage();
+                }}
+                className="filterSelect"
+              >
+                <option value="">Alle leesniveaus</option>
+                {BOOK_READING_LEVELS.map((level) => (
+                  <option key={level} value={level}>
+                    Leesniveau {level}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -414,8 +515,28 @@ export default function Home() {
 
         <div className="mainContent">
           {/* Toolbar */}
-          <div className="bookListToolbar">
-            <span className="resultCount">{totalElements} boeken</span>
+          <div
+            className={`bookListToolbar ${
+              canManageSpotlight ? "bookListToolbarManage" : ""
+            }`}
+          >
+            <div className="catalogToolbarLeft">
+              <span className="resultCount">{totalElements} boeken</span>
+
+              {canManageSpotlight && selectedSpotlightIds.size > 0 && (
+                <button
+                  type="button"
+                  className="catalogSpotlightAddButton"
+                  onClick={addSelectedBooksToSpotlight}
+                  disabled={addingToSpotlight}
+                >
+                  {addingToSpotlight
+                    ? "Toevoegen..."
+                    : `${selectedSpotlightIds.size} boek(en) toevoegen aan kijker`}
+                </button>
+              )}
+            </div>
+
             <div className="pageSizeSelector">
               <span className="pageSizeLabel">Per pagina:</span>
               <select
@@ -433,15 +554,26 @@ export default function Home() {
             </div>
           </div>
 
+          {canManageSpotlight && spotlightSuccess && (
+            <p className="catalogSpotlightFeedback success">{spotlightSuccess}</p>
+          )}
+
+          {canManageSpotlight && spotlightError && (
+            <p className="catalogSpotlightFeedback error">{spotlightError}</p>
+          )}
+
           {/* Boeken lijst */}
-          <div id="bookList">
+          <div
+            id="bookList"
+            className={canManageSpotlight ? "catalogManageBookList" : ""}
+          >
             {books.map((book) => (
               <BookCard
-                withCheckbox={false}
+                withCheckbox={canManageSpotlight}
                 key={book.id}
                 book={book}
-                isSelected={false}
-                onToggle={() => {}}
+                isSelected={selectedSpotlightIds.has(book.id)}
+                onToggle={() => toggleSpotlightSelection(book.id)}
               />
             ))}
           </div>
