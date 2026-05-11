@@ -1,5 +1,7 @@
 package edu.ap.gosmartlib.repositories;
 
+import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
+import edu.ap.gosmartlib.entities.LoanEntities.LoanHistoryEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 
 import org.springframework.data.domain.Page;
@@ -7,7 +9,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -48,4 +52,23 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
             Collection<String> smartschoolUids);
 
     List<UserEntity> findAllByActiveIsFalseAndScheduledDeletionAtBefore(LocalDateTime cutoff);
+
+    @Query("""
+            SELECT COUNT(u)
+            FROM UserEntity u
+            WHERE u.school.id = :schoolId
+              AND u.role = edu.ap.gosmartlib.util.UserRoles.STUDENT
+              AND u.active = true
+              AND u.smartschoolUid NOT IN (
+                  SELECT l.smartschoolUserId FROM LoanEntity l
+                  JOIN UserEntity lu ON lu.smartschoolUid = l.smartschoolUserId
+                  WHERE lu.school.id = :schoolId
+              )
+              AND u.smartschoolUid NOT IN (
+                  SELECT lh.smartschoolUserId FROM LoanHistoryEntity lh
+                  JOIN UserEntity lhu ON lhu.smartschoolUid = lh.smartschoolUserId
+                  WHERE lhu.school.id = :schoolId AND lh.returnDate >= :since
+              )
+            """)
+    long countInactiveStudents(@Param("schoolId") Long schoolId, @Param("since") LocalDate since);
 }

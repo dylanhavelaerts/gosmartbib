@@ -363,7 +363,19 @@ export default function DetailPage({
         {/* RIGHT PANEL */}
         <div className="detailRight">
           <h1 className="detailTitle">{book.title}</h1>
-          <p className="detailAuthors">door {book.authors?.join(", ")}</p>
+          <p className="detailAuthors">
+            door {book.authors?.map((author, index) => (
+              <span key={index}>
+                <Link 
+                  href={`/catalog?search=${encodeURIComponent(author)}`} 
+                  className="authorLink"
+                >
+                  {author}
+                </Link>
+                {index < book.authors.length - 1 ? ", " : ""}
+              </span>
+            ))}
+          </p>
 
           <div className="tabContent">
             <div className="detailDescription">
