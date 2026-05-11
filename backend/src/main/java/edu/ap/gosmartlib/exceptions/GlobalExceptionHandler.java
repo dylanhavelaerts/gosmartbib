@@ -86,4 +86,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", "Er is een onverwachte fout opgetreden", "status", "500"));
     }
+    @ExceptionHandler(UnauthorizedRoleException.class)
+    public ResponseEntity<Map<String, String>> handleUnauthorizedRole(UnauthorizedRoleException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", ex.getMessage(), "status", "403"));
+    }
+
 }

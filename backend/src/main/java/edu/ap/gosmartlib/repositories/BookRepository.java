@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.repositories;
 
 import edu.ap.gosmartlib.entities.BookEntity;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,7 +42,9 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
         @EntityGraph(attributePaths = { "inventories", "inventories.school" })
         List<BookEntity> findTop4ByAgeRangeIgnoreCaseAndDidacticTagFalseOrderByRatingDesc(String ageRange);
 
-        boolean existsByIsbn(String isbn);
+    List<BookEntity> findByIsbnIn(Collection<String> isbns);
+
+    boolean existsByIsbn(String isbn);
 
         /**
          * Zoek boeken op titel, auteur of ISBN, case-insensitive en ondersteunt
