@@ -133,6 +133,8 @@ export default function SpotlightPage() {
                       book={book}
                       isSelected={selectedIds.has(book.id)}
                       onToggle={() => toggleSelect(book.id)}
+                      selectionControl="remove"
+
                     />
                   ))}
                 </div>

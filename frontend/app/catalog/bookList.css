@@ -59,6 +59,7 @@
 .mobileSidebarToggle {
   display: none;
 }
+
 @media (max-width: 768px) {
   .pageLayout {
     flex-direction: column;
@@ -218,6 +219,7 @@
 .catalogHeader ul::-webkit-scrollbar {
   display: none;
 }
+
 .catalogAdminPage h1 {
   font-size: clamp(20px, 1.5vw, 24px);
   color: #8e2446;
@@ -273,12 +275,14 @@
   margin-bottom: -1px;
 }
 
-/* ── Toolbar (result count + page size) ── */
+/* ── Toolbar ── */
 .bookListToolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 48px;
   padding: 0.4rem clamp(8px, 2vw, 16px);
+  box-sizing: border-box;
   font-size: 13px;
   color: #888;
 }
@@ -397,9 +401,48 @@
   position: absolute;
   top: 8px;
   left: 8px;
+  z-index: 2;
 }
 
-/* ── Filter bar (sidebar contents) ── */
+.bookCardActionToggle {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background-color: #f7e8ee;
+  color: #8e2446;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(62, 12, 28, 0.14);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.bookCardActionToggle:hover,
+.bookCardActionToggleActive {
+  background-color: #8e2446;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(142, 36, 70, 0.24);
+}
+
+.bookCardActionToggle:active {
+  transform: translateY(0);
+}
+
+/* ── Filter bar ── */
 .filterBar {
   margin: 0.5rem;
   padding-right: 0.75rem;
@@ -540,6 +583,7 @@
   font-size: 14px;
   cursor: pointer;
 }
+
 .filterToggleRow {
   border: 1px solid #8e2446;
   border-radius: 6px;
@@ -654,7 +698,6 @@
 }
 
 /* ── Bibliotheekbeheerder: boeken toevoegen aan In de kijker ── */
-
 .bookListToolbarManage {
   gap: 1rem;
 }
@@ -728,14 +771,9 @@
   transform: translateY(-2px);
 }
 
-.catalogManageBookList .bookCheckBox {
+.catalogManageBookList .bookCardActionToggle {
   top: 10px;
   left: 10px;
-  width: 18px;
-  height: 18px;
-  accent-color: #8e2446;
-  cursor: pointer;
-  z-index: 2;
 }
 
 @media (max-width: 768px) {

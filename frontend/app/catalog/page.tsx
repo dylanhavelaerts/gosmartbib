@@ -572,6 +572,7 @@ export default function Home() {
             {books.map((book) => (
               <BookCard
                 withCheckbox={canManageSpotlight}
+                selectionControl="add"
                 key={book.id}
                 book={book}
                 isSelected={selectedSpotlightIds.has(book.id)}

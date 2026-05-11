@@ -43,8 +43,10 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  min-height: 68px;
   margin-bottom: 1.5rem;
   padding: 0.9rem 1rem;
+  box-sizing: border-box;
   border: 1px solid #ece6f0;
   border-radius: 16px;
   background: #fff;
@@ -174,10 +176,9 @@
   font-size: 0.82rem;
 }
 
-.spotlightReadingLevelBookGrid .bookCheckBox {
-  width: 15px;
-  height: 15px;
-  accent-color: #8e2446;
+.spotlightReadingLevelBookGrid .bookCardActionToggle {
+  top: 10px;
+  left: 10px;
 }
 
 .spotlightEmptyState {
@@ -209,6 +210,7 @@
   .spotlightToolbar {
     align-items: flex-start;
     flex-direction: column;
+    min-height: 112px;
   }
 }
 
