@@ -1,8 +1,11 @@
 package edu.ap.gosmartlib.repositories;
 
 import edu.ap.gosmartlib.entities.BookNotificationEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -14,4 +17,14 @@ public interface BookNotificationRepository extends JpaRepository<BookNotificati
 
     @EntityGraph(attributePaths = {"user", "user.school"})
     List<BookNotificationEntity> findAllByBook_IdAndUser_School_Id(Long bookId, Long schoolId);
+
+    @Query("""
+            SELECT bn.book, COUNT(bn)
+            FROM BookNotificationEntity bn
+            JOIN bn.user u
+            WHERE u.school.id = :schoolId
+            GROUP BY bn.book
+            ORDER BY COUNT(bn) DESC
+            """)
+    List<Object[]> findMostWantedBooks(@Param("schoolId") Long schoolId, Pageable pageable);
 }
