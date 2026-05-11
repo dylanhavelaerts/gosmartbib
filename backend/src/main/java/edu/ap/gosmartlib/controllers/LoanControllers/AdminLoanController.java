@@ -2,8 +2,10 @@ package edu.ap.gosmartlib.controllers.LoanControllers;
 
 import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
+import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
 import edu.ap.gosmartlib.services.Loans.AdminLoanService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,28 +22,39 @@ public class AdminLoanController {
     private final AdminLoanService adminLoanService;
 
     @GetMapping("/school/active")
-    public ResponseEntity<List<AdminActiveLoanDTO>> getActiveLoansForSchool(
+    public ResponseEntity<Page<AdminActiveLoanDTO>> getActiveLoansForSchool(
             @AuthenticationPrincipal OAuth2User principal,
-            @RequestParam(required = false) Long classId) {
+            @RequestParam(required = false) Long classId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
-        if (principal == null || principal.getAttribute("userID") == null) {
+        if (principal == null || principal.getAttribute("userID") == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
-        String actorUid = (String) principal.getAttribute("userID");
-        return ResponseEntity.ok(adminLoanService.getActiveLoansForSchool(actorUid, classId));
+        String actorUid = principal.getAttribute("userID");
+        return ResponseEntity.ok(adminLoanService.getActiveLoansForSchool(actorUid, classId, page, size));
     }
 
     @GetMapping("/school/history")
-    public ResponseEntity<List<AdminLoanHistoryDTO>> getLoanHistoryForSchool(
+    public ResponseEntity<Page<AdminLoanHistoryDTO>> getLoanHistoryForSchool(
             @AuthenticationPrincipal OAuth2User principal,
-            @RequestParam(required = false) Long classId) {
+            @RequestParam(required = false) Long classId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
+        if (principal == null || principal.getAttribute("userID") == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        String actorUid = (String) principal.getAttribute("userID");
+        return ResponseEntity.ok(adminLoanService.getLoanHistoryForSchool(actorUid, classId, page, size));
+    }
+    @GetMapping("/school/classes")
+    public ResponseEntity<List<ReadingListAssignmentTargetsDTO.ClassTarget>> getSchoolClasses(
+            @AuthenticationPrincipal OAuth2User principal) {
         if (principal == null || principal.getAttribute("userID") == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
-        String actorUid = (String) principal.getAttribute("userID");
-        return ResponseEntity.ok(adminLoanService.getLoanHistoryForSchool(actorUid, classId));
+        String actorUid = principal.getAttribute("userID");
+        return ResponseEntity.ok(adminLoanService.getSchoolClasses(actorUid));
     }
 }

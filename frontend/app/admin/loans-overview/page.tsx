@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import ProtectedRoute from "@/app/components/ProtectedRoute";
 import "./loans-overview.css";
 import Link from "next/dist/client/link";
+import Pagination from "@/app/catalog/pagination";
 
 interface ClassOption {
   id: number;
@@ -48,10 +49,15 @@ export default function LoansOverviewPage() {
   const [loanHistory, setLoanHistory] = useState<AdminLoanHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activePage, setActivePage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [activeTotalPages, setActiveTotalPages] = useState(0);
+  const [historyTotalPages, setHistoryTotalPages] = useState(0);
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-    fetch(`${apiUrl}/reading-lists/assignment-targets/classes`, {
+    fetch(`${apiUrl}/loans/school/classes`, {
       credentials: "include",
     })
       .then((r) => r.json())
@@ -60,33 +66,49 @@ export default function LoansOverviewPage() {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchActive = async () => {
       setIsLoading(true);
       setError(null);
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
         const classParam =
-          selectedClassId != null ? `?classId=${selectedClassId}` : "";
-        const [activeRes, historyRes] = await Promise.all([
-          fetch(`${apiUrl}/loans/school/active${classParam}`, {
-            credentials: "include",
-          }),
-          fetch(`${apiUrl}/loans/school/history${classParam}`, {
-            credentials: "include",
-          }),
-        ]);
-        if (!activeRes.ok || !historyRes.ok)
-          throw new Error("Kon de gegevens niet ophalen.");
-        setActiveLoans(await activeRes.json());
-        setLoanHistory(await historyRes.json());
+          selectedClassId != null ? `&classId=${selectedClassId}` : "";
+        const res = await fetch(
+          `${apiUrl}/loans/school/active?page=${activePage - 1}&size=${PAGE_SIZE}${classParam}`,
+          { credentials: "include" },
+        );
+        if (!res.ok) throw new Error("Kon de gegevens niet ophalen.");
+        const data = await res.json();
+        setActiveLoans(data.content);
+        setActiveTotalPages(data.totalPages);
       } catch (err: any) {
         setError(err.message || "Er is een onbekende fout opgetreden.");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchData();
-  }, [selectedClassId]);
+
+    fetchActive();
+  }, [selectedClassId, activePage]);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+        const classParam =
+          selectedClassId != null ? `&classId=${selectedClassId}` : "";
+        const res = await fetch(
+          `${apiUrl}/loans/school/history?page=${historyPage - 1}&size=${PAGE_SIZE}${classParam}`,
+          { credentials: "include" },
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        setLoanHistory(data.content);
+        setHistoryTotalPages(data.totalPages);
+      } catch {}
+    };
+    fetchHistory();
+  }, [selectedClassId, historyPage]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "Onbekend";
@@ -126,9 +148,9 @@ export default function LoansOverviewPage() {
       <main className="loansOverviewPage pageLayout">
         <div className="pageHeader">
           <div className="pageHeaderText">
-            <h1>Leningen Overzicht</h1>
+            <h1>Uitleenoverzicht</h1>
             <p className="pageSubtitle">
-              Overzicht van alle leningen binnen de school
+              Overzicht van alle leningen binnen jouw school
             </p>
           </div>
           {!isLoading && !error && (
@@ -153,11 +175,13 @@ export default function LoansOverviewPage() {
             id="classFilter"
             className="classSelect"
             value={selectedClassId ?? ""}
-            onChange={(e) =>
+            onChange={(e) => {
               setSelectedClassId(
                 e.target.value === "" ? null : Number(e.target.value),
-              )
-            }
+              );
+              setActivePage(1);
+              setHistoryPage(1);
+            }}
           >
             <option value="">Alle klassen</option>
             {classes.map((c) => (
@@ -282,6 +306,11 @@ export default function LoansOverviewPage() {
                   })}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={activePage}
+                totalPages={activeTotalPages}
+                onPageChange={setActivePage}
+              />
             </div>
           )
         ) : loanHistory.length === 0 ? (
@@ -350,6 +379,11 @@ export default function LoansOverviewPage() {
                 ))}
               </tbody>
             </table>
+            <Pagination
+              currentPage={historyPage}
+              totalPages={historyTotalPages}
+              onPageChange={setHistoryPage}
+            />
           </div>
         )}
       </main>
