@@ -54,6 +54,8 @@ export default function LoansOverviewPage() {
   const [activeTotalPages, setActiveTotalPages] = useState(0);
   const [historyTotalPages, setHistoryTotalPages] = useState(0);
   const PAGE_SIZE = 20;
+  const [activeTotalElements, setActiveTotalElements] = useState(0);
+  const [historyTotalElements, setHistoryTotalElements] = useState(0);
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -81,6 +83,7 @@ export default function LoansOverviewPage() {
         const data = await res.json();
         setActiveLoans(data.content);
         setActiveTotalPages(data.totalPages);
+        setActiveTotalElements(data.totalElements);
       } catch (err: any) {
         setError(err.message || "Er is een onbekende fout opgetreden.");
       } finally {
@@ -105,6 +108,7 @@ export default function LoansOverviewPage() {
         const data = await res.json();
         setLoanHistory(data.content);
         setHistoryTotalPages(data.totalPages);
+        setHistoryTotalElements(data.totalElements);
       } catch {}
     };
     fetchHistory();
@@ -156,8 +160,9 @@ export default function LoansOverviewPage() {
           {!isLoading && !error && (
             <div className="statsRow">
               <span className="statChip">
-                <strong>{activeLoans.length}</strong> actieve leningen
+                <strong>{activeTotalElements}</strong> actieve leningen
               </span>
+
               {overdueCount > 0 && (
                 <span className="statChip statChip--late">
                   <strong>{overdueCount}</strong> te laat
@@ -200,7 +205,7 @@ export default function LoansOverviewPage() {
           >
             Actieve leningen
             {!isLoading && (
-              <span className="tabBadge">{activeLoans.length}</span>
+              <span className="tabBadge">{activeTotalElements}</span>
             )}
           </button>
           <button
@@ -209,7 +214,7 @@ export default function LoansOverviewPage() {
           >
             Ontleengeschiedenis
             {!isLoading && (
-              <span className="tabBadge">{loanHistory.length}</span>
+              <span className="tabBadge">{historyTotalElements}</span>
             )}
           </button>
         </div>
