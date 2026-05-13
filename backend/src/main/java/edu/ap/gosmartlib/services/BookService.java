@@ -188,6 +188,26 @@ public class BookService {
                 .toList();
     }
 
+    public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole, String currentUserUid, String readingLevel) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        Long schoolId = restrictToOwnSchool(callerRole) ? requireRequesterSchoolId(currentUserUid) : null;
+        String normalizedReadingLevel = safeTrim(readingLevel);
+
+        if (normalizedReadingLevel != null && normalizedReadingLevel.isBlank()) {
+            normalizedReadingLevel = null;
+        }
+
+        return bookRepository.findSpotlightBooksByReadingLevel(
+                normalizedReadingLevel,
+                includeDidactic,
+                schoolId,
+                PageRequest.of(0, 4))
+                .stream()
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
     public List<BookDTO> getAllBooksInSpotlight(UserRoles callerRole, String currentUserUid) {
         boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findBySpotlightTrueOrderByIdDesc()

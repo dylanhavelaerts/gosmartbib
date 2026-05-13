@@ -291,6 +291,128 @@ class BookServiceTest {
         // --- getTop4BooksInSpotlight Tests ---
 
         @Test
+        void givenReadingLevelAndStudentRole_whenGetTop4BooksInSpotlight_thenUsesReadingLevelAndSchoolScopedQuery() {
+                stubStudentSchoolLookup();
+
+                BookEntity book = buildBook();
+                book.setId(1L);
+                book.setTitle("Leesniveau A Spotlight");
+                book.setReadingLevel("A");
+
+                when(bookRepository.findSpotlightBooksByReadingLevel(
+                                eq("A"),
+                                eq(false),
+                                eq(1L),
+                                any(Pageable.class)))
+                                .thenReturn(List.of(book));
+
+                List<BookDTO> result = bookService.getTop4BooksInSpotlight(
+                                UserRoles.STUDENT,
+                                STUDENT_UID,
+                                "A");
+
+                assertNotNull(result);
+                assertEquals(1, result.size());
+                assertEquals("Leesniveau A Spotlight", result.get(0).title());
+                assertEquals("A", result.get(0).readingLevel());
+
+                ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+
+                verify(bookRepository).findSpotlightBooksByReadingLevel(
+                                eq("A"),
+                                eq(false),
+                                eq(1L),
+                                pageableCaptor.capture());
+
+                assertEquals(0, pageableCaptor.getValue().getPageNumber());
+                assertEquals(4, pageableCaptor.getValue().getPageSize());
+        }
+
+        @Test
+        void givenReadingLevelWithWhitespace_whenGetTop4BooksInSpotlight_thenTrimsReadingLevel() {
+                stubStudentSchoolLookup();
+
+                BookEntity book = buildBook();
+                book.setReadingLevel("B");
+
+                when(bookRepository.findSpotlightBooksByReadingLevel(
+                                eq("B"),
+                                eq(false),
+                                eq(1L),
+                                any(Pageable.class)))
+                                .thenReturn(List.of(book));
+
+                List<BookDTO> result = bookService.getTop4BooksInSpotlight(
+                                UserRoles.STUDENT,
+                                STUDENT_UID,
+                                "  B  ");
+
+                assertEquals(1, result.size());
+
+                verify(bookRepository).findSpotlightBooksByReadingLevel(
+                                eq("B"),
+                                eq(false),
+                                eq(1L),
+                                any(Pageable.class));
+        }
+
+        @Test
+        void givenBlankReadingLevel_whenGetTop4BooksInSpotlight_thenPassesNullReadingLevelToRepository() {
+                stubStudentSchoolLookup();
+
+                BookEntity book = buildBook();
+
+                when(bookRepository.findSpotlightBooksByReadingLevel(
+                                isNull(),
+                                eq(false),
+                                eq(1L),
+                                any(Pageable.class)))
+                                .thenReturn(List.of(book));
+
+                List<BookDTO> result = bookService.getTop4BooksInSpotlight(
+                                UserRoles.STUDENT,
+                                STUDENT_UID,
+                                "   ");
+
+                assertEquals(1, result.size());
+
+                verify(bookRepository).findSpotlightBooksByReadingLevel(
+                                isNull(),
+                                eq(false),
+                                eq(1L),
+                                any(Pageable.class));
+        }
+
+        @Test
+        void givenTeacherRole_whenGetTop4BooksInSpotlightWithReadingLevel_thenDoesNotRestrictToSchool() {
+                BookEntity book = buildBook();
+                book.setReadingLevel("D");
+
+                when(bookRepository.findSpotlightBooksByReadingLevel(
+                                eq("D"),
+                                eq(true),
+                                isNull(),
+                                any(Pageable.class)))
+                                .thenReturn(List.of(book));
+
+                List<BookDTO> result = bookService.getTop4BooksInSpotlight(
+                                UserRoles.TEACHER,
+                                null,
+                                "D");
+
+                assertEquals(1, result.size());
+                assertEquals("D", result.get(0).readingLevel());
+
+                verify(bookRepository).findSpotlightBooksByReadingLevel(
+                                eq("D"),
+                                eq(true),
+                                isNull(),
+                                any(Pageable.class));
+
+                verify(userRepository, never()).findDetailedBySmartschoolUid(anyString());
+        }
+
+        @Test
         void givenSpotlightBookExists_whenGetTop4BooksInSpotlight_thenReturnsMappedDTOs() {
                 stubStudentSchoolLookup();
 
