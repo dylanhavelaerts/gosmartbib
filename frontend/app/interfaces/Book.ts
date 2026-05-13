@@ -23,6 +23,8 @@ export interface Book {
 
 export const AGE_RANGE = ["Eerste graad", "Tweede graad", "Derde graad"];
 
+export const BOOK_READING_LEVELS = ["A", "B", "C", "D"];
+
 export const BOOK_CATEGORIES = [
   "Fictie algemeen",
   "Literaire roman",

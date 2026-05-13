@@ -43,7 +43,8 @@ class BookControllerTest {
     @Mock
     private UserRepository userRepository;
 
-    // @Spy gebruikt de echte implementatie van AuthHelper zodat extractUid/extractUidOrNull
+    // @Spy gebruikt de echte implementatie van AuthHelper zodat
+    // extractUid/extractUidOrNull
     // correct werken zonder elke test afzonderlijk te stubben.
     @Spy
     private AuthHelper authHelper = new AuthHelper();
@@ -143,8 +144,6 @@ class BookControllerTest {
         verify(bookService, times(1)).getBookById(99L, UserRoles.STUDENT, null);
     }
 
-
-
     @Test
     void givenSpotlightBooksExist_whenGetBooksInSpotlight_thenReturnsExpectedDTOs() {
         List<BookDTO> expected = List.of(
@@ -199,7 +198,7 @@ class BookControllerTest {
     @Test
     void givenValidFilters_whenFilterBooks_thenReturnsOk() {
         BookFilterRequest filter = new BookFilterRequest(
-                null, "en", List.of("Programming"), List.of("Toekomst & technologie"),
+                null, "en", List.of("Programming"), List.of("Toekomst & technologie"), "A",
                 100, 500, 2000, 2023, 3.0, 5.0, null, 0, 20);
         Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
         when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
@@ -215,7 +214,7 @@ class BookControllerTest {
     @Test
     void givenOnlyLabels_whenFilterBooks_thenReturnsOk() {
         BookFilterRequest filter = new BookFilterRequest(
-                null, null, null, List.of("Toekomst & technologie"),
+                null, null, null, List.of("Toekomst & technologie"), null,
                 null, null, null, null, null, null, null, 0, 20);
         Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
         when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
@@ -231,7 +230,7 @@ class BookControllerTest {
     @Test
     void givenNullFilters_whenFilterBooks_thenReturnsOk() {
         BookFilterRequest filter = new BookFilterRequest(
-                null, null, null, null,
+                null, null, null, null, null,
                 null, null, null, null, null, null, null, 0, 20);
         when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenReturn(toPage(List.of(buildDTO(1L, "Clean Code"))));
@@ -244,7 +243,7 @@ class BookControllerTest {
     @Test
     void givenMinGreaterThanMax_whenFilterBooks_thenReturnsBadRequest() {
         BookFilterRequest filter = new BookFilterRequest(
-                null, null, null, null,
+                null, null, null, null, null,
                 500, 100, null, null, null, null, null, 0, 20);
         when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenThrow(new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount"));
@@ -258,7 +257,7 @@ class BookControllerTest {
     @Test
     void givenMinRatingGreaterThanMaxRating_whenFilterBooks_thenReturnsBadRequest() {
         BookFilterRequest filter = new BookFilterRequest(
-                null, null, null, null,
+                null, null, null, null, null,
                 null, null, null, null, 5.0, 3.0, null, 0, 20);
         when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenThrow(new IllegalArgumentException("minRating mag niet groter zijn dan maxRating"));
@@ -276,7 +275,7 @@ class BookControllerTest {
                 });
 
         ResponseEntity<?> result = bookController.filterBooks(new BookFilterRequest(
-                null, null, null, null,
+                null, null, null, null, null,
                 null, null, null, null, null, null, null, 0, 20), null);
 
         assertEquals(500, result.getStatusCode().value());
@@ -288,7 +287,7 @@ class BookControllerTest {
                 .thenReturn(toPage(List.of()));
 
         ResponseEntity<?> result = bookController.filterBooks(new BookFilterRequest(
-                null, null, null, null,
+                null, null, null, null, null,
                 null, null, null, null, null, null, null, 0, 20), null);
 
         assertEquals(200, result.getStatusCode().value());
@@ -547,7 +546,6 @@ class BookControllerTest {
         verifyNoMoreInteractions(bookService);
     }
 
-
     @Test
     void updateBook_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
         Method method = BookController.class.getMethod("updateBook", Long.class, edu.ap.gosmartlib.dto.BookDTO.class);
@@ -558,12 +556,21 @@ class BookControllerTest {
     }
 
     @Test
+    void getAllBooksInSpotlight_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
+        Method method = BookController.class.getMethod("getAllBooksInSpotlight", OAuth2User.class);
+        PreAuthorize preAuthorize = method.getAnnotation(PreAuthorize.class);
+
+        assertNotNull(preAuthorize);
+        assertEquals("hasRole('BIBLIOTHEEKBEHEERDER')", preAuthorize.value());
+    }
+
+    @Test
     void updateSpotlight_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
         Method method = BookController.class.getMethod("updateSpotlight", Long.class, boolean.class);
         PreAuthorize preAuthorize = method.getAnnotation(PreAuthorize.class);
 
         assertNotNull(preAuthorize);
-        assertEquals("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')", preAuthorize.value());
+        assertEquals("hasRole('BIBLIOTHEEKBEHEERDER')", preAuthorize.value());
     }
 
     @Test
@@ -708,8 +715,8 @@ class BookControllerTest {
         BookDTO expected = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
                 2023, false, List.of("STEM"), "A", 5, 3, "Eerste graad", null, List.of(
-                buildInventoryDTO(11L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
-                buildInventoryDTO(12L, 2L, "GO! School", "Campus Zuid", 3, 2)));
+                        buildInventoryDTO(11L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
+                        buildInventoryDTO(12L, 2L, "GO! School", "Campus Zuid", 3, 2)));
 
         when(bookService.getBookById(1L, UserRoles.STUDENT, null)).thenReturn(expected);
 
@@ -737,8 +744,8 @@ class BookControllerTest {
         BookDTO updatedDTO = new BookDTO(1L, "Updated Title", List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
                 2023, false, List.of("STEM"), "A", 10, 7, "Eerste graad", null, List.of(
-                buildInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
-                buildInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
+                        buildInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
+                        buildInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
 
         when(bookService.updateBook(1L, updatedDTO)).thenReturn(updatedDTO);
 
@@ -764,7 +771,7 @@ class BookControllerTest {
         BookDTO updatedDTO = new BookDTO(1L, "Updated Title", List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
                 2023, false, List.of("STEM"), "A", 3, 5, "Eerste graad", null, List.of(
-                buildInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 3, 5)));
+                        buildInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 3, 5)));
 
         when(bookService.updateBook(1L, updatedDTO))
                 .thenThrow(new IllegalArgumentException(
@@ -807,8 +814,8 @@ class BookControllerTest {
                 "Manual Publisher", "Manual Description", 321, List.of("Fantasy", "Young adult"),
                 "thumbnail-url", "nl", 4.5, "NOISBN-123e4567-e89b-12d3-a456-426614174000",
                 2024, false, List.of("STEM"), "A", 5, 3, "Eerste graad", null, List.of(
-                buildInventoryDTO(21L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
-                buildInventoryDTO(22L, 2L, "GO! School", "Campus Zuid", 3, 2)));
+                        buildInventoryDTO(21L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
+                        buildInventoryDTO(22L, 2L, "GO! School", "Campus Zuid", 3, 2)));
 
         when(bookService.addManualBook(request, "uid-123")).thenReturn(createdBook);
 
@@ -863,13 +870,13 @@ class BookControllerTest {
         assertEquals("Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren", result.getBody());
         verify(bookService).addManualBook(request, "uid-123");
     }
+
     // --- Snowball Tests ---
 
     @Test
     void givenSnowballSectionsExist_whenGetSnowball_thenReturns200WithSections() {
         List<SnowballSectionDTO> sections = List.of(
-                new SnowballSectionDTO("AUTHOR", "Auteur X", List.of(buildDTO(2L, "Boek B")))
-        );
+                new SnowballSectionDTO("AUTHOR", "Auteur X", List.of(buildDTO(2L, "Boek B"))));
         when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null)).thenReturn(sections);
 
         ResponseEntity<List<SnowballSectionDTO>> result = bookController.getSnowball(1L, null);
@@ -931,12 +938,12 @@ class BookControllerTest {
     }
 
     private BookInventoryDTO buildInventoryDTO(Long id, Long schoolId, String schoolName, String campus,
-                                               Integer totalCopies, Integer availableCopies) {
+            Integer totalCopies, Integer availableCopies) {
         return new BookInventoryDTO(id, schoolId, schoolName, campus, totalCopies, availableCopies);
     }
 
     private CreateBookInventoryRequestDTO buildCreateInventoryRequest(Long schoolId, String campus,
-                                                                      Integer totalCopies, Integer availableCopies) {
+            Integer totalCopies, Integer availableCopies) {
         return new CreateBookInventoryRequestDTO(schoolId, campus, totalCopies, availableCopies);
     }
 }

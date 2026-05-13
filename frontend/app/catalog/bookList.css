@@ -4,10 +4,6 @@
   min-height: 100vh;
 }
 
-#spotlightPage {
-  margin-top: 4.5rem;
-}
-
 .mainContent {
   flex: 1;
   min-width: 0;
@@ -63,6 +59,7 @@
 .mobileSidebarToggle {
   display: none;
 }
+
 @media (max-width: 768px) {
   .pageLayout {
     flex-direction: column;
@@ -222,6 +219,7 @@
 .catalogHeader ul::-webkit-scrollbar {
   display: none;
 }
+
 .catalogAdminPage h1 {
   font-size: clamp(20px, 1.5vw, 24px);
   color: #8e2446;
@@ -277,12 +275,14 @@
   margin-bottom: -1px;
 }
 
-/* ── Toolbar (result count + page size) ── */
+/* ── Toolbar ── */
 .bookListToolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 48px;
   padding: 0.4rem clamp(8px, 2vw, 16px);
+  box-sizing: border-box;
   font-size: 13px;
   color: #888;
 }
@@ -401,9 +401,48 @@
   position: absolute;
   top: 8px;
   left: 8px;
+  z-index: 2;
 }
 
-/* ── Filter bar (sidebar contents) ── */
+.bookCardActionToggle {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background-color: #f7e8ee;
+  color: #8e2446;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(62, 12, 28, 0.14);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.bookCardActionToggle:hover,
+.bookCardActionToggleActive {
+  background-color: #8e2446;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(142, 36, 70, 0.24);
+}
+
+.bookCardActionToggle:active {
+  transform: translateY(0);
+}
+
+/* ── Filter bar ── */
 .filterBar {
   margin: 0.5rem;
   padding-right: 0.75rem;
@@ -544,6 +583,7 @@
   font-size: 14px;
   cursor: pointer;
 }
+
 .filterToggleRow {
   border: 1px solid #8e2446;
   border-radius: 6px;
@@ -557,8 +597,6 @@
   min-height: 38px;
   justify-content: space-between;
 }
-
-
 
 /* ── Modal ── */
 .modalOverlay {
@@ -659,19 +697,96 @@
   transform: scale(1.1);
 }
 
-/* Spotlight Action Button */
-.spotlightActionBtn {
-  border: 1px solid #8e2446;
-  background: #8e2446;
-  color: #fff;
-  border-radius: 6px;
-  padding: 0.35rem 0.65rem;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
+/* ── Bibliotheekbeheerder: boeken toevoegen aan In de kijker ── */
+.bookListToolbarManage {
+  gap: 1rem;
 }
 
-.spotlightActionBtn:hover {
-  background: #6b1a34;
-  border-color: #6b1a34;
+.catalogToolbarLeft {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.catalogSpotlightAddButton {
+  border: none;
+  border-radius: 999px;
+  background: #8e2446;
+  color: #fff;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(142, 36, 70, 0.18);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease,
+    opacity 0.16s ease;
+}
+
+.catalogSpotlightAddButton:hover:not(:disabled) {
+  background: #7a1e3b;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(142, 36, 70, 0.24);
+}
+
+.catalogSpotlightAddButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.catalogSpotlightFeedback {
+  width: fit-content;
+  margin: 0.25rem 1rem 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.catalogSpotlightFeedback.success {
+  border: 1px solid #f0c7d2;
+  background: #fdf2f5;
+  color: #8e2446;
+}
+
+.catalogSpotlightFeedback.error {
+  border: 1px solid #f1b5b5;
+  background: #fff4f4;
+  color: #a73535;
+}
+
+.catalogManageBookList .bookCard {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.catalogManageBookList .bookCard.selected {
+  border-color: #8e2446;
+  box-shadow: 0 10px 24px rgba(142, 36, 70, 0.2);
+  transform: translateY(-2px);
+}
+
+.catalogManageBookList .bookCardActionToggle {
+  top: 10px;
+  left: 10px;
+}
+
+@media (max-width: 768px) {
+  .bookListToolbarManage {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .catalogToolbarLeft {
+    width: 100%;
+  }
+
+  .catalogSpotlightAddButton {
+    width: 100%;
+  }
 }

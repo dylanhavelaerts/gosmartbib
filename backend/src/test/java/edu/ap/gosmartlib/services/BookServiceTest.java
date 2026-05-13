@@ -131,8 +131,6 @@ class BookServiceTest {
                         return saved;
                 });
 
-                // AANGEPAST: Hier geven we nu '1' mee als vierde argument voor het aantal
-                // kopieën!
                 BookDTO result = bookService.addBookByIsbn(isbn, STUDENT_UID, "Campus Zuid", 1);
 
                 assertNotNull(result);
@@ -289,7 +287,6 @@ class BookServiceTest {
                 assertEquals(10L, result.id());
                 verify(bookRepository).findDetailedById(10L);
         }
-
 
         // --- getTop4BooksInSpotlight Tests ---
 
@@ -566,8 +563,20 @@ class BookServiceTest {
         @Test
         void givenValidFilters_whenFilterBooks_thenReturnsMappedDTOs() {
                 BookFilterRequest request = new BookFilterRequest(
-                                null, "en", List.of("Programming"), List.of("Toekomst & technologie"),
-                                100, 500, 2000, 2023, 3.0, 5.0, null, 0, 20);
+                                null,
+                                "en",
+                                List.of("Programming"),
+                                List.of("Toekomst & technologie"),
+                                "A",
+                                100,
+                                500,
+                                2000,
+                                2023,
+                                3.0,
+                                5.0,
+                                null,
+                                0,
+                                20);
 
                 stubStudentSchoolLookup();
 
@@ -578,6 +587,7 @@ class BookServiceTest {
                                 eq("en"),
                                 eq(List.of("Programming")),
                                 eq(List.of("Toekomst & technologie")),
+                                eq("A"),
                                 eq(100),
                                 eq(500),
                                 eq(2000),
@@ -599,6 +609,7 @@ class BookServiceTest {
                                 eq("en"),
                                 eq(List.of("Programming")),
                                 eq(List.of("Toekomst & technologie")),
+                                eq("A"),
                                 eq(100),
                                 eq(500),
                                 eq(2000),
@@ -612,8 +623,20 @@ class BookServiceTest {
         @Test
         void givenNullFilters_whenFilterBooks_thenReturnsAllBooks() {
                 BookFilterRequest request = new BookFilterRequest(
-                                null, null, null, null,
-                                null, null, null, null, null, null, null, 0, 20);
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                0,
+                                20);
 
                 stubStudentSchoolLookup();
 
@@ -621,6 +644,7 @@ class BookServiceTest {
                                 2);
                 when(bookRepository.filterBooksForSchool(
                                 eq(false),
+                                isNull(),
                                 isNull(),
                                 isNull(),
                                 isNull(),
@@ -644,8 +668,20 @@ class BookServiceTest {
         @Test
         void givenOnlyLabels_whenFilterBooks_thenReturnsMatchingBooks() {
                 BookFilterRequest request = new BookFilterRequest(
-                                null, null, null, List.of("Toekomst & technologie"),
-                                null, null, null, null, null, null, null, 0, 20);
+                                null,
+                                null,
+                                null,
+                                List.of("Toekomst & technologie"),
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                0,
+                                20);
 
                 stubStudentSchoolLookup();
 
@@ -656,6 +692,7 @@ class BookServiceTest {
                                 isNull(),
                                 isNull(),
                                 eq(List.of("Toekomst & technologie")),
+                                isNull(),
                                 isNull(),
                                 isNull(),
                                 isNull(),
@@ -676,8 +713,20 @@ class BookServiceTest {
         @Test
         void givenNoMatchingBooks_whenFilterBooks_thenReturnsEmptyPage() {
                 BookFilterRequest request = new BookFilterRequest(
-                                null, "nl", null, null,
-                                null, null, null, null, null, null, null, 0, 20);
+                                null,
+                                "nl",
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                0,
+                                20);
 
                 stubStudentSchoolLookup();
 
@@ -686,6 +735,7 @@ class BookServiceTest {
                                 eq(false),
                                 isNull(),
                                 eq("nl"),
+                                isNull(),
                                 isNull(),
                                 isNull(),
                                 isNull(),
@@ -707,12 +757,25 @@ class BookServiceTest {
         @Test
         void givenTeacherRole_whenFilterBooks_thenPassesTrueToRepo() {
                 BookFilterRequest request = new BookFilterRequest(
-                                null, null, null, null,
-                                null, null, null, null, null, null, null, 0, 20);
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                0,
+                                20);
 
                 Page<BookEntity> entityPage = new PageImpl<>(List.of(buildBook()), PageRequest.of(0, 20), 1);
                 when(bookRepository.filterBooks(
                                 eq(true),
+                                isNull(),
                                 isNull(),
                                 isNull(),
                                 isNull(),
@@ -737,6 +800,7 @@ class BookServiceTest {
                                 isNull(),
                                 isNull(),
                                 isNull(),
+                                isNull(),
                                 eq(false),
                                 isNull(),
                                 isNull(),
@@ -750,8 +814,20 @@ class BookServiceTest {
         @Test
         void givenMinPageCountGreaterThanMaxPageCount_whenFilterBooks_thenThrowsIllegalArgumentException() {
                 BookFilterRequest request = new BookFilterRequest(
-                                null, null, null, null,
-                                500, 100, null, null, null, null, null, 0, 20);
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                500,
+                                100,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                0,
+                                20);
 
                 doThrow(new IllegalArgumentException("minPageCount mag niet groter zijn dan maxPageCount"))
                                 .when(bookFilterValidator).validate(request);
@@ -760,7 +836,18 @@ class BookServiceTest {
                                 () -> bookService.filterBooks(request, UserRoles.STUDENT, STUDENT_UID));
 
                 verify(bookRepository, never()).filterBooksForSchool(
-                                anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                                anyBoolean(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
                                 anyLong(),
                                 any(Pageable.class));
         }
@@ -768,8 +855,20 @@ class BookServiceTest {
         @Test
         void givenMinYearGreaterThanMaxYear_whenFilterBooks_thenThrowsIllegalArgumentException() {
                 BookFilterRequest request = new BookFilterRequest(
-                                null, null, null, null,
-                                null, null, 2023, 2000, null, null, null, 0, 20);
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                2023,
+                                2000,
+                                null,
+                                null,
+                                null,
+                                0,
+                                20);
 
                 doThrow(new IllegalArgumentException("minPubYear mag niet groter zijn dan maxPubYear"))
                                 .when(bookFilterValidator).validate(request);
@@ -778,7 +877,18 @@ class BookServiceTest {
                                 () -> bookService.filterBooks(request, UserRoles.STUDENT, STUDENT_UID));
 
                 verify(bookRepository, never()).filterBooksForSchool(
-                                anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                                anyBoolean(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
                                 anyLong(),
                                 any(Pageable.class));
         }
@@ -786,8 +896,20 @@ class BookServiceTest {
         @Test
         void givenMinRatingGreaterThanMaxRating_whenFilterBooks_thenThrowsIllegalArgumentException() {
                 BookFilterRequest request = new BookFilterRequest(
-                                null, null, null, null,
-                                null, null, null, null, 5.0, 3.0, null, 0, 20);
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                5.0,
+                                3.0,
+                                null,
+                                0,
+                                20);
 
                 doThrow(new IllegalArgumentException("minRating mag niet groter zijn dan maxRating"))
                                 .when(bookFilterValidator).validate(request);
@@ -796,7 +918,18 @@ class BookServiceTest {
                                 () -> bookService.filterBooks(request, UserRoles.STUDENT, STUDENT_UID));
 
                 verify(bookRepository, never()).filterBooksForSchool(
-                                anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                                anyBoolean(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
                                 anyLong(),
                                 any(Pageable.class));
         }
@@ -804,8 +937,20 @@ class BookServiceTest {
         @Test
         void givenRatingOutOfBounds_whenFilterBooks_thenThrowsIllegalArgumentException() {
                 BookFilterRequest request = new BookFilterRequest(
-                                null, null, null, null,
-                                null, null, null, null, 0.5, null, null, 0, 20);
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                0.5,
+                                null,
+                                null,
+                                0,
+                                20);
 
                 doThrow(new IllegalArgumentException("minRating moet tussen 1 en 5 liggen"))
                                 .when(bookFilterValidator).validate(request);
@@ -814,7 +959,18 @@ class BookServiceTest {
                                 () -> bookService.filterBooks(request, UserRoles.STUDENT, STUDENT_UID));
 
                 verify(bookRepository, never()).filterBooksForSchool(
-                                anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                                anyBoolean(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
                                 anyLong(),
                                 any(Pageable.class));
         }
@@ -822,13 +978,36 @@ class BookServiceTest {
         @Test
         void givenRepositoryFails_whenFilterBooks_thenThrowsException() {
                 BookFilterRequest request = new BookFilterRequest(
-                                null, null, null, null,
-                                null, null, null, null, null, null, null, 0, 20);
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                0,
+                                20);
 
                 stubStudentSchoolLookup();
 
                 when(bookRepository.filterBooksForSchool(
-                                anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                                anyBoolean(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
                                 anyLong(),
                                 any(Pageable.class)))
                                 .thenThrow(new RuntimeException("Database unavailable"));
@@ -839,31 +1018,112 @@ class BookServiceTest {
 
         @Test
         void givenDidacticOnlyTrue_whenFilterBooks_asTeacher_thenPassesTrueToRepo() {
-                BookFilterRequest request = new BookFilterRequest(null, null, null, null, null, null, null, null, null,
-                                null, true, 0, 20);
-                when(bookRepository.filterBooks(eq(true), isNull(), isNull(), isNull(), isNull(), eq(true), isNull(),
-                                isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+                BookFilterRequest request = new BookFilterRequest(
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                true,
+                                0,
+                                20);
+
+                when(bookRepository.filterBooks(
+                                eq(true),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                eq(true),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                any(Pageable.class)))
                                 .thenReturn(Page.empty());
 
                 bookService.filterBooks(request, UserRoles.TEACHER, "teacher-uid");
 
-                verify(bookRepository).filterBooks(eq(true), isNull(), isNull(), isNull(), isNull(), eq(true), isNull(),
-                                isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
+                verify(bookRepository).filterBooks(
+                                eq(true),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                eq(true),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                any(Pageable.class));
         }
 
         @Test
         void givenDidacticOnlyNull_whenFilterBooks_thenPassesFalseToRepo() {
-                BookFilterRequest request = new BookFilterRequest(null, null, null, null, null, null, null, null, null,
-                                null, null, 0, 20);
-                when(bookRepository.filterBooks(eq(true), isNull(), isNull(), isNull(), isNull(), eq(false), isNull(),
-                                isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+                BookFilterRequest request = new BookFilterRequest(
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                0,
+                                20);
+
+                when(bookRepository.filterBooks(
+                                eq(true),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                eq(false),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                any(Pageable.class)))
                                 .thenReturn(Page.empty());
 
                 bookService.filterBooks(request, UserRoles.TEACHER, "teacher-uid");
 
-                verify(bookRepository).filterBooks(eq(true), isNull(), isNull(), isNull(), isNull(), eq(false),
-                                isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
+                verify(bookRepository).filterBooks(
+                                eq(true),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                eq(false),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                isNull(),
+                                any(Pageable.class));
         }
+
         // --- getAllBooksUnpaged Tests ---
 
         @Test
@@ -1684,6 +1944,7 @@ class BookServiceTest {
                                 "en",
                                 List.of("Programming"),
                                 List.of("Toekomst & technologie"),
+                                "A",
                                 100,
                                 500,
                                 2000,
@@ -1706,6 +1967,7 @@ class BookServiceTest {
                                 eq("en"),
                                 eq(List.of("Programming")),
                                 eq(List.of("Toekomst & technologie")),
+                                eq("A"),
                                 eq(100),
                                 eq(500),
                                 eq(2000),
@@ -1730,6 +1992,7 @@ class BookServiceTest {
                                 eq("en"),
                                 eq(List.of("Programming")),
                                 eq(List.of("Toekomst & technologie")),
+                                eq("A"),
                                 eq(100),
                                 eq(500),
                                 eq(2000),
@@ -1739,8 +2002,19 @@ class BookServiceTest {
                                 eq(1L),
                                 any(Pageable.class));
                 verify(bookRepository, never()).filterBooks(
-                                anyBoolean(), any(), any(), any(), any(), anyBoolean(), any(), any(), any(), any(),
-                                any(), any(),
+                                anyBoolean(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                anyBoolean(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
                                 any(Pageable.class));
         }
 
@@ -1817,175 +2091,181 @@ class BookServiceTest {
                 assertEquals("Campus A", result.inventories().get(0).campus());
                 assertEquals("Campus B", result.inventories().get(1).campus());
         }
-    // --- Snowball Tests ---
 
-    @Test
-    void givenBookNotFound_whenGetSnowballSections_thenThrowsBookNotFoundException() {
-        when(bookRepository.findDetailedById(99L)).thenReturn(Optional.empty());
+        // --- Snowball Tests ---
 
-        assertThrows(BookNotFoundException.class,
-                () -> bookService.getSnowballSections(99L, UserRoles.TEACHER, null));
-    }
+        @Test
+        void givenBookNotFound_whenGetSnowballSections_thenThrowsBookNotFoundException() {
+                when(bookRepository.findDetailedById(99L)).thenReturn(Optional.empty());
 
-    @Test
-    void givenBookWithAuthors_whenGetSnowballSections_thenReturnsAuthorSection() {
-        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
-        BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
+                assertThrows(BookNotFoundException.class,
+                                () -> bookService.getSnowballSections(99L, UserRoles.TEACHER, null));
+        }
 
-        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
-        when(bookRepository.findByAuthorsInAndIdNot(eq(List.of("Auteur X")), eq(1L), any(Pageable.class)))
-                .thenReturn(List.of(related));
+        @Test
+        void givenBookWithAuthors_whenGetSnowballSections_thenReturnsAuthorSection() {
+                BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
+                BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
 
-        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+                when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+                when(bookRepository.findByAuthorsInAndIdNot(eq(List.of("Auteur X")), eq(1L), any(Pageable.class)))
+                                .thenReturn(List.of(related));
 
-        assertEquals(1, result.size());
-        assertEquals("AUTHOR", result.get(0).type());
-        assertEquals("Auteur X", result.get(0).value());
-        assertEquals(1, result.get(0).books().size());
-    }
+                List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
 
-    @Test
-    void givenBookWithCategories_whenGetSnowballSections_thenReturnsCategorySection() {
-        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of("Fictie"));
-        BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of(), List.of("Fictie"));
+                assertEquals(1, result.size());
+                assertEquals("AUTHOR", result.get(0).type());
+                assertEquals("Auteur X", result.get(0).value());
+                assertEquals(1, result.get(0).books().size());
+        }
 
-        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
-        when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Fictie")), eq(1L), any(Pageable.class)))
-                .thenReturn(List.of(related));
+        @Test
+        void givenBookWithCategories_whenGetSnowballSections_thenReturnsCategorySection() {
+                BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of("Fictie"));
+                BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of(), List.of("Fictie"));
 
-        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+                when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+                when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Fictie")), eq(1L), any(Pageable.class)))
+                                .thenReturn(List.of(related));
 
-        assertEquals(1, result.size());
-        assertEquals("CATEGORY", result.get(0).type());
-        assertEquals("Fictie", result.get(0).value());
-        assertEquals(1, result.get(0).books().size());
-    }
+                List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
 
-    @Test
-    void givenBookWithAuthorsAndCategories_whenGetSnowballSections_thenReturnsTwoSections() {
-        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of("Fictie"));
-        BookEntity relatedByAuthor = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
-        BookEntity relatedByCategory = buildBookEntityForSnowball(3L, "Boek C", List.of(), List.of("Fictie"));
+                assertEquals(1, result.size());
+                assertEquals("CATEGORY", result.get(0).type());
+                assertEquals("Fictie", result.get(0).value());
+                assertEquals(1, result.get(0).books().size());
+        }
 
-        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
-        when(bookRepository.findByAuthorsInAndIdNot(eq(List.of("Auteur X")), eq(1L), any(Pageable.class)))
-                .thenReturn(List.of(relatedByAuthor));
-        when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Fictie")), eq(1L), any(Pageable.class)))
-                .thenReturn(List.of(relatedByCategory));
+        @Test
+        void givenBookWithAuthorsAndCategories_whenGetSnowballSections_thenReturnsTwoSections() {
+                BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of("Fictie"));
+                BookEntity relatedByAuthor = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
+                BookEntity relatedByCategory = buildBookEntityForSnowball(3L, "Boek C", List.of(), List.of("Fictie"));
 
-        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+                when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+                when(bookRepository.findByAuthorsInAndIdNot(eq(List.of("Auteur X")), eq(1L), any(Pageable.class)))
+                                .thenReturn(List.of(relatedByAuthor));
+                when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Fictie")), eq(1L), any(Pageable.class)))
+                                .thenReturn(List.of(relatedByCategory));
 
-        assertEquals(2, result.size());
-        assertEquals("AUTHOR", result.get(0).type());
-        assertEquals("Auteur X", result.get(0).value());
-        assertEquals("CATEGORY", result.get(1).type());
-        assertEquals("Fictie", result.get(1).value());
-    }
+                List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
 
-    @Test
-    void givenBookWithNoAuthorsAndNoCategories_whenGetSnowballSections_thenReturnsEmptyList() {
-        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of());
-        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+                assertEquals(2, result.size());
+                assertEquals("AUTHOR", result.get(0).type());
+                assertEquals("Auteur X", result.get(0).value());
+                assertEquals("CATEGORY", result.get(1).type());
+                assertEquals("Fictie", result.get(1).value());
+        }
 
-        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+        @Test
+        void givenBookWithNoAuthorsAndNoCategories_whenGetSnowballSections_thenReturnsEmptyList() {
+                BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of());
+                when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
 
-        assertTrue(result.isEmpty());
-        verify(bookRepository, never()).findByAuthorsInAndIdNot(any(), any(), any());
-        verify(bookRepository, never()).findByCategoriesInAndIdNot(any(), any(), any());
-    }
+                List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
 
-    @Test
-    void givenAuthorWithOnlyOneBook_whenGetSnowballSections_thenNoAuthorSection() {
-        BookEntity book = buildBookEntityForSnowball(1L, "Enig Boek", List.of("Auteur X"), List.of());
-        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
-        when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of());
+                assertTrue(result.isEmpty());
+                verify(bookRepository, never()).findByAuthorsInAndIdNot(any(), any(), any());
+                verify(bookRepository, never()).findByCategoriesInAndIdNot(any(), any(), any());
+        }
 
-        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+        @Test
+        void givenAuthorWithOnlyOneBook_whenGetSnowballSections_thenNoAuthorSection() {
+                BookEntity book = buildBookEntityForSnowball(1L, "Enig Boek", List.of("Auteur X"), List.of());
+                when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+                when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of());
 
-        assertTrue(result.isEmpty());
-    }
+                List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
 
-    @Test
-    void givenNoRelatedBooksByCategory_whenGetSnowballSections_thenNoCategorySection() {
-        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of("Fictie"));
-        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
-        when(bookRepository.findByCategoriesInAndIdNot(any(), any(), any())).thenReturn(List.of());
+                assertTrue(result.isEmpty());
+        }
 
-        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+        @Test
+        void givenNoRelatedBooksByCategory_whenGetSnowballSections_thenNoCategorySection() {
+                BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of("Fictie"));
+                when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+                when(bookRepository.findByCategoriesInAndIdNot(any(), any(), any())).thenReturn(List.of());
 
-        assertTrue(result.isEmpty());
-    }
+                List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
 
-    @Test
-    void givenStudentWithNoMatchingSchool_whenGetSnowballSections_thenBooksAreFiltered() {
-        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
-        BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
+                assertTrue(result.isEmpty());
+        }
 
-        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
-        when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of(related));
-        when(userRepository.findDetailedBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+        @Test
+        void givenStudentWithNoMatchingSchool_whenGetSnowballSections_thenBooksAreFiltered() {
+                BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
+                BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
 
-        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.STUDENT, STUDENT_UID);
+                when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+                when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of(related));
+                when(userRepository.findDetailedBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
 
-        assertTrue(result.isEmpty());
-    }
+                List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.STUDENT, STUDENT_UID);
 
-    @Test
-    void givenStudentWithMatchingSchool_whenGetSnowballSections_thenReturnsVisibleBooks() {
-        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
-        BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
-        BookInventoryEntity inv = buildInventory(school, "Campus Zuid", 2, 1);
-        related.setInventories(List.of(inv));
+                assertTrue(result.isEmpty());
+        }
 
-        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
-        when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of(related));
-        when(userRepository.findDetailedBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+        @Test
+        void givenStudentWithMatchingSchool_whenGetSnowballSections_thenReturnsVisibleBooks() {
+                BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
+                BookEntity related = buildBookEntityForSnowball(2L, "Boek B", List.of("Auteur X"), List.of());
+                BookInventoryEntity inv = buildInventory(school, "Campus Zuid", 2, 1);
+                related.setInventories(List.of(inv));
 
-        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.STUDENT, STUDENT_UID);
+                when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+                when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of(related));
+                when(userRepository.findDetailedBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
 
-        assertEquals(1, result.size());
-        assertEquals("AUTHOR", result.get(0).type());
-        assertEquals("Auteur X", result.get(0).value());
-        assertEquals(1, result.get(0).books().size());
-    }
+                List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.STUDENT, STUDENT_UID);
 
-    @Test
-    void givenBookWithMultipleCategories_whenGetSnowballSections_thenEachCategoryGetsOwnSection() {
-        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(), List.of("Fantasy", "Coming of age"));
-        BookEntity fantasyBook = buildBookEntityForSnowball(2L, "Boek B", List.of(), List.of("Fantasy"));
-        BookEntity comingOfAgeBook = buildBookEntityForSnowball(3L, "Boek C", List.of(), List.of("Coming of age"));
+                assertEquals(1, result.size());
+                assertEquals("AUTHOR", result.get(0).type());
+                assertEquals("Auteur X", result.get(0).value());
+                assertEquals(1, result.get(0).books().size());
+        }
 
-        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
-        when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Fantasy")), eq(1L), any(Pageable.class)))
-                .thenReturn(List.of(fantasyBook));
-        when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Coming of age")), eq(1L), any(Pageable.class)))
-                .thenReturn(List.of(comingOfAgeBook));
+        @Test
+        void givenBookWithMultipleCategories_whenGetSnowballSections_thenEachCategoryGetsOwnSection() {
+                BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of(),
+                                List.of("Fantasy", "Coming of age"));
+                BookEntity fantasyBook = buildBookEntityForSnowball(2L, "Boek B", List.of(), List.of("Fantasy"));
+                BookEntity comingOfAgeBook = buildBookEntityForSnowball(3L, "Boek C", List.of(),
+                                List.of("Coming of age"));
 
-        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
+                when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+                when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Fantasy")), eq(1L), any(Pageable.class)))
+                                .thenReturn(List.of(fantasyBook));
+                when(bookRepository.findByCategoriesInAndIdNot(eq(List.of("Coming of age")), eq(1L),
+                                any(Pageable.class)))
+                                .thenReturn(List.of(comingOfAgeBook));
 
-        assertEquals(2, result.size());
-        assertEquals("Fantasy", result.get(0).value());
-        assertEquals(1, result.get(0).books().size());
-        assertEquals("Coming of age", result.get(1).value());
-        assertEquals(1, result.get(1).books().size());
-    }
-    @Test
-    void givenStudentRole_whenSnowballContainsDidacticBook_thenDidacticBookIsFilteredOut() {
-        BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
-        BookEntity didacticBook = buildBookEntityForSnowball(2L, "Didactisch Boek", List.of("Auteur X"), List.of());
-        didacticBook.setDidacticTag(true);
-        BookInventoryEntity inv = buildInventory(school, "Campus Zuid", 2, 1);
-        didacticBook.setInventories(List.of(inv));
+                List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.TEACHER, null);
 
-        when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
-        when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of(didacticBook));
+                assertEquals(2, result.size());
+                assertEquals("Fantasy", result.get(0).value());
+                assertEquals(1, result.get(0).books().size());
+                assertEquals("Coming of age", result.get(1).value());
+                assertEquals(1, result.get(1).books().size());
+        }
 
-        List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.STUDENT, STUDENT_UID);
+        @Test
+        void givenStudentRole_whenSnowballContainsDidacticBook_thenDidacticBookIsFilteredOut() {
+                BookEntity book = buildBookEntityForSnowball(1L, "Boek A", List.of("Auteur X"), List.of());
+                BookEntity didacticBook = buildBookEntityForSnowball(2L, "Didactisch Boek", List.of("Auteur X"),
+                                List.of());
+                didacticBook.setDidacticTag(true);
+                BookInventoryEntity inv = buildInventory(school, "Campus Zuid", 2, 1);
+                didacticBook.setInventories(List.of(inv));
 
-        assertTrue(result.isEmpty());
-    }
+                when(bookRepository.findDetailedById(1L)).thenReturn(Optional.of(book));
+                when(bookRepository.findByAuthorsInAndIdNot(any(), any(), any())).thenReturn(List.of(didacticBook));
 
-//       region Helpers
+                List<SnowballSectionDTO> result = bookService.getSnowballSections(1L, UserRoles.STUDENT, STUDENT_UID);
+
+                assertTrue(result.isEmpty());
+        }
+
+        // region Helpers
 
         private void stubStudentSchoolLookup() {
                 when(userRepository.findDetailedBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
@@ -2077,17 +2357,19 @@ class BookServiceTest {
                 inventory.setAvailableCopies(availableCopies);
                 return inventory;
         }
-    private BookEntity buildBookEntityForSnowball(Long id, String title, List<String> authors, List<String> categories) {
-        BookEntity b = new BookEntity();
-        b.setId(id);
-        b.setTitle(title);
-        b.setAuthors(new ArrayList<>(authors));
-        b.setCategories(new ArrayList<>(categories));
-        b.setInventories(new ArrayList<>());
-        b.setIsbn("978-" + id);
-        b.setRating(4.0);
-        return b;
-    }
 
-//    endregion
+        private BookEntity buildBookEntityForSnowball(Long id, String title, List<String> authors,
+                        List<String> categories) {
+                BookEntity b = new BookEntity();
+                b.setId(id);
+                b.setTitle(title);
+                b.setAuthors(new ArrayList<>(authors));
+                b.setCategories(new ArrayList<>(categories));
+                b.setInventories(new ArrayList<>());
+                b.setIsbn("978-" + id);
+                b.setRating(4.0);
+                return b;
+        }
+
+        // endregion
 }

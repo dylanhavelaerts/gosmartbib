@@ -97,13 +97,14 @@ public class BookService {
         return toDTO(previewBook);
     }
 
-    // AANGEPAST: 4 argumenten (inclusief Integer copies), passend bij de BookController
+    // AANGEPAST: 4 argumenten (inclusief Integer copies), passend bij de
+    // BookController
     public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer copies) {
         BookEntity newBook = buildBookEntityFromGoogle(isbn);
-        
+
         // Zorg dat er altijd minimaal 1 copy is als er null wordt meegegeven
         int totalCopies = (copies != null && copies > 0) ? copies : 1;
-        
+
         applySingleInventoryForCurrentUser(newBook, smartschoolUid, campus, totalCopies, totalCopies);
         recomputeBookCopyTotals(newBook);
         BookEntity savedBook = bookRepository.save(newBook);
@@ -243,6 +244,7 @@ public class BookService {
                     request.language(),
                     request.categories(),
                     request.labels(),
+                    request.readingLevel(),
                     request.minPageCount(),
                     request.maxPageCount(),
                     request.minPubYear(),
@@ -260,7 +262,9 @@ public class BookService {
                         request.language(),
                         request.categories(),
                         request.labels(),
-                        Boolean.TRUE.equals(request.didacticOnly()), // null-safe unbox moet erbij anders leerkrachtenpad geeft errors
+                        request.readingLevel(),
+                        Boolean.TRUE.equals(request.didacticOnly()), // null-safe unbox moet erbij anders
+                                                                     // leerkrachtenpad geeft errors
                         request.minPageCount(),
                         request.maxPageCount(),
                         request.minPubYear(),
@@ -648,7 +652,7 @@ public class BookService {
         if (!book.getAuthors().isEmpty()) {
             String mainAuthor = book.getAuthors().get(0);
             List<BookDTO> authorBooks = bookRepository
-                    .findByAuthorsInAndIdNot(book.getAuthors(), bookId,top12)
+                    .findByAuthorsInAndIdNot(book.getAuthors(), bookId, top12)
                     .stream()
                     .filter(b -> canSeeDidactic(callerRole) || !b.isDidacticTag())
                     .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
@@ -657,13 +661,11 @@ public class BookService {
 
             if (!authorBooks.isEmpty()) {
                 sections.add(new SnowballSectionDTO(
-                        "AUTHOR", mainAuthor, authorBooks
-                ));
+                        "AUTHOR", mainAuthor, authorBooks));
             }
         }
 
-
-//        categorieeen
+        // categorieeen
         if (!book.getCategories().isEmpty()) {
             for (String category : book.getCategories()) {
                 List<BookDTO> categoryBooks = bookRepository
@@ -682,7 +684,7 @@ public class BookService {
         return sections;
     }
 
-// region Helper functies
+    // region Helper functies
     private BookEntity buildBookEntityFromGoogle(String isbn) {
         String url = UriComponentsBuilder
                 .fromUriString(googleBooksApiUrl)
@@ -696,14 +698,17 @@ public class BookService {
                         : "too-short");
 
         GoogleBooksResponse response = null;
-        
+
         try {
             // De eerste API Call (met fout-afvanging)
             response = restTemplate.getForObject(url, GoogleBooksResponse.class);
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            // Dit vangt fouten zoals 429 (Too Many Requests) of 403 (Quota Exceeded) netjes af
-            log.error("Google API weigerde het verzoek! Status: {}, Reden: {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("De Google API weigert het verzoek tijdelijk (Status " + e.getStatusCode() + "). Wacht even en probeer het opnieuw.");
+            // Dit vangt fouten zoals 429 (Too Many Requests) of 403 (Quota Exceeded) netjes
+            // af
+            log.error("Google API weigerde het verzoek! Status: {}, Reden: {}", e.getStatusCode(),
+                    e.getResponseBodyAsString());
+            throw new RuntimeException("De Google API weigert het verzoek tijdelijk (Status " + e.getStatusCode()
+                    + "). Wacht even en probeer het opnieuw.");
         } catch (Exception e) {
             log.error("Onverwachte fout bij ophalen ISBN: {}", e.getMessage(), e);
             throw new RuntimeException("Er ging iets mis bij het communiceren met Google Books.");
@@ -738,14 +743,15 @@ public class BookService {
         book.setInventories(new ArrayList<>());
         book.setTotalCopies(0);
         book.setAvailableCopies(0);
-        
+
         // --- NIEUW: Bulletproof Link Extractie mét Titel-Check ---
         String finalReaderLink = null;
-        
+
         try {
             String originalTitle = book.getTitle();
             String originalTitleLower = originalTitle.toLowerCase().trim();
-            String authorQuery = (book.getAuthors() != null && !book.getAuthors().isEmpty()) ? book.getAuthors().get(0) : "";
+            String authorQuery = (book.getAuthors() != null && !book.getAuthors().isEmpty()) ? book.getAuthors().get(0)
+                    : "";
             String searchQuery = (originalTitle + " " + authorQuery).trim();
 
             java.net.URI searchUri = UriComponentsBuilder
@@ -760,11 +766,11 @@ public class BookService {
 
             if (searchResponse != null && searchResponse.get("items") instanceof java.util.List) {
                 java.util.List<?> items = (java.util.List<?>) searchResponse.get("items");
-                
+
                 for (Object itemObj : items) {
                     if (itemObj instanceof java.util.Map) {
                         java.util.Map<?, ?> item = (java.util.Map<?, ?>) itemObj;
-                        
+
                         // 1. Controleer of de titel van dit zoekresultaat wel overeenkomt met ons boek!
                         boolean isTitleMatch = false;
                         if (item.get("volumeInfo") instanceof java.util.Map) {
@@ -773,12 +779,13 @@ public class BookService {
 
                             if (itemTitleObj instanceof String) {
                                 String itemTitleLower = ((String) itemTitleObj).toLowerCase().trim();
-                                
+
                                 // We checken of de titels sterk overeenkomen
-                                // (Gelijk aan elkaar, of de ene is een onderdeel van de andere i.v.m. ondertitels)
+                                // (Gelijk aan elkaar, of de ene is een onderdeel van de andere i.v.m.
+                                // ondertitels)
                                 if (itemTitleLower.equals(originalTitleLower) ||
-                                    itemTitleLower.startsWith(originalTitleLower) ||
-                                    originalTitleLower.startsWith(itemTitleLower)) {
+                                        itemTitleLower.startsWith(originalTitleLower) ||
+                                        originalTitleLower.startsWith(itemTitleLower)) {
                                     isTitleMatch = true;
                                 }
                             }
@@ -787,7 +794,7 @@ public class BookService {
                         // 2. Als de titel klopt, dán pas kijken we naar de lees-link
                         if (isTitleMatch && item.get("accessInfo") instanceof java.util.Map) {
                             java.util.Map<?, ?> accessInfo = (java.util.Map<?, ?>) item.get("accessInfo");
-                            
+
                             Object viewabilityObj = accessInfo.get("viewability");
                             Object webReaderLinkObj = accessInfo.get("webReaderLink");
 
@@ -795,7 +802,8 @@ public class BookService {
                                 String viewability = (String) viewabilityObj;
                                 String webReaderLink = (String) webReaderLinkObj;
 
-                                if (!"NO_PAGES".equals(viewability) && webReaderLink.contains("play.google.com/books/reader")) {
+                                if (!"NO_PAGES".equals(viewability)
+                                        && webReaderLink.contains("play.google.com/books/reader")) {
                                     finalReaderLink = webReaderLink.replace("http://", "https://");
                                     break; // Perfecte match gevonden, stop met zoeken!
                                 }
