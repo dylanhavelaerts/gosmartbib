@@ -523,6 +523,12 @@ align-self: center;
     border-bottom: 1px solid #e4d5de;
   }
 
+  .detailCoverWrapper {
+    max-width: 220px;
+    width: 100%;
+    align-self: center;
+  }
+
   .detailRight {
     width: 100%;
     padding: 1rem 0 1rem;
@@ -590,4 +596,9 @@ align-self: center;
     font-size: 1rem;
   }
 
+}
+
+.authorLink:hover {
+  text-decoration: underline;
+  color: #0056b3;
 }

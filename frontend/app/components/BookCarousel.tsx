@@ -2,6 +2,7 @@
 import { useRef } from "react";
 import { SnowballSection } from "@/app/interfaces/Book";
 import BookCard from "@/app/catalog/bookCard";
+import Link from "next/link";
 import "./BookCarousel.css";
 
 export default function BookCarousel({
@@ -27,7 +28,20 @@ export default function BookCarousel({
 
   return (
     <section className="snowball-section">
-      <h2 className="snowball-title">{title}</h2>
+      
+      <div className="carouselHeader">
+        <h2 className="snowball-title">{title}</h2>
+        
+        {section.type === "AUTHOR" && (
+          <Link
+            href={`/catalog?search=${encodeURIComponent(section.value)}`}
+            className="carouselAuthorSearchBtn"
+          >
+            Bekijk alle boeken
+          </Link>
+        )}
+      </div>
+
       <div className="snowball-wrapper">
         <button
           className="snowball-btn snowball-btn--left"

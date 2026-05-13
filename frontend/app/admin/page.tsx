@@ -28,7 +28,7 @@ const teacherWidgets = [
     title: "Statistieken",
     description:
       "Bekijk statistieken over populaire boeken en gebruikersactiviteit",
-    href: "/admin",
+    href: "/admin/statistics",
   },
 ];
 

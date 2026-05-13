@@ -10,7 +10,7 @@
   font-size: 1.15rem;
   font-weight: 700;
   color: #8e2446;
-  margin: 0 0 1.25rem 0;
+  margin: 0; 
 }
 
 .snowball-wrapper {
@@ -21,7 +21,7 @@
 
 .snowball-track {
   display: flex;
-  gap: 1rem;
+  gap: 2.4rem;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
@@ -70,4 +70,38 @@
   .snowball-card {
     flex: 0 0 110px;
   }
+}
+
+.carouselHeader {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 1.25rem; 
+}
+
+.carouselTitle {
+  margin-bottom: 0;
+}
+
+.carouselAuthorSearchBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.9rem;
+  background-color: #8e2446;
+  color: white;
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(142, 36, 70, 0.2);
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.carouselAuthorSearchBtn:hover {
+  background-color: #6e1a35;
+  color: white;
+  transform: translateY(-1px);
 }

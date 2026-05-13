@@ -28,6 +28,7 @@ Dit project maakt gebruik van een moderne tech-stack:
 - Next.js (v16.1.6)
 - React (v19)
 - TypeScript
+- Recharts (voor statistieken)
 
 **Backend**
 - Java 17
