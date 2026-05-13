@@ -56,6 +56,9 @@ export default function LoansOverviewPage() {
   const PAGE_SIZE = 20;
   const [activeTotalElements, setActiveTotalElements] = useState(0);
   const [historyTotalElements, setHistoryTotalElements] = useState(0);
+  const [overdueTotal, setOverdueTotal] = useState(0);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -95,7 +98,17 @@ export default function LoansOverviewPage() {
   }, [selectedClassId, activePage]);
 
   useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    fetch(`${apiUrl}/statistics/overview`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => setOverdueTotal(data.overdueLoans))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const fetchHistory = async () => {
+      setIsHistoryLoading(true);
+      setHistoryError(null);
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
         const classParam =
@@ -104,12 +117,16 @@ export default function LoansOverviewPage() {
           `${apiUrl}/loans/school/history?page=${historyPage - 1}&size=${PAGE_SIZE}${classParam}`,
           { credentials: "include" },
         );
-        if (!res.ok) return;
+        if (!res.ok) throw new Error("Kon de geschiedenis niet ophalen.");
         const data = await res.json();
         setLoanHistory(data.content);
         setHistoryTotalPages(data.totalPages);
         setHistoryTotalElements(data.totalElements);
-      } catch {}
+      } catch (err: any) {
+        setHistoryError(err.message || "Er is een onbekende fout opgetreden.");
+      } finally {
+        setIsHistoryLoading(false);
+      }
     };
     fetchHistory();
   }, [selectedClassId, historyPage]);
@@ -141,12 +158,6 @@ export default function LoansOverviewPage() {
     return { text: `Nog ${diffDays} dagen`, cls: "status-ok" };
   };
 
-  const overdueCount = activeLoans.filter((l) => {
-    const due = new Date(l.dueDate);
-    due.setHours(0, 0, 0, 0);
-    return due < new Date(new Date().setHours(0, 0, 0, 0));
-  }).length;
-
   return (
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
       <main className="loansOverviewPage pageLayout">
@@ -163,9 +174,9 @@ export default function LoansOverviewPage() {
                 <strong>{activeTotalElements}</strong> actieve leningen
               </span>
 
-              {overdueCount > 0 && (
+              {overdueTotal > 0 && (
                 <span className="statChip statChip--late">
-                  <strong>{overdueCount}</strong> te laat
+                  <strong>{overdueTotal}</strong> te laat
                 </span>
               )}
             </div>
@@ -318,6 +329,16 @@ export default function LoansOverviewPage() {
               />
             </div>
           )
+        ) : isHistoryLoading ? (
+          <div className="loadingState">Gegevens ophalen...</div>
+        ) : historyError ? (
+          <div className="errorState">
+            <h3>Fout bij ophalen</h3>
+            <p>{historyError}</p>
+            <button onClick={() => setHistoryPage((p) => p)}>
+              Probeer opnieuw
+            </button>
+          </div>
         ) : loanHistory.length === 0 ? (
           <div className="emptyState">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
