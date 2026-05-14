@@ -1,0 +1,141 @@
+package edu.ap.gosmartlib.services.oneRoster;
+
+import edu.ap.gosmartlib.dto.sync.SchoolSyncResultDTO;
+import edu.ap.gosmartlib.dto.sync.SyncResultDTO;
+import edu.ap.gosmartlib.dto.sync.SyncSummaryDTO;
+import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
+import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
+import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
+import edu.ap.gosmartlib.services.users.UserDeletionService;
+import edu.ap.gosmartlib.util.OneRosterUtils;
+import edu.ap.gosmartlib.util.UserRoles;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class OneRosterSyncService {
+
+    private final SmartschoolOneRosterAuthService authService;
+    private final SmartschoolOneRosterClient client;
+    private final UserRepository userRepository;
+    private final UserDeletionService userDeletionService;
+    private final SchoolIntegrationRepository schoolIntegrationRepository;
+
+    public SyncSummaryDTO syncAll() {
+        List<SchoolIntegrationEntity> integrations =
+                schoolIntegrationRepository.findAllByOnerosterEnabledTrue();
+
+        List<SchoolSyncResultDTO> results = new ArrayList<>();
+        int totalAdded = 0;
+        int totalRemoved = 0;
+
+        for (SchoolIntegrationEntity integration : integrations) {
+            SyncResultDTO result = syncSchool(integration);
+            results.add(new SchoolSyncResultDTO(
+                    integration.getSchool().getDomain(),
+                    result.added(),
+                    result.removed(),
+                    result.errors()));
+            totalAdded += result.added();
+            totalRemoved += result.removed();
+        }
+
+        log.info("Full sync completed: {} added, {} removed across {} schools",
+                totalAdded, totalRemoved, integrations.size());
+
+        return new SyncSummaryDTO(totalAdded, totalRemoved, results);
+    }
+
+    @Transactional
+    public SyncResultDTO syncSchool(SchoolIntegrationEntity integration) {
+        log.info("Starting OneRoster sync for school {}", integration.getSchool().getDomain());
+
+        List<String> errors = new ArrayList<>();
+        int added = 0;
+        int removed = 0;
+
+        try {
+            String accessToken = authService.getAccessToken(integration);
+            List<Map<String, Object>> onerosterUsers = client.getUsers(integration, accessToken);
+
+            Map<String, Map<String, Object>> onerosterByUid = onerosterUsers.stream()
+                    .filter(u -> OneRosterUtils.extractSmartschoolUid(u) != null)
+                    .collect(Collectors.toMap(
+                            OneRosterUtils::extractSmartschoolUid,
+                            u -> u,
+                            (a, b) -> a));
+
+            Map<String, UserEntity> dbByUid = userRepository
+                    .findAllBySchool_IdOrderBySmartschoolUidAsc(integration.getSchool().getId())
+                    .stream()
+                    .collect(Collectors.toMap(UserEntity::getSmartschoolUid, u -> u));
+
+            for (Map.Entry<String, Map<String, Object>> entry : onerosterByUid.entrySet()) {
+                if (!dbByUid.containsKey(entry.getKey())) {
+                    try {
+                        createUser(entry.getValue(), integration.getSchool());
+                        added++;
+                    } catch (Exception e) {
+                        log.error("Failed to create user {}: {}", entry.getKey(), e.getMessage());
+                        errors.add("Maken van gebruiker mislukt voor " + entry.getKey() + ": " + e.getMessage());
+                    }
+                }
+            }
+
+            for (Map.Entry<String, UserEntity> entry : dbByUid.entrySet()) {
+                if (!onerosterByUid.containsKey(entry.getKey())) {
+                    try {
+                        userDeletionService.deleteUser(entry.getValue());
+                        removed++;
+                    } catch (Exception e) {
+                        log.error("Failed to delete user {}: {}", entry.getKey(), e.getMessage());
+                        errors.add("Verwijderen mislukt voor " + entry.getKey() + ": " + e.getMessage());
+                    }
+                }
+            }
+
+            integration.setLastSyncAt(LocalDateTime.now());
+            integration.setLastError(errors.isEmpty() ? null : String.join("; ", errors));
+            schoolIntegrationRepository.save(integration);
+
+            log.info("Sync completed for school {}: {} added, {} removed, {} errors",
+                    integration.getSchool().getDomain(), added, removed, errors.size());
+
+        } catch (Exception e) {
+            log.error("Sync failed for school {}: {}", integration.getSchool().getDomain(), e.getMessage());
+            integration.setLastError("Sync mislukt: " + e.getMessage());
+            schoolIntegrationRepository.save(integration);
+            errors.add("Sync mislukt: " + e.getMessage());
+        }
+
+        return new SyncResultDTO(added, removed, errors);
+    }
+
+    private void createUser(Map<String, Object> onerosterUser, SchoolEntity school) {
+        String uid = OneRosterUtils.extractSmartschoolUid(onerosterUser);
+        String sourcedId = (String) onerosterUser.get("sourcedId");
+        String role = (String) onerosterUser.get("role");
+
+        UserEntity user = new UserEntity();
+        user.setSmartschoolUid(uid);
+        user.setOnerosterSourcedId(sourcedId);
+        user.setSchool(school);
+        user.setRole(UserRoles.fromOneRoster(role));
+        userRepository.save(user);
+        log.info("Created user {} from OneRoster", uid);
+    }
+}
