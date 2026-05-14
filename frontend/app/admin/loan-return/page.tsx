@@ -43,6 +43,22 @@ export default function GeneralLoanReturn() {
             </p>
           </div>
         </a>
+        <a href="/admin/loans-overview" className="action-card">
+          <div className="action-icon">
+            <img
+              src="/history.png"
+              alt="Leenbeheer"
+              className="action-icon-img"
+            />
+          </div>
+          <div className="action-body">
+            <p className="action-title">Leenbeheer</p>
+            <p className="action-description">
+              Bekijk alle actieve leningen en de ontleengeschiedenis binnen jouw
+              school
+            </p>
+          </div>
+        </a>
       </div>
     </div>
   );

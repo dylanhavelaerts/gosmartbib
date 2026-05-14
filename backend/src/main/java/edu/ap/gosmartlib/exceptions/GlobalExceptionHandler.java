@@ -36,11 +36,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("message", ex.getMessage(), "status", "404"));
     }
-    @ExceptionHandler(BookAlreadyInListException.class)
-    public ResponseEntity<Map<String, String>> handleBookAlreadyInList(BookAlreadyInListException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("message", ex.getMessage()));
-    }
 
 
     @ExceptionHandler(BookNotFoundException.class)
@@ -86,4 +81,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", "Er is een onverwachte fout opgetreden", "status", "500"));
     }
+    @ExceptionHandler(UnauthorizedRoleException.class)
+    public ResponseEntity<Map<String, String>> handleUnauthorizedRole(UnauthorizedRoleException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", ex.getMessage(), "status", "403"));
+    }
+
 }

@@ -1,0 +1,363 @@
+/* --- LAYOUT & HEADER --- */
+.loansOverviewPage.pageLayout {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 4.5rem);
+  box-sizing: border-box;
+  padding: 1rem 2.5rem 2rem;
+  margin-top: 4.5rem;
+}
+
+.loansOverviewPage .pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.loansOverviewPage .pageHeaderText h1 {
+  margin: 0;
+  color: #7a1d3f;
+  font-size: 2rem;
+}
+
+.loansOverviewPage .pageSubtitle {
+  color: #7b6870;
+  margin-top: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.loansOverviewPage .statsRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.loansOverviewPage .statChip {
+  background-color: #e4d9dc;
+  color: #3e0c1c;
+  padding: 0.35rem 0.9rem;
+  border-radius: 1rem;
+  font-size: 0.88rem;
+}
+
+.loansOverviewPage .statChip--late {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+}
+
+/* --- FILTER BAR --- */
+.loansOverviewPage .filterBar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1.25rem;
+  background-color: #fdfcfd;
+  border: 1px solid #ece6f0;
+  border-radius: 0.5rem;
+}
+
+.loansOverviewPage .filterLabel {
+  font-size: 0.9rem;
+  color: #555;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.loansOverviewPage .classSelect {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid #d8cdd1;
+  border-radius: 0.35rem;
+  font-size: 0.9rem;
+  color: #3e0c1c;
+  background-color: #fff;
+  cursor: pointer;
+  min-width: 220px;
+}
+
+.loansOverviewPage .classSelect:focus {
+  outline: none;
+  border-color: #8e2446;
+  box-shadow: 0 0 0 2px rgba(142, 36, 70, 0.15);
+}
+
+/* --- TABS --- */
+.loansOverviewPage .tabBar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #ece6f0;
+  margin-bottom: 1.5rem;
+}
+
+.loansOverviewPage .tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #7b6870;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.loansOverviewPage .tab:hover {
+  color: #3e0c1c;
+}
+
+.loansOverviewPage .tab--active {
+  color: #8e2446;
+  border-bottom-color: #8e2446;
+}
+
+.loansOverviewPage .tabBadge {
+  background-color: #e4d9dc;
+  color: #8e2446;
+  padding: 0.05rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.loansOverviewPage .tab--active .tabBadge {
+  background-color: #8e2446;
+  color: #fff;
+}
+
+/* --- TABEL --- */
+.loansOverviewPage .historyTableWrapper {
+  border: 1px solid #ece6f0;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  background-color: #fff;
+}
+
+.loansOverviewPage .historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 700px;
+}
+
+.loansOverviewPage .historyTable th {
+  background-color: #fdfafb;
+  color: #8e2446;
+  font-weight: bold;
+  padding: 1rem;
+  border-bottom: 2px solid #ece6f0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.loansOverviewPage .historyTable td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #ece6f0;
+  color: #333;
+  font-size: 0.92rem;
+  vertical-align: middle;
+}
+
+.loansOverviewPage .historyTable tr:last-child td {
+  border-bottom: none;
+}
+
+.loansOverviewPage .historyTable tr:hover {
+  background-color: #fdfcfd;
+}
+
+.loansOverviewPage .bookTitleCell {
+  font-weight: bold;
+  color: #222;
+  margin-bottom: 0.2rem;
+}
+
+.loansOverviewPage .bookAuthorCell {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* --- VERVALDATUM IN TABEL --- */
+.loansOverviewPage .dueDateBadge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: bold;
+  margin-bottom: 0.2rem;
+}
+
+.loansOverviewPage .dueDateSub {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.loansOverviewPage .status-late {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+}
+
+.loansOverviewPage .status-soon {
+  background-color: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffe0b2;
+}
+
+.loansOverviewPage .status-ok {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+/* --- RETOURNEER KNOP IN TABEL --- */
+.loansOverviewPage .returnButtonSmall {
+  display: inline-block;
+  white-space: nowrap;
+  text-decoration: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: #8e2446;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: background-color 0.15s, transform 0.15s;
+}
+
+.loansOverviewPage .returnButtonSmall:hover {
+  background: #7a1e3b;
+  transform: translateY(-1px);
+}
+
+/* --- STATUS / BADGES --- */
+.loansOverviewPage .statusReturned {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+  border: 1px solid #c8e6c9;
+}
+
+.loansOverviewPage .qtyBadge {
+  background-color: #ece6f0;
+  color: #555;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+/* --- KLAS CHIPS --- */
+.loansOverviewPage .classChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.loansOverviewPage .classChip {
+  background-color: #ece6f0;
+  color: #5c3355;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.loansOverviewPage .classChip--unknown {
+  color: #aaa;
+  background-color: #f5f5f5;
+}
+
+/* --- LEGE / ERROR STATES --- */
+.loansOverviewPage .emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #888;
+  background-color: #fdfcfd;
+  border: 1px dashed #d8cdd1;
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.loansOverviewPage .emptyState svg {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 1rem;
+  color: #d8cdd1;
+}
+
+.loansOverviewPage .emptyTitle {
+  font-weight: bold;
+  color: #3e0c1c;
+  margin-bottom: 0.25rem;
+  font-size: 1.05rem;
+}
+
+.loansOverviewPage .emptyText {
+  font-size: 0.9rem;
+  max-width: 400px;
+}
+
+.loansOverviewPage .loadingState {
+  padding: 3rem;
+  text-align: center;
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.loansOverviewPage .errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 0.5rem;
+  color: #c62828;
+  text-align: center;
+}
+
+.loansOverviewPage .errorState h3 {
+  margin: 0 0 0.5rem 0;
+  color: #b71c1c;
+}
+
+.loansOverviewPage .errorState button {
+  margin-top: 1rem;
+  background-color: #8e2446;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+  .loansOverviewPage.pageLayout {
+    padding: 1rem 1.5rem 2rem;
+  }
+  .loansOverviewPage .pageHeader {
+    flex-direction: column;
+  }
+}
