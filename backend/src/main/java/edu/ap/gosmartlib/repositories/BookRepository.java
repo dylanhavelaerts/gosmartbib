@@ -74,6 +74,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                 LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%'))
                 OR LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))
                 OR LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))
+                OR REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')
+            
             )
             """)
     Page<BookEntity> searchByTitleOrAuthorOrCategory(@Param("query") String query,
@@ -195,6 +197,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                   LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%'))
                   OR LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))
                   OR LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))
+                  OR REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')
               )
             """, countQuery = """
             SELECT COUNT(DISTINCT b)
@@ -212,6 +215,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                   LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%'))
                   OR LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))
                   OR LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))
+                  OR REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')
               )
             """)
     Page<BookEntity> searchByTitleOrAuthorOrCategoryForSchool(
