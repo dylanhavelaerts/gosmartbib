@@ -28,13 +28,80 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
     List<BookEntity> findTop4BySpotlightTrueOrderByIdDesc();
 
     @EntityGraph(attributePaths = { "inventories", "inventories.school" })
+    @Query("""
+            SELECT DISTINCT b
+            FROM BookEntity b
+            WHERE b.spotlight = true
+              AND (:readingLevel IS NULL OR LOWER(b.readingLevel) = LOWER(:readingLevel))
+              AND (:includeDidactic = true OR b.didacticTag = false)
+              AND (
+                  :schoolId IS NULL OR EXISTS (
+                      SELECT 1
+                      FROM BookInventoryEntity inv
+                      WHERE inv.book = b
+                        AND inv.school.id = :schoolId
+                  )
+              )
+            ORDER BY b.id DESC
+            """)
+    List<BookEntity> findSpotlightBooksByReadingLevel(
+            @Param("readingLevel") String readingLevel,
+            @Param("includeDidactic") boolean includeDidactic,
+            @Param("schoolId") Long schoolId,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = { "inventories", "inventories.school" })
     List<BookEntity> findBySpotlightTrueOrderByIdDesc();
 
     @EntityGraph(attributePaths = { "inventories", "inventories.school" })
     List<BookEntity> findTop4ByOrderByIdDesc();
 
     @EntityGraph(attributePaths = { "inventories", "inventories.school" })
+    @Query("""
+            SELECT DISTINCT b
+            FROM BookEntity b
+            WHERE (:readingLevel IS NULL OR LOWER(b.readingLevel) = LOWER(:readingLevel))
+              AND (:includeDidactic = true OR b.didacticTag = false)
+              AND (
+                  :schoolId IS NULL OR EXISTS (
+                      SELECT 1
+                      FROM BookInventoryEntity inv
+                      WHERE inv.book = b
+                        AND inv.school.id = :schoolId
+                  )
+              )
+            ORDER BY b.id DESC
+            """)
+    List<BookEntity> findLatestBooksByReadingLevel(
+            @Param("readingLevel") String readingLevel,
+            @Param("includeDidactic") boolean includeDidactic,
+            @Param("schoolId") Long schoolId,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = { "inventories", "inventories.school" })
     List<BookEntity> findTop4ByOrderByRatingDesc();
+
+    @EntityGraph(attributePaths = { "inventories", "inventories.school" })
+    @Query("""
+            SELECT DISTINCT b
+            FROM BookEntity b
+            WHERE (:readingLevel IS NULL OR LOWER(b.readingLevel) = LOWER(:readingLevel))
+              AND (:includeDidactic = true OR b.didacticTag = false)
+              AND (
+                  :schoolId IS NULL OR EXISTS (
+                      SELECT 1
+                      FROM BookInventoryEntity inv
+                      WHERE inv.book = b
+                        AND inv.school.id = :schoolId
+                  )
+              )
+            ORDER BY COALESCE(b.rating, 0) DESC, b.id DESC
+            """)
+    List<BookEntity> findTopRatedBooksByReadingLevel(
+            @Param("readingLevel") String readingLevel,
+            @Param("includeDidactic") boolean includeDidactic,
+            @Param("schoolId") Long schoolId,
+            Pageable pageable);
 
     @EntityGraph(attributePaths = { "inventories", "inventories.school" })
     List<BookEntity> findTop4ByDidacticTagTrueOrderByRatingDesc();
@@ -75,7 +142,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                 OR LOWER(a) LIKE LOWER(CONCAT('%', :query, '%'))
                 OR LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))
                 OR REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')
-            
+
             )
             """)
     Page<BookEntity> searchByTitleOrAuthorOrCategory(@Param("query") String query,
@@ -127,7 +194,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                 LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR
                 LOWER(a) LIKE LOWER(CONCAT('%', :query, '%')) OR
                 LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))OR
-                REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')    
+                REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')
             )
             AND (:language IS NULL OR LOWER(b.language) = LOWER(:language))
             AND (:readingLevel IS NULL OR TRIM(:readingLevel) = '' OR LOWER(b.readingLevel) = LOWER(:readingLevel))
@@ -298,7 +365,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                 LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR
                 LOWER(a) LIKE LOWER(CONCAT('%', :query, '%')) OR
                 LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))OR
-                REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')    
+                REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')
             )
             AND (:language IS NULL OR LOWER(b.language) = LOWER(:language))
             AND (:readingLevel IS NULL OR TRIM(:readingLevel) = '' OR LOWER(b.readingLevel) = LOWER(:readingLevel))

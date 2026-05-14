@@ -14,6 +14,9 @@ import { Book } from "./interfaces/Book";
 import "./dashboard.css";
 
 type TabId = "spotlight" | "new";
+type ReadingLevel = "A" | "B" | "C" | "D";
+
+const READING_LEVELS: ReadingLevel[] = ["A", "B", "C", "D"];
 
 const GREETINGS = [
   "Klaar om te lezen?",
@@ -24,12 +27,44 @@ const GREETINGS = [
   "Tijd voor een nieuw avontuur tussen de pagina's!",
 ];
 
+function getDefaultReadingLevelFromClassName(
+  className?: string | null,
+): ReadingLevel {
+  if (!className) return "A";
+
+  const year = Number(className.trim().charAt(0));
+
+  if (year === 1 || year === 2) return "A";
+  if (year === 3 || year === 4) return "B";
+  if (year === 5 || year === 6 || year === 7) return "C";
+
+  return "A";
+}
+
+function getDefaultReadingLevelForUser(user: {
+  role?: string;
+  classes?: {
+    name?: string | null;
+  }[];
+} | null): ReadingLevel {
+  if (user?.role !== "STUDENT") {
+    return "A";
+  }
+
+  const className = user.classes?.[0]?.name;
+
+  return getDefaultReadingLevelFromClassName(className);
+}
+
 export default function Home() {
   const [selected, setSelected] = useState<TabId>("spotlight");
   const [books, setBooks] = useState<Book[]>([]);
+  const [booksLoading, setBooksLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [greeting, setGreeting] = useState(GREETINGS[0]);
   const [firstName, setFirstName] = useState<string | null>(null);
+  const [selectedReadingLevel, setSelectedReadingLevel] =
+  useState<ReadingLevel | null>(null);
 
   useEffect(() => {
     setGreeting(GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
@@ -43,52 +78,109 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-  useEffect(() => {
-    if (authLoading || !user?.smartschoolUid) return;
+  const activeReadingLevel =
+  selectedReadingLevel ?? getDefaultReadingLevelForUser(user);
 
-    fetch(`${apiUrl}/users/display-names`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uids: [user.smartschoolUid] }),
+useEffect(() => {
+  if (authLoading || !user?.smartschoolUid) return;
+
+  const uid = user.smartschoolUid;
+
+  fetch(`${apiUrl}/users/display-names`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uids: [uid] }),
+  })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => {
+      if (data?.success && data.displayNames?.[uid]) {
+        const fullName: string = data.displayNames[uid];
+        setFirstName(fullName.split(" ")[0]);
+      }
     })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.success && data.displayNames?.[user.smartschoolUid]) {
-          const fullName: string = data.displayNames[user.smartschoolUid];
-          setFirstName(fullName.split(" ")[0]);
-        }
-      })
-      .catch(() => {});
-  }, [authLoading, user, apiUrl]);
+    .catch(() => {});
+}, [authLoading, user, apiUrl]);
 
   const cls = (id: TabId) =>
     `tabBtn ${selected === id ? "selectedCategory" : ""}`;
 
-  useEffect(() => {
-    if (authLoading || !user) return;
+useEffect(() => {
+  if (authLoading || !user) return;
 
-    const endpoint =
-      selected === "spotlight" ? "/books/spotlight" : "/books/latest";
+  let cancelled = false;
 
-    fetch(`${apiUrl}${endpoint}`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data: Book[]) => {
-        if (data.length > 0) {
-          setBooks(data);
-        } else {
-          // Fallback naar top-rated boeken als de lijst leeg is
-          return fetch(`${apiUrl}/books/top-rated`, {
-            credentials: "include",
-          })
-            .then((res) => res.json())
-            .then((fallbackData: Book[]) => setBooks(fallbackData));
+  const fetchBooks = async () => {
+    setBooksLoading(true);
+
+    try {
+      const endpoint =
+        selected === "spotlight"
+          ? `/books/spotlight?readingLevel=${encodeURIComponent(
+              activeReadingLevel,
+            )}`
+          : `/books/latest?readingLevel=${encodeURIComponent(
+        activeReadingLevel,
+      )}`;
+
+      const response = await fetch(`${apiUrl}${endpoint}`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Kon boeken niet laden.");
+      }
+
+      const data: Book[] = await response.json();
+
+      if (cancelled) return;
+
+        if (selected === "spotlight") {
+          if (data.length > 0) {
+            setBooks(data);
+            return;
+          }
+
+          const fallbackResponse = await fetch(
+            `${apiUrl}/books/top-rated?readingLevel=${encodeURIComponent(
+              activeReadingLevel,
+            )}`,
+            { credentials: "include" },
+          );
+
+          if (!fallbackResponse.ok) {
+            throw new Error("Kon aanbevolen boeken niet laden.");
+          }
+
+          const fallbackData: Book[] = await fallbackResponse.json();
+
+          if (!cancelled) {
+            setBooks(fallbackData);
+          }
+
+          return;
         }
-      })
-      .catch((error) => console.error("Fout bij laden boeken:", error));
-  }, [selected, apiUrl, authLoading, user]);
+
+      setBooks(data);
+    } catch (error) {
+      console.error("Fout bij laden boeken:", error);
+
+      if (!cancelled) {
+        setBooks([]);
+      }
+    } finally {
+      if (!cancelled) {
+        setBooksLoading(false);
+      }
+    }
+  };
+
+  fetchBooks();
+
+  return () => {
+    cancelled = true;
+  };
+}, [selected, activeReadingLevel, apiUrl, authLoading, user]);
 
   // --- Persoonlijke leeslijsten ophalen ---
   const fetchPersonalLists = useCallback(() => {
@@ -173,10 +265,32 @@ export default function Home() {
               <button className={cls("new")} onClick={() => setSelected("new")}>
                 Nieuw in bibliotheek
               </button>
+                <label className="spotlightLevelFilter">
+                  <span>Leesniveau</span>
+                  <select
+                    value={activeReadingLevel}
+                    onChange={(e) =>
+                      setSelectedReadingLevel(e.target.value as ReadingLevel)
+                    }
+                    aria-label={
+                      selected === "spotlight"
+                        ? "Kies leesniveau voor In de kijker"
+                        : "Kies leesniveau voor Nieuw in bibliotheek"
+                    }
+                  >
+                    {READING_LEVELS.map((level) => (
+                      <option key={level} value={level}>
+                        Leesniveau {level}
+                      </option>
+                    ))}
+                  </select>
+                </label>
             </nav>
 
             <div id="bookListDashboard">
-              {books.length > 0 ? (
+              {booksLoading ? (
+                <p className="dashboardBookMessage">Laden van boeken...</p>
+              ) : books.length > 0 ? (
                 books.map((book) => (
                   <BookCard
                     key={book.id}
@@ -187,7 +301,11 @@ export default function Home() {
                   />
                 ))
               ) : (
-                <p>Laden van boeken...</p>
+                <p className="dashboardBookMessage">
+                  {selected === "spotlight"
+                    ? `Geen boeken in de kijker voor leesniveau ${activeReadingLevel}.`
+                    : `Geen nieuwe boeken gevonden voor leesniveau ${activeReadingLevel}.`}
+                </p>
               )}
             </div>
           </div>

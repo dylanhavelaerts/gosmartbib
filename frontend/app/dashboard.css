@@ -109,9 +109,11 @@
 .tabs-nav {
   display: flex;
   gap: 1.5rem;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #e6dedb;
   margin-bottom: 1.5rem;
   margin-top: 0;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .tabBtn {
@@ -120,13 +122,73 @@
   padding: 1rem 0.5rem;
   cursor: pointer;
   font-size: 1.1rem;
-  color: #666;
-  transition: all 0.2s ease;
+  color: #6f625e;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.tabBtn:hover {
+  color: #8e1f42;
 }
 
 .selectedCategory {
   color: #8e1f42 !important;
-  border-bottom: 3px solid #8e1f42;
+  border-bottom-color: #8e1f42;
+  font-weight: 700;
+}
+
+.spotlightLevelFilter {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #5f514d;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.spotlightLevelFilter span {
+  white-space: nowrap;
+}
+
+.spotlightLevelFilter select {
+  border: 1px solid #e3d6d1;
+  border-radius: 999px;
+  background-color: #fffaf8;
+  color: #721935;
+  padding: 0.55rem 2.25rem 0.55rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 2px 8px rgba(114, 25, 53, 0.06);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.spotlightLevelFilter select:hover {
+  border-color: #8e1f42;
+  background-color: #ffffff;
+}
+
+.spotlightLevelFilter select:focus {
+  border-color: #8e1f42;
+  box-shadow: 0 0 0 3px rgba(142, 31, 66, 0.12);
+}
+
+.dashboardBookMessage {
+  grid-column: 1 / -1;
+  color: #6f625e;
+  background-color: #fffaf8;
+  border: 1px solid #eadfdb;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  margin: 0;
   font-weight: 600;
 }
 
@@ -243,6 +305,21 @@
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 2rem;
   }
+
+  .tabs-nav {
+    gap: 0.75rem 1rem;
+  }
+
+  .spotlightLevelFilter {
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+    padding-bottom: 0.75rem;
+  }
+
+  .spotlightLevelFilter select {
+    max-width: 180px;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -270,4 +347,3 @@
     gap: 2.5rem;
   }
 }
-

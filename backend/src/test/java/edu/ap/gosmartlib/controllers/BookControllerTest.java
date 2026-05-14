@@ -151,7 +151,7 @@ class BookControllerTest {
                 buildDTO(2L, "Spotlight Book 2"));
         when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null)).thenReturn(expected);
 
-        List<BookDTO> result = bookController.getBooksInSpotlight(null);
+        List<BookDTO> result = bookController.getBooksInSpotlight(null, null);
 
         assertEquals(expected, result);
         verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
@@ -161,11 +161,42 @@ class BookControllerTest {
     void givenNoSpotlightBooksExist_whenGetBooksInSpotlight_thenReturnsEmptyList() {
         when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null)).thenReturn(List.of());
 
-        List<BookDTO> result = bookController.getBooksInSpotlight(null);
+        List<BookDTO> result = bookController.getBooksInSpotlight(null, null);
 
         assertNotNull(result);
         assertEquals(0, result.size());
         verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
+    }
+
+    @Test
+    void givenReadingLevel_whenGetBooksInSpotlight_thenUsesReadingLevelFilteredServiceMethod() {
+        List<BookDTO> expected = List.of(
+                buildDTO(1L, "Leesniveau A Book"),
+                buildDTO(2L, "Another Leesniveau A Book"));
+
+        when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null, "A"))
+                .thenReturn(expected);
+
+        List<BookDTO> result = bookController.getBooksInSpotlight("A", null);
+
+        assertEquals(expected, result);
+        verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT, null, "A");
+        verify(bookService, never()).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
+    }
+
+    @Test
+    void givenBlankReadingLevel_whenGetBooksInSpotlight_thenUsesDefaultSpotlightServiceMethod() {
+        List<BookDTO> expected = List.of(
+                buildDTO(1L, "Default Spotlight Book"));
+
+        when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null))
+                .thenReturn(expected);
+
+        List<BookDTO> result = bookController.getBooksInSpotlight("   ", null);
+
+        assertEquals(expected, result);
+        verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
+        verify(bookService, never()).getTop4BooksInSpotlight(UserRoles.STUDENT, null, "   ");
     }
 
     @Test
@@ -176,7 +207,7 @@ class BookControllerTest {
                 buildDTO(12L, "Latest Book 3"));
         when(bookService.getLatestBooks(UserRoles.STUDENT, null)).thenReturn(expected);
 
-        List<BookDTO> result = bookController.getLatestBooks(null);
+        List<BookDTO> result = bookController.getLatestBooks(null, null);
 
         assertEquals(expected, result);
         verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
@@ -186,11 +217,42 @@ class BookControllerTest {
     void givenNoLatestBooksExist_whenGetLatestBooks_thenReturnsEmptyList() {
         when(bookService.getLatestBooks(UserRoles.STUDENT, null)).thenReturn(List.of());
 
-        List<BookDTO> result = bookController.getLatestBooks(null);
+        List<BookDTO> result = bookController.getLatestBooks(null, null);
 
         assertNotNull(result);
         assertEquals(0, result.size());
         verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
+    }
+
+    @Test
+    void givenReadingLevel_whenGetLatestBooks_thenUsesReadingLevelFilteredServiceMethod() {
+        List<BookDTO> expected = List.of(
+                buildDTO(10L, "Latest Leesniveau A Book"),
+                buildDTO(11L, "Another Latest Leesniveau A Book"));
+
+        when(bookService.getLatestBooks(UserRoles.STUDENT, null, "A"))
+                .thenReturn(expected);
+
+        List<BookDTO> result = bookController.getLatestBooks("A", null);
+
+        assertEquals(expected, result);
+        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null, "A");
+        verify(bookService, never()).getLatestBooks(UserRoles.STUDENT, null);
+    }
+
+    @Test
+    void givenBlankReadingLevel_whenGetLatestBooks_thenUsesDefaultLatestServiceMethod() {
+        List<BookDTO> expected = List.of(
+                buildDTO(10L, "Default Latest Book"));
+
+        when(bookService.getLatestBooks(UserRoles.STUDENT, null))
+                .thenReturn(expected);
+
+        List<BookDTO> result = bookController.getLatestBooks("   ", null);
+
+        assertEquals(expected, result);
+        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
+        verify(bookService, never()).getLatestBooks(UserRoles.STUDENT, null, "   ");
     }
 
     // --- filterBooks Controller Tests ---

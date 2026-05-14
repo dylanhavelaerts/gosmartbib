@@ -99,12 +99,22 @@ public class BookController {
                 .ok(bookService.getBookById(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
     }
 
-    /**
-     * Geeft de 4 boeken terug met de hoogste ID en spotlight = true
-     */
     @GetMapping("/spotlight")
-    public List<BookDTO> getBooksInSpotlight(@AuthenticationPrincipal OAuth2User principal) {
-        return bookService.getTop4BooksInSpotlight(callerRole(principal), authHelper.extractUidOrNull(principal));
+    public List<BookDTO> getBooksInSpotlight(
+            @RequestParam(required = false) String readingLevel,
+            @AuthenticationPrincipal OAuth2User principal) {
+        UserRoles role = callerRole(principal);
+        String uid = authHelper.extractUidOrNull(principal);
+
+        if (readingLevel == null || readingLevel.isBlank()) {
+            return bookService.getTop4BooksInSpotlight(role, uid);
+        }
+
+        return bookService.getTop4BooksInSpotlight(role, uid, readingLevel);
+    }
+
+    public List<BookDTO> getBooksInSpotlight(OAuth2User principal) {
+        return getBooksInSpotlight(null, principal);
     }
 
     /**
@@ -117,15 +127,33 @@ public class BookController {
     }
 
     /**
-     * Geeft de 4 boeken terug met de hoogste ID
+     * Geeft de 4 boeken terug met de hoogste ID per leesniveau
      */
     @GetMapping("/latest")
-    public List<BookDTO> getLatestBooks(@AuthenticationPrincipal OAuth2User principal) {
-        return bookService.getLatestBooks(callerRole(principal), authHelper.extractUidOrNull(principal));
+    public List<BookDTO> getLatestBooks(
+            @RequestParam(required = false) String readingLevel,
+            @AuthenticationPrincipal OAuth2User principal) {
+        UserRoles role = callerRole(principal);
+        String uid = authHelper.extractUidOrNull(principal);
+
+        if (readingLevel == null || readingLevel.isBlank()) {
+            return bookService.getLatestBooks(role, uid);
+        }
+
+        return bookService.getLatestBooks(role, uid, readingLevel);
     }
 
     @GetMapping("/top-rated")
-    public ResponseEntity<List<BookDTO>> getRecommendedBooks(@AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<List<BookDTO>> getRecommendedBooks(
+            @RequestParam(required = false) String readingLevel,
+            @AuthenticationPrincipal OAuth2User principal) {
+        UserRoles role = callerRole(principal);
+        String uid = authHelper.extractUidOrNull(principal);
+
+        if (readingLevel != null && !readingLevel.isBlank()) {
+            return ResponseEntity.ok(bookService.getTopRatedBooksByReadingLevel(role, uid, readingLevel));
+        }
+
         return ResponseEntity.ok(bookService.getRecommendedBooksForUser(authHelper.extractUid(principal)));
     }
 
@@ -135,8 +163,7 @@ public class BookController {
     @PostMapping("/add/{isbn}")
     public ResponseEntity<BookDTO> addBookByIsbn(@PathVariable String isbn,
             @RequestParam(required = false) String campus,
-            Integer amount,
-            @AuthenticationPrincipal OAuth2User principal) {
+            @RequestParam(required = false) Integer amount, @AuthenticationPrincipal OAuth2User principal) {
         BookDTO addedBook = bookService.addBookByIsbn(isbn, authHelper.extractUidOrNull(principal), campus, amount);
         return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
     }
@@ -152,7 +179,7 @@ public class BookController {
     /**
      * Past de spotlight status aan van een boek.
      */
-    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     @PatchMapping("/{id}/spotlight")
     public ResponseEntity<Void> updateSpotlight(
             @PathVariable Long id,
