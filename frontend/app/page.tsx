@@ -65,6 +65,8 @@ export default function Home() {
   const [firstName, setFirstName] = useState<string | null>(null);
   const [selectedReadingLevel, setSelectedReadingLevel] =
   useState<ReadingLevel | null>(null);
+  const [showingSpotlightFallback, setShowingSpotlightFallback] =
+  useState(false);
 
   useEffect(() => {
     setGreeting(GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
@@ -133,10 +135,32 @@ useEffect(() => {
 
       if (cancelled) return;
 
-      if (selected === "spotlight") {
-        setBooks(data);
-        return;
-      }
+        if (selected === "spotlight") {
+          if (data.length > 0) {
+            setBooks(data);
+            return;
+          }
+
+          const fallbackResponse = await fetch(
+            `${apiUrl}/books/top-rated?readingLevel=${encodeURIComponent(
+              activeReadingLevel,
+            )}`,
+            { credentials: "include" },
+          );
+
+          if (!fallbackResponse.ok) {
+            throw new Error("Kon aanbevolen boeken niet laden.");
+          }
+
+          const fallbackData: Book[] = await fallbackResponse.json();
+
+          if (!cancelled) {
+            setBooks(fallbackData);
+            setShowingSpotlightFallback(fallbackData.length > 0);
+          }
+
+          return;
+        }
 
       if (data.length > 0) {
         setBooks(data);
