@@ -14,7 +14,7 @@ import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
 import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
-import edu.ap.gosmartlib.services.UserDirectoryService;
+import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -109,7 +109,7 @@ public class AdminLoanService {
     }
 
     private Map<String, List<String>> buildClassMap(Long schoolId, List<String> uids) {
-        return userRepository.findAllBySchool_IdAndSmartschoolUidInAndActiveIsTrue(schoolId, uids)
+        return userRepository.findAllBySchool_IdAndSmartschoolUidIn(schoolId, uids)
                 .stream()
                 .collect(Collectors.toMap(
                         UserEntity::getSmartschoolUid,

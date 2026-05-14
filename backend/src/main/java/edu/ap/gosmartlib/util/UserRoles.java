@@ -24,4 +24,15 @@ public enum UserRoles {
             default -> OTHER;
         };
     }
+
+    public static UserRoles fromOneRoster(String role) {
+        if (role == null) return OTHER;
+        return switch (role.toLowerCase()) {
+            case "student" -> STUDENT;
+            case "teacher" -> TEACHER;
+            case "administrator" -> ADMIN;
+            default -> OTHER;
+        };
+    }
+
 }

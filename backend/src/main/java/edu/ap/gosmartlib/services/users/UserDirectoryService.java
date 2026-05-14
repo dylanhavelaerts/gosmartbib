@@ -8,6 +8,7 @@ import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.util.OneRosterUtils;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
 import lombok.RequiredArgsConstructor;
@@ -67,7 +68,7 @@ public class UserDirectoryService {
 
         Long schoolId = actor.getSchool().getId();
 
-        List<UserEntity> knownUsers = userRepository.findAllBySchool_IdAndSmartschoolUidInAndActiveIsTrue(
+        List<UserEntity> knownUsers = userRepository.findAllBySchool_IdAndSmartschoolUidIn(
                 schoolId,
                 requestedUids);
 
@@ -178,7 +179,7 @@ public class UserDirectoryService {
         Long schoolId = actor.getSchool().getId();
 
         List<UserEntity> knownUsers = userRepository
-                .findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(schoolId);
+                .findAllBySchool_IdOrderBySmartschoolUidAsc(schoolId);
         if (knownUsers.isEmpty()) {
             return List.of();
         }
@@ -336,12 +337,7 @@ public class UserDirectoryService {
     }
 
     private String extractLegacyIdentifier(Map<String, Object> liveUser) {
-        Object metadataObj = liveUser.get("metadata");
-        if (!(metadataObj instanceof Map<?, ?> metadata)) {
-            return "";
-        }
-
-        Object legacyIdentifier = metadata.get("smsc.legacyIdentifier");
-        return readString(legacyIdentifier);
+        String uid = OneRosterUtils.extractSmartschoolUid(liveUser);
+        return uid != null ? uid : "";
     }
 }

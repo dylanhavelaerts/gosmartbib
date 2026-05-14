@@ -168,7 +168,7 @@ public class ReadingListService {
         Long schoolId = requireSchoolId(currentUser);
 
         List<UserEntity> studentsInSchool = userRepository
-                .findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(schoolId)
+                .findAllBySchool_IdOrderBySmartschoolUidAsc(schoolId)
                 .stream()
                 .filter(user -> user.getRole() == UserRoles.STUDENT)
                 .toList();
@@ -540,10 +540,6 @@ public class ReadingListService {
         for (UserEntity user : users) {
             if (user.getRole() != UserRoles.STUDENT) {
                 throw new IllegalArgumentException("Je kan alleen leerlingen als specifieke doelgroep kiezen");
-            }
-
-            if (!user.isActive()) {
-                throw new IllegalArgumentException("Je kan geen gedeactiveerde leerling als doelgroep kiezen");
             }
 
             Long studentSchoolId = requireSchoolId(user);
