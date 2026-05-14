@@ -10,12 +10,10 @@ public record AdminUserDTO(
         long id,
         String smartschoolUid,
         UserRoles role,
-        boolean active,
         SchoolDTO school,
         Set<SchoolClassDTO> classes) {
     public static AdminUserDTO from(UserEntity user) {
-        return new AdminUserDTO(user.getId(), user.getSmartschoolUid(), user.getRole(), user.isActive(),
-                SchoolDTO.from(user.getSchool()),
+        return new AdminUserDTO(user.getId(), user.getSmartschoolUid(), user.getRole(), SchoolDTO.from(user.getSchool()),
                 user.getClasses().stream().map(SchoolClassDTO::from).collect(Collectors.toSet()));
     }
 }

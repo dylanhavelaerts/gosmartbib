@@ -34,6 +34,10 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
     boolean existsFlagByReviewIdAndUid(@Param("reviewId") Long reviewId, @Param("uid") String uid);
 
     @Modifying
+    @Query("UPDATE ReviewEntity r SET r.flagCount = r.flagCount + 1 WHERE r.id = :reviewId")
+    void incrementFlagCount(@Param("reviewId") Long reviewId);
+
+    @Modifying
     @Query("UPDATE ReviewEntity r SET r.user = null WHERE r.user = :user")
     void anonymizeByUser(@Param("user") UserEntity user);
 }
