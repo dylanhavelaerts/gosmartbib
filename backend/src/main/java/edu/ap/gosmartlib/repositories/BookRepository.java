@@ -103,6 +103,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                 LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR
                 LOWER(a) LIKE LOWER(CONCAT('%', :query, '%')) OR
                 LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))
+                OR REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')
             )
             AND (:language IS NULL OR LOWER(b.language) = LOWER(:language))
             AND (:readingLevel IS NULL OR TRIM(:readingLevel) = '' OR LOWER(b.readingLevel) = LOWER(:readingLevel))
@@ -125,7 +126,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                 :query IS NULL OR TRIM(:query) = '' OR
                 LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR
                 LOWER(a) LIKE LOWER(CONCAT('%', :query, '%')) OR
-                LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))
+                LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))OR
+                REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')    
             )
             AND (:language IS NULL OR LOWER(b.language) = LOWER(:language))
             AND (:readingLevel IS NULL OR TRIM(:readingLevel) = '' OR LOWER(b.readingLevel) = LOWER(:readingLevel))
@@ -267,6 +269,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                 LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR
                 LOWER(a) LIKE LOWER(CONCAT('%', :query, '%')) OR
                 LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))
+                OR REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')
             )
             AND (:language IS NULL OR LOWER(b.language) = LOWER(:language))
             AND (:readingLevel IS NULL OR TRIM(:readingLevel) = '' OR LOWER(b.readingLevel) = LOWER(:readingLevel))
@@ -294,7 +297,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
                 :query IS NULL OR TRIM(:query) = '' OR
                 LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR
                 LOWER(a) LIKE LOWER(CONCAT('%', :query, '%')) OR
-                LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))
+                LOWER(c) LIKE LOWER(CONCAT('%', :query, '%'))OR
+                REPLACE(b.isbn, '-', '') LIKE CONCAT('%', REPLACE(:query, '-', ''), '%')    
             )
             AND (:language IS NULL OR LOWER(b.language) = LOWER(:language))
             AND (:readingLevel IS NULL OR TRIM(:readingLevel) = '' OR LOWER(b.readingLevel) = LOWER(:readingLevel))
