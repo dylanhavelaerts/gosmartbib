@@ -11,8 +11,11 @@ type UserRole =
 
 interface AuthUser {
   id: number;
-  smartschoolUid: string;
+  smartschoolUid?: string;
   role: UserRole;
+  classes?: {
+    name?: string | null;
+    }[];
 }
 
 interface AuthContextType {
