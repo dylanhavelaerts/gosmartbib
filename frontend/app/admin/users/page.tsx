@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import "./userAdmin.css";
 import Pagination from "@/app/catalog/pagination";
+import SyncModal from "./SyncModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -23,6 +24,29 @@ type DisplayNamesResponse = {
   unresolvedUids: string[];
   message: string;
 };
+
+type SyncStatus = "idle" | "confirm" | "loading" | "done";
+
+type SchoolSyncResult = {
+  schoolDomain: string;
+  added: number;
+  removed: number;
+  errors: string[];
+};
+
+type SyncSummary = {
+  totalAdded: number;
+  totalRemoved: number;
+  schools: SchoolSyncResult[];
+};
+
+const SYNC_STEPS = [
+  "Verbinding maken met OneRoster...",
+  "Gebruikers ophalen...",
+  "Vergelijken met huidige data...",
+  "Wijzigingen opslaan...",
+  "Afronden...",
+];
 
 const replaceRoleName = (role: string): string => {
   switch (role) {
@@ -57,6 +81,11 @@ export default function AdminUserPage() {
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+
+  // Sync
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+  const [syncStep, setSyncStep] = useState(0);
+  const [syncResult, setSyncResult] = useState<SyncSummary | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -213,6 +242,30 @@ export default function AdminUserPage() {
     }
   };
 
+  const handleSync = async () => {
+    setSyncStatus("loading");
+    setSyncStep(0);
+
+    const stepInterval = setInterval(() => {
+      setSyncStep((prev) => (prev < SYNC_STEPS.length - 1 ? prev + 1 : prev));
+    }, 4000);
+
+    try {
+      const res = await fetch(`${API_URL}/api/sync`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Sync mislukt");
+      const data: SyncSummary = await res.json();
+      setSyncResult(data);
+    } catch {
+      setSyncResult(null);
+    } finally {
+      clearInterval(stepInterval);
+      setSyncStatus("done");
+    }
+  };
+
   if (loading) {
     return <div>Gebruikers laden...</div>;
   }
@@ -226,10 +279,17 @@ export default function AdminUserPage() {
         <div id="userMain">
           <div className="adminPageHeader">
             <h1>Gebruikersbeheer {me?.school?.name}</h1>
-
-            <Link href="/admin/school-integration" className="adminPrimaryLink">
-              <button className="adminPrimaryButton">Schoolintegratie</button>
-            </Link>
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button
+                className="adminPrimaryButton"
+                onClick={() => setSyncStatus("confirm")}
+              >
+                Synchroniseer
+              </button>
+              <Link href="/admin/school-integration" className="adminPrimaryLink">
+                <button className="adminPrimaryButton">Schoolintegratie</button>
+              </Link>
+            </div>
           </div>
 
           <div className="adminSearchbar">
@@ -349,6 +409,17 @@ export default function AdminUserPage() {
           />
         </div>
       )}
+      <SyncModal
+        syncStatus={syncStatus}
+        syncStep={syncStep}
+        syncResult={syncResult}
+        syncSteps={SYNC_STEPS}
+        onConfirm={handleSync}
+        onClose={() => {
+          setSyncStatus("idle");
+          setSyncResult(null);
+        }}
+      />
     </main>
   );
 }

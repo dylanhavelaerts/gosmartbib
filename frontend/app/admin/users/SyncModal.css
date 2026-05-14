@@ -1,0 +1,100 @@
+.syncModalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.syncModalBox {
+  background-color: white;
+  border-radius: 7px;
+  border: 1.2px solid #8a1d40;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.syncModalHeader {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.syncModalHeader h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #8e2446;
+}
+
+.syncModalBody {
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.syncModalBody p {
+  margin: 0;
+  color: #333;
+  line-height: 1.5;
+}
+
+.syncModalWarning {
+  font-size: 0.85rem;
+  color: #888;
+  font-style: italic;
+}
+
+.syncProgressBar {
+  width: 100%;
+  height: 8px;
+  background-color: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.syncProgressBarFill {
+  height: 100%;
+  background-color: #8a1d40;
+  border-radius: 4px;
+  animation: syncProgress 1.5s ease-in-out infinite alternate;
+  width: 40%;
+}
+
+@keyframes syncProgress {
+  from {
+    width: 20%;
+    margin-left: 0;
+  }
+  to {
+    width: 60%;
+    margin-left: 40%;
+  }
+}
+
+.syncModalFooter {
+  padding: 1rem 2rem;
+  border-top: 1px solid #ddd;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.syncResultItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.syncResultError {
+  color: #c0392b;
+  font-size: 0.8rem;
+}
