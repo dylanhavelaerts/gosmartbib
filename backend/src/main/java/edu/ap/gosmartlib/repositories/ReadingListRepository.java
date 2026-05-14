@@ -1,8 +1,10 @@
 package edu.ap.gosmartlib.repositories;
 
 import edu.ap.gosmartlib.entities.ReadingListEntity;
+import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.util.ReadingListType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -22,4 +24,8 @@ public interface ReadingListRepository extends JpaRepository<ReadingListEntity, 
 
     @Query("SELECT DISTINCT rl FROM ReadingListEntity rl LEFT JOIN FETCH rl.books WHERE rl.publicUid = :publicUid")
     Optional<ReadingListEntity> findByPublicUidWithBooks(@Param("publicUid") String publicUid);
+
+    @Modifying
+    @Query("DELETE FROM ReadingListEntity r WHERE r.creator = :user")
+    void deleteByCreator(@Param("user") UserEntity user);
 }

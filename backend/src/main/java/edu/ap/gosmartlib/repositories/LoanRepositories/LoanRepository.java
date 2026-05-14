@@ -49,24 +49,24 @@ public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
             """)
     long countActiveLoansForSchool(@Param("schoolId") Long schoolId);
 
-    @Query("""
+        @Query("""
             SELECT COUNT(l)
             FROM LoanEntity l
             JOIN UserEntity u ON u.smartschoolUid = l.smartschoolUserId
             WHERE u.school.id = :schoolId AND l.dueDate < :today
             """)
-    long countOverdueLoansForSchool(@Param("schoolId") Long schoolId, @Param("today") LocalDate today);
+        long countOverdueLoansForSchool(@Param("schoolId") Long schoolId, @Param("today") LocalDate today);
 
-    @Query("""
+        @Query("""
             SELECT COUNT(l)
             FROM LoanEntity l
             JOIN UserEntity u ON u.smartschoolUid = l.smartschoolUserId
             WHERE u.school.id = :schoolId AND l.extensionStatus = edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus.PENDING
             """)
-    long countPendingExtensionsForSchool(@Param("schoolId") Long schoolId);
+        long countPendingExtensionsForSchool(@Param("schoolId") Long schoolId);
 
 
-    @Query(value = """
+        @Query(value = """
             select loan from LoanEntity loan
             join UserEntity user on user.smartschoolUid = loan.smartschoolUserId
             where user.school.id = :schoolId
@@ -77,9 +77,9 @@ public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
                     join UserEntity user on user.smartschoolUid = loan.smartschoolUserId
                     where user.school.id = :schoolId
                     """)
-    Page<LoanEntity> findAllActiveBySchoolId(@Param("schoolId") Long schoolId, Pageable pageable);
+        Page<LoanEntity> findAllActiveBySchoolId(@Param("schoolId") Long schoolId, Pageable pageable);
 
-    @Query(value = """
+        @Query(value = """
             select distinct loan from LoanEntity loan
             join UserEntity user on user.smartschoolUid = loan.smartschoolUserId
             join user.classes cls
@@ -92,6 +92,15 @@ public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
                     join user.classes cls
                     where user.school.id = :schoolId and cls.id = :classId
                     """)
-    Page<LoanEntity> findAllActiveBySchoolIdAndClassId(
+        Page<LoanEntity> findAllActiveBySchoolIdAndClassId(
             @Param("schoolId") Long schoolId, @Param("classId") Long classId, Pageable pageable);
+
+        @Modifying
+        @Query("UPDATE LoanEntity l SET l.smartschoolUserId = null WHERE l.smartschoolUserId = :uid")
+        void anonymizeBySmartschoolUid(@Param("uid") String uid);
+
+        @Modifying
+        @Query("UPDATE LoanEntity l SET l.extensionDecidedBySmartschoolUserId = null WHERE l.extensionDecidedBySmartschoolUserId = :uid")
+        void anonymizeExtensionDeciderBySmartschoolUid(@Param("uid") String uid);
+
 }

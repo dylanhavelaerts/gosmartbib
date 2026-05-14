@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.repositories;
 
 import edu.ap.gosmartlib.entities.BookNotificationEntity;
+import edu.ap.gosmartlib.entities.UserEntity;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,4 +28,6 @@ public interface BookNotificationRepository extends JpaRepository<BookNotificati
             ORDER BY COUNT(bn) DESC
             """)
     List<Object[]> findMostWantedBooks(@Param("schoolId") Long schoolId, Pageable pageable);
+
+    void deleteByUser(UserEntity user);
 }

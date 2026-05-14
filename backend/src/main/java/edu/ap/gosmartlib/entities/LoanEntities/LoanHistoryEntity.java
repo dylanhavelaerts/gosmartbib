@@ -15,7 +15,7 @@ public class LoanHistoryEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String smartschoolUserId;
 
     @Column(nullable = false)

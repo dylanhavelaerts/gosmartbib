@@ -18,7 +18,7 @@ public class LoanEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String smartschoolUserId; // Gebruikers ID
 
     @Column(nullable = false)

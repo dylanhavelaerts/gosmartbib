@@ -135,4 +135,9 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     """)
     Page<LoanHistoryEntity> findAllBySchoolIdAndClassIdOrderByReturnDateDesc(
             @Param("schoolId") Long schoolId, @Param("classId") Long classId, Pageable pageable);
+
+        @Modifying
+        @Query("UPDATE LoanHistoryEntity l SET l.smartschoolUserId = null WHERE l.smartschoolUserId = :uid")
+        void anonymizeBySmartschoolUid(@Param("uid") String uid);
+
 }

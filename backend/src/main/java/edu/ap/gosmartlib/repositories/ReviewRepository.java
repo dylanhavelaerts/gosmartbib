@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.repositories;
 
 import edu.ap.gosmartlib.entities.ReviewEntity;
+import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.util.ReviewStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -33,6 +34,6 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
     boolean existsFlagByReviewIdAndUid(@Param("reviewId") Long reviewId, @Param("uid") String uid);
 
     @Modifying
-    @Query("UPDATE ReviewEntity r SET r.flagCount = r.flagCount + 1 WHERE r.id = :id")
-    void incrementFlagCount(@Param("id") Long id);
+    @Query("UPDATE ReviewEntity r SET r.user = null WHERE r.user = :user")
+    void anonymizeByUser(@Param("user") UserEntity user);
 }
