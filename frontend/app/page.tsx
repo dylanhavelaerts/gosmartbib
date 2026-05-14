@@ -65,8 +65,6 @@ export default function Home() {
   const [firstName, setFirstName] = useState<string | null>(null);
   const [selectedReadingLevel, setSelectedReadingLevel] =
   useState<ReadingLevel | null>(null);
-  const [showingSpotlightFallback, setShowingSpotlightFallback] =
-  useState(false);
 
   useEffect(() => {
     setGreeting(GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
@@ -121,7 +119,9 @@ useEffect(() => {
           ? `/books/spotlight?readingLevel=${encodeURIComponent(
               activeReadingLevel,
             )}`
-          : "/books/latest";
+          : `/books/latest?readingLevel=${encodeURIComponent(
+        activeReadingLevel,
+      )}`;
 
       const response = await fetch(`${apiUrl}${endpoint}`, {
         credentials: "include",
@@ -156,32 +156,12 @@ useEffect(() => {
 
           if (!cancelled) {
             setBooks(fallbackData);
-            setShowingSpotlightFallback(fallbackData.length > 0);
           }
 
           return;
         }
 
-      if (data.length > 0) {
-        setBooks(data);
-        return;
-      }
-
-      // Alleen voor "Nieuw in bibliotheek":
-      // fallback naar top-rated als de nieuwste boeken leeg zijn.
-      const fallbackResponse = await fetch(`${apiUrl}/books/top-rated`, {
-        credentials: "include",
-      });
-
-      if (!fallbackResponse.ok) {
-        throw new Error("Kon aanbevolen boeken niet laden.");
-      }
-
-      const fallbackData: Book[] = await fallbackResponse.json();
-
-      if (!cancelled) {
-        setBooks(fallbackData);
-      }
+      setBooks(data);
     } catch (error) {
       console.error("Fout bij laden boeken:", error);
 
@@ -285,7 +265,6 @@ useEffect(() => {
               <button className={cls("new")} onClick={() => setSelected("new")}>
                 Nieuw in bibliotheek
               </button>
-               {selected === "spotlight" && (
                 <label className="spotlightLevelFilter">
                   <span>Leesniveau</span>
                   <select
@@ -293,7 +272,11 @@ useEffect(() => {
                     onChange={(e) =>
                       setSelectedReadingLevel(e.target.value as ReadingLevel)
                     }
-                    aria-label="Kies leesniveau voor In de kijker"
+                    aria-label={
+                      selected === "spotlight"
+                        ? "Kies leesniveau voor In de kijker"
+                        : "Kies leesniveau voor Nieuw in bibliotheek"
+                    }
                   >
                     {READING_LEVELS.map((level) => (
                       <option key={level} value={level}>
@@ -302,7 +285,6 @@ useEffect(() => {
                     ))}
                   </select>
                 </label>
-              )}
             </nav>
 
             <div id="bookListDashboard">
@@ -322,7 +304,7 @@ useEffect(() => {
                 <p className="dashboardBookMessage">
                   {selected === "spotlight"
                     ? `Geen boeken in de kijker voor leesniveau ${activeReadingLevel}.`
-                    : "Geen boeken gevonden."}
+                    : `Geen nieuwe boeken gevonden voor leesniveau ${activeReadingLevel}.`}
                 </p>
               )}
             </div>
