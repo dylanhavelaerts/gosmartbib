@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.security;
 
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.services.UserService;
+import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

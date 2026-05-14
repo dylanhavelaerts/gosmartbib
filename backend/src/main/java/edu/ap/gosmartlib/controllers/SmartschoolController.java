@@ -2,7 +2,7 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO;
 import edu.ap.gosmartlib.security.AuthHelper;
-import edu.ap.gosmartlib.services.UserDirectoryService;
+import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

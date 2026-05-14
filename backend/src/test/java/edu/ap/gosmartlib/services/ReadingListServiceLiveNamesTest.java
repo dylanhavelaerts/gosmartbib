@@ -9,6 +9,7 @@ import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
 import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.util.ReadingListTargetType;
 import edu.ap.gosmartlib.util.ReadingListType;
 import edu.ap.gosmartlib.util.UserRoles;

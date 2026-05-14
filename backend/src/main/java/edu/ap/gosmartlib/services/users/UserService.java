@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.services;
+package edu.ap.gosmartlib.services.users;
 
 import edu.ap.gosmartlib.dto.UserDTO;
 import edu.ap.gosmartlib.entities.SchoolClassEntity;
@@ -28,9 +28,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class UserService {
 
-    // Nog bespreken met klant (hoe lang voor inactive accounts verwijderd mogen
-    // worden
-    // private static final long DELETION_DAYS = 365; --> ook nog te implementeren
     private final UserRepository userRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final SchoolRepository schoolRepository;
@@ -72,11 +69,6 @@ public class UserService {
                     return u;
                 });
 
-        if (!user.isActive()) {
-            user.setActive(true);
-            log.info("Gebruiker {} is opnieuw actief geworden, status bijgewerkt", uid);
-        }
-
         // Sync classes
         List<Map<String, Object>> groups = oauth2User.getAttribute("groups");
         List<Map<String, Object>> parentGroups = oauth2User.getAttribute("parentGroups");
@@ -109,7 +101,6 @@ public class UserService {
                 });
     }
 
-    //
     @Transactional(readOnly = true)
     public UserDTO getCurrentUser(String uid) {
         UserEntity user = userRepository.findDetailedBySmartschoolUid(uid)
@@ -137,11 +128,8 @@ public class UserService {
     }
 
     // Maakt van Smartschool groups een SchoolClassEntity
-    private Set<SchoolClassEntity> resolveClasses(
-            List<Map<String, Object>> groups,
-            List<Map<String, Object>> parentGroups,
-            SchoolEntity school) {
-        String gradeLevel = parentGroups.stream()
+    private Set<SchoolClassEntity> resolveClasses(List<Map<String, Object>> groups, List<Map<String, Object>> parentGroups, SchoolEntity school) {
+        String grade = parentGroups.stream()
                 .map(pg -> (String) pg.get("name"))
                 .filter(n -> n != null && n.toLowerCase().contains("jaars"))
                 .findFirst()
@@ -156,16 +144,21 @@ public class UserService {
 
             SchoolClassEntity schoolClass = schoolClassRepository.findBySmartschoolGroupId(groupId)
                     .orElseGet(() -> {
-                        SchoolClassEntity c = new SchoolClassEntity(
-                                school, groupId, name, schoolYear, gradeLevel);
                         log.info("New class created: {} ({})", name, groupId);
-                        return schoolClassRepository.save(c);
+                        return schoolClassRepository.save(new SchoolClassEntity(school, groupId, name, schoolYear, grade));
                     });
+
+            schoolClass.setSchoolYear(schoolYear);
+
+            if (name != null) schoolClass.setName(name);
+            if (grade != null) schoolClass.setGrade(grade);
 
             resolved.add(schoolClass);
         }
         return resolved;
     }
+
+
 
     // Vindt het momentele schooljaar
     private String resolveCurrentSchoolYear() {

@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.security;
 
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.services.UserService;
+import edu.ap.gosmartlib.services.users.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

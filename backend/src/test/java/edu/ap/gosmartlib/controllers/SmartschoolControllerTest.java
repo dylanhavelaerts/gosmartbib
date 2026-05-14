@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO;
-import edu.ap.gosmartlib.services.UserDirectoryService;
+import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

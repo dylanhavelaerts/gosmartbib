@@ -5,7 +5,7 @@ import edu.ap.gosmartlib.dto.SchoolClassDTO;
 import edu.ap.gosmartlib.dto.SchoolDTO;
 import edu.ap.gosmartlib.dto.UpdateUserRoleRequest;
 import edu.ap.gosmartlib.security.AuthHelper;
-import edu.ap.gosmartlib.services.UserAdminService;
+import edu.ap.gosmartlib.services.users.UserAdminService;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

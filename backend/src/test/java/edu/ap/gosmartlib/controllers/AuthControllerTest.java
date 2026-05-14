@@ -2,7 +2,7 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.SchoolDTO;
 import edu.ap.gosmartlib.dto.UserDTO;
-import edu.ap.gosmartlib.services.UserService;
+import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

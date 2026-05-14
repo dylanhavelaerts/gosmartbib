@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
-import edu.ap.gosmartlib.services.UserService;
+import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

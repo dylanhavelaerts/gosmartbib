@@ -15,7 +15,7 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
-import edu.ap.gosmartlib.services.UserService;
+import edu.ap.gosmartlib.services.users.UserService;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;

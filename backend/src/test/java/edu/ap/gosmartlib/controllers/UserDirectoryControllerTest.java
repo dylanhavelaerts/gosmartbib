@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.services.UserDirectoryService;
-import edu.ap.gosmartlib.services.UserService;
+import edu.ap.gosmartlib.services.users.UserDirectoryService;
+import edu.ap.gosmartlib.services.users.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

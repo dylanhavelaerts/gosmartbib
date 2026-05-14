@@ -3,7 +3,7 @@ package edu.ap.gosmartlib.controllers;
 import edu.ap.gosmartlib.dto.AdminUserDTO;
 import edu.ap.gosmartlib.dto.UpdateUserRoleRequest;
 import edu.ap.gosmartlib.security.AuthHelper;
-import edu.ap.gosmartlib.services.UserAdminService;
+import edu.ap.gosmartlib.services.users.UserAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

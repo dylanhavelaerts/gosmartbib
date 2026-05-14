@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.services;
+package edu.ap.gosmartlib.services.users;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
