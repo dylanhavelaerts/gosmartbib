@@ -11,7 +11,7 @@ import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
 import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
-import edu.ap.gosmartlib.services.UserDirectoryService;
+import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -76,7 +76,7 @@ class AdminLoanServiceTest {
                 new PageImpl<>(List.of(loan), PageRequest.of(0, 10), 1);
         when(loanRepository.findAllActiveBySchoolId(eq(1L), any(Pageable.class))).thenReturn(loanPage);
         when(bookRepository.findByIsbnIn(any())).thenReturn(List.of());
-        when(userRepository.findAllBySchool_IdAndSmartschoolUidInAndActiveIsTrue(any(), any())).thenReturn(List.of());
+        when(userRepository.findAllBySchool_IdAndSmartschoolUidIn(any(), any())).thenReturn(List.of());
 
         AdminActiveLoanDTO dto = mock(AdminActiveLoanDTO.class);
         when(mapper.toActiveDTO(any(), any(), any(), any())).thenReturn(dto);

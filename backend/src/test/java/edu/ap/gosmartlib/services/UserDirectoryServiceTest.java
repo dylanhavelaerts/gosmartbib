@@ -67,7 +67,7 @@ class UserDirectoryServiceTest {
                 "metadata", Map.of("smsc.legacyIdentifier", "piuogheziugsoqihf="));
 
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
-        when(userRepository.findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(1L))
+        when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(1L))
                 .thenReturn(List.of(borrower));
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
         when(authService.getAccessToken(integration)).thenReturn("token-123");
@@ -102,7 +102,7 @@ class UserDirectoryServiceTest {
         integration.setOnerosterEnabled(true);
 
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
-        when(userRepository.findAllBySchool_IdAndActiveIsTrueOrderBySmartschoolUidAsc(1L))
+        when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(1L))
                 .thenReturn(List.of(borrower));
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
         when(authService.getAccessToken(integration)).thenReturn("token-123");
@@ -136,7 +136,6 @@ class UserDirectoryServiceTest {
         user.setRole(role);
         user.setSchool(school);
         user.setClasses(classes);
-        user.setActive(true);
         return user;
     }
 }

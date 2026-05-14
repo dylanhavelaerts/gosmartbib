@@ -63,7 +63,7 @@ class UserDirectoryResolveDisplayNamesTest {
                 "metadata", Map.of("smsc.legacyIdentifier", "ouyzgpfoiahoih=="));
 
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
-        when(userRepository.findAllBySchool_IdAndSmartschoolUidInAndActiveIsTrue(
+        when(userRepository.findAllBySchool_IdAndSmartschoolUidIn(
                 1L,
                 List.of("ouyzgpfoiahoih=="))).thenReturn(List.of(target));
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
@@ -93,7 +93,7 @@ class UserDirectoryResolveDisplayNamesTest {
         integration.setOnerosterEnabled(false);
 
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
-        when(userRepository.findAllBySchool_IdAndSmartschoolUidInAndActiveIsTrue(
+        when(userRepository.findAllBySchool_IdAndSmartschoolUidIn(
                 1L,
                 List.of("ouyzgpfoiahoih=="))).thenReturn(List.of(target));
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
@@ -127,7 +127,7 @@ class UserDirectoryResolveDisplayNamesTest {
                 "familyName", "Else");
 
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
-        when(userRepository.findAllBySchool_IdAndSmartschoolUidInAndActiveIsTrue(
+        when(userRepository.findAllBySchool_IdAndSmartschoolUidIn(
                 1L,
                 List.of("ouyzgpfoiahoih=="))).thenReturn(List.of(target));
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
@@ -160,7 +160,6 @@ class UserDirectoryResolveDisplayNamesTest {
         user.setSmartschoolUid(uid);
         user.setRole(role);
         user.setSchool(school);
-        user.setActive(true);
         return user;
     }
 }

@@ -1,11 +1,13 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,9 @@ class SmartschoolControllerTest {
 
     @Mock
     private OAuth2User principal;
+
+    @Spy
+    private AuthHelper authHelper = new AuthHelper();
 
     @InjectMocks
     private SmartschoolController smartschoolController;

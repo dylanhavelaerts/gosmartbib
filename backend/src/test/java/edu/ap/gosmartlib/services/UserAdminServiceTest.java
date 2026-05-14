@@ -163,21 +163,9 @@ class UserAdminServiceTest {
         verifyNoMoreInteractions(userRepository);
     }
 
-    @Test
-    void givenBibbeheerderExists_whenGetCurrentAdmin_thenReturnsActor() {
-        UserEntity actor = buildUser(1L, "admin-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
-        when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(actor));
-
-        UserEntity result = userAdminService.getCurrentAdmin("admin-uid");
-
-        assertSame(actor, result);
-        verify(userRepository).findDetailedBySmartschoolUid("admin-uid");
-        verifyNoMoreInteractions(userRepository);
-    }
-
     // Hulpmethodes
     private UserEntity buildUser(Long id, String uid, UserRoles role, Long schoolId, String schoolName,
-            boolean active) {
+            boolean ignored) {
         SchoolEntity school = new SchoolEntity();
         school.setId(schoolId);
         school.setName(schoolName);
@@ -195,7 +183,6 @@ class UserAdminServiceTest {
         user.setId(id);
         user.setSmartschoolUid(uid);
         user.setRole(role);
-        user.setActive(active);
         user.setSchool(school);
         user.setClasses(Set.of(schoolClass));
         return user;

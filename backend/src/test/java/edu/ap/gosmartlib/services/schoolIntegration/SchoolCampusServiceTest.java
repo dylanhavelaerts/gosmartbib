@@ -213,7 +213,6 @@ class SchoolCampusServiceTest {
         user.setSmartschoolUid(uid);
         user.setRole(role);
         user.setSchool(school);
-        user.setActive(true);
 
         return user;
     }

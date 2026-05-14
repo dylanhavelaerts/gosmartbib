@@ -147,7 +147,6 @@ class UserAdminControllerTest {
                                 id,
                                 uid,
                                 role,
-                                true,
                                 new SchoolDTO(100L, "GO! School", "school.example.be"),
                                 Set.of(new SchoolClassDTO(10L, "1A", "1", "2025-2026")));
         }
