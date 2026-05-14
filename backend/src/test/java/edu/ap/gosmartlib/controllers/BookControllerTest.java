@@ -207,7 +207,7 @@ class BookControllerTest {
                 buildDTO(12L, "Latest Book 3"));
         when(bookService.getLatestBooks(UserRoles.STUDENT, null)).thenReturn(expected);
 
-        List<BookDTO> result = bookController.getLatestBooks(null);
+        List<BookDTO> result = bookController.getLatestBooks(null, null);
 
         assertEquals(expected, result);
         verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
@@ -217,11 +217,42 @@ class BookControllerTest {
     void givenNoLatestBooksExist_whenGetLatestBooks_thenReturnsEmptyList() {
         when(bookService.getLatestBooks(UserRoles.STUDENT, null)).thenReturn(List.of());
 
-        List<BookDTO> result = bookController.getLatestBooks(null);
+        List<BookDTO> result = bookController.getLatestBooks(null, null);
 
         assertNotNull(result);
         assertEquals(0, result.size());
         verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
+    }
+
+    @Test
+    void givenReadingLevel_whenGetLatestBooks_thenUsesReadingLevelFilteredServiceMethod() {
+        List<BookDTO> expected = List.of(
+                buildDTO(10L, "Latest Leesniveau A Book"),
+                buildDTO(11L, "Another Latest Leesniveau A Book"));
+
+        when(bookService.getLatestBooks(UserRoles.STUDENT, null, "A"))
+                .thenReturn(expected);
+
+        List<BookDTO> result = bookController.getLatestBooks("A", null);
+
+        assertEquals(expected, result);
+        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null, "A");
+        verify(bookService, never()).getLatestBooks(UserRoles.STUDENT, null);
+    }
+
+    @Test
+    void givenBlankReadingLevel_whenGetLatestBooks_thenUsesDefaultLatestServiceMethod() {
+        List<BookDTO> expected = List.of(
+                buildDTO(10L, "Default Latest Book"));
+
+        when(bookService.getLatestBooks(UserRoles.STUDENT, null))
+                .thenReturn(expected);
+
+        List<BookDTO> result = bookController.getLatestBooks("   ", null);
+
+        assertEquals(expected, result);
+        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
+        verify(bookService, never()).getLatestBooks(UserRoles.STUDENT, null, "   ");
     }
 
     // --- filterBooks Controller Tests ---

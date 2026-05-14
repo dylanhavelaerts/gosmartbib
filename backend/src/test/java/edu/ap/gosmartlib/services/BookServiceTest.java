@@ -522,6 +522,128 @@ class BookServiceTest {
                 verify(bookRepository).findTop4ByOrderByIdDesc();
         }
 
+        @Test
+        void givenReadingLevelAndStudentRole_whenGetLatestBooks_thenUsesReadingLevelAndSchoolScopedQuery() {
+                stubStudentSchoolLookup();
+
+                BookEntity book = buildBook();
+                book.setId(20L);
+                book.setTitle("Latest Leesniveau A Book");
+                book.setReadingLevel("A");
+
+                when(bookRepository.findLatestBooksByReadingLevel(
+                                eq("A"),
+                                eq(false),
+                                eq(1L),
+                                any(Pageable.class)))
+                                .thenReturn(List.of(book));
+
+                List<BookDTO> result = bookService.getLatestBooks(
+                                UserRoles.STUDENT,
+                                STUDENT_UID,
+                                "A");
+
+                assertNotNull(result);
+                assertEquals(1, result.size());
+                assertEquals("Latest Leesniveau A Book", result.get(0).title());
+                assertEquals("A", result.get(0).readingLevel());
+
+                ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+
+                verify(bookRepository).findLatestBooksByReadingLevel(
+                                eq("A"),
+                                eq(false),
+                                eq(1L),
+                                pageableCaptor.capture());
+
+                assertEquals(0, pageableCaptor.getValue().getPageNumber());
+                assertEquals(4, pageableCaptor.getValue().getPageSize());
+        }
+
+        @Test
+        void givenReadingLevelWithWhitespace_whenGetLatestBooks_thenTrimsReadingLevel() {
+                stubStudentSchoolLookup();
+
+                BookEntity book = buildBook();
+                book.setReadingLevel("B");
+
+                when(bookRepository.findLatestBooksByReadingLevel(
+                                eq("B"),
+                                eq(false),
+                                eq(1L),
+                                any(Pageable.class)))
+                                .thenReturn(List.of(book));
+
+                List<BookDTO> result = bookService.getLatestBooks(
+                                UserRoles.STUDENT,
+                                STUDENT_UID,
+                                "  B  ");
+
+                assertEquals(1, result.size());
+
+                verify(bookRepository).findLatestBooksByReadingLevel(
+                                eq("B"),
+                                eq(false),
+                                eq(1L),
+                                any(Pageable.class));
+        }
+
+        @Test
+        void givenBlankReadingLevel_whenGetLatestBooks_thenPassesNullReadingLevelToRepository() {
+                stubStudentSchoolLookup();
+
+                BookEntity book = buildBook();
+
+                when(bookRepository.findLatestBooksByReadingLevel(
+                                isNull(),
+                                eq(false),
+                                eq(1L),
+                                any(Pageable.class)))
+                                .thenReturn(List.of(book));
+
+                List<BookDTO> result = bookService.getLatestBooks(
+                                UserRoles.STUDENT,
+                                STUDENT_UID,
+                                "   ");
+
+                assertEquals(1, result.size());
+
+                verify(bookRepository).findLatestBooksByReadingLevel(
+                                isNull(),
+                                eq(false),
+                                eq(1L),
+                                any(Pageable.class));
+        }
+
+        @Test
+        void givenTeacherRole_whenGetLatestBooksWithReadingLevel_thenDoesNotRestrictToSchool() {
+                BookEntity book = buildBook();
+                book.setReadingLevel("D");
+
+                when(bookRepository.findLatestBooksByReadingLevel(
+                                eq("D"),
+                                eq(true),
+                                isNull(),
+                                any(Pageable.class)))
+                                .thenReturn(List.of(book));
+
+                List<BookDTO> result = bookService.getLatestBooks(
+                                UserRoles.TEACHER,
+                                null,
+                                "D");
+
+                assertEquals(1, result.size());
+                assertEquals("D", result.get(0).readingLevel());
+
+                verify(bookRepository).findLatestBooksByReadingLevel(
+                                eq("D"),
+                                eq(true),
+                                isNull(),
+                                any(Pageable.class));
+
+                verify(userRepository, never()).findDetailedBySmartschoolUid(anyString());
+        }
+
         // --- updateSpotlight Tests ---
 
         @Test
@@ -679,32 +801,32 @@ class BookServiceTest {
                 assertEquals(1, result.getTotalElements());
                 verify(bookRepository).searchByTitleOrAuthorOrCategory(eq("Clean"), eq(true), any(Pageable.class));
         }
-    @Test
-    void givenMixedResults_whenSearchByTitleOrAuthorOrCategory_thenTitleMatchesComeFirst() {
-        stubStudentSchoolLookup();
 
-        BookEntity titleMatch = buildBook();
-        BookEntity authorMatch = buildBook();
-        authorMatch.setTitle("Other Book");
+        @Test
+        void givenMixedResults_whenSearchByTitleOrAuthorOrCategory_thenTitleMatchesComeFirst() {
+                stubStudentSchoolLookup();
 
-        Page<BookEntity> entityPage = new PageImpl<>(
-                List.of(authorMatch, titleMatch), PageRequest.of(0, 20), 2);
-        when(bookRepository.searchByTitleOrAuthorOrCategoryForSchool(eq("Clean"), eq(false), eq(1L),
-                any(Pageable.class)))
-                .thenReturn(entityPage);
+                BookEntity titleMatch = buildBook();
+                BookEntity authorMatch = buildBook();
+                authorMatch.setTitle("Other Book");
 
-        Page<BookDTO> result = bookService.searchByTitleOrAuthorOrCategory(
-                "Clean", 0, 20, UserRoles.STUDENT, STUDENT_UID);
+                Page<BookEntity> entityPage = new PageImpl<>(
+                                List.of(authorMatch, titleMatch), PageRequest.of(0, 20), 2);
+                when(bookRepository.searchByTitleOrAuthorOrCategoryForSchool(eq("Clean"), eq(false), eq(1L),
+                                any(Pageable.class)))
+                                .thenReturn(entityPage);
 
-        assertEquals(2, result.getTotalElements());
-        assertEquals("Clean Code", result.getContent().get(0).title());
-        assertEquals("Other Book", result.getContent().get(1).title());
-        verify(bookRepository).searchByTitleOrAuthorOrCategoryForSchool(eq("Clean"), eq(false), eq(1L),
-                any(Pageable.class));
-    }
+                Page<BookDTO> result = bookService.searchByTitleOrAuthorOrCategory(
+                                "Clean", 0, 20, UserRoles.STUDENT, STUDENT_UID);
 
+                assertEquals(2, result.getTotalElements());
+                assertEquals("Clean Code", result.getContent().get(0).title());
+                assertEquals("Other Book", result.getContent().get(1).title());
+                verify(bookRepository).searchByTitleOrAuthorOrCategoryForSchool(eq("Clean"), eq(false), eq(1L),
+                                any(Pageable.class));
+        }
 
-    // --- filterBooks Service Tests ---
+        // --- filterBooks Service Tests ---
 
         @Test
         void givenValidFilters_whenFilterBooks_thenReturnsMappedDTOs() {
@@ -2410,7 +2532,6 @@ class BookServiceTest {
 
                 assertTrue(result.isEmpty());
         }
-
 
         // region Helpers
 

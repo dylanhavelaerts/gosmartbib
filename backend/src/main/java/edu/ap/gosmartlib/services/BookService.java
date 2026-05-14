@@ -145,7 +145,7 @@ public class BookService {
     }
 
     public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size, UserRoles callerRole,
-                                                         String currentUserUid) {
+            String currentUserUid) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
 
@@ -175,7 +175,7 @@ public class BookService {
     }
 
     private Page<BookDTO> prioritizeTitleMatches(Page<BookEntity> raw, String query, Pageable pageable,
-                                                 Function<BookEntity, BookDTO> mapper) {
+            Function<BookEntity, BookDTO> mapper) {
         String lowerQuery = query.toLowerCase();
         List<BookDTO> sorted = raw.getContent().stream()
                 .sorted(Comparator.comparingInt(b -> b.getTitle().toLowerCase().contains(lowerQuery) ? 0 : 1))
@@ -184,7 +184,6 @@ public class BookService {
                 .toList();
         return new PageImpl<>(sorted, pageable, raw.getTotalElements());
     }
-
 
     public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole, String currentUserUid) {
         boolean includeDidactic = canSeeDidactic(callerRole);
@@ -231,6 +230,26 @@ public class BookService {
         return bookRepository.findTop4ByOrderByIdDesc()
                 .stream()
                 .filter(b -> includeDidactic || !b.isDidacticTag())
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    public List<BookDTO> getLatestBooks(UserRoles callerRole, String currentUserUid, String readingLevel) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        Long schoolId = restrictToOwnSchool(callerRole) ? requireRequesterSchoolId(currentUserUid) : null;
+        String normalizedReadingLevel = safeTrim(readingLevel);
+
+        if (normalizedReadingLevel != null && normalizedReadingLevel.isBlank()) {
+            normalizedReadingLevel = null;
+        }
+
+        return bookRepository.findLatestBooksByReadingLevel(
+                normalizedReadingLevel,
+                includeDidactic,
+                schoolId,
+                PageRequest.of(0, 4))
+                .stream()
                 .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
                 .filter(Objects::nonNull)
                 .toList();
@@ -571,10 +590,6 @@ public class BookService {
         return sections;
     }
 
-
-
-
-
     // region Helper functies
 
     private BookDTO toDTO(BookEntity book) {
@@ -593,15 +608,15 @@ public class BookService {
         List<BookInventoryDTO> inventories = book.getInventories() == null
                 ? new ArrayList<>()
                 : book.getInventories().stream()
-                .sorted(Comparator
-                        .comparing(
-                                (BookInventoryEntity inventory) -> inventory.getSchool().getName(),
-                                Comparator.nullsLast(String::compareToIgnoreCase))
-                        .thenComparing(
-                                BookInventoryEntity::getCampus,
-                                Comparator.nullsLast(String::compareToIgnoreCase)))
-                .map(this::toInventoryDTO)
-                .toList();
+                        .sorted(Comparator
+                                .comparing(
+                                        (BookInventoryEntity inventory) -> inventory.getSchool().getName(),
+                                        Comparator.nullsLast(String::compareToIgnoreCase))
+                                .thenComparing(
+                                        BookInventoryEntity::getCampus,
+                                        Comparator.nullsLast(String::compareToIgnoreCase)))
+                        .map(this::toInventoryDTO)
+                        .toList();
 
         return new BookDTO(
                 book.getId(),
@@ -637,8 +652,8 @@ public class BookService {
     }
 
     private void replaceInventoriesFromRequest(BookEntity book,
-                                               List<CreateBookInventoryRequestDTO> requestInventories,
-                                               String smartschoolUid) {
+            List<CreateBookInventoryRequestDTO> requestInventories,
+            String smartschoolUid) {
         book.getInventories().clear();
 
         for (CreateBookInventoryRequestDTO requestInventory : requestInventories) {
@@ -685,20 +700,20 @@ public class BookService {
     }
 
     private void applySingleInventoryForCurrentUser(BookEntity book,
-                                                    String smartschoolUid,
-                                                    String campus,
-                                                    int totalCopies,
-                                                    int availableCopies) {
+            String smartschoolUid,
+            String campus,
+            int totalCopies,
+            int availableCopies) {
         validateInventoryCounts(totalCopies, availableCopies);
         book.getInventories().clear();
         addInventory(book, resolveSchoolForUser(smartschoolUid), normalizeCampus(campus), totalCopies, availableCopies);
     }
 
     private void addInventory(BookEntity book,
-                              SchoolEntity school,
-                              String campus,
-                              int totalCopies,
-                              int availableCopies) {
+            SchoolEntity school,
+            String campus,
+            int totalCopies,
+            int availableCopies) {
         BookInventoryEntity inventory = new BookInventoryEntity();
         inventory.setBook(book);
         inventory.setSchool(school);
@@ -712,18 +727,18 @@ public class BookService {
         int totalCopies = book.getInventories() == null
                 ? 0
                 : book.getInventories().stream()
-                .map(BookInventoryEntity::getTotalCopies)
-                .filter(value -> value != null)
-                .mapToInt(Integer::intValue)
-                .sum();
+                        .map(BookInventoryEntity::getTotalCopies)
+                        .filter(value -> value != null)
+                        .mapToInt(Integer::intValue)
+                        .sum();
 
         int availableCopies = book.getInventories() == null
                 ? 0
                 : book.getInventories().stream()
-                .map(BookInventoryEntity::getAvailableCopies)
-                .filter(value -> value != null)
-                .mapToInt(Integer::intValue)
-                .sum();
+                        .map(BookInventoryEntity::getAvailableCopies)
+                        .filter(value -> value != null)
+                        .mapToInt(Integer::intValue)
+                        .sum();
 
         book.setTotalCopies(totalCopies);
         book.setAvailableCopies(availableCopies);
@@ -741,6 +756,7 @@ public class BookService {
                     "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren");
         }
     }
+
     private BookEntity buildBookEntityFromGoogle(String isbn) {
         String url = UriComponentsBuilder
                 .fromUriString(googleBooksApiUrl)

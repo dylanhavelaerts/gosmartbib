@@ -127,11 +127,20 @@ public class BookController {
     }
 
     /**
-     * Geeft de 4 boeken terug met de hoogste ID
+     * Geeft de 4 boeken terug met de hoogste ID per leesniveau
      */
     @GetMapping("/latest")
-    public List<BookDTO> getLatestBooks(@AuthenticationPrincipal OAuth2User principal) {
-        return bookService.getLatestBooks(callerRole(principal), authHelper.extractUidOrNull(principal));
+    public List<BookDTO> getLatestBooks(
+            @RequestParam(required = false) String readingLevel,
+            @AuthenticationPrincipal OAuth2User principal) {
+        UserRoles role = callerRole(principal);
+        String uid = authHelper.extractUidOrNull(principal);
+
+        if (readingLevel == null || readingLevel.isBlank()) {
+            return bookService.getLatestBooks(role, uid);
+        }
+
+        return bookService.getLatestBooks(role, uid, readingLevel);
     }
 
     @GetMapping("/top-rated")

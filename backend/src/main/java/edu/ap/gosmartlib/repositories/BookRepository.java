@@ -57,6 +57,28 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
     List<BookEntity> findTop4ByOrderByIdDesc();
 
     @EntityGraph(attributePaths = { "inventories", "inventories.school" })
+    @Query("""
+            SELECT DISTINCT b
+            FROM BookEntity b
+            WHERE (:readingLevel IS NULL OR LOWER(b.readingLevel) = LOWER(:readingLevel))
+              AND (:includeDidactic = true OR b.didacticTag = false)
+              AND (
+                  :schoolId IS NULL OR EXISTS (
+                      SELECT 1
+                      FROM BookInventoryEntity inv
+                      WHERE inv.book = b
+                        AND inv.school.id = :schoolId
+                  )
+              )
+            ORDER BY b.id DESC
+            """)
+    List<BookEntity> findLatestBooksByReadingLevel(
+            @Param("readingLevel") String readingLevel,
+            @Param("includeDidactic") boolean includeDidactic,
+            @Param("schoolId") Long schoolId,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = { "inventories", "inventories.school" })
     List<BookEntity> findTop4ByOrderByRatingDesc();
 
     @EntityGraph(attributePaths = { "inventories", "inventories.school" })
