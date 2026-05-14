@@ -557,8 +557,32 @@ class BookServiceTest {
                 assertEquals(1, result.getTotalElements());
                 verify(bookRepository).searchByTitleOrAuthorOrCategory(eq("Clean"), eq(true), any(Pageable.class));
         }
+    @Test
+    void givenMixedResults_whenSearchByTitleOrAuthorOrCategory_thenTitleMatchesComeFirst() {
+        stubStudentSchoolLookup();
 
-        // --- filterBooks Service Tests ---
+        BookEntity titleMatch = buildBook();
+        BookEntity authorMatch = buildBook();
+        authorMatch.setTitle("Other Book");
+
+        Page<BookEntity> entityPage = new PageImpl<>(
+                List.of(authorMatch, titleMatch), PageRequest.of(0, 20), 2);
+        when(bookRepository.searchByTitleOrAuthorOrCategoryForSchool(eq("Clean"), eq(false), eq(1L),
+                any(Pageable.class)))
+                .thenReturn(entityPage);
+
+        Page<BookDTO> result = bookService.searchByTitleOrAuthorOrCategory(
+                "Clean", 0, 20, UserRoles.STUDENT, STUDENT_UID);
+
+        assertEquals(2, result.getTotalElements());
+        assertEquals("Clean Code", result.getContent().get(0).title());
+        assertEquals("Other Book", result.getContent().get(1).title());
+        verify(bookRepository).searchByTitleOrAuthorOrCategoryForSchool(eq("Clean"), eq(false), eq(1L),
+                any(Pageable.class));
+    }
+
+
+    // --- filterBooks Service Tests ---
 
         @Test
         void givenValidFilters_whenFilterBooks_thenReturnsMappedDTOs() {
@@ -2264,6 +2288,7 @@ class BookServiceTest {
 
                 assertTrue(result.isEmpty());
         }
+
 
         // region Helpers
 
