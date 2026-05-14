@@ -135,7 +135,16 @@ public class BookController {
     }
 
     @GetMapping("/top-rated")
-    public ResponseEntity<List<BookDTO>> getRecommendedBooks(@AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<List<BookDTO>> getRecommendedBooks(
+            @RequestParam(required = false) String readingLevel,
+            @AuthenticationPrincipal OAuth2User principal) {
+        UserRoles role = callerRole(principal);
+        String uid = authHelper.extractUidOrNull(principal);
+
+        if (readingLevel != null && !readingLevel.isBlank()) {
+            return ResponseEntity.ok(bookService.getTopRatedBooksByReadingLevel(role, uid, readingLevel));
+        }
+
         return ResponseEntity.ok(bookService.getRecommendedBooksForUser(authHelper.extractUid(principal)));
     }
 
@@ -161,7 +170,7 @@ public class BookController {
     /**
      * Past de spotlight status aan van een boek.
      */
-    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     @PatchMapping("/{id}/spotlight")
     public ResponseEntity<Void> updateSpotlight(
             @PathVariable Long id,

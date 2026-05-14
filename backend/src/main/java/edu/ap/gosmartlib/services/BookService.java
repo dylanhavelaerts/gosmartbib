@@ -250,6 +250,30 @@ public class BookService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<BookDTO> getTopRatedBooksByReadingLevel(
+            UserRoles callerRole,
+            String currentUserUid,
+            String readingLevel) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        Long schoolId = restrictToOwnSchool(callerRole) ? requireRequesterSchoolId(currentUserUid) : null;
+        String normalizedReadingLevel = safeTrim(readingLevel);
+
+        if (normalizedReadingLevel != null && normalizedReadingLevel.isBlank()) {
+            normalizedReadingLevel = null;
+        }
+
+        return bookRepository.findTopRatedBooksByReadingLevel(
+                normalizedReadingLevel,
+                includeDidactic,
+                schoolId,
+                PageRequest.of(0, 4))
+                .stream()
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
     public Page<BookDTO> filterBooks(BookFilterRequest request, UserRoles callerRole, String currentUserUid) {
         bookFilterValidator.validate(request);
 
