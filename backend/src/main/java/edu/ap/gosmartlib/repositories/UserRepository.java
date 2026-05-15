@@ -37,6 +37,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
             FROM UserEntity u
             WHERE u.school.id = :schoolId
               AND u.role = edu.ap.gosmartlib.util.UserRoles.STUDENT
+               AND (:className IS NULL OR EXISTS (
+                SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className))
               AND u.smartschoolUid NOT IN (
                   SELECT l.smartschoolUserId FROM LoanEntity l
                   JOIN UserEntity lu ON lu.smartschoolUid = l.smartschoolUserId
@@ -48,5 +50,5 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
                   WHERE lhu.school.id = :schoolId AND lh.returnDate >= :since
               )
             """)
-    long countInactiveStudents(@Param("schoolId") Long schoolId, @Param("since") LocalDate since);
+    long countInactiveStudents(@Param("schoolId") Long schoolId, @Param("since") LocalDate since, @Param("className") String className);
 }

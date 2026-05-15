@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import ProtectedRoute from "@/app/components/ProtectedRoute";
 import {
   BookPopularityDTO,
@@ -48,12 +48,21 @@ export default function StatisticsPage() {
   const [wantedBooks, setWantedBooks] = useState<MostWantedBookDTO[]>([]);
   const [topReaders, setTopReaders] = useState<TopReaderStudentDTO[]>([]);
   const [loansPerMonth, setLoansPerMonth] = useState<LoansPerMonthDTO[]>([]);
-  const [leastPopularBooks, setLeastPopularBooks] = useState<BookPopularityDTO[]>([]);
+  const [leastPopularBooks, setLeastPopularBooks] = useState<
+    BookPopularityDTO[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedClass, setSelectedClass] = useState("");
+  const isFirstFetch = useRef(true);
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    const params = selectedClass
+      ? `?className=${encodeURIComponent(selectedClass)}`
+      : "";
+
+    if (isFirstFetch.current) setIsLoading(true);
 
     const fetchAll = async () => {
       try {
@@ -69,34 +78,75 @@ export default function StatisticsPage() {
           loansPerMonthRes,
           leastPopularRes,
         ] = await Promise.all([
-          fetch(`${apiUrl}/statistics/overview`, { credentials: "include" }),
-          fetch(`${apiUrl}/statistics/popular-books`, { credentials: "include" }),
-          fetch(`${apiUrl}/statistics/popular-genres`, { credentials: "include" }),
-          fetch(`${apiUrl}/statistics/highest-count-class`, { credentials: "include" }),
-          fetch(`${apiUrl}/statistics/return-punctuality`, { credentials: "include" }),
-          fetch(`${apiUrl}/statistics/loan-duration-distribution`, { credentials: "include" }),
-          fetch(`${apiUrl}/statistics/most-wanted-books`, { credentials: "include" }),
-          fetch(`${apiUrl}/statistics/top-readers`, { credentials: "include" }),
-          fetch(`${apiUrl}/statistics/loans-per-month`, { credentials: "include" }),
-          fetch(`${apiUrl}/statistics/least-popular-books`, { credentials: "include" }),
+          fetch(`${apiUrl}/statistics/overview${params}`, {
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/statistics/popular-books${params}`, {
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/statistics/popular-genres${params}`, {
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/statistics/highest-count-class`, {
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/statistics/return-punctuality${params}`, {
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/statistics/loan-duration-distribution${params}`, {
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/statistics/most-wanted-books`, {
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/statistics/top-readers${params}`, {
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/statistics/loans-per-month${params}`, {
+            credentials: "include",
+          }),
+          fetch(`${apiUrl}/statistics/least-popular-books${params}`, {
+            credentials: "include",
+          }),
         ]);
 
         if (
-          !overviewRes.ok || !booksRes.ok || !genresRes.ok || !classesRes.ok ||
-          !punctualityRes.ok || !durationsRes.ok || !wantedRes.ok ||
-          !topReadersRes.ok || !loansPerMonthRes.ok || !leastPopularRes.ok
+          !overviewRes.ok ||
+          !booksRes.ok ||
+          !genresRes.ok ||
+          !classesRes.ok ||
+          !punctualityRes.ok ||
+          !durationsRes.ok ||
+          !wantedRes.ok ||
+          !topReadersRes.ok ||
+          !loansPerMonthRes.ok ||
+          !leastPopularRes.ok
         ) {
           throw new Error("Kon statistieken niet ophalen");
         }
 
         const [
-          overviewData, booksData, genresData, classesData,
-          punctualityData, durationsData, wantedData,
-          topReadersData, loansPerMonthData, leastPopularData,
+          overviewData,
+          booksData,
+          genresData,
+          classesData,
+          punctualityData,
+          durationsData,
+          wantedData,
+          topReadersData,
+          loansPerMonthData,
+          leastPopularData,
         ] = await Promise.all([
-          overviewRes.json(), booksRes.json(), genresRes.json(), classesRes.json(),
-          punctualityRes.json(), durationsRes.json(), wantedRes.json(),
-          topReadersRes.json(), loansPerMonthRes.json(), leastPopularRes.json(),
+          overviewRes.json(),
+          booksRes.json(),
+          genresRes.json(),
+          classesRes.json(),
+          punctualityRes.json(),
+          durationsRes.json(),
+          wantedRes.json(),
+          topReadersRes.json(),
+          loansPerMonthRes.json(),
+          leastPopularRes.json(),
         ]);
 
         setOverview(overviewData);
@@ -113,11 +163,12 @@ export default function StatisticsPage() {
         setError(err.message || "Er ging iets mis");
       } finally {
         setIsLoading(false);
+        isFirstFetch.current = false;
       }
     };
 
     fetchAll();
-  }, []);
+  }, [selectedClass]);
 
   if (isLoading)
     return (
@@ -142,6 +193,24 @@ export default function StatisticsPage() {
             Een overzicht van de meest populaire boeken, genres en klassen van
             jouw school
           </p>
+        </div>
+        <div className="statsFilterBar">
+          <label htmlFor="classFilter">Klas:</label>
+          <select
+            id="classFilter"
+            value={selectedClass}
+            onChange={(e) => setSelectedClass(e.target.value)}
+            className="statsClassFilter"
+          >
+            <option value="">Hele school</option>
+            {[...new Set(classes.map((c) => c.className))]
+              .sort()
+              .map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+          </select>
         </div>
 
         {overview && <OverviewSection overview={overview} />}

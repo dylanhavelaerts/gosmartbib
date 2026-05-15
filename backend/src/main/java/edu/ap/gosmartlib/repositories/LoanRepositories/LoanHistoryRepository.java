@@ -22,10 +22,13 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     JOIN BookEntity b ON b.isbn = lh.isbn
     JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
     WHERE u.school.id = :schoolId
+    AND (:className IS NULL OR EXISTS (
+        SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
+            ))
     GROUP BY b
     ORDER BY COUNT(lh) DESC
     """)
-    List<Object[]> findMostPopularBooks(Long schoolId, Pageable pageable);
+    List<Object[]> findMostPopularBooks(Long schoolId, Pageable pageable,String className);
 
     @Query("""
     SELECT c, COUNT(lh)
@@ -34,10 +37,13 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     JOIN b.categories c
     JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
     WHERE u.school.id = :schoolId
+    AND (:className IS NULL OR EXISTS (
+        SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
+            ))
     GROUP BY c
     ORDER BY COUNT(lh) DESC
     """)
-    List<Object[]> findMostReadGenres(Long schoolId, Pageable pageable);
+    List<Object[]> findMostReadGenres(Long schoolId, Pageable pageable,String className);
 
     @Query("""
     SELECT sc.name, sc.grade, sc.schoolYear, COUNT(lh)
@@ -55,46 +61,61 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     FROM LoanHistoryEntity lh
     JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
     WHERE u.school.id = :schoolId AND lh.returnDate <= lh.dueDate
+    AND (:className IS NULL OR EXISTS (
+            SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
+        ))
     """)
-    long countOnTimeReturns(Long schoolId);
+    long countOnTimeReturns(Long schoolId,String className);
 
     @Query("""
     SELECT COUNT(lh)
     FROM LoanHistoryEntity lh
     JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
     WHERE u.school.id = :schoolId AND lh.returnDate > lh.dueDate
+    AND (:className IS NULL OR EXISTS (
+        SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
+            ))
     """)
-    long countLateReturns(Long schoolId);
+    long countLateReturns(Long schoolId,String className);
 
     @Query("""
     SELECT FUNCTION('DATEDIFF', lh.returnDate, lh.loanDate), COUNT(lh)
     FROM LoanHistoryEntity lh
     JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
     WHERE u.school.id = :schoolId
+    AND (:className IS NULL OR EXISTS (
+        SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
+            ))
     GROUP BY FUNCTION('DATEDIFF', lh.returnDate, lh.loanDate)
     ORDER BY COUNT(lh) DESC
     """)
-    List<Object[]> findLoanDurationDistribution(Long schoolId);
+    List<Object[]> findLoanDurationDistribution(Long schoolId,String className);
 
     @Query("""
     SELECT lh.smartschoolUserId, COUNT(lh)
     FROM LoanHistoryEntity lh
     JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
     WHERE u.school.id = :schoolId
+    AND (:className IS NULL OR EXISTS (
+        SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
+            ))
     GROUP BY lh.smartschoolUserId
     ORDER BY COUNT(lh) DESC
     """)
-    List<Object[]> findTopReaders(Long schoolId, Pageable pageable);
+    List<Object[]> findTopReaders(Long schoolId, Pageable pageable,String className);
 
     @Query("""
     SELECT FUNCTION('YEAR', lh.loanDate), FUNCTION('MONTH', lh.loanDate), COUNT(lh)
     FROM LoanHistoryEntity lh
     JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
     WHERE u.school.id = :schoolId
+    AND (:className IS NULL OR EXISTS (
+        SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
+            ))
     GROUP BY FUNCTION('YEAR', lh.loanDate), FUNCTION('MONTH', lh.loanDate)
     ORDER BY FUNCTION('YEAR', lh.loanDate) ASC, FUNCTION('MONTH', lh.loanDate) ASC
     """)
-    List<Object[]> findLoansPerMonth(Long schoolId);
+    List<Object[]> findLoansPerMonth(Long schoolId,String className);
 
     @Query("""
     SELECT b, COUNT(lh)
@@ -102,10 +123,13 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     JOIN BookEntity b ON b.isbn = lh.isbn
     JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
     WHERE u.school.id = :schoolId
+    AND (:className IS NULL OR EXISTS (
+        SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
+            ))
     GROUP BY b
     ORDER BY COUNT(lh) ASC
     """)
-    List<Object[]> findLeastPopularBooks(Long schoolId, Pageable pageable);
+    List<Object[]> findLeastPopularBooks(Long schoolId, Pageable pageable,String className);
 
 
     @Query(value = """

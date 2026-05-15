@@ -40,9 +40,9 @@ public class StatisticsService {
      * @param uid - nodig om per school te filteren
      * @return - lijst van populairste boeken (top 10)
      */
-    public List<BookPopularityDTO> getMostPopularBooks(String uid) {
+    public List<BookPopularityDTO> getMostPopularBooks(String uid,String className) {
         Long schoolId = resolveSchoolId(uid);
-        return loanHistoryRepository.findMostPopularBooks(schoolId, PageRequest.of(0, 10))
+        return loanHistoryRepository.findMostPopularBooks(schoolId,PageRequest.of(0, 10),className)
                 .stream()
                 .map(row -> toBookPopularityDTO((BookEntity) row[0], (Long) row[1]))
                 .toList();
@@ -53,9 +53,9 @@ public class StatisticsService {
      * @param uid - nodig om per school te filteren
      * @return - lijst van populairste genres (top 15)
      */
-    public List<GenreStatsDTO> getMostReadGenres(String uid) {
+    public List<GenreStatsDTO> getMostReadGenres(String uid,String className) {
         Long schoolId = resolveSchoolId(uid);
-        return loanHistoryRepository.findMostReadGenres(schoolId, PageRequest.of(0, 15))
+        return loanHistoryRepository.findMostReadGenres(schoolId, PageRequest.of(0, 15),className)
                 .stream()
                 .map(row -> toGenreStatsDTO((String) row[0], (Long) row[1]))
                 .toList();
@@ -80,13 +80,13 @@ public class StatisticsService {
      * @param uid - nodig om per school te filteren
      * @return - telling van op-tijd, te laat, en verlengingsstatus
      */
-    public ReturnPunctualityDTO getReturnPunctuality(String uid) {
+    public ReturnPunctualityDTO getReturnPunctuality(String uid,String className) {
         Long schoolId = resolveSchoolId(uid);
-        long onTime = loanHistoryRepository.countOnTimeReturns(schoolId);
-        long late = loanHistoryRepository.countLateReturns(schoolId);
+        long onTime = loanHistoryRepository.countOnTimeReturns(schoolId,className);
+        long late = loanHistoryRepository.countLateReturns(schoolId,className);
 
         long approved = 0, pending = 0, denied = 0;
-        for (Object[] row : loanRepository.countExtensionsByStatus(schoolId, LoanExtensionStatus.NONE)) {
+        for (Object[] row : loanRepository.countExtensionsByStatus(schoolId, LoanExtensionStatus.NONE,className)) {
             LoanExtensionStatus status = (LoanExtensionStatus) row[0];
             long count = (Long) row[1];
             switch (status) {
@@ -103,9 +103,9 @@ public class StatisticsService {
      * @param uid - nodig om per school te filteren
      * @return - lijst van (duurDagen, aantal), gesorteerd op meest voorkomend
      */
-    public List<LoanDurationStatsDTO> getLoanDurationDistribution(String uid) {
+    public List<LoanDurationStatsDTO> getLoanDurationDistribution(String uid,String className) {
         Long schoolId = resolveSchoolId(uid);
-        return loanHistoryRepository.findLoanDurationDistribution(schoolId)
+        return loanHistoryRepository.findLoanDurationDistribution(schoolId,className)
                 .stream()
                 .map(row -> new LoanDurationStatsDTO(((Number) row[0]).intValue(), (Long) row[1]))
                 .toList();
@@ -128,17 +128,17 @@ public class StatisticsService {
                 .toList();
     }
 
-    public List<TopReaderStudentDTO> getTopReaders(String uid) {
+    public List<TopReaderStudentDTO> getTopReaders(String uid,String className) {
         Long schoolId = resolveSchoolId(uid);
-        return loanHistoryRepository.findTopReaders(schoolId, PageRequest.of(0, 10))
+        return loanHistoryRepository.findTopReaders(schoolId, PageRequest.of(0, 10),className)
                 .stream()
                 .map(row -> new TopReaderStudentDTO((String) row[0], (Long) row[1]))
                 .toList();
     }
 
-    public List<LoansPerMonthDTO> getLoansPerMonth(String uid) {
+    public List<LoansPerMonthDTO> getLoansPerMonth(String uid,String className) {
         Long schoolId = resolveSchoolId(uid);
-        return loanHistoryRepository.findLoansPerMonth(schoolId)
+        return loanHistoryRepository.findLoansPerMonth(schoolId,className)
                 .stream()
                 .map(row -> new LoansPerMonthDTO(
                         ((Number) row[0]).intValue(),
@@ -147,23 +147,23 @@ public class StatisticsService {
                 .toList();
     }
 
-    public List<BookPopularityDTO> getLeastPopularBooks(String uid) {
+    public List<BookPopularityDTO> getLeastPopularBooks(String uid,String className) {
         Long schoolId = resolveSchoolId(uid);
-        return loanHistoryRepository.findLeastPopularBooks(schoolId, PageRequest.of(0, 10))
+        return loanHistoryRepository.findLeastPopularBooks(schoolId, PageRequest.of(0, 10),className)
                 .stream()
                 .map(row -> toBookPopularityDTO((BookEntity) row[0], (Long) row[1]))
                 .toList();
     }
 
-    public OverviewStatsDTO getOverviewStats(String uid) {
+    public OverviewStatsDTO getOverviewStats(String uid,String className) {
         Long schoolId = resolveSchoolId(uid);
         LocalDate today = LocalDate.now();
         LocalDate since = today.minusWeeks(4);
 
-        long activeLoans = loanRepository.countActiveLoansForSchool(schoolId);
-        long overdueLoans = loanRepository.countOverdueLoansForSchool(schoolId, today);
-        long inactiveStudents = userRepository.countInactiveStudents(schoolId, since);
-        long pendingExtensions = loanRepository.countPendingExtensionsForSchool(schoolId);
+        long activeLoans = loanRepository.countActiveLoansForSchool(schoolId,className);
+        long overdueLoans = loanRepository.countOverdueLoansForSchool(schoolId, today,className);
+        long inactiveStudents = userRepository.countInactiveStudents(schoolId, since,className);
+        long pendingExtensions = loanRepository.countPendingExtensionsForSchool(schoolId,className);
 
         return new OverviewStatsDTO(activeLoans, overdueLoans, inactiveStudents, pendingExtensions);
     }
