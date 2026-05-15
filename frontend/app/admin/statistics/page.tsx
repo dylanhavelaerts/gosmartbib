@@ -51,16 +51,25 @@ export default function StatisticsPage() {
   const [leastPopularBooks, setLeastPopularBooks] = useState<
     BookPopularityDTO[]
   >([]);
+  const [selectedGrade, setSelectedGrade] = useState("");
+  const [selectedClass, setSelectedClass] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedClass, setSelectedClass] = useState("");
   const isFirstFetch = useRef(true);
+
+  const availableGrades = [...new Set(classes.map((c) => c.grade))].sort();
+  const availableClasses = classes
+    .filter((c) => !selectedGrade || c.grade === selectedGrade)
+    .map((c) => c.className)
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .sort();
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-    const params = selectedClass
-      ? `?className=${encodeURIComponent(selectedClass)}`
-      : "";
+    const searchParams = new URLSearchParams();
+    if (selectedClass) searchParams.set("className", selectedClass);
+    if (selectedGrade) searchParams.set("grade", selectedGrade);
+    const params = searchParams.size > 0 ? `?${searchParams}` : "";
 
     if (isFirstFetch.current) setIsLoading(true);
 
@@ -168,7 +177,7 @@ export default function StatisticsPage() {
     };
 
     fetchAll();
-  }, [selectedClass]);
+  }, [selectedClass, selectedGrade]);
 
   if (isLoading)
     return (
@@ -195,6 +204,24 @@ export default function StatisticsPage() {
           </p>
         </div>
         <div className="statsFilterBar">
+          <label htmlFor="gradeFilter">Jaar:</label>
+          <select
+            id="gradeFilter"
+            value={selectedGrade}
+            onChange={(e) => {
+              setSelectedGrade(e.target.value);
+              setSelectedClass("");
+            }}
+            className="statsClassFilter"
+          >
+            <option value="">Alle jaren</option>
+            {availableGrades.map((grade) => (
+              <option key={grade} value={grade}>
+                {grade}
+              </option>
+            ))}
+          </select>
+
           <label htmlFor="classFilter">Klas:</label>
           <select
             id="classFilter"
@@ -202,15 +229,25 @@ export default function StatisticsPage() {
             onChange={(e) => setSelectedClass(e.target.value)}
             className="statsClassFilter"
           >
-            <option value="">Hele school</option>
-            {[...new Set(classes.map((c) => c.className))]
-              .sort()
-              .map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
+            <option value="">Alle klassen</option>
+            {availableClasses.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
           </select>
+
+          {(selectedGrade || selectedClass) && (
+            <button
+              onClick={() => {
+                setSelectedGrade("");
+                setSelectedClass("");
+              }}
+              className="statsResetFilter"
+            >
+              Alles tonen
+            </button>
+          )}
         </div>
 
         {overview && <OverviewSection overview={overview} />}

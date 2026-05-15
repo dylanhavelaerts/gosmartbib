@@ -40,11 +40,15 @@ public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
             AND (:className IS NULL OR EXISTS (
                 SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
             ))
+            AND (:grade IS NULL OR EXISTS (
+                SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.grade = :grade
+            ))
             GROUP BY l.extensionStatus
             """)
     List<Object[]> countExtensionsByStatus(@Param("schoolId") Long schoolId,
                                            @Param("noneStatus") LoanExtensionStatus noneStatus,
-                                           @Param("className") String className);
+                                           @Param("className") String className,
+                                           @Param("grade") String grade);
 
     @Query("""
         SELECT COUNT(l)
@@ -54,9 +58,11 @@ public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
         AND (:className IS NULL OR EXISTS (
             SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
         ))
+        AND (:grade IS NULL OR EXISTS (
+            SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.grade = :grade
+        ))
         """)
-    long countActiveLoansForSchool(@Param("schoolId") Long schoolId, @Param("className") String className);
-
+    long countActiveLoansForSchool(@Param("schoolId") Long schoolId, @Param("className") String className, @Param("grade") String grade);
 
         @Query("""
             SELECT COUNT(l)
@@ -65,8 +71,10 @@ public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
             WHERE u.school.id = :schoolId AND l.dueDate < :today
             AND (:className IS NULL OR EXISTS (
                 SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className))
+            AND (:grade IS NULL OR EXISTS (
+                SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.grade = :grade))
             """)
-        long countOverdueLoansForSchool(@Param("schoolId") Long schoolId, @Param("today") LocalDate today, @Param("className") String className);
+        long countOverdueLoansForSchool(@Param("schoolId") Long schoolId, @Param("today") LocalDate today, @Param("className") String className, @Param("grade") String grade);
 
         @Query("""
             SELECT COUNT(l)
@@ -75,8 +83,10 @@ public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
             WHERE u.school.id = :schoolId AND l.extensionStatus = edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus.PENDING
             AND (:className IS NULL OR EXISTS (
                 SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className))
+            AND (:grade IS NULL OR EXISTS (
+                SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.grade = :grade))
             """)
-        long countPendingExtensionsForSchool(@Param("schoolId") Long schoolId, @Param("className") String className);
+        long countPendingExtensionsForSchool(@Param("schoolId") Long schoolId, @Param("className") String className, @Param("grade") String grade);
 
 
         @Query(value = """

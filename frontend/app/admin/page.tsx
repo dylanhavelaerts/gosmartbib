@@ -57,7 +57,7 @@ const beheerderWidgets = [
     href: "/admin/manageCatalog",
   },
   {
-    iconSrc: "/checl.png",
+    iconSrc: "/book-closed.png",
     iconAlt: "Uitleningen",
     title: "Uitleningen",
     description:
