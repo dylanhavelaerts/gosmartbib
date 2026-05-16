@@ -139,21 +139,15 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     List<Object[]> findLoansPerMonth(Long schoolId, String className, String grade);
 
     @Query("""
-    SELECT b, COUNT(lh)
-    FROM LoanHistoryEntity lh
-    JOIN BookEntity b ON b.isbn = lh.isbn
-    JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
-    WHERE u.school.id = :schoolId
-    AND (:className IS NULL OR EXISTS (
-        SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
-            ))
-    AND (:grade IS NULL OR EXISTS (
-        SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.grade = :grade
-            ))
-    GROUP BY b
-    ORDER BY COUNT(lh) ASC
-    """)
-    List<Object[]> findLeastPopularBooks(Long schoolId, Pageable pageable, String className, String grade);
+SELECT b, COUNT(lh)
+FROM LoanHistoryEntity lh
+JOIN BookEntity b ON b.isbn = lh.isbn
+JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
+WHERE u.school.id = :schoolId
+GROUP BY b
+ORDER BY COUNT(lh) ASC
+""")
+    List<Object[]> findLeastPopularBooks(Long schoolId, Pageable pageable);
 
 
     @Query(value = """

@@ -114,7 +114,7 @@ export default function StatisticsPage() {
           fetch(`${apiUrl}/statistics/loans-per-month${params}`, {
             credentials: "include",
           }),
-          fetch(`${apiUrl}/statistics/least-popular-books${params}`, {
+          fetch(`${apiUrl}/statistics/least-popular-books`, {
             credentials: "include",
           }),
         ]);

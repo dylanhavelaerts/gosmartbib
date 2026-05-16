@@ -164,9 +164,9 @@ public class StatisticsService {
                 .toList();
     }
 
-    public List<BookPopularityDTO> getLeastPopularBooks(String uid, String className, String grade) {
+    public List<BookPopularityDTO> getLeastPopularBooks(String uid) {
         Long schoolId = resolveSchoolId(uid);
-        return loanHistoryRepository.findLeastPopularBooks(schoolId, PageRequest.of(0, 10), className, grade)
+        return loanHistoryRepository.findLeastPopularBooks(schoolId, PageRequest.of(0, 10))
                 .stream()
                 .map(row -> toBookPopularityDTO((BookEntity) row[0], (Long) row[1]))
                 .toList();

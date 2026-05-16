@@ -120,10 +120,8 @@ public class StatisticsController {
     @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
     @GetMapping("/least-popular-books")
     public ResponseEntity<List<BookPopularityDTO>> leastPopularBooks(
-            @AuthenticationPrincipal OAuth2User principal,
-            @RequestParam(required = false) String className,
-            @RequestParam(required = false) String grade) {
+            @AuthenticationPrincipal OAuth2User principal) {
         String uid = authHelper.extractUid(principal);
-        return ResponseEntity.ok(statisticsService.getLeastPopularBooks(uid, className, grade));
+        return ResponseEntity.ok(statisticsService.getLeastPopularBooks(uid));
     }
 }
