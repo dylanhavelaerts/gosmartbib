@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.services;
+package edu.ap.gosmartlib.services.messages;
 
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.BookNotificationEntity;
@@ -23,7 +23,7 @@ public class BookNotificationService {
     private final BookNotificationRepository bookNotificationRepository;
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
-    private final SmartschoolMessageService messageService;
+    private final MessageSender messageService;
 
     @Transactional
     public void enable(String smartschoolUid, Long bookId) {

@@ -16,7 +16,7 @@ import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanPolicyRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
-import edu.ap.gosmartlib.services.BookNotificationService;
+import edu.ap.gosmartlib.services.messages.BookNotificationService;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;

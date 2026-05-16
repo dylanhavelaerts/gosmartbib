@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.services;
+package edu.ap.gosmartlib.services.messages;
 
 import edu.ap.gosmartlib.entities.*;
 import edu.ap.gosmartlib.repositories.*;
@@ -28,7 +28,7 @@ class BookNotificationServiceTest {
     @Mock
     private BookRepository bookRepository;
     @Mock
-    private SmartschoolMessageService messageService;
+    private MessageSender messageService;
 
     @InjectMocks
     private BookNotificationService bookNotificationService;

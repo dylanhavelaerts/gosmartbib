@@ -4,7 +4,7 @@ import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
 import edu.ap.gosmartlib.security.AuthHelper;
-import edu.ap.gosmartlib.services.BookNotificationService;
+import edu.ap.gosmartlib.services.messages.BookNotificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

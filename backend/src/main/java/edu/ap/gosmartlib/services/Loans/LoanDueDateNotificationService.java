@@ -4,7 +4,7 @@ import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
-import edu.ap.gosmartlib.services.SmartschoolMessageService;
+import edu.ap.gosmartlib.services.messages.MessageSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,7 +22,7 @@ public class LoanDueDateNotificationService {
     private final LoanRepository loanRepository;
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
-    private final SmartschoolMessageService messageService;
+    private final MessageSender messageService;
 
     @Scheduled(cron = "0 0 8 * * *")
     @Transactional(readOnly = true)

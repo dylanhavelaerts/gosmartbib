@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.security.AuthHelper;
-import edu.ap.gosmartlib.services.BookNotificationService;
+import edu.ap.gosmartlib.services.messages.BookNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

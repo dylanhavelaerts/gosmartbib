@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.services;
+package edu.ap.gosmartlib.services.messages;
 
 import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -8,13 +8,14 @@ import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolSoapClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
-
+@Primary
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class SmartschoolMessageService {
+public class SmartschoolMessageService implements MessageSender {
 
     private final SmartschoolOneRosterAuthService authService;
     private final SmartschoolOneRosterClient oneRosterClient;

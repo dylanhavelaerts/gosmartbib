@@ -6,7 +6,8 @@ import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.BookRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
-import edu.ap.gosmartlib.services.SmartschoolMessageService;
+import edu.ap.gosmartlib.services.messages.MessageSender;
+import edu.ap.gosmartlib.services.messages.SmartschoolMessageService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,7 +32,7 @@ class LoanDueDateNotificationServiceTest {
     @Mock
     private BookRepository bookRepository;
     @Mock
-    private SmartschoolMessageService messageService;
+    private MessageSender messageService;
 
     @InjectMocks
     private LoanDueDateNotificationService service;

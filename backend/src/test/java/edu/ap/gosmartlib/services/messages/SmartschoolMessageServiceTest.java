@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.services;
+package edu.ap.gosmartlib.services.messages;
 
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
