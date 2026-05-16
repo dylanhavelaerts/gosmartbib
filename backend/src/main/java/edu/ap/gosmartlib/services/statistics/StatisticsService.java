@@ -36,11 +36,16 @@ public class StatisticsService {
     private final UserRepository userRepository;
 
     /**
-     * Haal de meest populaire boeken op basis van het aantal uitleningen
-     * @param uid - nodig om per school te filteren
-     * @return - lijst van populairste boeken (top 10)
+     * Haal de meest populaire boeken op basis van het aantal uitleningen.
+     * Optioneel te filteren op klas en/of jaar.
+     *
+     * @param uid       smartschool-uid van de ingelogde gebruiker, nodig om per school te filteren
+     * @param className naam van de klas (nullable)
+     * @param grade     jaar/graad (nullable)
+     * @return top 10 populairste boeken
      */
-    public List<BookPopularityDTO> getMostPopularBooks(String uid, String className, String grade) {
+    public List<BookPopularityDTO> getMostPopularBooks(String uid, String className, String grade)
+ {
         Long schoolId = resolveSchoolId(uid);
         return loanHistoryRepository.findMostPopularBooks(schoolId, PageRequest.of(0, 10), className, grade)
                 .stream()
@@ -49,9 +54,13 @@ public class StatisticsService {
     }
 
     /**
-     * Haal de populairste genres op basis van het aantal uitleningen
-     * @param uid - nodig om per school te filteren
-     * @return - lijst van populairste genres (top 15)
+     * Haal de populairste genres op basis van het aantal uitleningen.
+     * Optioneel te filteren op klas en/of jaar.
+     *
+     * @param uid       smartschool-uid van de ingelogde gebruiker
+     * @param className naam van de klas (nullable)
+     * @param grade     jaar/graad (nullable)
+     * @return top 15 populairste genres
      */
     public List<GenreStatsDTO> getMostReadGenres(String uid, String className, String grade) {
         Long schoolId = resolveSchoolId(uid);
@@ -76,9 +85,13 @@ public class StatisticsService {
     }
 
     /**
-     * Haal op hoeveel boeken op tijd vs te laat zijn teruggebracht, en hoeveel verlengingen er zijn aangevraagd
-     * @param uid - nodig om per school te filteren
-     * @return - telling van op-tijd, te laat, en verlengingsstatus
+     * Haal op hoeveel boeken op tijd vs te laat zijn teruggebracht en hoeveel verlengingen er zijn aangevraagd.
+     * Optioneel te filteren op klas en/of jaar.
+     *
+     * @param uid       smartschool-uid van de ingelogde gebruiker
+     * @param className naam van de klas (nullable)
+     * @param grade     jaar/graad (nullable)
+     * @return telling van op-tijd, te laat en verlengingsstatus
      */
     public ReturnPunctualityDTO getReturnPunctuality(String uid, String className, String grade) {
         Long schoolId = resolveSchoolId(uid);
@@ -99,9 +112,13 @@ public class StatisticsService {
     }
 
     /**
-     * Haal de verdeling op van het aantal dagen dat leerlingen over het terugbrengen doen
-     * @param uid - nodig om per school te filteren
-     * @return - lijst van (duurDagen, aantal), gesorteerd op meest voorkomend
+     * Haal de verdeling op van het aantal dagen dat leerlingen over het terugbrengen doen.
+     * Optioneel te filteren op klas en/of jaar.
+     *
+     * @param uid       smartschool-uid van de ingelogde gebruiker
+     * @param className naam van de klas (nullable)
+     * @param grade     jaar/graad (nullable)
+     * @return lijst van (duurDagen, aantal), gesorteerd op meest voorkomend
      */
     public List<LoanDurationStatsDTO> getLoanDurationDistribution(String uid, String className, String grade) {
         Long schoolId = resolveSchoolId(uid);
