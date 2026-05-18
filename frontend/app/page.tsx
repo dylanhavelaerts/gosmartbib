@@ -262,35 +262,40 @@ export default function Home() {
   useEffect(() => {
     if (authLoading || !user) return;
 
-    fetch(`${apiUrl}/loans/active`, { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : []))
-      .then(
-        (
-          loans: Array<{
-            loanId: number;
-            dueDate: string;
-            book: {
-              id: number;
-              title: string;
-              thumbnail: string | null;
-              isbn: string;
-              authors: string[];
-            } | null;
-          }>,
-        ) => {
-          const urgent = loans
-            .map((l) => ({
-              loanId: l.loanId,
-              book: l.book,
-              daysLeft: calcDaysLeft(l.dueDate),
-            }))
-            .filter((l) => l.daysLeft <= 5)
-            .sort((a, b) => a.daysLeft - b.daysLeft);
-          setUrgentLoans(urgent);
-          if (urgent.length > 0) setSelected("urgent");
-        },
-      )
-      .catch(() => {});
+    Promise.all([
+      fetch(`${apiUrl}/loans/reminder-days`, { credentials: "include" })
+        .then((res) => (res.ok ? res.json() : 5))
+        .catch(() => 5),
+      fetch(`${apiUrl}/loans/active`, { credentials: "include" })
+        .then((res) => (res.ok ? res.json() : []))
+        .catch(() => []),
+    ]).then(
+      ([reminderDays, loans]: [
+        number,
+        Array<{
+          loanId: number;
+          dueDate: string;
+          book: {
+            id: number;
+            title: string;
+            thumbnail: string | null;
+            isbn: string;
+            authors: string[];
+          } | null;
+        }>,
+      ]) => {
+        const urgent = loans
+          .map((l) => ({
+            loanId: l.loanId,
+            book: l.book,
+            daysLeft: calcDaysLeft(l.dueDate),
+          }))
+          .filter((l) => l.daysLeft <= reminderDays)
+          .sort((a, b) => a.daysLeft - b.daysLeft);
+        setUrgentLoans(urgent);
+        if (urgent.length > 0) setSelected("urgent");
+      },
+    );
   }, [authLoading, user, apiUrl]);
 
   return (

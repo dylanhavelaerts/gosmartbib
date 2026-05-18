@@ -5,6 +5,7 @@ import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
 import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
+import edu.ap.gosmartlib.services.Loans.LoanPolicyService;
 import edu.ap.gosmartlib.services.Loans.LoanService;
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +22,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LoanController {
     private final LoanService loanService;
+    private final LoanPolicyService loanPolicyService;
+
 
     // Bestaande functie: Boeken uitlenen
     @PostMapping
@@ -143,5 +146,13 @@ public class LoanController {
         // Haal data op via service
         List<LoanHistoryDTO> history = loanService.getLoanHistoryByUser(smartschoolUid);
         return ResponseEntity.ok(history);
+    }
+    @GetMapping("/reminder-days")
+    public ResponseEntity<Integer> getReminderDays(@AuthenticationPrincipal OAuth2User principal) {
+        if (principal == null || principal.getAttribute("userID") == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String uid = principal.getAttribute("userID");
+        return ResponseEntity.ok(loanPolicyService.getReminderDaysForUser(uid));
     }
 }

@@ -26,9 +26,15 @@ public class LoanPolicyEntity {
     @Min(1)
     private int defaultExtensionPeriodDays;
 
+    @Min(1)
+    @Column(columnDefinition = "integer default 3 not null")
+    private int dueDateReminderDays = 3;
+
     public LoanPolicyEntity(SchoolEntity school, int defaultLoanPeriodDays, int defaultExtensionPeriodDays) {
         this.school = school;
         this.defaultLoanPeriodDays = defaultLoanPeriodDays;
         this.defaultExtensionPeriodDays = defaultExtensionPeriodDays;
+        this.dueDateReminderDays = 3;
     }
+
 }

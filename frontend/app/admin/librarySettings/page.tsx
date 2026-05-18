@@ -9,16 +9,23 @@ import { formatSchoolLabel } from "../reviews/components/ReviewCard";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const DEFAULT_LOAN_PERIOD = 14;
 const DEFAULT_EXTENSION_PERIOD = 3;
+const DEFAULT_REMINDER_DAYS = 3;
 
 export default function LibrarySettings() {
   const [loanPeriod, setLoanPeriod] = useState<number>(DEFAULT_LOAN_PERIOD);
   const [extensionPeriod, setExtensionPeriod] = useState<number>(
     DEFAULT_EXTENSION_PERIOD,
   );
+  const [reminderDays, setReminderDays] = useState<number>(
+    DEFAULT_REMINDER_DAYS,
+  );
   const [savedLoanPeriod, setSavedLoanPeriod] =
     useState<number>(DEFAULT_LOAN_PERIOD);
   const [savedExtensionPeriod, setSavedExtensionPeriod] = useState<number>(
     DEFAULT_EXTENSION_PERIOD,
+  );
+  const [savedReminderDays, setSavedReminderDays] = useState<number>(
+    DEFAULT_REMINDER_DAYS,
   );
 
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -70,14 +77,18 @@ export default function LibrarySettings() {
         if (policyResponse.status === 404) {
           setLoanPeriod(DEFAULT_LOAN_PERIOD);
           setExtensionPeriod(DEFAULT_EXTENSION_PERIOD);
+          setReminderDays(DEFAULT_REMINDER_DAYS);
           setSavedLoanPeriod(DEFAULT_LOAN_PERIOD);
           setSavedExtensionPeriod(DEFAULT_EXTENSION_PERIOD);
+          setSavedReminderDays(DEFAULT_REMINDER_DAYS);
         } else if (policyResponse.ok) {
           const data = await policyResponse.json();
           setLoanPeriod(data.defaultLoanPeriodDays);
           setExtensionPeriod(data.defaultExtensionPeriodDays);
+          setReminderDays(data.dueDateReminderDays);
           setSavedLoanPeriod(data.defaultLoanPeriodDays);
           setSavedExtensionPeriod(data.defaultExtensionPeriodDays);
+          setSavedReminderDays(data.dueDateReminderDays);
         } else {
           throw new Error(`HTTP ${policyResponse.status}`);
         }
@@ -93,7 +104,7 @@ export default function LibrarySettings() {
 
   const handleSave = async () => {
     if (!API_URL || !schoolId) return;
-    if (loanPeriod < 1 || extensionPeriod < 1) {
+    if (loanPeriod < 1 || extensionPeriod < 1 || reminderDays < 1) {
       setError("Periodes moeten minimaal 1 dag zijn");
       return;
     }
@@ -112,6 +123,7 @@ export default function LibrarySettings() {
           body: JSON.stringify({
             defaultLoanPeriodDays: loanPeriod,
             defaultExtensionPeriodDays: extensionPeriod,
+            dueDateReminderDays: reminderDays,
           }),
         },
       );
@@ -124,8 +136,10 @@ export default function LibrarySettings() {
       const saved = await response.json();
       setLoanPeriod(saved.defaultLoanPeriodDays);
       setExtensionPeriod(saved.defaultExtensionPeriodDays);
+      setReminderDays(saved.dueDateReminderDays);
       setSavedLoanPeriod(saved.defaultLoanPeriodDays);
       setSavedExtensionPeriod(saved.defaultExtensionPeriodDays);
+      setSavedReminderDays(saved.dueDateReminderDays);
       setSuccess("Instellingen succesvol opgeslagen");
     } catch (err) {
       setError(
@@ -200,6 +214,19 @@ export default function LibrarySettings() {
                     <span className="unitLabel">dagen</span>
                   </div>
                 </label>
+
+                <label className="field">
+                  <span>Herinneringsperiode</span>
+                  <div className="inputWithUnit">
+                    <input
+                      type="number"
+                      value={reminderDays}
+                      onChange={(e) => setReminderDays(Number(e.target.value))}
+                      disabled={saving}
+                    />
+                    <span className="unitLabel">dagen</span>
+                  </div>
+                </label>
               </div>
 
               <div className="actions">
@@ -241,6 +268,12 @@ export default function LibrarySettings() {
                   <span className="infoLabel">Verlengingsperiode</span>
                   <strong className="infoValue">
                     {savedExtensionPeriod} dagen
+                  </strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Herinneringsperiode</span>
+                  <strong className="infoValue">
+                    {savedReminderDays} dagen
                   </strong>
                 </div>
               </div>
