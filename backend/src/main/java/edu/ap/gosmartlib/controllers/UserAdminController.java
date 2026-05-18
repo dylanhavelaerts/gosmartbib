@@ -29,17 +29,19 @@ public class UserAdminController {
     @GetMapping
     @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public Page<AdminUserDTO> listUsers(@AuthenticationPrincipal OAuth2User principal,
+            @RequestParam(required = false) Long schoolId,
             @RequestParam(required = false) String name,
             Pageable pageable) {
-        return userAdminService.listUsersForAdmin(authHelper.extractUid(principal), name, pageable);
+        return userAdminService.listUsersForAdmin(authHelper.extractUid(principal), schoolId, name, pageable);
     }
 
     @PatchMapping("/{id}/role")
     @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public AdminUserDTO updateRole(
             @PathVariable long id,
+            @RequestParam(required = false) Long schoolId,
             @RequestBody UpdateUserRoleRequest request,
             @AuthenticationPrincipal OAuth2User principal) {
-        return userAdminService.updateUserRole(authHelper.extractUid(principal), id, request.role());
+        return userAdminService.updateUserRole(authHelper.extractUid(principal), schoolId, id, request.role());
     }
 }

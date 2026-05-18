@@ -89,11 +89,7 @@ public class SchoolIntegrationService {
 
     @Transactional(readOnly = true)
     public SchoolIntegrationEntity getIntegrationEntityForAdmin(String actorUid, Long schoolId) {
-        UserEntity actor = getCurrentAdmin(actorUid);
-
-        if (!actor.getSchool().getId().equals(schoolId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang tot deze school");
-        }
+        getCurrentAdmin(actorUid);
 
         return schoolIntegrationRepository.findBySchool_Id(schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Integratie niet gevonden"));
