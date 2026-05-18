@@ -104,78 +104,6 @@
   margin: 0;
   line-height: 1.4;
 }
-/* --- Urgent loans banner --- */
-
-.urgent-banner {
-  margin: 0 2.5rem 1.5rem;
-  padding: 1.25rem 1.5rem;
-  background: #fdfcfd;
-  border: 1px solid #ece6f0;
-  border-radius: 0.5rem;
-}
-
-.urgent-banner-title {
-  font-size: 1.15rem;
-  font-weight: bold;
-  color: #3e0c1c;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #ece6f0;
-  margin-bottom: 0.75rem;
-}
-
-.urgent-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 0.875rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.urgent-list-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid #ece6f0;
-}
-
-.urgent-list-item:last-child {
-  border-bottom: none;
-}
-
-.urgent-book-title {
-  font-size: 0.9rem;
-  color: #333;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.urgent-days-badge {
-  font-size: 0.75rem;
-  font-weight: bold;
-  padding: 0.25rem 0.6rem;
-  border-radius: 0.35rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.badge--soon    { background-color: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
-.badge--overdue { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
-
-.urgent-banner-link {
-  font-size: 0.82rem;
-  color: #8e2446;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.urgent-banner-link:hover {
-  text-decoration: underline;
-}
-
 
 @media (max-width: 640px) {
   .user-header {
@@ -194,10 +122,6 @@
 
   .widget-card {
     padding: 1.25rem;
-  }
-  .urgent-banner {
-    margin: 0 1.25rem 1rem;
-    padding: 1rem 1.25rem;
   }
 
 }
