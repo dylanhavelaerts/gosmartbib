@@ -25,11 +25,7 @@ public class SchoolIntegrationService {
 
     @Transactional(readOnly = true)
     public SchoolIntegrationDTO getIntegration(String actorUid, Long schoolId) {
-        UserEntity actor = getCurrentAdmin(actorUid);
-
-        if (!actor.getSchool().getId().equals(schoolId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang tot deze school");
-        }
+        getCurrentAdmin(actorUid);
 
         SchoolIntegrationEntity integration = schoolIntegrationRepository.findBySchool_Id(schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Integratie niet gevonden"));
@@ -44,11 +40,7 @@ public class SchoolIntegrationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body ontbreekt");
         }
 
-        UserEntity actor = getCurrentAdmin(actorUid);
-
-        if (!actor.getSchool().getId().equals(schoolId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang tot deze school");
-        }
+        getCurrentAdmin(actorUid);
 
         validateRequest(request);
 

@@ -27,7 +27,7 @@ public class UserEntity {
     private String smartschoolUid;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "school_id", nullable = false)
+    @JoinColumn(name = "school_id", nullable = true)
     private SchoolEntity school;
 
     @Enumerated(EnumType.STRING)
