@@ -31,7 +31,7 @@ public class SchoolIntegrationAdminController {
     private final AuthHelper authHelper;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationDTO getIntegration(
             @PathVariable Long schoolId,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -39,7 +39,7 @@ public class SchoolIntegrationAdminController {
     }
 
     @PutMapping
-    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationDTO upsertIntegration(
             @PathVariable Long schoolId,
             @RequestBody UpsertSchoolIntegrationRequest request,
@@ -48,7 +48,7 @@ public class SchoolIntegrationAdminController {
     }
 
     @PostMapping("/test")
-    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationTestResponse testIntegration(
             @PathVariable Long schoolId,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -56,7 +56,7 @@ public class SchoolIntegrationAdminController {
     }
 
     @GetMapping("/live/schools")
-    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationLiveSchoolsResponse getLiveSchools(
             @PathVariable Long schoolId,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -64,7 +64,7 @@ public class SchoolIntegrationAdminController {
     }
 
     @GetMapping("/live/users")
-    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationLiveUsersResponse getLiveUsers(
             @PathVariable Long schoolId,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -72,7 +72,7 @@ public class SchoolIntegrationAdminController {
     }
 
     @GetMapping("/live/classes")
-    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationLiveClassesResponse getLiveClasses(
             @PathVariable Long schoolId,
             @AuthenticationPrincipal OAuth2User principal) {

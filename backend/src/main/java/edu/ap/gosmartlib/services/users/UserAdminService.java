@@ -33,6 +33,11 @@ public class UserAdminService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieuwe rol ontbreekt");
         }
 
+        if (newRole == UserRoles.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Gebruikers mogen niet naar ADMIN worden aangepast");
+        }
+
         UserEntity actor = getCurrentAdmin(actorUid);
         Long effectiveSchoolId = resolveSchoolId(actor, schoolId);
 
