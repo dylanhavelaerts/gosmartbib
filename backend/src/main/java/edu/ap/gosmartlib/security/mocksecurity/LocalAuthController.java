@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import jakarta.servlet.http.Cookie;
@@ -28,6 +29,7 @@ public class LocalAuthController {
 
     private final UserService userService;
     private final UserRepository userRepository;
+    private final SchoolRepository schoolRepository;
     private final HttpSessionSecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     @PostMapping("/mock-role/{role}")
@@ -74,6 +76,11 @@ public class LocalAuthController {
         response.addCookie(authenticatedCookie);
 
         userService.syncUser(mockUser);
+        schoolRepository.findByDomain("https://aphogeschool.smartschool.be")
+                .ifPresent(school -> {
+                    school.setAdminApproved(true);
+                    schoolRepository.save(school);
+                });
 
         if (role.equalsIgnoreCase("bibliotheekbeheerder")) {
             userRepository.findBySmartschoolUid("mock-librarian-local")

@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.security;
 
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.exceptions.SchoolNotApprovedException;
 import edu.ap.gosmartlib.services.users.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -69,6 +70,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             String targetUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
 
+        } catch (SchoolNotApprovedException ex) {
+            log.warn("Login geblokkeerd: school nog niet goedgekeurd - {}", ex.getMessage());
+            response.sendRedirect(frontendUrl + "/login?error=school_not_approved");
         } catch (Exception ex) {
             log.error("OAuth2 success handling failed", ex);
             response.sendRedirect(frontendUrl + "/login?error=true");

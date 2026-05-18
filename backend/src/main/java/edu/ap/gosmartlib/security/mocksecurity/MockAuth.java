@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
 import jakarta.servlet.FilterChain;
@@ -24,6 +25,7 @@ import java.util.Map;
 public class MockAuth extends OncePerRequestFilter {
 
     private final UserService userService;
+    private final SchoolRepository schoolRepository;
 
     /**
      * Deze klasse injecteert een basis gebruiker in je sessie in de lokale omgeving
@@ -75,6 +77,11 @@ public class MockAuth extends OncePerRequestFilter {
 
             // lokale gebruikers injecteren in de db
             userService.syncUser(mockUser);
+            schoolRepository.findByDomain("https://aphogeschool.smartschool.be")
+                    .ifPresent(school -> {
+                        school.setAdminApproved(true);
+                        schoolRepository.save(school);
+                    });
         }
 
         filterChain.doFilter(request, response);

@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.services.users;
 
 import edu.ap.gosmartlib.dto.UserDTO;
 import edu.ap.gosmartlib.entities.SchoolClassEntity;
+import edu.ap.gosmartlib.exceptions.SchoolNotApprovedException;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolClassRepository;
@@ -59,8 +60,12 @@ public class UserService {
                 });
 
         // Zoek een gebruiker, als gebruiker niet bestaat -> maak aan
+        // Nieuwe gebruikers van een niet-goedgekeurde school worden geblokkeerd
         UserEntity user = userRepository.findBySmartschoolUid(uid)
                 .orElseGet(() -> {
+                    if (!school.isAdminApproved()) {
+                        throw new SchoolNotApprovedException(domain);
+                    }
                     log.info("Nieuwe gebruiker gevonden, toevoegen aan database: {} ({} - {})", uid, role, domain);
                     UserEntity u = new UserEntity();
                     u.setSmartschoolUid(uid);
