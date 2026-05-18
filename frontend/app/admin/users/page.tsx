@@ -13,7 +13,6 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "STUDENT", label: "LEERLING" },
   { value: "TEACHER", label: "LEERKRACHT" },
   { value: "BIBLIOTHEEKBEHEERDER", label: "BEHEERDER" },
-  { value: "ADMIN", label: "ADMINISTRATOR" },
 ];
 
 type DisplayNamesResponse = {
@@ -56,8 +55,6 @@ const replaceRoleName = (role: string): string => {
       return "LEERKRACHT";
     case "STUDENT":
       return "LEERLING";
-    case "ADMIN":
-      return "ADMINISTRATOR";
     default:
       return "-";
   }
@@ -109,7 +106,7 @@ export default function AdminUserPage() {
         const meData: MeResponse = await meResponse.json();
         setMe(meData);
 
-        if (meData.role !== "ADMIN") {
+        if (meData.role !== "ADMIN" && meData.role !== "BIBLIOTHEEKBEHEERDER") {
           setError("Je hebt geen toegang tot deze pagina");
           setLoading(false);
           return;
@@ -275,21 +272,23 @@ export default function AdminUserPage() {
       {error && <p className="adminMessage adminMessageError">{error}</p>}
       {succes && <p className="adminMessage adminMessageSuccess">{succes}</p>}
 
-      {!error && me?.role === "ADMIN" && (
+      {!error && (me?.role === "ADMIN" || me?.role === "BIBLIOTHEEKBEHEERDER") && (
         <div id="userMain">
           <div className="adminPageHeader">
             <h1>Gebruikersbeheer {me?.school?.name}</h1>
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              <button
-                className="adminPrimaryButton"
-                onClick={() => setSyncStatus("confirm")}
-              >
-                Synchroniseer
-              </button>
-              <Link href="/admin/school-integration" className="adminPrimaryLink">
-                <button className="adminPrimaryButton">Schoolintegratie</button>
-              </Link>
-            </div>
+            {me?.role === "ADMIN" && (
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <button
+                  className="adminPrimaryButton"
+                  onClick={() => setSyncStatus("confirm")}
+                >
+                  Synchroniseer
+                </button>
+                <Link href="/admin/school-integration" className="adminPrimaryLink">
+                  <button className="adminPrimaryButton">Schoolintegratie</button>
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="adminSearchbar">
@@ -383,20 +382,18 @@ export default function AdminUserPage() {
                       </select>
                     </td>
 
-                    {!changed && <td className="adminCell"></td>}
-
-                    {changed && (
                       <td className="saveButton adminCell">
                         <button
-                          className="adminTableButton"
-                          onClick={() => {
-                            handleSave(user.id);
-                          }}
+                          className={`adminTableButton saveRoleButton ${
+                            changed ? "" : "saveRoleButtonHidden"
+                          }`}
+                          onClick={() => handleSave(user.id)}
+                          disabled={!changed || savingUserId === user.id}
+                          tabIndex={changed ? 0 : -1}
                         >
                           {savingUserId === user.id ? "Opslaan..." : "Opslaan"}
                         </button>
                       </td>
-                    )}
                   </tr>
                 );
               })}

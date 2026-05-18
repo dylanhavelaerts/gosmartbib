@@ -33,6 +33,13 @@ const teacherWidgets = [
 ];
 
 const beheerderWidgets = [
+    {
+    iconSrc: "/admin/settings.png",
+    iconAlt: "Gebruikersbeheer",
+    title: "Gebruikersbeheer",
+    description: "Beheer gebruikers en hun rollen binnen het systeem",
+    href: "/admin/users",
+  },
   {
     iconSrc: "/save.png",
     iconAlt: "InDeKijker",
