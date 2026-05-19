@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
@@ -36,7 +37,7 @@ class LocalAuthControllerTest {
     void givenUnknownRole_whenSwitchRole_thenReturnsBadRequest() {
         UserService userService = mock(UserService.class);
         UserRepository userRepository = mock(UserRepository.class);
-        LocalAuthController controller = new LocalAuthController(userService, userRepository);
+        LocalAuthController controller = new LocalAuthController(userService, userRepository, mock(SchoolRepository.class));
 
         ResponseEntity<String> response = controller.switchRole(
                 "unknown",
@@ -52,7 +53,7 @@ class LocalAuthControllerTest {
     void givenBibliotheekbeheerderRole_whenSwitchRole_thenUpdatesUserRoleAndAuthenticates() {
         UserService userService = mock(UserService.class);
         UserRepository userRepository = mock(UserRepository.class);
-        LocalAuthController controller = new LocalAuthController(userService, userRepository);
+        LocalAuthController controller = new LocalAuthController(userService, userRepository, mock(SchoolRepository.class));
 
         UserEntity user = new UserEntity();
         user.setRole(UserRoles.STUDENT);
@@ -76,7 +77,7 @@ class LocalAuthControllerTest {
     void givenLeerlingRole_whenSwitchRole_thenAuthenticatesAndDoesNotTouchRepository() {
         UserService userService = mock(UserService.class);
         UserRepository userRepository = mock(UserRepository.class);
-        LocalAuthController controller = new LocalAuthController(userService, userRepository);
+        LocalAuthController controller = new LocalAuthController(userService, userRepository, mock(SchoolRepository.class));
 
         ResponseEntity<String> result = controller.switchRole(
                 "leerling",
@@ -93,7 +94,7 @@ class LocalAuthControllerTest {
     void givenLeerkrachtRole_whenSwitchRole_thenAuthenticatesAndDoesNotTouchRepository() {
         UserService userService = mock(UserService.class);
         UserRepository userRepository = mock(UserRepository.class);
-        LocalAuthController controller = new LocalAuthController(userService, userRepository);
+        LocalAuthController controller = new LocalAuthController(userService, userRepository, mock(SchoolRepository.class));
 
         ResponseEntity<String> result = controller.switchRole(
                 "leerkracht",

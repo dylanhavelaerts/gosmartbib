@@ -50,13 +50,13 @@ class UserAdminControllerTest {
                 Pageable pageable = PageRequest.of(0, 10);
 
                 when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
-                when(userAdminService.listUsersForAdmin("admin-uid", null, pageable)).thenReturn(expectedPage);
+                when(userAdminService.listUsersForAdmin("admin-uid", null, null, pageable)).thenReturn(expectedPage);
 
-                Page<AdminUserDTO> result = userAdminController.listUsers(oAuth2User, null, pageable);
+                Page<AdminUserDTO> result = userAdminController.listUsers(oAuth2User, null, null, pageable);
 
                 assertEquals(expectedPage, result);
                 verify(oAuth2User).getAttribute("userID");
-                verify(userAdminService).listUsersForAdmin("admin-uid", null, pageable);
+                verify(userAdminService).listUsersForAdmin("admin-uid", null, null, pageable);
                 verifyNoMoreInteractions(userAdminService, oAuth2User);
         }
 
@@ -65,7 +65,7 @@ class UserAdminControllerTest {
                 Pageable pageable = PageRequest.of(0, 10);
 
                 ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                                () -> userAdminController.listUsers(null, null, pageable));
+                                () -> userAdminController.listUsers(null, null, null, pageable));
 
                 assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
                 assertEquals("Niet ingelogd", exception.getReason());
@@ -78,7 +78,7 @@ class UserAdminControllerTest {
                 Pageable pageable = PageRequest.of(0, 10);
 
                 ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                                () -> userAdminController.listUsers(oAuth2User, null, pageable));
+                                () -> userAdminController.listUsers(oAuth2User, null, null, pageable));
 
                 assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
                 assertEquals("Geen geldige gebruiker", exception.getReason());
@@ -92,7 +92,7 @@ class UserAdminControllerTest {
                 Pageable pageable = PageRequest.of(0, 10);
 
                 ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                                () -> userAdminController.listUsers(oAuth2User, null, pageable));
+                                () -> userAdminController.listUsers(oAuth2User, null, null, pageable));
 
                 assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
                 assertEquals("Geen geldige gebruiker", exception.getReason());
@@ -106,13 +106,13 @@ class UserAdminControllerTest {
                 AdminUserDTO expected = buildAdminUserDTO(2L, "student-uid", UserRoles.TEACHER);
 
                 when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
-                when(userAdminService.updateUserRole("admin-uid", 2L, UserRoles.TEACHER)).thenReturn(expected);
+                when(userAdminService.updateUserRole("admin-uid", null, 2L, UserRoles.TEACHER)).thenReturn(expected);
 
-                AdminUserDTO result = userAdminController.updateRole(2L, request, oAuth2User);
+                AdminUserDTO result = userAdminController.updateRole(2L, null, request, oAuth2User);
 
                 assertEquals(expected, result);
                 verify(oAuth2User).getAttribute("userID");
-                verify(userAdminService).updateUserRole("admin-uid", 2L, UserRoles.TEACHER);
+                verify(userAdminService).updateUserRole("admin-uid", null, 2L, UserRoles.TEACHER);
                 verifyNoMoreInteractions(userAdminService, oAuth2User);
         }
 
@@ -121,7 +121,7 @@ class UserAdminControllerTest {
                 UpdateUserRoleRequest request = new UpdateUserRoleRequest(UserRoles.TEACHER);
 
                 ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                                () -> userAdminController.updateRole(2L, request, null));
+                                () -> userAdminController.updateRole(2L, null, request, null));
 
                 assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
                 assertEquals("Niet ingelogd", exception.getReason());
@@ -134,7 +134,7 @@ class UserAdminControllerTest {
                 when(oAuth2User.getAttribute("userID")).thenReturn(" ");
 
                 ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                                () -> userAdminController.updateRole(2L, request, oAuth2User));
+                                () -> userAdminController.updateRole(2L, null, request, oAuth2User));
 
                 assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
                 assertEquals("Geen geldige gebruiker", exception.getReason());

@@ -49,7 +49,7 @@ class UserAdminServiceTest {
         // Aangepast naar findBySchoolIdAndName zoals gedefinieerd in de Service
         when(userRepository.findBySchoolIdAndName(100L, null, pageable)).thenReturn(userPage);
 
-        Page<AdminUserDTO> result = userAdminService.listUsersForAdmin("admin-uid", null, pageable);
+        Page<AdminUserDTO> result = userAdminService.listUsersForAdmin("admin-uid", null, null, pageable);
 
         assertEquals(2, result.getContent().size());
         assertEquals("student-uid", result.getContent().get(0).smartschoolUid());
@@ -71,7 +71,7 @@ class UserAdminServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.listUsersForAdmin("missing-admin", null, pageable));
+                () -> userAdminService.listUsersForAdmin("missing-admin", null, null, pageable));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Ingelogde gebruiker niet gevonden", exception.getReason());
@@ -86,7 +86,7 @@ class UserAdminServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.listUsersForAdmin("teacher-uid", null, pageable));
+                () -> userAdminService.listUsersForAdmin("teacher-uid", null, null, pageable));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Geen toegang", exception.getReason());
@@ -97,7 +97,7 @@ class UserAdminServiceTest {
     @Test
     void givenNullRole_whenUpdateUserRole_thenThrowsBadRequestWithoutRepositoryCalls() {
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.updateUserRole("admin-uid", 2L, null));
+                () -> userAdminService.updateUserRole("admin-uid", null, 2L, null));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("Nieuwe rol ontbreekt", exception.getReason());
@@ -111,7 +111,7 @@ class UserAdminServiceTest {
         when(userRepository.findByIdAndSchool_Id(99L, 100L)).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.updateUserRole("admin-uid", 99L, UserRoles.TEACHER));
+                () -> userAdminService.updateUserRole("admin-uid", null, 99L, UserRoles.TEACHER));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Gebruiker niet gevonden", exception.getReason());
@@ -128,7 +128,7 @@ class UserAdminServiceTest {
         when(userRepository.findByIdAndSchool_Id(1L, 100L)).thenReturn(Optional.of(actor));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.updateUserRole("admin-uid", 1L, UserRoles.TEACHER));
+                () -> userAdminService.updateUserRole("admin-uid", null, 1L, UserRoles.TEACHER));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("Je kan je eigen rol niet aanpassen", exception.getReason());
@@ -147,7 +147,7 @@ class UserAdminServiceTest {
         when(userRepository.findByIdAndSchool_Id(2L, 100L)).thenReturn(Optional.of(target));
         when(userRepository.save(target)).thenReturn(target);
 
-        AdminUserDTO result = userAdminService.updateUserRole("admin-uid", 2L, UserRoles.TEACHER);
+        AdminUserDTO result = userAdminService.updateUserRole("admin-uid", null, 2L, UserRoles.TEACHER);
 
         assertNotNull(result);
         assertEquals(2L, result.id());
