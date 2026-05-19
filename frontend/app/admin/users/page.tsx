@@ -187,7 +187,12 @@ export default function AdminUserPage() {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ uids: uniqueUids }),
+                body: JSON.stringify({
+              uids: uniqueUids,
+              ...(me?.role === "ADMIN" && selectedSchoolId !== null
+                ? { schoolId: selectedSchoolId }
+                : {}),
+            }),
               },
             );
             if (displayNamesRes.ok) {
@@ -343,7 +348,7 @@ export default function AdminUserPage() {
                     Synchroniseer
                   </button>
                   <Link
-                    href="/admin/school-integration"
+                    href={`/admin/school-integration${selectedSchoolId ? `?schoolId=${selectedSchoolId}` : ""}`}
                     className="adminPrimaryLink"
                   >
                     <button className="adminPrimaryButton">

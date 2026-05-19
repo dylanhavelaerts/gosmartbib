@@ -157,7 +157,11 @@ export default function SchoolsAdminPage() {
           <tbody>
             {schools.map((school) => (
               <tr key={school.id}>
-                <td className="adminCell nameCell">{school.name}</td>
+                <td className="adminCell nameCell">
+                  <Link href={`/admin/school-integration?schoolId=${school.id}`}>
+                    {school.name}
+                  </Link>
+                </td>
                 <td className="adminCell domainCell">{school.domain}</td>
                 <td className="adminCell">
                   {school.adminApproved ? (
