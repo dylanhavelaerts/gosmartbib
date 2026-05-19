@@ -133,6 +133,11 @@
   flex-wrap: wrap;
 }
 
+.homeReadingListsState .homeRlBtn {
+  flex-shrink: 0;
+}
+
+
 .homeReadingListsState p {
   flex: 1;
   min-width: 125px; /* Adjust based on your text length */
