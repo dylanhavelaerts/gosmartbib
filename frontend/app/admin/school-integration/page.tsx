@@ -11,7 +11,6 @@ import type {
 } from "@/app/interfaces/schoolIntegration";
 import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import "./schoolIntegration.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -32,10 +31,7 @@ function formatDate(value?: string | null) {
 }
 
 export default function SchoolIntegrationPage() {
-  const searchParams = useSearchParams();
-  const schoolIdParam = searchParams.get("schoolId")
-    ? Number(searchParams.get("schoolId"))
-    : null;
+  const schoolIdParam = Number(new URLSearchParams(window.location.search).get("schoolId")) || null;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
