@@ -35,6 +35,7 @@ public class SchoolAdminService {
                 .toList();
     }
 
+    @Transactional
     public SchoolDTO createSchool(CreateSchoolRequest request) {
         String name = request.name() != null ? request.name().trim() : "";
         String domain = request.domain() != null ? request.domain().trim() : "";
