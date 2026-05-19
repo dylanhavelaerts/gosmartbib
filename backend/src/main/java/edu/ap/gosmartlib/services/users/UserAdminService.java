@@ -20,15 +20,15 @@ public class UserAdminService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public Page<AdminUserDTO> listUsersForAdmin(String actorUid, String name, Pageable pageable) {
+    public Page<AdminUserDTO> listUsersForAdmin(String actorUid, Long schoolId, String name, Pageable pageable) {
         UserEntity actor = getCurrentAdmin(actorUid);
-        Long schoolId = actor.getSchool().getId();
-        Page<UserEntity> users = userRepository.findBySchoolIdAndName(schoolId, name, pageable);
+        Long effectiveSchoolId = resolveSchoolId(actor, schoolId);
+        Page<UserEntity> users = userRepository.findBySchoolIdAndName(effectiveSchoolId, name, pageable);
         return users.map(AdminUserDTO::from);
     }
 
     @Transactional
-    public AdminUserDTO updateUserRole(String actorUid, Long targerUserId, UserRoles newRole) {
+    public AdminUserDTO updateUserRole(String actorUid, Long schoolId, Long targerUserId, UserRoles newRole) {
         if (newRole == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieuwe rol ontbreekt");
         }
@@ -39,8 +39,9 @@ public class UserAdminService {
         }
 
         UserEntity actor = getCurrentAdmin(actorUid);
+        Long effectiveSchoolId = resolveSchoolId(actor, schoolId);
 
-        UserEntity target = userRepository.findByIdAndSchool_Id(targerUserId, actor.getSchool().getId())
+        UserEntity target = userRepository.findByIdAndSchool_Id(targerUserId, effectiveSchoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gebruiker niet gevonden"));
 
         if (target.getId().equals(actor.getId())) {
@@ -50,6 +51,14 @@ public class UserAdminService {
         target.setRole(newRole);
 
         return AdminUserDTO.from(userRepository.save(target));
+    }
+
+    private Long resolveSchoolId(UserEntity actor, Long schoolId) {
+        if (actor.getRole() == UserRoles.ADMIN) {
+            if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
+            return schoolId;
+        }
+        return actor.getSchool().getId();
     }
 
     @Transactional(readOnly = true)

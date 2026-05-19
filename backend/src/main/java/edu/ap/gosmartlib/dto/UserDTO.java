@@ -15,7 +15,7 @@ public record UserDTO(
         return new UserDTO(
                 user.getId(),
                 user.getRole(),
-                SchoolDTO.from(user.getSchool()),
+                user.getSchool() != null ? SchoolDTO.from(user.getSchool()) : null,
                 user.getClasses().stream()
                         .map(SchoolClassDTO::from)
                         .collect(Collectors.toSet()));

@@ -25,11 +25,7 @@ public class SchoolIntegrationService {
 
     @Transactional(readOnly = true)
     public SchoolIntegrationDTO getIntegration(String actorUid, Long schoolId) {
-        UserEntity actor = getCurrentAdmin(actorUid);
-
-        if (!actor.getSchool().getId().equals(schoolId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang tot deze school");
-        }
+        getCurrentAdmin(actorUid);
 
         SchoolIntegrationEntity integration = schoolIntegrationRepository.findBySchool_Id(schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Integratie niet gevonden"));
@@ -44,11 +40,7 @@ public class SchoolIntegrationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body ontbreekt");
         }
 
-        UserEntity actor = getCurrentAdmin(actorUid);
-
-        if (!actor.getSchool().getId().equals(schoolId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang tot deze school");
-        }
+        getCurrentAdmin(actorUid);
 
         validateRequest(request);
 
@@ -88,7 +80,7 @@ public class SchoolIntegrationService {
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
 
-        if (actor.getRole() != UserRoles.ADMIN) {
+        if (actor.getRole() != UserRoles.ADMIN && actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
         }
 
@@ -97,11 +89,7 @@ public class SchoolIntegrationService {
 
     @Transactional(readOnly = true)
     public SchoolIntegrationEntity getIntegrationEntityForAdmin(String actorUid, Long schoolId) {
-        UserEntity actor = getCurrentAdmin(actorUid);
-
-        if (!actor.getSchool().getId().equals(schoolId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang tot deze school");
-        }
+        getCurrentAdmin(actorUid);
 
         return schoolIntegrationRepository.findBySchool_Id(schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Integratie niet gevonden"));

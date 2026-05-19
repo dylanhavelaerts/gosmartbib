@@ -89,6 +89,13 @@ const adminWidgets = [
     description: "Beheer gebruikers en hun rollen binnen het systeem",
     href: "/admin/users",
   },
+  {
+    iconSrc: "/admin/settings.png",
+    iconAlt: "Schoolintegratie",
+    title: "Schoolintegratie",
+    description: "Voeg scholen toe, keur wachtende scholen goed en beheer schoolintegraties",
+    href: "/admin/schools",
+  },
 ];
 
 export default function AdminHome() {

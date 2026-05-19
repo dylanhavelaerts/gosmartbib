@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -14,7 +15,7 @@ class LocalSecurityConfigTest {
 
     @Test
     void localCorsConfigurationSource_shouldAllowLocalFrontend() {
-        LocalSecurityConfig config = new LocalSecurityConfig(mock(UserService.class));
+        LocalSecurityConfig config = new LocalSecurityConfig(mock(UserService.class), mock(SchoolRepository.class));
 
         CorsConfigurationSource source = config.localCorsConfigurationSource();
         CorsConfiguration cors = source.getCorsConfiguration(new MockHttpServletRequest("GET", "/books/all"));
