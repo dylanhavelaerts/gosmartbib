@@ -80,7 +80,7 @@ public class SchoolIntegrationService {
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
 
-        if (actor.getRole() != UserRoles.ADMIN) {
+        if (actor.getRole() != UserRoles.ADMIN && actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
         }
 

@@ -17,15 +17,19 @@ type PreviewUser = {
 
 export default function NewSchoolPage() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     fetch(`${API_URL}/auth/me`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((me) => {
-        if (!me || me.role !== "ADMIN") router.replace("/");
+        if (!me || me.role !== "ADMIN") { router.replace("/"); return; }
+        setChecking(false);
       })
       .catch(() => router.replace("/"));
   }, [router]);
+
+  if (checking) return null;
 
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
