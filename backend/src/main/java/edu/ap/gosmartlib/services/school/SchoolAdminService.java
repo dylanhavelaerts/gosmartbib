@@ -4,10 +4,16 @@ import edu.ap.gosmartlib.dto.school.ApproveSchoolRequest;
 import edu.ap.gosmartlib.dto.school.CreateSchoolRequest;
 import edu.ap.gosmartlib.dto.school.SchoolDTO;
 import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.repositories.SchoolClassRepository;
+import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.services.users.UserDeletionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -17,6 +23,10 @@ import java.util.List;
 public class SchoolAdminService {
 
     private final SchoolRepository schoolRepository;
+    private final UserRepository userRepository;
+    private final UserDeletionService userDeletionService;
+    private final SchoolClassRepository schoolClassRepository;
+    private final SchoolIntegrationRepository schoolIntegrationRepository;
 
     public List<SchoolDTO> listAllSchools() {
         return schoolRepository.findAllByOrderByAdminApprovedAscNameAsc()
@@ -31,7 +41,10 @@ public class SchoolAdminService {
 
         if (name.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schoolnaam is verplicht");
         if (domain.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schooldomein is verplicht");
-        if (schoolRepository.existsByDomain(domain)) throw new ResponseStatusException(HttpStatus.CONFLICT, "School met dit domein bestaat al");
+        schoolRepository.findByDomain(domain).ifPresent(existing -> {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "School met dit domein bestaat al (id=" + existing.getId() + ")");
+        });
 
         SchoolEntity school = new SchoolEntity();
         school.setName(name);
@@ -39,6 +52,23 @@ public class SchoolAdminService {
         school.setAdminApproved(true);
 
         return SchoolDTO.from(schoolRepository.save(school));
+    }
+
+    @Transactional
+    public void deleteSchool(Long schoolId) {
+        SchoolEntity school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School niet gevonden"));
+
+        List<UserEntity> users = userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(schoolId);
+        for (UserEntity user : users) {
+            userDeletionService.deleteUser(user);
+        }
+
+        schoolClassRepository.deleteAll(schoolClassRepository.findAllBySchool_IdOrderByNameAsc(schoolId));
+
+        schoolIntegrationRepository.findBySchool_Id(schoolId).ifPresent(schoolIntegrationRepository::delete);
+
+        schoolRepository.delete(school);
     }
 
     public SchoolDTO approveSchool(Long schoolId, ApproveSchoolRequest request) {
