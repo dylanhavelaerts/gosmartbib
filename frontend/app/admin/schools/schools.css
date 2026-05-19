@@ -1,0 +1,227 @@
+#schoolsMain {
+  width: min(1100px, 100%);
+  margin: 5rem auto 2rem;
+  padding: 0 1rem;
+  color: #2b2024;
+}
+
+#schoolsMain h1 {
+  font-size: clamp(22px, 2vw, 30px);
+  color: #7a1d3f;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.adminPageHeader {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.adminMessage {
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+}
+.adminMessageError {
+  color: #b71f49;
+}
+.adminMessageSuccess {
+  color: #1f6a3f;
+}
+
+/* ── Table ── */
+.adminTable {
+  width: 100%;
+  border: 1px solid #e7d4dc;
+  border-radius: 12px;
+  overflow: hidden;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(122, 29, 63, 0.08);
+  table-layout: fixed;
+}
+.adminTable thead {
+  background: #f8f4f6;
+}
+.adminTable th.adminHeader {
+  padding: 0.95rem 1rem;
+  font-size: 0.95rem;
+  color: #7a1d3f;
+  font-weight: 700;
+  border-bottom: 1px solid #e7d4dc;
+}
+.adminTable th.adminHeader:first-child {
+  text-align: left;
+}
+.adminCell {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #efe2e7;
+  text-align: center;
+  color: #4d3b42;
+}
+.adminTable tbody tr:hover {
+  background: #fcf7f9;
+}
+.adminTable tbody tr:last-child .adminCell {
+  border-bottom: none;
+}
+.nameCell {
+  text-align: left;
+  font-weight: 600;
+  color: #7a1d3f;
+  overflow-wrap: anywhere;
+}
+.domainCell {
+  text-align: left;
+  font-size: 0.88rem;
+  color: #666;
+  overflow-wrap: anywhere;
+}
+
+/* ── Status badge ── */
+.statusBadge {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.statusApproved {
+  background: #e6f4ec;
+  color: #1f6a3f;
+}
+.statusPending {
+  background: #fff3e0;
+  color: #b45309;
+}
+
+/* ── Buttons ── */
+.adminPrimaryButton {
+  background-color: #8e2446;
+  color: white;
+  border: 1.5px solid #8e2446;
+  border-radius: 10px;
+  padding: 0.85rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease;
+  box-shadow: 0 4px 10px rgba(142, 36, 70, 0.16);
+}
+.adminPrimaryButton:hover {
+  background-color: #6e1a35;
+  transform: translateY(-1px);
+}
+.adminTableButton {
+  background-color: #7a1d3f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 4px 10px rgba(122, 29, 63, 0.18);
+}
+.adminTableButton:hover {
+  background-color: #6a1936;
+}
+
+.adminTableButtonDanger {
+  background-color: transparent;
+  color: #b42318;
+  border: 1px solid #b42318;
+  box-shadow: none;
+}
+.adminTableButtonDanger:hover {
+  background-color: #fff1f1;
+}
+
+.adminDangerButton {
+  background-color: #b42318;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+.adminDangerButton:hover:not(:disabled) {
+  background-color: #9b1e14;
+}
+.adminDangerButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Modal overlay (add / approve school) ── */
+.schoolModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.schoolModalBox {
+  background: #fff;
+  border-radius: 14px;
+  padding: 2rem;
+  width: min(480px, 90vw);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.schoolModalBox h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #7a1d3f;
+}
+.schoolModalField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.schoolModalField label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #4d3b42;
+}
+.schoolModalField input {
+  border: 1.5px solid #d4c4ca;
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.95rem;
+  color: #2b2024;
+  outline: none;
+  transition: border-color 0.18s;
+}
+.schoolModalField input:focus {
+  border-color: #8e2446;
+}
+.schoolModalField input:disabled {
+  background: #f5f0f2;
+  color: #888;
+}
+.schoolModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+.schoolModalCancel {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 0.95rem;
+}

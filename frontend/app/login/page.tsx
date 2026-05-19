@@ -8,7 +8,13 @@ export default function LoginPage() {
   const [hasError] = useState(() =>
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("error") === "true"
-      : false
+      : false,
+  );
+  const [schoolNotApproved] = useState(() =>
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("error") ===
+        "school_not_approved"
+      : false,
   );
 
   useEffect(() => {
@@ -61,7 +67,13 @@ export default function LoginPage() {
             </picture>
           </button>
 
-          {hasError && (
+          {schoolNotApproved && (
+            <p className="loginError" role="alert">
+              Jouw school is nog niet toegevoegd aan het platform. Contacteer de
+              schooladministratie.
+            </p>
+          )}
+          {hasError && !schoolNotApproved && (
             <p className="loginError" role="alert">
               Er is een fout opgetreden tijdens het inloggen. Probeer het
               opnieuw.
