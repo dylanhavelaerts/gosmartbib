@@ -825,7 +825,7 @@ public class ReadingListService {
         try {
             var response = userDirectoryService.resolveDisplayNames(
                     actorUid,
-                    new ResolveDisplayNamesRequest(uids));
+                    new ResolveDisplayNamesRequest(uids, null));
 
             if (!response.success() || response.displayNames() == null) {
                 return Map.of();

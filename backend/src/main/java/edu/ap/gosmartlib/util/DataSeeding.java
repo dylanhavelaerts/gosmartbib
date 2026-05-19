@@ -85,15 +85,23 @@ public class DataSeeding implements CommandLineRunner {
                 return b;
         }
 
-        private SchoolEntity ensureSchool(String name, String domain) {
-                return schoolRepository.findByDomain(domain)
-                                .orElseGet(() -> {
-                                        SchoolEntity school = new SchoolEntity();
-                                        school.setName(name);
-                                        school.setDomain(domain);
-                                        return schoolRepository.save(school);
-                                });
-        }
+    private SchoolEntity ensureSchool(String name, String domain) {
+        return schoolRepository.findByDomain(domain)
+                .map(existing -> {
+                    if (!existing.isAdminApproved()) {
+                        existing.setAdminApproved(true);
+                        return schoolRepository.save(existing);
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> {
+                    SchoolEntity school = new SchoolEntity();
+                    school.setName(name);
+                    school.setDomain(domain);
+                    school.setAdminApproved(true);
+                    return schoolRepository.save(school);
+                });
+    }
 
         private List<BookInventoryEntity> createSeedInventories(BookEntity book, int totalCopies, int availableCopies) {
                 List<BookInventoryEntity> inventories = new ArrayList<>();
