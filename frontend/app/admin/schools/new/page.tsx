@@ -18,19 +18,6 @@ type PreviewUser = {
 export default function NewSchoolPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    fetch(`${API_URL}/auth/me`, { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((me) => {
-        if (!me || me.role !== "ADMIN") { router.replace("/"); return; }
-        setChecking(false);
-      })
-      .catch(() => router.replace("/"));
-  }, [router]);
-
-  if (checking) return null;
-
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
 
@@ -38,6 +25,9 @@ export default function NewSchoolPage() {
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [showSecret, setShowSecret] = useState(false);
+  const [smartschoolAccesscode, setSmartschoolAccesscode] = useState("");
+  const [showAccesscode, setShowAccesscode] = useState(false);
+  const [senderIdentifier, setSenderIdentifier] = useState("");
   const [onerosterEnabled, setOnerosterEnabled] = useState(true);
 
   const [saving, setSaving] = useState(false);
@@ -54,6 +44,18 @@ export default function NewSchoolPage() {
   );
   const [previewClasses, setPreviewClasses] = useState<string[] | null>(null);
   const [previewError, setPreviewError] = useState("");
+
+  useEffect(() => {
+    fetch(`${API_URL}/auth/me`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((me) => {
+        if (!me || me.role !== "ADMIN") { router.replace("/"); return; }
+        setChecking(false);
+      })
+      .catch(() => router.replace("/"));
+  }, [router]);
+
+  if (checking) return null;
 
   const handleSave = async () => {
     setError("");
@@ -72,9 +74,8 @@ export default function NewSchoolPage() {
       });
       let schoolId: number;
       let schoolName: string;
-      if (schoolRes.status === 409 || schoolRes.status === 201) {
-        // 409 = domein bestaat al, maar we proberen toch de school op te halen (om id te krijgen)
-        // 201 = nieuwe school gemaakt
+      let wasUpdated = false;
+      if (schoolRes.status === 409) {
         const data = await schoolRes.json().catch(() => null);
         if (!data?.id) {
           setError(
@@ -84,6 +85,7 @@ export default function NewSchoolPage() {
         }
         schoolId = data.id;
         schoolName = data.name ?? name.trim();
+        wasUpdated = true;
       } else if (!schoolRes.ok) {
         const data = await schoolRes.json().catch(() => ({}));
         setError(data.message ?? "School aanmaken mislukt.");
@@ -94,7 +96,7 @@ export default function NewSchoolPage() {
         schoolName = created.name;
       }
 
-      if (baseUrl.trim() || clientId.trim() || clientSecret.trim()) {
+      if (baseUrl.trim() || clientId.trim() || clientSecret.trim() || smartschoolAccesscode.trim() || senderIdentifier.trim()) {
         const intRes = await fetch(
           `${API_URL}/admin/schools/${schoolId}/integration`,
           {
@@ -106,15 +108,15 @@ export default function NewSchoolPage() {
               onerosterClientId: clientId.trim(),
               onerosterClientSecret: clientSecret.trim(),
               onerosterEnabled,
-              smartschoolAccesscode: "",
-              smartschoolSenderIdentifier: "",
+              smartschoolAccesscode: smartschoolAccesscode.trim(),
+              smartschoolSenderIdentifier: senderIdentifier.trim(),
             }),
           },
         );
         if (!intRes.ok) {
           const data = await intRes.json().catch(() => ({}));
           setError(
-            `School aangemaakt, maar integratie opslaan mislukt: ${data.message ?? "onbekende fout"}`,
+            `School ${wasUpdated ? "bijgewerkt" : "aangemaakt"}, maar integratie opslaan mislukt: ${data.message ?? "onbekende fout"}`,
           );
           setSavedSchoolId(schoolId);
           return;
@@ -122,7 +124,7 @@ export default function NewSchoolPage() {
       }
 
       setSavedSchoolId(schoolId);
-      setSuccess(`School "${schoolName}" succesvol aangemaakt.`);
+      setSuccess(`School "${schoolName}" succesvol ${wasUpdated ? "bijgewerkt" : "aangemaakt"}.`);
     } catch {
       setError("Er ging iets mis bij het opslaan.");
     } finally {
@@ -263,6 +265,35 @@ export default function NewSchoolPage() {
                 {showSecret ? "Verberg" : "Toon"}
               </button>
             </div>
+          </div>
+          <div className="field">
+            <span>Smartschool Webservices accesscode</span>
+            <div className="passwordFieldWrapper">
+              <input
+                type={showAccesscode ? "text" : "password"}
+                placeholder="Webservices Accesscode"
+                value={smartschoolAccesscode}
+                onChange={(e) => setSmartschoolAccesscode(e.target.value)}
+                disabled={!!savedSchoolId}
+              />
+              <button
+                type="button"
+                className="togglePasswordBtn"
+                onClick={() => setShowAccesscode((v) => !v)}
+              >
+                {showAccesscode ? "Verberg" : "Toon"}
+              </button>
+            </div>
+          </div>
+          <div className="field">
+            <span>Smartschool afzender</span>
+            <input
+              type="text"
+              placeholder="bv. jan.janssen"
+              value={senderIdentifier}
+              onChange={(e) => setSenderIdentifier(e.target.value)}
+              disabled={!!savedSchoolId}
+            />
           </div>
           <label className="checkbox">
             <input
