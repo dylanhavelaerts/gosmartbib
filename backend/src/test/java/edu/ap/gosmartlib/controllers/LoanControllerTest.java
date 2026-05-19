@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
 import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
+import edu.ap.gosmartlib.services.Loans.LoanPolicyService;
 import edu.ap.gosmartlib.services.Loans.LoanService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,10 +29,13 @@ class LoanControllerTest {
     private LoanService loanService;
 
     @Mock
-    private OAuth2User principal; // Voeg de mock toe voor de ingelogde gebruiker
+    private OAuth2User principal;
 
     @InjectMocks
     private LoanController loanController;
+
+    @Mock
+    private LoanPolicyService loanPolicyService;
 
     @Test
     void givenValidRequests_whenCreateLoans_thenReturnsOk() {
@@ -271,4 +275,25 @@ class LoanControllerTest {
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(loanService);
     }
+    @Test
+    void givenValidPrincipal_whenGetReminderDays_thenReturnsOkWithDays() {
+        String uid = "uid-123";
+        when(principal.getAttribute("userID")).thenReturn(uid);
+        when(loanPolicyService.getReminderDaysForUser(uid)).thenReturn(5);
+
+        ResponseEntity<Integer> response = loanController.getReminderDays(principal);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(5, response.getBody());
+        verify(loanPolicyService, times(1)).getReminderDaysForUser(uid);
+    }
+
+    @Test
+    void givenNullPrincipal_whenGetReminderDays_thenReturnsUnauthorized() {
+        ResponseEntity<Integer> response = loanController.getReminderDays(null);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        verifyNoInteractions(loanPolicyService);
+    }
+
 }
