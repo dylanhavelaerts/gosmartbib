@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +23,7 @@ import java.util.List;
 public class LocalSecurityConfig {
 
     private final UserService userService;
+    private final SchoolRepository schoolRepository;
 
     @Bean
     public SecurityFilterChain localFilterChain(HttpSecurity http) throws Exception {
@@ -32,7 +34,7 @@ public class LocalSecurityConfig {
                         .securityContextRepository(new HttpSessionSecurityContextRepository()))
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll())
-                .addFilterBefore(new MockAuth(userService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new MockAuth(userService, schoolRepository), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

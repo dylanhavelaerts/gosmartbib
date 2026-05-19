@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
+import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
@@ -75,13 +76,25 @@ public class MockAuth extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+            // Goedkeuren voor syncUser loopt, anders blokkeert de gate nieuwe gebruikers
+            schoolRepository.findByDomain("https://aphogeschool.smartschool.be")
+                    .ifPresentOrElse(
+                            school -> {
+                                if (!school.isAdminApproved()) {
+                                    school.setAdminApproved(true);
+                                    schoolRepository.save(school);
+                                }
+                            },
+                            () -> {
+                                SchoolEntity newSchool = new SchoolEntity();
+                                newSchool.setDomain("https://aphogeschool.smartschool.be");
+                                newSchool.setName("AP Hogeschool (Mock)");
+                                newSchool.setAdminApproved(true);
+                                schoolRepository.save(newSchool);
+                            });
+
             // lokale gebruikers injecteren in de db
             userService.syncUser(mockUser);
-            schoolRepository.findByDomain("https://aphogeschool.smartschool.be")
-                    .ifPresent(school -> {
-                        school.setAdminApproved(true);
-                        schoolRepository.save(school);
-                    });
         }
 
         filterChain.doFilter(request, response);

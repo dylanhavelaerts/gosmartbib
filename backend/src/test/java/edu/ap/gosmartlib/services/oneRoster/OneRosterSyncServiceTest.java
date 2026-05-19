@@ -5,6 +5,7 @@ import edu.ap.gosmartlib.dto.sync.SyncSummaryDTO;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
@@ -33,6 +34,7 @@ class OneRosterSyncServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private UserDeletionService userDeletionService;
     @Mock private SchoolIntegrationRepository schoolIntegrationRepository;
+    @Mock private SchoolClassRepository schoolClassRepository;
 
     @InjectMocks
     private OneRosterSyncService syncService;
@@ -62,6 +64,8 @@ class OneRosterSyncServiceTest {
         when(schoolIntegrationRepository.findAllByOnerosterEnabledTrue()).thenReturn(List.of(int1, int2));
         when(authService.getAccessToken(any())).thenReturn("token");
         when(client.getUsers(any(), any())).thenReturn(List.of());
+        when(client.getClasses(any(), any())).thenReturn(List.of());
+        when(client.getEnrollments(any(), any())).thenReturn(List.of());
         when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(any())).thenReturn(List.of());
 
         SyncSummaryDTO result = syncService.syncAll();
@@ -83,6 +87,8 @@ class OneRosterSyncServiceTest {
 
         when(authService.getAccessToken(integration)).thenReturn("token");
         when(client.getUsers(integration, "token")).thenReturn(List.of(onerosterUser));
+        when(client.getClasses(any(), any())).thenReturn(List.of());
+        when(client.getEnrollments(any(), any())).thenReturn(List.of());
         when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(1L)).thenReturn(List.of());
 
         SyncResultDTO result = syncService.syncSchool(integration);
@@ -110,6 +116,8 @@ class OneRosterSyncServiceTest {
 
         when(authService.getAccessToken(integration)).thenReturn("token");
         when(client.getUsers(integration, "token")).thenReturn(List.of(onerosterUser));
+        when(client.getClasses(any(), any())).thenReturn(List.of());
+        when(client.getEnrollments(any(), any())).thenReturn(List.of());
         when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(1L)).thenReturn(List.of(existing));
 
         SyncResultDTO result = syncService.syncSchool(integration);
@@ -133,6 +141,8 @@ class OneRosterSyncServiceTest {
 
         when(authService.getAccessToken(integration)).thenReturn("token");
         when(client.getUsers(integration, "token")).thenReturn(List.of());
+        when(client.getClasses(any(), any())).thenReturn(List.of());
+        when(client.getEnrollments(any(), any())).thenReturn(List.of());
         when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(1L)).thenReturn(List.of(stale));
 
         SyncResultDTO result = syncService.syncSchool(integration);
@@ -171,6 +181,8 @@ class OneRosterSyncServiceTest {
 
         when(authService.getAccessToken(integration)).thenReturn("token");
         when(client.getUsers(integration, "token")).thenReturn(List.of(noUidUser));
+        when(client.getClasses(any(), any())).thenReturn(List.of());
+        when(client.getEnrollments(any(), any())).thenReturn(List.of());
         when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(1L)).thenReturn(List.of());
 
         SyncResultDTO result = syncService.syncSchool(integration);
@@ -186,6 +198,8 @@ class OneRosterSyncServiceTest {
 
         when(authService.getAccessToken(integration)).thenReturn("token");
         when(client.getUsers(integration, "token")).thenReturn(List.of());
+        when(client.getClasses(any(), any())).thenReturn(List.of());
+        when(client.getEnrollments(any(), any())).thenReturn(List.of());
         when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(1L)).thenReturn(List.of());
 
         syncService.syncSchool(integration);
