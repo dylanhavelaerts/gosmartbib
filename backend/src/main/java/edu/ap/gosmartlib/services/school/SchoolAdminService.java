@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.services.school;
 
 import edu.ap.gosmartlib.dto.school.ApproveSchoolRequest;
 import edu.ap.gosmartlib.dto.school.CreateSchoolRequest;
+import edu.ap.gosmartlib.dto.school.CreateSchoolResult;
 import edu.ap.gosmartlib.dto.school.SchoolDTO;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -36,23 +37,24 @@ public class SchoolAdminService {
     }
 
     @Transactional
-    public SchoolDTO createSchool(CreateSchoolRequest request) {
+    public CreateSchoolResult createSchool(CreateSchoolRequest request) {
         String name = request.name() != null ? request.name().trim() : "";
         String domain = request.domain() != null ? request.domain().trim() : "";
 
         if (name.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schoolnaam is verplicht");
         if (domain.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schooldomein is verplicht");
-        schoolRepository.findByDomain(domain).ifPresent(existing -> {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "School met dit domein bestaat al (id=" + existing.getId() + ")");
-        });
+
+        var existing = schoolRepository.findByDomain(domain);
+        if (existing.isPresent()) {
+            return new CreateSchoolResult(SchoolDTO.from(existing.get()), true);
+        }
 
         SchoolEntity school = new SchoolEntity();
         school.setName(name);
         school.setDomain(domain);
         school.setAdminApproved(true);
 
-        return SchoolDTO.from(schoolRepository.save(school));
+        return new CreateSchoolResult(SchoolDTO.from(schoolRepository.save(school)), false);
     }
 
     @Transactional

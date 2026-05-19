@@ -68,17 +68,18 @@ export default function NewSchoolPage() {
       });
       let schoolId: number;
       let schoolName: string;
-      if (schoolRes.status === 409) {
-        const data = await schoolRes.json().catch(() => ({}));
-        const match = String(data.message ?? "").match(/id=(\d+)/);
-        if (!match) {
+      if (schoolRes.status === 409 || schoolRes.status === 201) {
+        // 409 = domein bestaat al, maar we proberen toch de school op te halen (om id te krijgen)
+        // 201 = nieuwe school gemaakt
+        const data = await schoolRes.json().catch(() => null);
+        if (!data?.id) {
           setError(
             "School met dit domein bestaat al maar kon niet worden gevonden.",
           );
           return;
         }
-        schoolId = Number(match[1]);
-        schoolName = name.trim();
+        schoolId = data.id;
+        schoolName = data.name ?? name.trim();
       } else if (!schoolRes.ok) {
         const data = await schoolRes.json().catch(() => ({}));
         setError(data.message ?? "School aanmaken mislukt.");

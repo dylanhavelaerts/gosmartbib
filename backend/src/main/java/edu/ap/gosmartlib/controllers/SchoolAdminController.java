@@ -7,6 +7,7 @@ import edu.ap.gosmartlib.services.school.SchoolAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -34,8 +35,10 @@ public class SchoolAdminController {
 
     @PostMapping
     @PreAuthorize("@roleGuard.isAdmin(authentication)")
-    public SchoolDTO createSchool(@RequestBody CreateSchoolRequest request) {
-        return schoolAdminService.createSchool(request);
+    public ResponseEntity<SchoolDTO> createSchool(@RequestBody CreateSchoolRequest request) {
+        var result = schoolAdminService.createSchool(request);
+        HttpStatus status = result.alreadyExisted() ? HttpStatus.CONFLICT : HttpStatus.CREATED;
+        return ResponseEntity.status(status).body(result.school());
     }
 
     @PatchMapping("/{id}/approve")
