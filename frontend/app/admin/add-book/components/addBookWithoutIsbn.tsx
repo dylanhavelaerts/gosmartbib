@@ -505,7 +505,7 @@ useEffect(() => {
           >
             <option value="">Alle talen</option>
             <option value="en">EN</option>
-            <option value="ne">NE</option>
+            <option value="nl">NL</option>
             <option value="fr">FR</option>
           </select>
         </div>

@@ -793,13 +793,13 @@ export default function ManageCatalogPage() {
                     <select
                       name="language"
                       className="modal-input"
-                      value={formData.language ?? ""}
+                      value={(formData.language ?? "").toLowerCase()}
                       onChange={handleChange}
                     >
                       <option value="">Alle talen</option>
-                      <option value="NE">NE</option>
-                      <option value="EN">EN</option>
-                      <option value="FR">FR</option>
+                      <option value="nl">NL</option>
+                      <option value="en">EN</option>
+                      <option value="fr">FR</option>
                     </select>
                   </div>
                   <div className="modal-row">

@@ -310,7 +310,9 @@ export default function Home() {
                 className="filterSelect"
               >
                 <option value="">Alle talen</option>
+                <option value="nl">NL</option>
                 <option value="en">EN</option>
+                <option value="fr">FR</option>
               </select>
             </div>
 
