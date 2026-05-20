@@ -198,13 +198,18 @@ public class OneRosterSyncService {
         String sourcedId = (String) onerosterUser.get("sourcedId");
         String role = (String) onerosterUser.get("role");
 
-        UserEntity user = new UserEntity();
+        UserEntity user = userRepository.findBySmartschoolUid(uid)
+                .orElseGet(UserEntity::new);
+
+        boolean isNew = user.getId() == null;
         user.setSmartschoolUid(uid);
         user.setOnerosterSourcedId(sourcedId);
         user.setSchool(school);
-        user.setRole(UserRoles.fromOneRoster(role));
+        if (isNew) {
+            user.setRole(UserRoles.fromOneRoster(role));
+        }
         userRepository.save(user);
-        log.info("Created user {} from OneRoster", uid);
+        log.info("{} user {} from OneRoster", isNew ? "Created" : "Updated", uid);
         return user;
     }
 
