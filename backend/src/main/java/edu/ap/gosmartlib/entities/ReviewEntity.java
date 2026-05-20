@@ -59,4 +59,7 @@ public class ReviewEntity {
 
     @Column(name = "is_admin_deleted", nullable = false)
     private boolean adminDeleted = false;
+
+    @Column(name = "is_anonymous", nullable = false)
+    private boolean anonymous = false;
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import SettingsModal, { type UserPreferences } from "./SettingsModal";
 import "./userHome.css";
 
 interface ActiveLoan {
@@ -26,7 +27,8 @@ function formatDue(dueDateString: string): { text: string; cls: string } {
   due.setHours(0, 0, 0, 0);
   now.setHours(0, 0, 0, 0);
   const diffDays = Math.ceil((due.getTime() - now.getTime()) / 86_400_000);
-  if (diffDays < 0) return { text: `${Math.abs(diffDays)}d te laat`, cls: "due-late" };
+  if (diffDays < 0)
+    return { text: `${Math.abs(diffDays)}d te laat`, cls: "due-late" };
   if (diffDays <= 3) return { text: `Nog ${diffDays}d`, cls: "due-soon" };
   return { text: `Nog ${diffDays}d`, cls: "due-ok" };
 }
@@ -39,7 +41,11 @@ async function logoutUser() {
   window.location.href = "/login";
 }
 
-function UserInfoWidget({ user }: { user: ReturnType<typeof useAuth>["user"] }) {
+function UserInfoWidget({
+  user,
+}: {
+  user: ReturnType<typeof useAuth>["user"];
+}) {
   const cls = user?.classes?.[0];
 
   return (
@@ -71,11 +77,11 @@ function BadgeWidget() {
         <div className="badge-text">
           <p className="badge-title">Avonturier</p>
           <p className="badge-desc">
-            Als Avonturier verken je de bibliotheek in alle richtingen. Je
-            duikt in onbekende verhalen, ontdekt nieuwe genres en geeft elk
-            boek een eerlijke kans. Jouw nieuwsgierigheid is grenzeloos en
-            elke pagina is een nieuw avontuur. Blijf lezen, blijf ontdekken —
-            want de grootste verhalen wachten nog op jou.
+            Als Avonturier verken je de bibliotheek in alle richtingen. Je duikt
+            in onbekende verhalen, ontdekt nieuwe genres en geeft elk boek een
+            eerlijke kans. Jouw nieuwsgierigheid is grenzeloos en elke pagina is
+            een nieuw avontuur. Blijf lezen, blijf ontdekken — want de grootste
+            verhalen wachten nog op jou.
           </p>
         </div>
       </div>
@@ -121,7 +127,9 @@ function CurrentLoansWidget({
                   <p className="loan-author">
                     {loan.book?.authors?.join(", ") ?? "Auteur onbekend"}
                   </p>
-                  <span className={`loan-due loan-due--${due.cls}`}>{due.text}</span>
+                  <span className={`loan-due loan-due--${due.cls}`}>
+                    {due.text}
+                  </span>
                 </div>
               </div>
             );
@@ -201,6 +209,11 @@ export default function UserHome() {
   const [stats, setStats] = useState<PersonalStats | null>(null);
   const [loansLoading, setLoansLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [prefs, setPrefs] = useState<UserPreferences>({
+    anonymousLeaderboard: false,
+  });
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   useEffect(() => {
     const api = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -216,15 +229,63 @@ export default function UserHome() {
       .then(setStats)
       .catch(() => setStats(null))
       .finally(() => setStatsLoading(false));
+
+    fetch(`${api}/user/preferences`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setPrefs(data);
+      })
+      .catch(() => {});
   }, []);
+
+  async function handleToggleLeaderboard(anonymous: boolean) {
+    const previous = prefs;
+    setPrefs({ anonymousLeaderboard: anonymous });
+    setSavingPrefs(true);
+    const api = process.env.NEXT_PUBLIC_API_URL ?? "";
+    try {
+      const res = await fetch(`${api}/user/preferences`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anonymousLeaderboard: anonymous }),
+      });
+      if (!res.ok) setPrefs(previous);
+    } catch {
+      setPrefs(previous);
+    } finally {
+      setSavingPrefs(false);
+    }
+  }
 
   return (
     <div className="user-page">
+      {settingsOpen && (
+        <SettingsModal
+          prefs={prefs}
+          saving={savingPrefs}
+          onToggle={handleToggleLeaderboard}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
       <div className="user-header">
         <h2 className="user-header-title">Mijn profiel</h2>
-        <button className="logout-btn" onClick={logoutUser}>
-          Uitloggen
-        </button>
+        <div className="user-header-actions">
+          <button
+            className="settings-btn"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Instellingen"
+          >
+            <img
+              src="/admin/settings.png"
+              alt=""
+              className="settings-btn-icon"
+            />
+          </button>
+          <button className="logout-btn" onClick={logoutUser}>
+            Uitloggen
+          </button>
+        </div>
       </div>
 
       <div className="widgets-container">

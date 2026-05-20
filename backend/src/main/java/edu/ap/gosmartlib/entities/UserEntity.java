@@ -43,4 +43,7 @@ public class UserEntity {
 
     @Column(name = "oneroster_sourced_id", unique = true)
     private String onerosterSourcedId;
+
+    @Column(name = "anonymous_leaderboard", nullable = false)
+    private boolean anonymousLeaderboard = true;
 }

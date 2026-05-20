@@ -158,6 +158,7 @@ public class ReviewService {
 
             review.setRating(request.rating());
             review.setSpoiler(request.spoiler());
+            review.setAnonymous(request.anonymous());
 
             review.setReviewDate(LocalDate.now());
             review.setReviewStatus(ReviewStatus.APPROVED);
@@ -208,6 +209,7 @@ public class ReviewService {
 
             review.setRating(request.rating());
             review.setSpoiler(request.spoiler());
+            review.setAnonymous(request.anonymous());
             review.setReviewStatus(ReviewStatus.APPROVED);
             review.setAdminDeleteNote(null);
             review.setAdminDeleted(false);
@@ -423,6 +425,10 @@ public class ReviewService {
     }
 
     private String resolveReviewerName(ReviewEntity review, Map<String, String> displayNames) {
+        if (review.isAnonymous()) {
+            return "Anoniem";
+        }
+
         String reviewerUid = review.getUser().getSmartschoolUid();
         if (reviewerUid == null || reviewerUid.isBlank()) {
             return null;

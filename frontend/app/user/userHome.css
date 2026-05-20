@@ -17,6 +17,41 @@
   color: #8e2446;
 }
 
+.user-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.settings-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1.5px solid #8e2446;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.settings-btn:hover {
+  background: #8e2446;
+}
+
+.settings-btn:hover .settings-btn-icon {
+  filter: brightness(0) invert(1);
+}
+
+.settings-btn-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(900%)
+    hue-rotate(315deg);
+}
+
 .logout-btn {
   border: 1.5px solid #8e2446;
   color: #8e2446;
@@ -26,7 +61,9 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
   white-space: nowrap;
 }
 
@@ -105,7 +142,8 @@
   width: 26px;
   height: 26px;
   object-fit: contain;
-  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(900%) hue-rotate(315deg);
+  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(900%)
+    hue-rotate(315deg);
 }
 
 .user-name {
