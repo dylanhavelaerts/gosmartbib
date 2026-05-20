@@ -209,20 +209,28 @@ export default function DetailPage({
   };
 
   if (!book) return <p>Loading...</p>;
-  // Bepaal de beschikbaarheid op basis van de inventory voor de school van de gebruiker
-  const inv = currentUser
-    ? book.inventories?.find((i) => i.schoolId === currentUser.school?.id)
-    : undefined;
-  const available = inv?.availableCopies ?? 0;
-  const total = inv?.totalCopies ?? 0;
+
+  // Bepaal de beschikbaarheid op basis van de inventory
+  // Studenten zien enkel hun eigen school (wordt ook al door backend gefilterd)
+  // Staff ziet alle scholen en campussen.
+  const userInventories = currentUser
+    ? book.inventories?.filter((i) => isStaff || i.schoolId === currentUser.school?.id) || []
+    : [];
+
+  // Bereken de totalen over alle gefilterde campussen
+  const available = userInventories.reduce((acc, inv) => acc + (inv.availableCopies || 0), 0);
+  const total = userInventories.reduce((acc, inv) => acc + (inv.totalCopies || 0), 0);
+  
+  // Bepaal of het campus-lijstje zichtbaar moet zijn:
+  // Altijd voor staf (zien scholen), voor studenten enkel als er minstens één echte campusnaam is ingevuld.
+  const showCampusBreakdown = userInventories.length > 0 && 
+    (isStaff || userInventories.some(inv => inv.campus && inv.campus.trim() !== ""));
+
   // Fix http naar https als de opgeslagen link nog http is
   let displayLink = book.previewLink;
   if (displayLink && displayLink.startsWith("http://")) {
     displayLink = displayLink.replace("http://", "https://");
   }
-
-  // Bepaal de tekst op basis van het type link
-  const isReaderLink = displayLink?.includes("play.google.com/books/reader");
 
   return (
     <main className="detailPage">
@@ -249,13 +257,48 @@ export default function DetailPage({
             />
           )}
 
-          {/* Beschikbaarheidsbadge staat nu onder de cover */}
+          {/* Beschikbaarheid en campus breakdown */}
           {currentUser && (
-            <span
-              className={`coverBadge ${available > 0 ? "available" : "unavailable"}`}
-            >
-              {inv ? `${available}/${total} beschikbaar` : "Niet beschikbaar"}
-            </span>
+            <div className="availabilityWrapper">
+              <span
+                className={`coverBadge ${available > 0 ? "available" : "unavailable"}`}
+              >
+                {userInventories.length > 0 ? `${available}/${total} beschikbaar` : "Niet beschikbaar"}
+              </span>
+
+              {/* GECORRIGEERD: Lijst met campussen tonen op basis van showCampusBreakdown */}
+              {showCampusBreakdown && (
+                <div className="campusBreakdown">
+                  <p className="campusBreakdownTitle">Locaties:</p>
+                  <ul className="campusList">
+                    {userInventories.map((inv, idx) => {
+                      // Helper om de schoolnaam netjes te formatteren
+                      const formatSchoolName = (name: string | undefined) => {
+                        if (!name) return "";
+                        let cleanName = name.replace("https://", "").replace(".smartschool.be", "").replace("/", "");
+                        return cleanName.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                      };
+
+                      const displayName = isStaff && inv.schoolName 
+                        ? `${formatSchoolName(inv.schoolName)} (${inv.campus || "Hoofdcampus"})` 
+                        : (inv.campus || "Hoofdcampus");
+
+                      return (
+                        <li key={idx} className="campusItem">
+                          {/* title attribuut zorgt voor een tooltip bij hoveren */}
+                          <span className="campusName" title={displayName}>
+                            {displayName}
+                          </span>
+                          <span className={`campusCount ${inv.availableCopies > 0 ? "text-success" : "text-error"}`}>
+                            {inv.availableCopies}/{inv.totalCopies}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Toevoegen aan leeslijst */}
