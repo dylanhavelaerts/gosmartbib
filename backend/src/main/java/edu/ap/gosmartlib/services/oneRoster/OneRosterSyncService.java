@@ -36,6 +36,7 @@ public class OneRosterSyncService {
     private final SchoolIntegrationRepository schoolIntegrationRepository;
     private final SchoolClassRepository schoolClassRepository;
 
+    @Transactional
     public SyncSummaryDTO syncAll() {
         List<SchoolIntegrationEntity> integrations =
                 schoolIntegrationRepository.findAllByOnerosterEnabledTrue();
