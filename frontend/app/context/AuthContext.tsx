@@ -13,9 +13,13 @@ interface AuthUser {
   id: number;
   smartschoolUid?: string;
   role: UserRole;
+  school?: { id: number; name: string; domain: string } | null;
   classes?: {
+    id?: number;
     name?: string | null;
-    }[];
+    grade?: string | null;
+    schoolYear?: string | null;
+  }[];
 }
 
 interface AuthContextType {

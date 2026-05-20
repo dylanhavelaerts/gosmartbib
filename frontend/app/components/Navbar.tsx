@@ -62,6 +62,14 @@ export default function Navbar() {
                 Catalogus
               </button>
             </Link>
+            <Link href="/leaderboard">
+              <button
+                onClick={() => setIsOpen(false)}
+                className={isActive("/leaderboard") ? "active" : ""}
+              >
+                Ranglijst
+              </button>
+            </Link>
             <Link href="/reading-lists">
               <button
                 onClick={() => setIsOpen(false)}
@@ -78,14 +86,6 @@ export default function Navbar() {
                 Mijn ontleningen
               </button>
             </Link>{" "}
-            <Link href="/leaderboard">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/leaderboard") ? "active" : ""}
-              >
-                Leaderboard
-              </button>
-            </Link>
             {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
               user?.role === "ADMIN" ||
               user?.role === "TEACHER") && (
