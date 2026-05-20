@@ -1,3 +1,4 @@
+/* ── Page shell ─────────────────────────────────────────────── */
 .user-page {
   margin-top: 4.5rem;
   min-height: calc(100vh - 4.5rem);
@@ -16,10 +17,6 @@
   color: #8e2446;
 }
 
-.user-header-title span {
-  color: #8e2446;
-}
-
 .logout-btn {
   border: 1.5px solid #8e2446;
   color: #8e2446;
@@ -29,9 +26,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition:
-    background 0.2s,
-    color 0.2s;
+  transition: background 0.2s, color 0.2s;
   white-space: nowrap;
 }
 
@@ -40,71 +35,322 @@
   color: #fff;
 }
 
-.widget-grid {
+/* ── Widget grid ─────────────────────────────────────────────── */
+.widgets-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  padding: 1rem 2.5rem 2.5rem;
+  gap: 1.25rem;
+  padding: 0.5rem 2.5rem 2.5rem;
 }
 
-.widget-card {
+/* ── Base widget card ────────────────────────────────────────── */
+.widget {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid #e8dde2;
   box-shadow: 0 2px 8px rgba(142, 36, 70, 0.06);
-  padding: 1.75rem;
-  cursor: pointer;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    border-color 0.15s ease;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  text-decoration: none;
-  min-height: 10rem;
-  vertical-align: center;
+  gap: 0.75rem;
 }
 
-.widget-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(142, 36, 70, 0.13);
-  border-color: #8e2446;
+.widget-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #b07090;
+  margin: 0;
 }
 
-.widget-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 10px;
-  background: rgba(142, 36, 70, 0.08);
+.widget-loading,
+.widget-empty {
+  font-size: 0.875rem;
+  color: #aaa;
+  margin: 0;
+}
+
+.widget-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.widget-count {
+  background: #8e2446;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+}
+
+/* ── User info widget ────────────────────────────────────────── */
+.widget--user-info {
+  align-items: flex-start;
+}
+
+.user-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: rgba(142, 36, 70, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.25rem;
-  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(900%)
-    hue-rotate(315deg);
 }
 
-.widget-icon-img {
-  width: 24px;
-  height: 24px;
+.user-avatar-icon {
+  width: 26px;
+  height: 26px;
   object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(900%) hue-rotate(315deg);
 }
 
-.widget-title {
+.user-name {
   font-size: 1rem;
   font-weight: 700;
   color: #1a1a1a;
   margin: 0;
 }
 
-.widget-description {
-  font-size: 0.82rem;
-  color: #999;
-  margin: 0;
-  line-height: 1.4;
+.user-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
+.user-tag {
+  background: rgba(142, 36, 70, 0.07);
+  color: #8e2446;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+/* ── Badge widget ────────────────────────────────────────────── */
+.widget--badge {
+  align-items: flex-start;
+}
+
+.badge-body {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.badge-placeholder {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-icon-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  opacity: 0.4;
+  filter: grayscale(0.3);
+}
+
+.badge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.badge-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.badge-desc {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Current loans widget ────────────────────────────────────── */
+.widget--loans {
+  grid-column: 1;
+}
+
+.loans-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.loan-item {
+  display: flex;
+  gap: 0.875rem;
+  align-items: center;
+}
+
+.loan-cover {
+  flex-shrink: 0;
+  width: 40px;
+  height: 56px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #f0e8ec;
+}
+
+.loan-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.loan-cover-empty {
+  width: 100%;
+  height: 100%;
+  background: #e8dde2;
+}
+
+.loan-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.loan-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loan-author {
+  font-size: 0.775rem;
+  color: #888;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loan-due {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.loan-due--due-ok {
+  background: #e6f4ea;
+  color: #2e7d32;
+}
+
+.loan-due--due-soon {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.loan-due--due-late {
+  background: #fde8ec;
+  color: #b71c1c;
+}
+
+.loans-more {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin: 0;
+}
+
+/* ── Book stats widget ───────────────────────────────────────── */
+.widget--stats {
+  grid-column: 1;
+}
+
+/* ── Badges widget ───────────────────────────────────────────── */
+.widget--badges {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+}
+
+.badges-coming-soon {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.badges-preview-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  opacity: 0.35;
+  filter: grayscale(0.2);
+}
+
+.badges-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.badges-desc {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.stats-row {
+  display: flex;
+  gap: 2rem;
+}
+
+.stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #8e2446;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.genre-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.genre-tag {
+  background: rgba(142, 36, 70, 0.07);
+  color: #8e2446;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .user-header {
     padding: 1.25rem 1.25rem 0.5rem;
@@ -114,13 +360,20 @@
     font-size: 1.1rem;
   }
 
-  .widget-grid {
+  .widgets-container {
     grid-template-columns: 1fr;
-    padding: 1rem 1.25rem 2rem;
+    padding: 0.5rem 1.25rem 2rem;
     gap: 1rem;
   }
 
-  .widget-card {
-    padding: 1.25rem;
+  .widget--loans,
+  .widget--stats,
+  .widget--badges {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .stats-row {
+    gap: 1.5rem;
   }
 }
