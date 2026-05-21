@@ -53,7 +53,7 @@ class SchoolCampusServiceTest {
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(admin));
         when(schoolCampusRepository.findBySchool_IdOrderByNameAsc(100L)).thenReturn(campuses);
 
-        List<SchoolCampusDTO> result = schoolCampusService.getCampusesForAdminSchool("admin-uid", 100L);
+        List<SchoolCampusDTO> result = schoolCampusService.getCampusesForBibbeheerder("admin-uid", 100L);
 
         assertEquals(2, result.size());
         assertEquals(1L, result.get(0).id());
@@ -73,7 +73,7 @@ class SchoolCampusServiceTest {
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(admin));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.getCampusesForAdminSchool("admin-uid", 200L));
+                () -> schoolCampusService.getCampusesForBibbeheerder("admin-uid", 200L));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Geen toegang tot deze school", exception.getReason());
@@ -90,7 +90,7 @@ class SchoolCampusServiceTest {
         when(userRepository.findDetailedBySmartschoolUid("leerkracht-uid")).thenReturn(Optional.of(actor));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.getCampusesForAdminSchool("leerkracht-uid", 100L));
+                () -> schoolCampusService.getCampusesForBibbeheerder("leerkracht-uid", 100L));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Geen toegang", exception.getReason());
@@ -112,7 +112,7 @@ class SchoolCampusServiceTest {
             return campus;
         });
 
-        SchoolCampusDTO result = schoolCampusService.createCampusForAdminSchool("admin-uid", 100L, request);
+        SchoolCampusDTO result = schoolCampusService.createCampusForBibbeheerder("admin-uid", 100L, request);
 
         assertEquals(10L, result.id());
         assertEquals("Campus Zuid", result.name());
@@ -138,7 +138,7 @@ class SchoolCampusServiceTest {
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(admin));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.createCampusForAdminSchool("admin-uid", 100L, request));
+                () -> schoolCampusService.createCampusForBibbeheerder("admin-uid", 100L, request));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("Campusnaam is verplicht", exception.getReason());
@@ -157,7 +157,7 @@ class SchoolCampusServiceTest {
         when(schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(100L, "Campus Zuid")).thenReturn(true);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.createCampusForAdminSchool("admin-uid", 100L, request));
+                () -> schoolCampusService.createCampusForBibbeheerder("admin-uid", 100L, request));
 
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
         assertEquals("Campus bestaat al voor deze school", exception.getReason());
@@ -176,7 +176,7 @@ class SchoolCampusServiceTest {
         when(userRepository.findDetailedBySmartschoolUid("admin-uid")).thenReturn(Optional.of(admin));
         when(schoolCampusRepository.findByIdAndSchool_Id(5L, 100L)).thenReturn(Optional.of(campus));
 
-        schoolCampusService.deleteCampusForAdminSchool("admin-uid", 100L, 5L);
+        schoolCampusService.deleteCampusForBibbeheerder("admin-uid", 100L, 5L);
 
         verify(userRepository).findDetailedBySmartschoolUid("admin-uid");
         verify(schoolCampusRepository).findByIdAndSchool_Id(5L, 100L);
@@ -192,7 +192,7 @@ class SchoolCampusServiceTest {
         when(schoolCampusRepository.findByIdAndSchool_Id(99L, 100L)).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.deleteCampusForAdminSchool("admin-uid", 100L, 99L));
+                () -> schoolCampusService.deleteCampusForBibbeheerder("admin-uid", 100L, 99L));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Campus niet gevonden", exception.getReason());

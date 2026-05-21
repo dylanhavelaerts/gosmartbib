@@ -47,14 +47,14 @@ class SchoolCampusControllerTest {
                 new SchoolCampusDTO(2L, "Campus Zuid"));
 
         when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
-        when(schoolCampusService.getCampusesForAdminSchool("admin-uid", 100L)).thenReturn(expected);
+        when(schoolCampusService.getCampusesForBibbeheerder("admin-uid", 100L)).thenReturn(expected);
 
         List<SchoolCampusDTO> result = schoolCampusController.getCampuses(100L, oAuth2User);
 
         assertEquals(expected, result);
 
         verify(oAuth2User).getAttribute("userID");
-        verify(schoolCampusService).getCampusesForAdminSchool("admin-uid", 100L);
+        verify(schoolCampusService).getCampusesForBibbeheerder("admin-uid", 100L);
         verifyNoMoreInteractions(oAuth2User, schoolCampusService);
     }
 
@@ -64,14 +64,14 @@ class SchoolCampusControllerTest {
         SchoolCampusDTO expected = new SchoolCampusDTO(3L, "Campus Zuid");
 
         when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
-        when(schoolCampusService.createCampusForAdminSchool("admin-uid", 100L, request)).thenReturn(expected);
+        when(schoolCampusService.createCampusForBibbeheerder("admin-uid", 100L, request)).thenReturn(expected);
 
         SchoolCampusDTO result = schoolCampusController.createCampus(100L, request, oAuth2User);
 
         assertEquals(expected, result);
 
         verify(oAuth2User).getAttribute("userID");
-        verify(schoolCampusService).createCampusForAdminSchool("admin-uid", 100L, request);
+        verify(schoolCampusService).createCampusForBibbeheerder("admin-uid", 100L, request);
         verifyNoMoreInteractions(oAuth2User, schoolCampusService);
     }
 
@@ -82,7 +82,7 @@ class SchoolCampusControllerTest {
         schoolCampusController.deleteCampus(100L, 5L, oAuth2User);
 
         verify(oAuth2User).getAttribute("userID");
-        verify(schoolCampusService).deleteCampusForAdminSchool("admin-uid", 100L, 5L);
+        verify(schoolCampusService).deleteCampusForBibbeheerder("admin-uid", 100L, 5L);
         verifyNoMoreInteractions(oAuth2User, schoolCampusService);
     }
 

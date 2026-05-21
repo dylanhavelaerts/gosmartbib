@@ -13,7 +13,6 @@ import edu.ap.gosmartlib.services.schoolIntegration.SchoolIntegrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,7 +35,7 @@ public class SchoolIntegrationAdminController {
     @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationDTO getIntegration(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
-            return schoolIntegrationService.getIntegrationAsPlatformAdmin(schoolId);
+            return schoolIntegrationService.getIntegrationForPlatformAdmin(schoolId);
         return schoolIntegrationService.getIntegration(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId);
     }
@@ -47,7 +46,7 @@ public class SchoolIntegrationAdminController {
                                                   @RequestBody UpsertSchoolIntegrationRequest request,
                                                   Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
-            return schoolIntegrationService.upsertIntegrationAsPlatformAdmin(schoolId, request);
+            return schoolIntegrationService.upsertIntegrationForPlatformAdmin(schoolId, request);
         return schoolIntegrationService.upsertIntegration(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, request);
     }
@@ -56,7 +55,7 @@ public class SchoolIntegrationAdminController {
     @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationTestResponse testIntegration(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
-            return schoolIntegrationAdminService.testIntegrationAsPlatformAdmin(schoolId);
+            return schoolIntegrationAdminService.testIntegrationForPlatformAdmin(schoolId);
         return schoolIntegrationAdminService.testIntegration(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId);
     }
@@ -65,7 +64,7 @@ public class SchoolIntegrationAdminController {
     @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationLiveSchoolsResponse getLiveSchools(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
-            return schoolIntegrationAdminService.getLiveSchoolsAsPlatformAdmin(schoolId);
+            return schoolIntegrationAdminService.getLiveSchoolsForPlatformAdmin(schoolId);
         return schoolIntegrationAdminService.getLiveSchools(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId);
     }
@@ -74,7 +73,7 @@ public class SchoolIntegrationAdminController {
     @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationLiveUsersResponse getLiveUsers(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
-            return schoolIntegrationAdminService.getLiveUsersAsPlatformAdmin(schoolId);
+            return schoolIntegrationAdminService.getLiveUsersForPlatformAdmin(schoolId);
         return schoolIntegrationAdminService.getLiveUsers(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId);
     }
@@ -83,7 +82,7 @@ public class SchoolIntegrationAdminController {
     @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
     public SchoolIntegrationLiveClassesResponse getLiveClasses(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
-            return schoolIntegrationAdminService.getLiveClassesAsPlatformAdmin(schoolId);
+            return schoolIntegrationAdminService.getLiveClassesForPlatformAdmin(schoolId);
         return schoolIntegrationAdminService.getLiveClasses(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId);
     }

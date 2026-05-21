@@ -26,8 +26,8 @@ public class SchoolCampusService {
     private final SchoolRepository schoolRepository;
 
     @Transactional(readOnly = true)
-    public List<SchoolCampusDTO> getCampusesForAdminSchool(String actorUid, Long schoolId) {
-        UserEntity actor = getCurrentAdminOrBibbeheerder(actorUid);
+    public List<SchoolCampusDTO> getCampusesForBibbeheerder(String actorUid, Long schoolId) {
+        UserEntity actor = getCurrentBibbeheerder(actorUid);
         assertAdminBelongsToSchool(actor, schoolId);
 
         return schoolCampusRepository.findBySchool_IdOrderByNameAsc(schoolId)
@@ -37,11 +37,11 @@ public class SchoolCampusService {
     }
 
     @Transactional
-    public SchoolCampusDTO createCampusForAdminSchool(
+    public SchoolCampusDTO createCampusForBibbeheerder(
             String actorUid,
             Long schoolId,
             CreateSchoolCampusRequest request) {
-        UserEntity actor = getCurrentAdminOrBibbeheerder(actorUid);
+        UserEntity actor = getCurrentBibbeheerder(actorUid);
         assertAdminBelongsToSchool(actor, schoolId);
 
         if (request == null) {
@@ -71,8 +71,8 @@ public class SchoolCampusService {
     }
 
     @Transactional
-    public void deleteCampusForAdminSchool(String actorUid, Long schoolId, Long campusId) {
-        UserEntity actor = getCurrentAdminOrBibbeheerder(actorUid);
+    public void deleteCampusForBibbeheerder(String actorUid, Long schoolId, Long campusId) {
+        UserEntity actor = getCurrentBibbeheerder(actorUid);
         assertAdminBelongsToSchool(actor, schoolId);
 
         SchoolCampusEntity campus = schoolCampusRepository.findByIdAndSchool_Id(campusId, schoolId)
@@ -82,14 +82,14 @@ public class SchoolCampusService {
     }
 
     @Transactional(readOnly = true)
-    public List<SchoolCampusDTO> getCampusesAsPlatformAdmin(Long schoolId) {
+    public List<SchoolCampusDTO> getCampusesForPlatformAdmin(Long schoolId) {
         if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
         return schoolCampusRepository.findBySchool_IdOrderByNameAsc(schoolId)
                 .stream().map(SchoolCampusDTO::from).toList();
     }
 
     @Transactional
-    public SchoolCampusDTO createCampusAsPlatformAdmin(Long schoolId, CreateSchoolCampusRequest request) {
+    public SchoolCampusDTO createCampusForPlatformAdmin(Long schoolId, CreateSchoolCampusRequest request) {
         if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
         if (request == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body ontbreekt");
 
@@ -107,7 +107,7 @@ public class SchoolCampusService {
     }
 
     @Transactional
-    public void deleteCampusAsPlatformAdmin(Long schoolId, Long campusId) {
+    public void deleteCampusForPlatformAdmin(Long schoolId, Long campusId) {
         if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
         SchoolCampusEntity campus = schoolCampusRepository.findByIdAndSchool_Id(campusId, schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campus niet gevonden"));
@@ -115,30 +115,18 @@ public class SchoolCampusService {
     }
 
 
-    private UserEntity getCurrentAdminOrBibbeheerder(String actorUid) {
+    private UserEntity getCurrentBibbeheerder(String actorUid) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Ingelogde gebruiker niet gevonden"));
-
-        if (actor.getRole() != UserRoles.ADMIN && actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER) {
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
+        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
-        }
-
         return actor;
     }
 
     private void assertAdminBelongsToSchool(UserEntity actor, Long schoolId) {
-        if (schoolId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "School ontbreekt");
-        }
-
-        // Global admin has no school and can access any school
-        if (actor.getRole() == UserRoles.ADMIN) return;
-
-        if (!actor.getSchool().getId().equals(schoolId)) {
+        if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "School ontbreekt");
+        if (!actor.getSchool().getId().equals(schoolId))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang tot deze school");
-        }
     }
 
     private String normalizeCampusName(String campusName) {

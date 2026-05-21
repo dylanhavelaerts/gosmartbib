@@ -50,13 +50,13 @@ class UserAdminControllerTest {
                 Pageable pageable = PageRequest.of(0, 10);
 
                 when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
-                when(userAdminService.listUsersForAdmin("admin-uid", null, null, pageable)).thenReturn(expectedPage);
+                when(userAdminService.listUsersForBibbeheerder("admin-uid", null, null, pageable)).thenReturn(expectedPage);
 
                 Page<AdminUserDTO> result = userAdminController.listUsers(oAuth2User, null, null, pageable);
 
                 assertEquals(expectedPage, result);
                 verify(oAuth2User).getAttribute("userID");
-                verify(userAdminService).listUsersForAdmin("admin-uid", null, null, pageable);
+                verify(userAdminService).listUsersForBibbeheerder("admin-uid", null, null, pageable);
                 verifyNoMoreInteractions(userAdminService, oAuth2User);
         }
 
@@ -106,13 +106,13 @@ class UserAdminControllerTest {
                 AdminUserDTO expected = buildAdminUserDTO(2L, "student-uid", UserRoles.TEACHER);
 
                 when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
-                when(userAdminService.updateUserRole("admin-uid", null, 2L, UserRoles.TEACHER)).thenReturn(expected);
+                when(userAdminService.updateUserRoleForBibbeheerder("admin-uid", null, 2L, UserRoles.TEACHER)).thenReturn(expected);
 
                 AdminUserDTO result = userAdminController.updateRole(2L, null, request, oAuth2User);
 
                 assertEquals(expected, result);
                 verify(oAuth2User).getAttribute("userID");
-                verify(userAdminService).updateUserRole("admin-uid", null, 2L, UserRoles.TEACHER);
+                verify(userAdminService).updateUserRoleForBibbeheerder("admin-uid", null, 2L, UserRoles.TEACHER);
                 verifyNoMoreInteractions(userAdminService, oAuth2User);
         }
 

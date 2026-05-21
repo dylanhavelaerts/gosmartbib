@@ -11,6 +11,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
@@ -25,6 +26,7 @@ public class AdminLoginFilter extends AbstractAuthenticationProcessingFilter {
     public AdminLoginFilter(AuthenticationManager authenticationManager) {
         super(PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/admin/login"));
         setAuthenticationManager(authenticationManager);
+        setSessionAuthenticationStrategy(new ChangeSessionIdAuthenticationStrategy());
     }
 
     @Override
@@ -54,5 +56,5 @@ public class AdminLoginFilter extends AbstractAuthenticationProcessingFilter {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
-    private record AdminLoginRequest(String username, String password) {}
+//    private record AdminLoginRequest(String username, String password) {}
 }

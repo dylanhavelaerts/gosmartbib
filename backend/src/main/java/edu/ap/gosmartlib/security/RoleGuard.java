@@ -18,12 +18,13 @@ public class RoleGuard {
 
     @Transactional(readOnly = true)
     public boolean isAdmin(Authentication authentication) {
-        return hasAnyRole(authentication, UserRoles.ADMIN);
+        return authentication != null && authentication.getPrincipal() instanceof AdminPrincipal;
     }
+
 
     @Transactional(readOnly = true)
     public boolean isBibbeheerder(Authentication authentication) {
-        return hasAnyRole(authentication, UserRoles.BIBLIOTHEEKBEHEERDER, UserRoles.ADMIN);
+        return hasAnyRole(authentication, UserRoles.BIBLIOTHEEKBEHEERDER);
     }
 
     private boolean hasAnyRole(Authentication authentication, UserRoles... allowedRoles) {

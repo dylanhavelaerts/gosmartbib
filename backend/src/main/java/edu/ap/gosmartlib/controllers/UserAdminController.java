@@ -10,7 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -35,8 +34,8 @@ public class UserAdminController {
                                         @RequestParam(required = false) String name,
                                         Pageable pageable) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
-            return userAdminService.listUsersAsPlatformAdmin(schoolId, name, pageable);
-        return userAdminService.listUsersForAdmin(
+            return userAdminService.listUsersForPlatformAdmin(schoolId, name, pageable);
+        return userAdminService.listUsersForBibbeheerder(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, name, pageable);
     }
 
@@ -47,8 +46,8 @@ public class UserAdminController {
                                    @RequestBody UpdateUserRoleRequest request,
                                    Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
-            return userAdminService.updateUserRoleAsPlatformAdmin(schoolId, id, request.role());
-        return userAdminService.updateUserRole(
+            return userAdminService.updateUserRoleForPlatformAdmin(schoolId, id, request.role());
+        return userAdminService.updateUserRoleForBibbeheerder(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, id, request.role());
     }
 
