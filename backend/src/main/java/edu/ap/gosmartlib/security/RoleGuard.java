@@ -27,25 +27,21 @@ public class RoleGuard {
     }
 
     private boolean hasAnyRole(Authentication authentication, UserRoles... allowedRoles) {
-        if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User oAuth2User)) {
-            return false;
-        }
+        if (authentication == null) return false;
+        if (!(authentication.getPrincipal() instanceof OAuth2User oAuth2User)) return false;
 
         String uid = oAuth2User.getAttribute("userID");
-        if (uid == null || uid.isBlank()) {
-            return false;
-        }
+        if (uid == null || uid.isBlank()) return false;
 
         return userRepository.findBySmartschoolUid(uid)
                 .map(UserEntity::getRole)
                 .map(role -> {
-                    for (UserRoles allowedRole : allowedRoles) {
-                        if (role == allowedRole) {
-                            return true;
-                        }
+                    for (UserRoles allowed : allowedRoles) {
+                        if (role == allowed) return true;
                     }
                     return false;
                 })
                 .orElse(false);
     }
+
 }
