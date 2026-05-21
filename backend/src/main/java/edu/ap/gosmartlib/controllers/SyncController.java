@@ -7,6 +7,7 @@ import edu.ap.gosmartlib.services.oneRoster.OneRosterSyncService;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,16 +24,9 @@ public class SyncController {
     private final UserRepository userRepository;
 
     @PostMapping
-    public SyncSummaryDTO syncAll(@AuthenticationPrincipal OAuth2User oauth2User) {
-        String uid = oauth2User.getAttribute("userID");
-
-        UserEntity actor = userRepository.findBySmartschoolUid(uid)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gebruiker niet gevonden"));
-
-        if (actor.getRole() != UserRoles.ADMIN) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
-        }
-
+    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    public SyncSummaryDTO syncAll() {
         return syncService.syncAll();
     }
+
 }

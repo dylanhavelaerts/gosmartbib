@@ -81,6 +81,40 @@ public class SchoolCampusService {
         schoolCampusRepository.delete(campus);
     }
 
+    @Transactional(readOnly = true)
+    public List<SchoolCampusDTO> getCampusesAsPlatformAdmin(Long schoolId) {
+        if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
+        return schoolCampusRepository.findBySchool_IdOrderByNameAsc(schoolId)
+                .stream().map(SchoolCampusDTO::from).toList();
+    }
+
+    @Transactional
+    public SchoolCampusDTO createCampusAsPlatformAdmin(Long schoolId, CreateSchoolCampusRequest request) {
+        if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
+        if (request == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body ontbreekt");
+
+        String campusName = normalizeCampusName(request.name());
+        if (campusName.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campusnaam is verplicht");
+        if (schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(schoolId, campusName))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Campus bestaat al voor deze school");
+
+        SchoolEntity school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School niet gevonden"));
+        SchoolCampusEntity campus = new SchoolCampusEntity();
+        campus.setSchool(school);
+        campus.setName(campusName);
+        return SchoolCampusDTO.from(schoolCampusRepository.save(campus));
+    }
+
+    @Transactional
+    public void deleteCampusAsPlatformAdmin(Long schoolId, Long campusId) {
+        if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
+        SchoolCampusEntity campus = schoolCampusRepository.findByIdAndSchool_Id(campusId, schoolId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campus niet gevonden"));
+        schoolCampusRepository.delete(campus);
+    }
+
+
     private UserEntity getCurrentAdminOrBibbeheerder(String actorUid) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new ResponseStatusException(

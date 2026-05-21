@@ -52,6 +52,24 @@ public class UserAdminService {
 
         return AdminUserDTO.from(userRepository.save(target));
     }
+    @Transactional(readOnly = true)
+    public Page<AdminUserDTO> listUsersAsPlatformAdmin(Long schoolId, String name, Pageable pageable) {
+        if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
+        return userRepository.findBySchoolIdAndName(schoolId, name, pageable).map(AdminUserDTO::from);
+    }
+
+    @Transactional
+    public AdminUserDTO updateUserRoleAsPlatformAdmin(Long schoolId, Long targetUserId, UserRoles newRole) {
+        if (newRole == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieuwe rol ontbreekt");
+        if (newRole == UserRoles.ADMIN) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ongeldige rol");
+        if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
+
+        UserEntity target = userRepository.findByIdAndSchool_Id(targetUserId, schoolId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gebruiker niet gevonden"));
+        target.setRole(newRole);
+        return AdminUserDTO.from(userRepository.save(target));
+    }
+
 
     private Long resolveSchoolId(UserEntity actor, Long schoolId) {
         if (actor.getRole() == UserRoles.ADMIN) {

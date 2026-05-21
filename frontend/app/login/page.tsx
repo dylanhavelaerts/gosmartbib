@@ -32,6 +32,38 @@ export default function LoginPage() {
     window.location.href = `${apiBaseUrl}/auth/login`;
   };
 
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  const handleAdminLogin = async () => {
+    if (!apiBaseUrl) return;
+    setAdminLoading(true);
+    setAdminError(false);
+    try {
+      const res = await fetch(`${apiBaseUrl}/admin/login`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: adminUsername,
+          password: adminPassword,
+        }),
+      });
+      if (res.ok) {
+        window.location.href = "/admin/schools";
+      } else {
+        setAdminError(true);
+      }
+    } catch {
+      setAdminError(true);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="loginBackground" />
@@ -78,6 +110,48 @@ export default function LoginPage() {
               Er is een fout opgetreden tijdens het inloggen. Probeer het
               opnieuw.
             </p>
+          )}
+          <div className="adminToggle" onClick={() => setAdminOpen((o) => !o)}>
+            <span>Beheerderslogin</span>
+            <span
+              className={`adminChevron ${adminOpen ? "adminChevronOpen" : ""}`}
+            >
+              ▾
+            </span>
+          </div>
+
+          {adminOpen && (
+            <div className="adminSection">
+              <input
+                className="adminInput"
+                type="text"
+                placeholder="Gebruikersnaam"
+                value={adminUsername}
+                onChange={(e) => setAdminUsername(e.target.value)}
+                autoComplete="username"
+              />
+              <input
+                className="adminInput"
+                type="password"
+                placeholder="Wachtwoord"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+              {adminError && (
+                <p className="loginError" role="alert">
+                  Ongeldige gebruikersnaam of wachtwoord.
+                </p>
+              )}
+              <button
+                className="adminSubmitButton"
+                onClick={handleAdminLogin}
+                disabled={adminLoading}
+                type="button"
+              >
+                {adminLoading ? "Bezig..." : "Aanmelden"}
+              </button>
+            </div>
           )}
         </section>
       </main>

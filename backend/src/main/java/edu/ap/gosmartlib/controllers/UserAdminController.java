@@ -2,12 +2,14 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.AdminUserDTO;
 import edu.ap.gosmartlib.dto.UpdateUserRoleRequest;
+import edu.ap.gosmartlib.security.AdminPrincipal;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.users.UserAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,21 +29,27 @@ public class UserAdminController {
     private final AuthHelper authHelper;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
-    public Page<AdminUserDTO> listUsers(@AuthenticationPrincipal OAuth2User principal,
-            @RequestParam(required = false) Long schoolId,
-            @RequestParam(required = false) String name,
-            Pageable pageable) {
-        return userAdminService.listUsersForAdmin(authHelper.extractUid(principal), schoolId, name, pageable);
+    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
+    public Page<AdminUserDTO> listUsers(Authentication authentication,
+                                        @RequestParam(required = false) Long schoolId,
+                                        @RequestParam(required = false) String name,
+                                        Pageable pageable) {
+        if (authentication.getPrincipal() instanceof AdminPrincipal)
+            return userAdminService.listUsersAsPlatformAdmin(schoolId, name, pageable);
+        return userAdminService.listUsersForAdmin(
+                authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, name, pageable);
     }
 
     @PatchMapping("/{id}/role")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
-    public AdminUserDTO updateRole(
-            @PathVariable long id,
-            @RequestParam(required = false) Long schoolId,
-            @RequestBody UpdateUserRoleRequest request,
-            @AuthenticationPrincipal OAuth2User principal) {
-        return userAdminService.updateUserRole(authHelper.extractUid(principal), schoolId, id, request.role());
+    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
+    public AdminUserDTO updateRole(@PathVariable long id,
+                                   @RequestParam(required = false) Long schoolId,
+                                   @RequestBody UpdateUserRoleRequest request,
+                                   Authentication authentication) {
+        if (authentication.getPrincipal() instanceof AdminPrincipal)
+            return userAdminService.updateUserRoleAsPlatformAdmin(schoolId, id, request.role());
+        return userAdminService.updateUserRole(
+                authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, id, request.role());
     }
+
 }
