@@ -43,18 +43,19 @@ export default function LoginPage() {
     setAdminLoading(true);
     setAdminError(false);
     try {
-      const formData = new URLSearchParams();
-      formData.append("username", adminUsername);
-      formData.append("password", adminPassword);
-
       const res = await fetch(`${apiBaseUrl}/admin/login`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString(),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: adminUsername,
+          password: adminPassword,
+        }),
       });
       if (res.ok) {
         window.location.href = "/admin/schools";
+      } else if (res.status === 429) {
+        setAdminError(true);
       } else {
         setAdminError(true);
       }

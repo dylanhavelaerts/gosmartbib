@@ -20,6 +20,7 @@ import java.util.List;
 public class AdminSecurityConfig {
 
     private final AdminUserDetailsService adminUserDetailsService;
+    private final LoginAttemptService loginAttemptService;
 
     @Value("${app.frontend.base-url}")
     private String frontendUrl;
@@ -31,7 +32,7 @@ public class AdminSecurityConfig {
         provider.setPasswordEncoder(new BCryptPasswordEncoder());
 
         ProviderManager authManager = new ProviderManager(provider);
-        AdminLoginFilter loginFilter = new AdminLoginFilter(authManager);
+        AdminLoginFilter loginFilter = new AdminLoginFilter(authManager, loginAttemptService);
 
         http
                 .securityMatcher("/admin/login")
