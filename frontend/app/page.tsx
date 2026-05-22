@@ -99,7 +99,7 @@ export default function Home() {
     useState<ReadingLevel | null>(null);
 
   // --- Homepage Settings States ---
-  const [settingsLoading, setSettingsLoading] = useState(true); // Nieuwe laadstatus
+  const [settingsLoading, setSettingsLoading] = useState(true);
   const [homepageSettings, setHomepageSettings] = useState({
     showSpotlight: true,
     showNewInLibrary: true,
@@ -149,7 +149,6 @@ export default function Home() {
   useEffect(() => {
     if (authLoading) return;
     
-    // Als er geen gebruiker is op dit punt, stoppen we met laden
     if (!user) {
       setSettingsLoading(false);
       return;
@@ -169,13 +168,13 @@ export default function Home() {
       })
       .catch(() => {})
       .finally(() => {
-        setSettingsLoading(false); // Stop met laden, ongeacht of het gelukt is of niet
+        setSettingsLoading(false);
       });
   }, [apiUrl, authLoading, user]);
 
   // --- Fallback als de actieve tab onzichtbaar wordt ---
   useEffect(() => {
-    if (settingsLoading) return; // Wacht tot instellingen geladen zijn!
+    if (settingsLoading) return;
 
     const canShowUrgent = homepageSettings.showUrgentLoans && urgentLoans.length > 0;
     const canShowSpotlight = homepageSettings.showSpotlight;
@@ -201,7 +200,7 @@ export default function Home() {
 
   // --- Boeken Ophalen ---
   useEffect(() => {
-    if (authLoading || !user || settingsLoading) return; // Wacht op instellingen
+    if (authLoading || !user || settingsLoading) return;
     
     if (selected === "urgent" || selected === "none") {
       setBooksLoading(false);
@@ -329,7 +328,7 @@ export default function Home() {
 
   // --- Dringende Leningen Ophalen ---
   useEffect(() => {
-    if (authLoading || !user || settingsLoading) return; // Wacht op instellingen
+    if (authLoading || !user || settingsLoading) return;
 
     Promise.all([
       fetch(`${apiUrl}/loans/reminder-days`, { credentials: "include" })
@@ -364,7 +363,6 @@ export default function Home() {
           
         setUrgentLoans(urgent);
         
-        // Alleen de 'urgent' tab forceren als deze in de instellingen actief staat
         if (urgent.length > 0 && homepageSettings.showUrgentLoans) {
           setSelected((prev) => prev !== "none" ? "urgent" : "urgent");
         }
@@ -402,15 +400,17 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="main-content-grid">
+        {/* Als "selected === none", halen we de grid formatting weg zodat de leeslijst full width wordt! */}
+        <div className="main-content-grid" style={selected === "none" ? { display: "block" } : undefined}>
           {settingsLoading ? (
              <div id="dashboard" style={{ gridColumn: "1 / -1", padding: "3rem", textAlign: "center" }}>
                <p className="dashboardBookMessage">Dashboard laden...</p>
              </div>
           ) : (
             <>
-              <div id="dashboard">
-                {selected !== "none" && (
+              {/* Als er tabbladen in te laden zijn, tonen we het standaard dashboard. */}
+              {selected !== "none" ? (
+                <div id="dashboard">
                   <nav className="tabs-nav">
                     {homepageSettings.showUrgentLoans && urgentLoans.length > 0 && (
                       <button
@@ -460,78 +460,83 @@ export default function Home() {
                       </label>
                     )}
                   </nav>
-                )}
 
-                {selected === "none" ? (
+                  {selected === "urgent" ? (
+                    <div id="bookListDashboard">
+                      {urgentLoans.map((loan) => (
+                        <div key={loan.loanId} className="urgent-book-wrapper">
+                          <span
+                            className={`urgent-overlay-badge ${badgeClass(loan.daysLeft)}`}
+                          >
+                            {formatDaysLabel(loan.daysLeft)}
+                          </span>
+                          <BookCard
+                            book={{
+                              id: loan.book?.id ?? 0,
+                              title: loan.book?.title ?? "Onbekend boek",
+                              thumbnail: loan.book?.thumbnail ?? "",
+                              authors: loan.book?.authors ?? [],
+                              isbn: loan.book?.isbn ?? "",
+                              publisher: "",
+                              description: "",
+                              pageCount: 0,
+                              categories: [],
+                              language: "",
+                              rating: 0,
+                              publishedYear: 0,
+                              spotlight: false,
+                              didacticTag: false,
+                              readingLevel: "",
+                              labels: [],
+                              ageRange: "",
+                            }}
+                            isSelected={false}
+                            onToggle={() => {}}
+                            withCheckbox={false}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div id="bookListDashboard">
+                      {booksLoading ? (
+                        <p className="dashboardBookMessage">Laden van boeken...</p>
+                      ) : books.length > 0 ? (
+                        books.map((book) => (
+                          <BookCard
+                            key={book.id}
+                            book={book}
+                            isSelected={false}
+                            onToggle={() => {}}
+                            withCheckbox={false}
+                          />
+                        ))
+                      ) : (
+                        <p className="dashboardBookMessage">
+                          {selected === "spotlight"
+                            ? `Geen boeken in de kijker voor leesniveau ${activeReadingLevel}.`
+                            : `Geen nieuwe boeken gevonden voor leesniveau ${activeReadingLevel}.`}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+              // Als ER GEEN tabbladen zijn EN ook GEEN leeslijsten, toon de algemene melding
+              ) : !homepageSettings.showReadingLists ? (
+                <div id="dashboard" style={{ width: "100%" }}>
                   <div id="bookListDashboard">
                     <p className="dashboardBookMessage">
-                      Er is momenteel geen specifiek dashboard ingesteld door de school.
+                      Er is momenteel geen weergave geconfigureerd voor de hoofdpagina. 
                       Gebruik de zoekbalk of het menu om boeken te ontdekken.
                     </p>
                   </div>
-                ) : selected === "urgent" ? (
-                  <div id="bookListDashboard">
-                    {urgentLoans.map((loan) => (
-                      <div key={loan.loanId} className="urgent-book-wrapper">
-                        <span
-                          className={`urgent-overlay-badge ${badgeClass(loan.daysLeft)}`}
-                        >
-                          {formatDaysLabel(loan.daysLeft)}
-                        </span>
-                        <BookCard
-                          book={{
-                            id: loan.book?.id ?? 0,
-                            title: loan.book?.title ?? "Onbekend boek",
-                            thumbnail: loan.book?.thumbnail ?? "",
-                            authors: loan.book?.authors ?? [],
-                            isbn: loan.book?.isbn ?? "",
-                            publisher: "",
-                            description: "",
-                            pageCount: 0,
-                            categories: [],
-                            language: "",
-                            rating: 0,
-                            publishedYear: 0,
-                            spotlight: false,
-                            didacticTag: false,
-                            readingLevel: "",
-                            labels: [],
-                            ageRange: "",
-                          }}
-                          isSelected={false}
-                          onToggle={() => {}}
-                          withCheckbox={false}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div id="bookListDashboard">
-                    {booksLoading ? (
-                      <p className="dashboardBookMessage">Laden van boeken...</p>
-                    ) : books.length > 0 ? (
-                      books.map((book) => (
-                        <BookCard
-                          key={book.id}
-                          book={book}
-                          isSelected={false}
-                          onToggle={() => {}}
-                          withCheckbox={false}
-                        />
-                      ))
-                    ) : (
-                      <p className="dashboardBookMessage">
-                        {selected === "spotlight"
-                          ? `Geen boeken in de kijker voor leesniveau ${activeReadingLevel}.`
-                          : `Geen nieuwe boeken gevonden voor leesniveau ${activeReadingLevel}.`}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : null}
 
+              {/* Leeslijsten Zijbalk */}
               {homepageSettings.showReadingLists && (
-                <aside className="home-sidebar">
+                <aside className="home-sidebar" style={selected === "none" ? { maxWidth: "100%", width: "100%" } : undefined}>
                   <HomeReadingLists
                     lists={personalLists}
                     loading={listsLoading}
