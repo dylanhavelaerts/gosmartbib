@@ -58,11 +58,13 @@ const TIER_LABELS: Record<string, string> = {
 
 export default function UserInfoWidget({
   user,
+  displayName,
   overallTier,
   profileType,
   profileLabel,
 }: {
   user: ReturnType<typeof useAuth>["user"];
+  displayName: string | null;
   overallTier: string | null;
   profileType: string | null;
   profileLabel: string | null;
@@ -103,7 +105,7 @@ export default function UserInfoWidget({
       <div className="user-avatar">
         <img src="/user.png" alt="Gebruiker" className="user-avatar-icon" />
       </div>
-      <p className="user-name">{user?.smartschoolUid ?? "—"}</p>
+      <p className="user-name">{displayName ?? "-"}</p>
       {cls && (
         <div className="user-tags">
           {cls.name && <span className="user-tag">{cls.name}</span>}

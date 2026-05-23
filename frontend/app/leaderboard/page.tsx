@@ -26,6 +26,7 @@ const RANKS = [2, 1, 3];
 export default function LeaderboardPage() {
   const [topClasses, setTopClasses] = useState<ClassReadingStatsDTO[]>([]);
   const [topStudents, setTopStudents] = useState<TopReaderStudentDTO[]>([]);
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -39,8 +40,24 @@ export default function LeaderboardPage() {
       .catch(() => {});
     fetch(`${apiUrl}/statistics/top-readers`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data) setTopStudents(data);
+      .then((data: TopReaderStudentDTO[] | null) => {
+        if (!data) return;
+        setTopStudents(data);
+        const uidsToResolve = data
+          .map((s) => s.smartschoolUid)
+          .filter((uid) => uid !== "Anoniem");
+        if (uidsToResolve.length === 0) return;
+        fetch(`${apiUrl}/users/display-names`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uids: uidsToResolve }),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((nameData) => {
+            if (nameData?.displayNames) setDisplayNames(nameData.displayNames);
+          })
+          .catch(() => {});
       })
       .catch(() => {});
   }, []);
@@ -75,7 +92,7 @@ export default function LeaderboardPage() {
                     </span>
                   </>
                 ) : (
-                  <span className="podium-empty">—</span>
+                  <span className="podium-empty">-</span>
                 )}
               </div>
               <div className="podium-block">
@@ -100,7 +117,7 @@ export default function LeaderboardPage() {
                 >
                   <span className="leaderboard-list-name">
                     {cls.className}
-                    <span className="leaderboard-list-sub"> — {cls.grade}</span>
+                    {cls.grade && <span className="leaderboard-list-sub"> — {cls.grade}</span>}
                   </span>
                   <span className="leaderboard-list-count">
                     {cls.loanCount} uitleeningen
@@ -123,7 +140,7 @@ export default function LeaderboardPage() {
                   className="leaderboard-list-item"
                 >
                   <span className="leaderboard-list-name">
-                    {student.smartschoolUid}
+                    {displayNames[student.smartschoolUid] ?? student.smartschoolUid}
                   </span>
                   <span className="leaderboard-list-count">
                     {student.loanCount} pagina's

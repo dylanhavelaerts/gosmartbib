@@ -51,6 +51,25 @@ export default function UserHome() {
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const api = process.env.NEXT_PUBLIC_API_URL ?? "";
+    if (!user?.smartschoolUid) return;
+    fetch(`${api}/users/display-names`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uids: [user.smartschoolUid] }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.success && data.displayNames?.[user.smartschoolUid!]) {
+          setDisplayName(data.displayNames[user.smartschoolUid!]);
+        }
+      })
+      .catch(() => {});
+  }, [user?.smartschoolUid]);
 
   useEffect(() => {
     const api = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -154,6 +173,7 @@ export default function UserHome() {
       <div className="widgets-container">
         <UserInfoWidget
           user={user}
+          displayName={displayName}
           overallTier={overallTier}
           profileType={profile?.profileType ?? null}
           profileLabel={profile?.profileLabel ?? null}
