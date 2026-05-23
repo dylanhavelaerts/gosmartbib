@@ -172,6 +172,14 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     where u.school.id = :schoolId and cls.id = :classId""")
     Page<LoanHistoryEntity> findAllBySchoolIdAndClassIdOrderByReturnDateDesc(@Param("schoolId") Long schoolId, @Param("classId") Long classId, Pageable pageable);
 
+    @Query("SELECT lh.isbn, COUNT(lh) FROM LoanHistoryEntity lh WHERE lh.isbn IN :isbns GROUP BY lh.isbn")
+    List<Object[]> countLoansByIsbnIn(@Param("isbns") List<String> isbns);
+
+    List<LoanHistoryEntity> findBySmartschoolUserId(String smartschoolUserId);
+
+    @Query("SELECT DISTINCT lh.smartschoolUserId FROM LoanHistoryEntity lh JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId WHERE u.school.id = :schoolId AND lh.smartschoolUserId IS NOT NULL")
+    List<String> findDistinctUserIdsBySchoolId(@Param("schoolId") Long schoolId);
+
     @Modifying
     @Query("UPDATE LoanHistoryEntity l SET l.smartschoolUserId = null WHERE l.smartschoolUserId = :uid")
     void anonymizeBySmartschoolUid(@Param("uid") String uid);
