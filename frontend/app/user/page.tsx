@@ -11,7 +11,9 @@ import CurrentLoansWidget, {
   type ActiveLoan,
 } from "./widgets/CurrentLoansWidget";
 import BookStatsWidget, { type PersonalStats } from "./widgets/BookStatsWidget";
-import BadgesWidget from "./widgets/BadgesWidget";
+import AchievementsWidget, {
+  type Achievement,
+} from "./widgets/AchievementsWidget";
 import "./userHome.css";
 
 const PROFILE_TINTS: Record<string, string> = {
@@ -41,6 +43,8 @@ export default function UserHome() {
   const [loansLoading, setLoansLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [achievementsLoading, setAchievementsLoading] = useState(true);
   const [prefs, setPrefs] = useState<UserPreferences>({
     anonymousLeaderboard: false,
   });
@@ -79,6 +83,12 @@ export default function UserHome() {
       .then((r) => (r.ok ? r.json() : null))
       .then(setDistribution)
       .catch(() => setDistribution(null));
+
+    fetch(`${api}/user-stats/achievements`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setAchievements)
+      .catch(() => setAchievements([]))
+      .finally(() => setAchievementsLoading(false));
   }, []);
 
   async function handleToggleLeaderboard(anonymous: boolean) {
@@ -147,7 +157,10 @@ export default function UserHome() {
         />
         <CurrentLoansWidget loans={activeLoans} loading={loansLoading} />
         <BookStatsWidget stats={stats} loading={statsLoading} />
-        <BadgesWidget />
+        <AchievementsWidget
+          achievements={achievements}
+          loading={achievementsLoading}
+        />
       </div>
     </div>
   );
