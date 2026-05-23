@@ -1,9 +1,11 @@
 package edu.ap.gosmartlib.controllers.statistics;
 
+import edu.ap.gosmartlib.dto.statistics.AchievementDTO;
 import edu.ap.gosmartlib.dto.statistics.PersonalReadingStatDTO;
 import edu.ap.gosmartlib.dto.statistics.ReaderProfileDTO;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.security.AuthHelper;
+import edu.ap.gosmartlib.services.statistics.AchievementService;
 import edu.ap.gosmartlib.services.statistics.UserStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,6 +24,7 @@ import java.util.Map;
 public class UserStatController {
 
     private final UserStatsService userStatsService;
+    private final AchievementService achievementService;
     private final AuthHelper authHelper;
     private final UserRepository userRepository;
 
@@ -45,6 +49,14 @@ public class UserStatController {
      * van profielnaam naar aantal gebruikers met dat profiel. 
      * Bijvoorbeeld: { "Avonturier": 10, "Pionier": 5, "Sprinter": 3, "Titan": 2 }
      */
+    @GetMapping("/achievements")
+    public ResponseEntity<List<AchievementDTO>> getAchievements(
+            @AuthenticationPrincipal OAuth2User principal) {
+        String uid = authHelper.extractUid(principal);
+
+        return ResponseEntity.ok(achievementService.getAchievements(uid));
+    }
+
     @GetMapping("/profile-distribution")
     public ResponseEntity<Map<String, Integer>> getProfileDistribution(
             @AuthenticationPrincipal OAuth2User principal) {
