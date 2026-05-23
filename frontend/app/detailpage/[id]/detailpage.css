@@ -602,3 +602,64 @@ align-self: center;
   text-decoration: underline;
   color: #0056b3;
 }
+
+.availabilityWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.campusBreakdown {
+  background-color: #f9fafb;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.campusBreakdownTitle {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  margin-top: 0;
+  color: #374151;
+}
+
+.campusList {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campusItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 4px;
+}
+
+.campusItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.campusName {
+  color: #4b5563;
+}
+
+.campusCount {
+  font-weight: 600;
+}
+
+.text-success {
+  color: #059669;
+}
+
+.text-error {
+  color: #dc2626;
+}

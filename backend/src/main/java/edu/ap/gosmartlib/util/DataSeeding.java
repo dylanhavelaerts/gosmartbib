@@ -106,17 +106,33 @@ public class DataSeeding implements CommandLineRunner {
         private List<BookInventoryEntity> createSeedInventories(BookEntity book, int totalCopies, int availableCopies) {
                 List<BookInventoryEntity> inventories = new ArrayList<>();
 
-                int primaryTotal = Math.max(1, (int) Math.ceil(totalCopies / 2.0));
-                int secondaryTotal = Math.max(0, totalCopies - primaryTotal);
+                // We verdelen de boeken nu over 3 locaties:
+                // 1. Primary school - Hoofdcampus (lege string)
+                // 2. Primary school - Extra Campus
+                // 3. Secondary school - Campus Zuid
 
-                int primaryAvailable = Math.min(availableCopies, primaryTotal);
-                int secondaryAvailable = Math.max(0, availableCopies - primaryAvailable);
+                int primaryMainTotal = Math.max(1, totalCopies / 3);
+                int primarySubTotal = Math.max(0, totalCopies / 3);
+                int secondaryTotal = Math.max(0, totalCopies - primaryMainTotal - primarySubTotal);
 
-                addInventory(inventories, book, seedSchoolPrimary, "", primaryTotal, primaryAvailable);
+                // Verdeel de beschikbare boeken op een vergelijkbare manier
+                int primaryMainAvailable = Math.min(availableCopies, primaryMainTotal);
+                int remainingAvailable = availableCopies - primaryMainAvailable;
+                
+                int primarySubAvailable = Math.min(remainingAvailable, primarySubTotal);
+                int secondaryAvailable = Math.max(0, remainingAvailable - primarySubAvailable);
 
+                // Voeg toe aan de standaard Hoofdcampus van jouw school
+                addInventory(inventories, book, seedSchoolPrimary, "", primaryMainTotal, primaryMainAvailable);
+
+                // Voeg toe aan een TWEEDE campus van jouw school (Dit is wat je nodig hebt om te testen!)
+                if (primarySubTotal > 0) {
+                        addInventory(inventories, book, seedSchoolPrimary, "Campus Groenenborger", primarySubTotal, primarySubAvailable);
+                }
+
+                // Voeg toe aan de tweede (andere) mock school
                 if (secondaryTotal > 0) {
-                        addInventory(inventories, book, seedSchoolSecondary, "Campus Zuid", secondaryTotal,
-                                        secondaryAvailable);
+                        addInventory(inventories, book, seedSchoolSecondary, "Campus Zuid", secondaryTotal, secondaryAvailable);
                 }
 
                 return inventories;

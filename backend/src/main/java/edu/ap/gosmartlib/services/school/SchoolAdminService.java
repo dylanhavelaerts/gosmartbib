@@ -39,7 +39,7 @@ public class SchoolAdminService {
     @Transactional
     public CreateSchoolResult createSchool(CreateSchoolRequest request) {
         String name = request.name() != null ? request.name().trim() : "";
-        String domain = request.domain() != null ? request.domain().trim() : "";
+        String domain = normalizeDomain(request.domain());
 
         if (name.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schoolnaam is verplicht");
         if (domain.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schooldomein is verplicht");
@@ -85,5 +85,10 @@ public class SchoolAdminService {
         school.setAdminApproved(true);
 
         return SchoolDTO.from(schoolRepository.save(school));
+    }
+
+    private String normalizeDomain(String raw) {
+        if (raw == null) return "";
+        return raw.trim().toLowerCase().replaceAll("/+$", "");
     }
 }
