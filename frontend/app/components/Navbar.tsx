@@ -54,33 +54,37 @@ export default function Navbar() {
                 Startpagina
               </button>
             </Link>
-            <Link href="/catalog">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/catalog") ? "active" : ""}
-              >
-                Catalogus
-              </button>
-            </Link>
+            {user?.role !== "ADMIN" && (
+              <>
+                <Link href="/catalog">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/catalog") ? "active" : ""}
+                  >
+                    Catalogus
+                  </button>
+                </Link>
 
-            <Link href="/reading-lists">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/reading-lists") ? "active" : ""}
-              >
-                Mijn leeslijsten
-              </button>
-            </Link>
+                <Link href="/reading-lists">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/reading-lists") ? "active" : ""}
+                  >
+                    Mijn leeslijsten
+                  </button>
+                </Link>
 
-            {/* Hier is de link aangepast naar /lended-books */}
-            <Link href="/lended-books">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/lended-books") ? "active" : ""}
-              >
-                Mijn ontleningen
-              </button>
-            </Link>
+                {/* Hier is de link aangepast naar /lended-books */}
+                <Link href="/lended-books">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/lended-books") ? "active" : ""}
+                  >
+                    Mijn ontleningen
+                  </button>
+                </Link>
+              </>
+            )}
 
             {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
               user?.role === "ADMIN" ||
@@ -97,15 +101,16 @@ export default function Navbar() {
               </>
             )}
           </div>
-
-          <Link
-            href="/user"
-            className={`user-icon-link${isActive("/user") ? " user-icon-active" : ""}`}
-            onClick={() => setIsOpen(false)}
-            title="Profiel"
-          >
-            <img src="/user.png" alt="Profiel" className="user-icon-img" />
-          </Link>
+          {user?.role !== "ADMIN" && (
+            <Link
+              href="/user"
+              className={`user-icon-link${isActive("/user") ? " user-icon-active" : ""}`}
+              onClick={() => setIsOpen(false)}
+              title="Profiel"
+            >
+              <img src="/user.png" alt="Profiel" className="user-icon-img" />
+            </Link>
+          )}
         </nav>
       </div>
     </header>
