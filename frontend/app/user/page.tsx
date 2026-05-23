@@ -3,35 +3,23 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import SettingsModal, { type UserPreferences } from "./SettingsModal";
+import UserInfoWidget from "./widgets/UserInfoWidget";
+import ReaderProfileWidget, {
+  type ReaderProfile,
+} from "./widgets/ReaderProfileWidget";
+import CurrentLoansWidget, {
+  type ActiveLoan,
+} from "./widgets/CurrentLoansWidget";
+import BookStatsWidget, { type PersonalStats } from "./widgets/BookStatsWidget";
+import BadgesWidget from "./widgets/BadgesWidget";
 import "./userHome.css";
 
-interface ActiveLoan {
-  loanId: number;
-  quantity: number;
-  dueDate: string;
-  book: {
-    title: string;
-    thumbnail: string | null;
-    authors?: string[];
-  } | null;
-}
-
-interface PersonalStats {
-  totalBooksRead: number;
-  topGenres: string[];
-}
-
-function formatDue(dueDateString: string): { text: string; cls: string } {
-  const due = new Date(dueDateString);
-  const now = new Date();
-  due.setHours(0, 0, 0, 0);
-  now.setHours(0, 0, 0, 0);
-  const diffDays = Math.ceil((due.getTime() - now.getTime()) / 86_400_000);
-  if (diffDays < 0)
-    return { text: `${Math.abs(diffDays)}d te laat`, cls: "due-late" };
-  if (diffDays <= 3) return { text: `Nog ${diffDays}d`, cls: "due-soon" };
-  return { text: `Nog ${diffDays}d`, cls: "due-ok" };
-}
+const PROFILE_TINTS: Record<string, string> = {
+  AVONTURIER: "#f9fffa",
+  PIONIER: "#fff7f9",
+  SPRINTER: "#fffff8",
+  TITAN: "#f8fbff",
+};
 
 async function logoutUser() {
   await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/logout`, {
@@ -41,174 +29,18 @@ async function logoutUser() {
   window.location.href = "/login";
 }
 
-function UserInfoWidget({
-  user,
-}: {
-  user: ReturnType<typeof useAuth>["user"];
-}) {
-  const cls = user?.classes?.[0];
-
-  return (
-    <div className="widget widget--user-info">
-      <p className="widget-label">Profiel</p>
-      <div className="user-avatar">
-        <img src="/user.png" alt="Gebruiker" className="user-avatar-icon" />
-      </div>
-      <p className="user-name">{user?.smartschoolUid ?? "—"}</p>
-      {cls && (
-        <div className="user-tags">
-          {cls.name && <span className="user-tag">{cls.name}</span>}
-          {cls.grade && <span className="user-tag">{cls.grade}</span>}
-          {cls.schoolYear && <span className="user-tag">{cls.schoolYear}</span>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function BadgeWidget() {
-  return (
-    <div className="widget widget--badge">
-      <p className="widget-label">Wat voor lezer ben jij?</p>
-      <div className="badge-body">
-        <div className="badge-placeholder">
-          <img src="/badges/pink.png" alt="Badge" className="badge-icon-img" />
-        </div>
-        <div className="badge-text">
-          <p className="badge-title">Avonturier</p>
-          <p className="badge-desc">
-            Als Avonturier verken je de bibliotheek in alle richtingen. Je duikt
-            in onbekende verhalen, ontdekt nieuwe genres en geeft elk boek een
-            eerlijke kans. Jouw nieuwsgierigheid is grenzeloos en elke pagina is
-            een nieuw avontuur. Blijf lezen, blijf ontdekken — want de grootste
-            verhalen wachten nog op jou.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CurrentLoansWidget({
-  loans,
-  loading,
-}: {
-  loans: ActiveLoan[];
-  loading: boolean;
-}) {
-  const total = loans.reduce((s, l) => s + l.quantity, 0);
-
-  return (
-    <div className="widget widget--loans">
-      <div className="widget-header-row">
-        <p className="widget-label">Momenteel ontleend</p>
-        {total > 0 && <span className="widget-count">{total}</span>}
-      </div>
-
-      {loading ? (
-        <p className="widget-loading">Laden…</p>
-      ) : loans.length === 0 ? (
-        <p className="widget-empty">Geen actieve uitleningen</p>
-      ) : (
-        <div className="loans-list">
-          {loans.slice(0, 4).map((loan) => {
-            const due = formatDue(loan.dueDate);
-            return (
-              <div key={loan.loanId} className="loan-item">
-                <div className="loan-cover">
-                  {loan.book?.thumbnail ? (
-                    <img src={loan.book.thumbnail} alt={loan.book.title} />
-                  ) : (
-                    <div className="loan-cover-empty" />
-                  )}
-                </div>
-                <div className="loan-info">
-                  <p className="loan-title">{loan.book?.title ?? "Onbekend"}</p>
-                  <p className="loan-author">
-                    {loan.book?.authors?.join(", ") ?? "Auteur onbekend"}
-                  </p>
-                  <span className={`loan-due loan-due--${due.cls}`}>
-                    {due.text}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-          {loans.length > 4 && (
-            <p className="loans-more">+{loans.length - 4} meer</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function BadgesWidget() {
-  return (
-    <div className="widget widget--badges">
-      <p className="widget-label">Badges &amp; prestaties</p>
-      <div className="badges-coming-soon">
-        <img src="/badges/pink.png" alt="" className="badges-preview-icon" />
-        <img src="/badges/blue.png" alt="" className="badges-preview-icon" />
-        <img src="/badges/yellow.png" alt="" className="badges-preview-icon" />
-        <img src="/badges/green.png" alt="" className="badges-preview-icon" />
-      </div>
-      <p className="badges-title">Binnenkort beschikbaar</p>
-      <p className="badges-desc">
-        Verdien badges door boeken te lezen, genres te verkennen en
-        uitleendoelen te halen. Hoe meer je leest, hoe meer je ontgrendelt.
-      </p>
-    </div>
-  );
-}
-
-function BookStatsWidget({
-  stats,
-  loading,
-}: {
-  stats: PersonalStats | null;
-  loading: boolean;
-}) {
-  return (
-    <div className="widget widget--stats">
-      <p className="widget-label">Leesstatistieken</p>
-
-      {loading ? (
-        <p className="widget-loading">Laden…</p>
-      ) : (
-        <>
-          <div className="stats-row">
-            <div className="stat-block">
-              <span className="stat-value">{stats?.totalBooksRead ?? 0}</span>
-              <span className="stat-label">Boeken gelezen</span>
-            </div>
-            <div className="stat-block">
-              <span className="stat-value">{stats?.topGenres?.[0] ?? "—"}</span>
-              <span className="stat-label">Favoriete genre</span>
-            </div>
-          </div>
-
-          {stats?.topGenres && stats.topGenres.length > 1 && (
-            <div className="genre-tags">
-              {stats.topGenres.slice(1).map((g) => (
-                <span key={g} className="genre-tag">
-                  {g}
-                </span>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
 export default function UserHome() {
   const { user } = useAuth();
   const [activeLoans, setActiveLoans] = useState<ActiveLoan[]>([]);
   const [stats, setStats] = useState<PersonalStats | null>(null);
+  const [profile, setProfile] = useState<ReaderProfile | null>(null);
+  const [distribution, setDistribution] = useState<Record<
+    string,
+    number
+  > | null>(null);
   const [loansLoading, setLoansLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [prefs, setPrefs] = useState<UserPreferences>({
     anonymousLeaderboard: false,
   });
@@ -236,6 +68,17 @@ export default function UserHome() {
         if (data) setPrefs(data);
       })
       .catch(() => {});
+
+    fetch(`${api}/user-stats/reader-profile`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setProfile)
+      .catch(() => setProfile(null))
+      .finally(() => setProfileLoading(false));
+
+    fetch(`${api}/user-stats/profile-distribution`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setDistribution)
+      .catch(() => setDistribution(null));
   }, []);
 
   async function handleToggleLeaderboard(anonymous: boolean) {
@@ -258,8 +101,15 @@ export default function UserHome() {
     }
   }
 
+  const pageTint = profile?.profileType
+    ? (PROFILE_TINTS[profile.profileType] ?? "#fff")
+    : "#fff";
+
   return (
-    <div className="user-page">
+    <div
+      className="user-page"
+      style={{ background: pageTint, transition: "background 0.4s ease" }}
+    >
       {settingsOpen && (
         <SettingsModal
           prefs={prefs}
@@ -290,7 +140,11 @@ export default function UserHome() {
 
       <div className="widgets-container">
         <UserInfoWidget user={user} />
-        <BadgeWidget />
+        <ReaderProfileWidget
+          profile={profile}
+          distribution={distribution}
+          loading={profileLoading}
+        />
         <CurrentLoansWidget loans={activeLoans} loading={loansLoading} />
         <BookStatsWidget stats={stats} loading={statsLoading} />
         <BadgesWidget />
