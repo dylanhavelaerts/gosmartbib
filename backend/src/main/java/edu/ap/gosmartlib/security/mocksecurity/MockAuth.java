@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -86,11 +87,13 @@ public class MockAuth extends OncePerRequestFilter {
                                 }
                             },
                             () -> {
-                                SchoolEntity newSchool = new SchoolEntity();
-                                newSchool.setDomain("https://aphogeschool.smartschool.be");
-                                newSchool.setName("AP Hogeschool (Mock)");
-                                newSchool.setAdminApproved(true);
-                                schoolRepository.save(newSchool);
+                                try {
+                                    SchoolEntity newSchool = new SchoolEntity();
+                                    newSchool.setDomain("https://aphogeschool.smartschool.be");
+                                    newSchool.setName("AP Hogeschool (Mock)");
+                                    newSchool.setAdminApproved(true);
+                                    schoolRepository.save(newSchool);
+                                } catch (DataIntegrityViolationException ignored) {}
                             });
 
             // lokale gebruikers injecteren in de db

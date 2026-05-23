@@ -33,8 +33,7 @@ public class UserStatsService {
     private final UserRepository userRepository;
 
     public PersonalReadingStatDTO getPersonalReadingStats(String uid) {
-        int totalBooksRead = loanHistoryRepository
-                .findBySmartschoolUserIdOrderByReturnDateDesc(uid).size();
+        int totalBooksRead = (int) loanHistoryRepository.sumQuantityBySmartschoolUserId(uid);
 
         List<String> topGenres = loanHistoryRepository
                 .findTopGenreForUser(uid, PageRequest.of(0, 3))

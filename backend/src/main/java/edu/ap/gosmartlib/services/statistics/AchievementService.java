@@ -24,14 +24,14 @@ public class AchievementService {
 
     @Cacheable("achievements")
     public List<AchievementDTO> getAchievements(String uid) {
-        int booksRead      = loanHistoryRepository.findBySmartschoolUserId(uid).size();
+        long booksRead     = loanHistoryRepository.sumQuantityBySmartschoolUserId(uid);
         long pagesRead     = loanHistoryRepository.sumPagesByUid(uid);
         long genresRead    = loanHistoryRepository.countDistinctGenresByUid(uid);
         long reviewsWritten = reviewRepository.countByUser_SmartschoolUid(uid);
         long authorsRead   = loanHistoryRepository.countDistinctAuthorsByUid(uid);
 
         return List.of(
-                compute("BOOKS_READ", "Boeken gelezen", booksRead, BOOKS_THRESHOLDS),
+                compute("BOOKS_READ", "Boeken gelezen", (int) booksRead, BOOKS_THRESHOLDS),
                 compute("PAGES_READ", "Pagina's gelezen", (int) pagesRead, PAGES_THRESHOLDS),
                 compute("GENRES_EXPLORED", "Genres ontdekt", (int) genresRead, GENRES_THRESHOLDS),
                 compute("REVIEWS_WRITTEN", "Recensies geschreven", (int) reviewsWritten, REVIEWS_THRESHOLDS),

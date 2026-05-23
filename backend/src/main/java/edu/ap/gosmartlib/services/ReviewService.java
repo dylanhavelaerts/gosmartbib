@@ -19,6 +19,7 @@ import edu.ap.gosmartlib.util.ReviewFlagReason;
 import edu.ap.gosmartlib.util.ReviewStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -125,6 +126,7 @@ public class ReviewService {
     // endregion
 
     // region Post methods
+    @CacheEvict(value = "achievements", key = "#smartschoolUid")
     public ReviewSummaryDTO submitReview(ReviewRequestDTO request, String smartschoolUid) {
         try {
             UserEntity user = userRepository.findBySmartschoolUid(smartschoolUid)
@@ -187,6 +189,7 @@ public class ReviewService {
     // endregion
 
     // region Patch methods
+    @CacheEvict(value = "achievements", key = "#smartschoolUid")
     public ReviewSummaryDTO editReview(Long reviewId, ReviewRequestDTO request, String smartschoolUid) { // <--FIX: smartschoolUid toegevoegd voor ownership check
         try {
             ReviewEntity review = reviewRepository.findById(reviewId)
