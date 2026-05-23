@@ -18,6 +18,35 @@ const TIER_LABELS: Record<string, string> = {
   LEGENDARY: "Legendarisch",
 };
 
+const TIER_VALUES: Record<string, number> = {
+  BRONZE: 1,
+  SILVER: 2,
+  GOLD: 3,
+  PLATINUM: 4,
+  DIAMOND: 5,
+  LEGENDARY: 6,
+};
+
+const TIERS_BY_VALUE: Record<number, string> = {
+  1: "BRONZE",
+  2: "SILVER",
+  3: "GOLD",
+  4: "PLATINUM",
+  5: "DIAMOND",
+  6: "LEGENDARY",
+};
+
+function computeOverallTier(achievements: Achievement[]): string | null {
+  if (achievements.length === 0) return null;
+  const avg =
+    achievements.reduce(
+      (sum, a) => sum + (a.currentTier ? (TIER_VALUES[a.currentTier] ?? 0) : 0),
+      0,
+    ) / achievements.length;
+  const rounded = Math.round(avg);
+  return rounded > 0 ? (TIERS_BY_VALUE[rounded] ?? "LEGENDARY") : null;
+}
+
 const CATEGORY_ICONS: Record<string, string> = {
   BOOKS_READ: "/achievements/book.png",
   PAGES_READ: "/achievements/page.png",
@@ -27,33 +56,51 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 function AchievementRow({ achievement }: { achievement: Achievement }) {
-  const { categoryKey, categoryLabel, currentTier, currentValue, nextThreshold, nextTier } = achievement;
+  const {
+    categoryKey,
+    categoryLabel,
+    currentTier,
+    currentValue,
+    nextThreshold,
+    nextTier,
+  } = achievement;
 
-  const tierClass = currentTier ? `tier-${currentTier.toLowerCase()}` : "tier-locked";
+  const tierClass = currentTier
+    ? `tier-${currentTier.toLowerCase()}`
+    : "tier-locked";
   const tierLabel = currentTier ? TIER_LABELS[currentTier] : null;
   const icon = CATEGORY_ICONS[categoryKey] ?? "/achievements/book.png";
 
-  const progressPct = nextThreshold > 0
-    ? Math.min((currentValue / nextThreshold) * 100, 100)
-    : 100;
+  const progressPct =
+    nextThreshold > 0
+      ? Math.min((currentValue / nextThreshold) * 100, 100)
+      : 100;
 
-  const firstThreshold = nextThreshold > 0 && currentTier === null ? nextThreshold : null;
-  const progressLabel = currentTier === null
-    ? `${currentValue} / ${firstThreshold ?? nextThreshold}`
-    : nextThreshold > 0
-    ? `${currentValue} / ${nextThreshold}`
-    : `${currentValue}`;
+  const firstThreshold =
+    nextThreshold > 0 && currentTier === null ? nextThreshold : null;
+  const progressLabel =
+    currentTier === null
+      ? `${currentValue} / ${firstThreshold ?? nextThreshold}`
+      : nextThreshold > 0
+        ? `${currentValue} / ${nextThreshold}`
+        : `${currentValue}`;
 
   return (
     <div className="achievement-row">
       <div className={`achievement-circle ${tierClass}`}>
-        <img src={icon} alt={categoryLabel} className="achievement-icon" />
+        <img
+          src={icon}
+          alt={categoryLabel}
+          className={`achievement-icon${categoryKey === "AUTHORS_READ" ? " achievement-icon--shift-right" : ""}`}
+        />
       </div>
       <div className="achievement-info">
         <div className="achievement-header">
           <span className="achievement-label">{categoryLabel}</span>
           {tierLabel && (
-            <span className={`achievement-tier-pill ${tierClass}`}>{tierLabel}</span>
+            <span className={`achievement-tier-pill ${tierClass}`}>
+              {tierLabel}
+            </span>
           )}
         </div>
         <div className="achievement-progress-bar">
@@ -65,7 +112,9 @@ function AchievementRow({ achievement }: { achievement: Achievement }) {
         <div className="achievement-progress-text">
           <span>{progressLabel}</span>
           {nextTier && (
-            <span className="achievement-next">→ {TIER_LABELS[nextTier]}</span>
+            <span className="achievement-next">
+              Volgende tier: {TIER_LABELS[nextTier]}
+            </span>
           )}
           {!nextTier && currentTier && (
             <span className="achievement-maxed">Maximaal bereikt</span>
@@ -90,11 +139,45 @@ export default function AchievementsWidget({
       {loading ? (
         <p className="widget-loading">Laden…</p>
       ) : (
-        <div className="achievements-list">
-          {achievements.map((a) => (
-            <AchievementRow key={a.categoryKey} achievement={a} />
-          ))}
-        </div>
+        <>
+          <div className="achievements-list">
+            {achievements.map((a) => (
+              <AchievementRow key={a.categoryKey} achievement={a} />
+            ))}
+          </div>
+
+          <div className="overall-rank-divider" />
+
+          <div className="overall-rank">
+            {(() => {
+              const tier = computeOverallTier(achievements);
+              const tierClass = tier
+                ? `tier-${tier.toLowerCase()}`
+                : "tier-locked";
+              const label = tier ? TIER_LABELS[tier] : "Geen rang";
+              return (
+                <>
+                  <div className={`overall-rank-circle ${tierClass}`}>
+                    <img
+                      src="/achievements/book.png"
+                      alt=""
+                      className="achievement-icon"
+                    />
+                  </div>
+                  <div className="overall-rank-text">
+                    <span className="overall-rank-label">Algemeen niveau</span>
+                    <span className={`overall-rank-tier ${tierClass}-text`}>
+                      {label}
+                    </span>
+                    <span className="overall-rank-sub">
+                      Gemiddeld over alle categorieën
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </>
       )}
     </div>
   );
