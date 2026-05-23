@@ -54,16 +54,16 @@ export default function Navbar() {
                 Startpagina
               </button>
             </Link>
-            <Link href="/catalog">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/catalog") ? "active" : ""}
-              >
-                Catalogus
-              </button>
-            </Link>
             {user?.role !== "ADMIN" && (
               <>
+                <Link href="/catalog">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/catalog") ? "active" : ""}
+                  >
+                    Catalogus
+                  </button>
+                </Link>
                 <Link href="/leaderboard">
                   <button
                     onClick={() => setIsOpen(false)}

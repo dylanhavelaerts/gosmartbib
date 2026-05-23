@@ -48,7 +48,7 @@ public class AuthController {
         }
 
         if (authentication.getPrincipal() instanceof AdminPrincipal admin) {
-            return ResponseEntity.ok(new UserDTO(admin.getId(), UserRoles.ADMIN, null, Set.of()));
+            return ResponseEntity.ok(new UserDTO(admin.getId(), null, UserRoles.ADMIN, null, Set.of()));
         }
 
         if (authentication.getPrincipal() instanceof OAuth2User oauth2User) {

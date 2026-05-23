@@ -3,8 +3,10 @@ package edu.ap.gosmartlib.services.schoolIntegration.schoolCampus;
 import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.CreateSchoolCampusRequest;
 import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.SchoolCampusDTO;
 import edu.ap.gosmartlib.entities.SchoolCampusEntity;
+import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolCampusRepository;
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class SchoolCampusService {
 
     private final SchoolCampusRepository schoolCampusRepository;
     private final UserRepository userRepository;
+    private final SchoolRepository schoolRepository;
 
     @Transactional(readOnly = true)
     public List<SchoolCampusDTO> getCampusesForBibbeheerder(String actorUid, Long schoolId) {

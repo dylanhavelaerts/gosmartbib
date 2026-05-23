@@ -254,7 +254,7 @@ public class BookController {
      */
     @PostMapping("/add")
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
-    public ResponseEntity<BookDTO> addManualBook(@RequestBody CreateBookRequestDTO request,
+    public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request,
             @AuthenticationPrincipal OAuth2User principal) {
         try {
             BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
