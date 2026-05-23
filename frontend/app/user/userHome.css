@@ -123,7 +123,7 @@
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .user-header {
     padding: 1.25rem 1.25rem 0.5rem;
   }
@@ -140,8 +140,8 @@
 
   .widget--loans,
   .widget--stats,
-  .widget--badges,
-  .widget--profile {
+  .widget--profile,
+  .widget--achievements {
     grid-column: 1;
     grid-row: auto;
   }

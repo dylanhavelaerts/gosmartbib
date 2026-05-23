@@ -13,6 +13,7 @@ import CurrentLoansWidget, {
 import BookStatsWidget, { type PersonalStats } from "./widgets/BookStatsWidget";
 import AchievementsWidget, {
   type Achievement,
+  computeOverallTier,
 } from "./widgets/AchievementsWidget";
 import "./userHome.css";
 
@@ -115,6 +116,8 @@ export default function UserHome() {
     ? (PROFILE_TINTS[profile.profileType] ?? "#fff")
     : "#fff";
 
+  const overallTier = computeOverallTier(achievements);
+
   return (
     <div
       className="user-page"
@@ -149,7 +152,12 @@ export default function UserHome() {
       </div>
 
       <div className="widgets-container">
-        <UserInfoWidget user={user} />
+        <UserInfoWidget
+          user={user}
+          overallTier={overallTier}
+          profileType={profile?.profileType ?? null}
+          profileLabel={profile?.profileLabel ?? null}
+        />
         <ReaderProfileWidget
           profile={profile}
           distribution={distribution}

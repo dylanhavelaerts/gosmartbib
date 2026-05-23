@@ -36,7 +36,7 @@ const TIERS_BY_VALUE: Record<number, string> = {
   6: "LEGENDARY",
 };
 
-function computeOverallTier(achievements: Achievement[]): string | null {
+export function computeOverallTier(achievements: Achievement[]): string | null {
   if (achievements.length === 0) return null;
   const avg =
     achievements.reduce(

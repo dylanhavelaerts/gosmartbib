@@ -2,6 +2,13 @@
   grid-column: 1;
 }
 
+@media (max-width: 768px) {
+  .widget--loans {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
 .loans-list {
   display: flex;
   flex-direction: column;

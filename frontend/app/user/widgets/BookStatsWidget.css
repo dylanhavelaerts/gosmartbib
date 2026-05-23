@@ -2,6 +2,13 @@
   grid-column: 1;
 }
 
+@media (max-width: 768px) {
+  .widget--stats {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
 .stats-row {
   display: flex;
   gap: 2rem;

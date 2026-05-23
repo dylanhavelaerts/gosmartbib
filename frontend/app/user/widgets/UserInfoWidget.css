@@ -2,6 +2,20 @@
   align-items: flex-start;
 }
 
+.user-info-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.user-info-pills {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .user-avatar {
   width: 52px;
   height: 52px;
@@ -40,4 +54,13 @@
   font-weight: 600;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
+}
+
+.user-tag--profile {
+  background: rgba(142, 36, 70, 0.12);
+  color: #8e2446;
+}
+
+.user-tag--tier {
+  font-weight: 700;
 }
