@@ -72,7 +72,7 @@ class UserDirectoryResolveDisplayNamesTest {
 
         ResolveDisplayNamesResponse response = userDirectoryService.resolveDisplayNames(
                 "admin-uid",
-                new ResolveDisplayNamesRequest(List.of("ouyzgpfoiahoih==")));
+                new ResolveDisplayNamesRequest(List.of("ouyzgpfoiahoih=="), 1L));
 
         assertTrue(response.success());
         assertEquals(1, response.requestedCount());
@@ -100,7 +100,7 @@ class UserDirectoryResolveDisplayNamesTest {
 
         ResolveDisplayNamesResponse response = userDirectoryService.resolveDisplayNames(
                 "admin-uid",
-                new ResolveDisplayNamesRequest(List.of("ouyzgpfoiahoih==")));
+                new ResolveDisplayNamesRequest(List.of("ouyzgpfoiahoih=="), 1L));
 
         assertFalse(response.success());
         assertEquals(1, response.requestedCount());
@@ -136,7 +136,7 @@ class UserDirectoryResolveDisplayNamesTest {
 
         ResolveDisplayNamesResponse response = userDirectoryService.resolveDisplayNames(
                 "admin-uid",
-                new ResolveDisplayNamesRequest(List.of("ouyzgpfoiahoih==")));
+                new ResolveDisplayNamesRequest(List.of("ouyzgpfoiahoih=="), 1L));
 
         assertTrue(response.success());
         assertEquals(1, response.requestedCount());

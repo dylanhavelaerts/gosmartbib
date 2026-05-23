@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.entities.LoanEntities.LoanPolicyEntity;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanPolicyRepository;
 import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class LoanPolicyService {
 
     private final LoanPolicyRepository loanPolicyRepository;
     private final SchoolRepository schoolRepository;
+    private final UserRepository userRepository;
 
     public LoanPolicyDTO getPolicy(Long schoolId) {
         return loanPolicyRepository.findBySchool_Id(schoolId)
@@ -26,23 +28,31 @@ public class LoanPolicyService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Geen uitleen policy gevonden voor schoolId: " + schoolId));
     }
 
+    public int getReminderDaysForUser(String smartschoolUid) {
+        return userRepository.findBySmartschoolUid(smartschoolUid)
+                .flatMap(user -> loanPolicyRepository.findBySchool_Id(user.getSchool().getId()))
+                .map(LoanPolicyEntity::getDueDateReminderDays)
+                .orElse(3);
+    }
+
     public LoanPolicyDTO savePolicy(Long schoolId, UpsertLoanPolicyRequest request) {
         if (request.defaultLoanPeriodDays() < 1)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "De uitleenperiode moet minimaal 1 dag zijn.");
-
         if (request.defaultExtensionPeriodDays() < 0)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "De verlengingsperiode kan niet negatief zijn.");
+        if (request.dueDateReminderDays() < 1)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "De herinneringsperiode moet minimaal 1 dag zijn.");
 
         LoanPolicyEntity policy = loanPolicyRepository.findBySchool_Id(schoolId)
                 .orElseGet(() -> {
                     SchoolEntity school = schoolRepository.findById(schoolId)
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School met id " + schoolId + " niet gevonden."));
-
                     return new LoanPolicyEntity(school, 14, 3);
                 });
 
         policy.setDefaultLoanPeriodDays(request.defaultLoanPeriodDays());
         policy.setDefaultExtensionPeriodDays(request.defaultExtensionPeriodDays());
+        policy.setDueDateReminderDays(request.dueDateReminderDays());
 
         return toDTO(loanPolicyRepository.save(policy));
     }
@@ -51,7 +61,8 @@ public class LoanPolicyService {
         return new LoanPolicyDTO(
                 policy.getSchool().getId(),
                 policy.getDefaultLoanPeriodDays(),
-                policy.getDefaultExtensionPeriodDays()
+                policy.getDefaultExtensionPeriodDays(),
+                policy.getDueDateReminderDays()
         );
     }
 }

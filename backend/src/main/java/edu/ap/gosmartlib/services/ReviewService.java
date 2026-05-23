@@ -415,7 +415,7 @@ public class ReviewService {
         try {
             var response = userDirectoryService.resolveDisplayNames(
                     actorUid,
-                    new ResolveDisplayNamesRequest(reviewerUids));
+                    new ResolveDisplayNamesRequest(reviewerUids, null));
 
             if (!response.success() || response.displayNames() == null) {
                 return Map.of();

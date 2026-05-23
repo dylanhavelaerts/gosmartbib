@@ -494,7 +494,7 @@ public class LoanService {
         try {
             var response = userDirectoryService.resolveDisplayNames(
                     actorUid,
-                    new ResolveDisplayNamesRequest(uids));
+                    new ResolveDisplayNamesRequest(uids, null));
 
             if (response == null || !response.success() || response.displayNames() == null) {
                 return Map.of();

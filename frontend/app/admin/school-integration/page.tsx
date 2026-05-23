@@ -31,6 +31,7 @@ function formatDate(value?: string | null) {
 }
 
 export default function SchoolIntegrationPage() {
+  const [schoolId, setSchoolId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -66,7 +67,6 @@ export default function SchoolIntegrationPage() {
   const [showAllUsers, setShowAllUsers] = useState(false);
   const [showAllClasses, setShowAllClasses] = useState(false);
 
-  const schoolId = me?.school?.id ?? null;
   const schoolName = me?.school?.name ?? "";
   const schoolDomain = me?.school?.domain ?? "";
 
@@ -111,15 +111,18 @@ export default function SchoolIntegrationPage() {
           return;
         }
 
-        if (!meData.school?.id) {
+        const paramId = Number(new URLSearchParams(window.location.search).get("schoolId")) || null;
+        const effectiveSchoolId = (meData.role === "ADMIN" ? paramId : meData.school?.id) ?? null;
+        if (!effectiveSchoolId) {
           setError("Geen school gevonden voor de ingelogde gebruiker");
           setLoading(false);
           return;
         }
+        setSchoolId(effectiveSchoolId);
 
         await Promise.all([
-          loadIntegration(meData.school.id),
-          loadCampuses(meData.school.id),
+          loadIntegration(effectiveSchoolId),
+          loadCampuses(effectiveSchoolId),
         ]);
       } catch (err) {
         console.error(err);
