@@ -74,7 +74,6 @@ public class SchoolIntegrationService {
         return SchoolIntegrationDTO.from(integration);
     }
 
-    @Transactional(readOnly = true)
     protected UserEntity getCurrentBibbeheerder(String actorUid) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
