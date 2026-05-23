@@ -184,6 +184,15 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     @Query("UPDATE LoanHistoryEntity l SET l.smartschoolUserId = null WHERE l.smartschoolUserId = :uid")
     void anonymizeBySmartschoolUid(@Param("uid") String uid);
 
+    @Query("SELECT COALESCE(SUM(b.pageCount), 0) FROM LoanHistoryEntity lh JOIN BookEntity b ON b.isbn = lh.isbn WHERE lh.smartschoolUserId = :uid AND b.pageCount IS NOT NULL")
+    long sumPagesByUid(@Param("uid") String uid);
+
+    @Query("SELECT COUNT(DISTINCT c) FROM LoanHistoryEntity lh JOIN BookEntity b ON b.isbn = lh.isbn JOIN b.categories c WHERE lh.smartschoolUserId = :uid")
+    long countDistinctGenresByUid(@Param("uid") String uid);
+
+    @Query("SELECT COUNT(DISTINCT a) FROM LoanHistoryEntity lh JOIN BookEntity b ON b.isbn = lh.isbn JOIN b.authors a WHERE lh.smartschoolUserId = :uid")
+    long countDistinctAuthorsByUid(@Param("uid") String uid);
+
     @Query("""
         SELECT c, COUNT(lh)
         FROM LoanHistoryEntity lh
