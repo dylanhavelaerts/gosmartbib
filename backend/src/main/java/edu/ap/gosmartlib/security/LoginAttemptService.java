@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.security;
 
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,6 +23,11 @@ public class LoginAttemptService {
             return new AttemptRecord(existing.count() + 1, existing.windowStart());
         });
         return record.count() <= MAX_ATTEMPTS;
+    }
+    @Scheduled(fixedRate = 600_000)
+    public void evictExpiredEntries() {
+        long now = System.currentTimeMillis();
+        attempts.entrySet().removeIf(e -> now - e.getValue().windowStart() > BLOCK_DURATION.toMillis());
     }
 
     public void reset(String ip) {
