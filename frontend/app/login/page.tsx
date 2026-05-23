@@ -37,6 +37,7 @@ export default function LoginPage() {
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
 
   const handleAdminLogin = async () => {
     if (!apiBaseUrl) return;
@@ -55,9 +56,11 @@ export default function LoginPage() {
       if (res.ok) {
         window.location.href = "/admin/schools";
       } else if (res.status === 429) {
-        setAdminError(true);
+        setRateLimited(true);
+        setAdminError(false);
       } else {
         setAdminError(true);
+        setRateLimited(false);
       }
     } catch {
       setAdminError(true);
@@ -114,7 +117,7 @@ export default function LoginPage() {
             </p>
           )}
           <div className="adminToggle" onClick={() => setAdminOpen((o) => !o)}>
-            <span>Beheerderslogin</span>
+            <span>Administratorlogin</span>
             <span
               className={`adminChevron ${adminOpen ? "adminChevronOpen" : ""}`}
             >
@@ -143,6 +146,11 @@ export default function LoginPage() {
               {adminError && (
                 <p className="loginError" role="alert">
                   Ongeldige gebruikersnaam of wachtwoord.
+                </p>
+              )}
+              {rateLimited && (
+                <p className="loginError" role="alert">
+                  Te veel pogingen. Probeer het over 15 minuten opnieuw.
                 </p>
               )}
               <button
