@@ -22,6 +22,8 @@ import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -112,6 +114,10 @@ public class LoanService {
     }
 
     // --- BOEKEN TERUGBRENGEN ---
+    @Caching(evict = {
+        @CacheEvict(value = "achievements", allEntries = true),
+        @CacheEvict(value = "profileDistribution", allEntries = true)
+    })
     public void returnBook(Long loanId, int returnQuantity) {
         LoanEntity loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Uitleen-record niet gevonden."));
@@ -404,6 +410,10 @@ public class LoanService {
     }
 
     // --- BULK BOEKEN TERUGBRENGEN (Vanuit Frontend Mandje) ---
+    @Caching(evict = {
+        @CacheEvict(value = "achievements", allEntries = true),
+        @CacheEvict(value = "profileDistribution", allEntries = true)
+    })
     public void returnBooksBulk(List<ReturnBulkRequestDTO> returnRequests) {
         for (ReturnBulkRequestDTO request : returnRequests) {
             // 1. Zoek op welk ISBN bij dit bookId hoort

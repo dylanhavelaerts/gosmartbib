@@ -54,17 +54,24 @@ export default function Navbar() {
                 Startpagina
               </button>
             </Link>
+            <Link href="/catalog">
+              <button
+                onClick={() => setIsOpen(false)}
+                className={isActive("/catalog") ? "active" : ""}
+              >
+                Catalogus
+              </button>
+            </Link>
             {user?.role !== "ADMIN" && (
               <>
-                <Link href="/catalog">
+                <Link href="/leaderboard">
                   <button
                     onClick={() => setIsOpen(false)}
-                    className={isActive("/catalog") ? "active" : ""}
+                    className={isActive("/leaderboard") ? "active" : ""}
                   >
-                    Catalogus
+                    Ranglijst
                   </button>
                 </Link>
-
                 <Link href="/reading-lists">
                   <button
                     onClick={() => setIsOpen(false)}
@@ -73,8 +80,6 @@ export default function Navbar() {
                     Mijn leeslijsten
                   </button>
                 </Link>
-
-                {/* Hier is de link aangepast naar /lended-books */}
                 <Link href="/lended-books">
                   <button
                     onClick={() => setIsOpen(false)}
@@ -82,10 +87,9 @@ export default function Navbar() {
                   >
                     Mijn ontleningen
                   </button>
-                </Link>
+                </Link>{" "}
               </>
             )}
-
             {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
               user?.role === "ADMIN" ||
               user?.role === "TEACHER") && (

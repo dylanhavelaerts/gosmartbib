@@ -6,10 +6,12 @@ import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
 import edu.ap.gosmartlib.dto.SnowballSectionDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.BookService;
 import edu.ap.gosmartlib.util.UserRoles;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -82,21 +84,31 @@ public class BookController {
      * @param principal de ingelogde gebruiker
      */
     @GetMapping("/filter")
-    public ResponseEntity<Page<BookDTO>> filterBooks(
+    public ResponseEntity<?> filterBooks(
             @ModelAttribute BookFilterRequest filter,
             @AuthenticationPrincipal OAuth2User principal) {
-        Page<BookDTO> filteredBooks = bookService.filterBooks(filter, callerRole(principal),
-                authHelper.extractUidOrNull(principal));
-        return ResponseEntity.ok(filteredBooks);
+        try {
+            Page<BookDTO> filteredBooks = bookService.filterBooks(filter, callerRole(principal),
+                    authHelper.extractUidOrNull(principal));
+            return ResponseEntity.ok(filteredBooks);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (DataAccessException e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     /**
      * Geeft het boek terug met het opgegeven id.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<BookDTO> getBookById(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity
-                .ok(bookService.getBookById(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
+    public ResponseEntity<?> getBookById(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
+        try {
+            return ResponseEntity
+                    .ok(bookService.getBookById(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
+        } catch (BookNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @GetMapping("/spotlight")
@@ -162,19 +174,37 @@ public class BookController {
      */
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     @PostMapping("/add/{isbn}")
-    public ResponseEntity<BookDTO> addBookByIsbn(@PathVariable String isbn,
+    public ResponseEntity<?> addBookByIsbn(@PathVariable String isbn,
             @RequestParam(required = false) String campus,
             @RequestParam(required = false) Integer amount, @AuthenticationPrincipal OAuth2User principal) {
-        BookDTO addedBook = bookService.addBookByIsbn(isbn, authHelper.extractUidOrNull(principal), campus, amount);
-        return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
+        try {
+            BookDTO addedBook = bookService.addBookByIsbn(isbn, authHelper.extractUidOrNull(principal), campus, amount);
+            return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Geen boek voor ISBN")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            }
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body("An error occurred while fetching the book.");
+        }
     }
 
     /**
      * Zoekt een boek op via ISBN zonder het op te slaan (preview).
      */
     @GetMapping("/search/{isbn}")
-    public ResponseEntity<BookDTO> searchBookByIsbn(@PathVariable String isbn) {
-        return new ResponseEntity<>(bookService.searchBookByIsbn(isbn), HttpStatus.OK);
+    public ResponseEntity<?> searchBookByIsbn(@PathVariable String isbn) {
+        try {
+            return new ResponseEntity<>(bookService.searchBookByIsbn(isbn), HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Geen boek voor ISBN")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            }
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body("An error occurred while fetching the book.");
+        }
     }
 
     /**
@@ -194,17 +224,29 @@ public class BookController {
      */
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<BulkImportResponseDTO> importBooks(@RequestParam("file") MultipartFile file,
+    public ResponseEntity<?> importBooks(@RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String campus, @AuthenticationPrincipal OAuth2User principal) {
-        BulkImportResponseDTO result = bookService.importBooksFromExcel(file, authHelper.extractUidOrNull(principal),
-                campus);
-        return new ResponseEntity<>(result, HttpStatus.OK);
+        try {
+            BulkImportResponseDTO result = bookService.importBooksFromExcel(file, authHelper.extractUidOrNull(principal),
+                    campus);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body("An error occurred while importing the Excel file.");
+        }
     }
 
     @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     @PatchMapping("/{id}")
-    public ResponseEntity<BookDTO> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
-        return ResponseEntity.ok(bookService.updateBook(id, bookDTO));
+    public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
+        try {
+            return ResponseEntity.ok(bookService.updateBook(id, bookDTO));
+        } catch (BookNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     /**
@@ -214,8 +256,14 @@ public class BookController {
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<BookDTO> addManualBook(@RequestBody CreateBookRequestDTO request,
             @AuthenticationPrincipal OAuth2User principal) {
-        BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
-        return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
+        try {
+            BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
+            return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body("An error occurred while saving the book.");
+        }
     }
 
     @GetMapping("/{id}/snowball")

@@ -168,7 +168,7 @@ public class DataSeeding implements CommandLineRunner {
                                                         332, List.of("Fantasy", "Coming-of-age"),
                                                         "https://covers.openlibrary.org/b/isbn/9780747532743-L.jpg",
                                                         "en", 4.7, "9780747532743", 1997, true, false,
-                                                        List.of("Vriendschap", "School & prestatiedruk"), "B", 7, 5),
+                                                        List.of("Vriendschap", "School & prestatiedruk"), "B", 105, 105),
                                         book("Harry Potter and the Chamber of Secrets", List.of("J.K. Rowling"),
                                                         "Bloomsbury",
                                                         "Harry's second year at Hogwarts is filled with new challenges. Strange messages appear on the walls, and students are mysteriously being petrified. With the help of Ron and Hermione, Harry investigates the legend of the Chamber of Secrets and confronts a deadly monster hidden within the school. Along the way, he learns more about his connection to Voldemort and the power of loyalty and courage.",

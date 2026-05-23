@@ -40,4 +40,6 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
     @Modifying
     @Query("UPDATE ReviewEntity r SET r.user = null WHERE r.user = :user")
     void anonymizeByUser(@Param("user") UserEntity user);
+
+    long countByUser_SmartschoolUid(String smartschoolUid);
 }

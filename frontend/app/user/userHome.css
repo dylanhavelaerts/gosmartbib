@@ -16,8 +16,39 @@
   color: #8e2446;
 }
 
-.user-header-title span {
-  color: #8e2446;
+.user-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.settings-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1.5px solid #8e2446;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.settings-btn:hover {
+  background: #8e2446;
+}
+
+.settings-btn:hover .settings-btn-icon {
+  filter: brightness(0) invert(1);
+}
+
+.settings-btn-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(900%)
+    hue-rotate(315deg);
 }
 
 .logout-btn {
@@ -40,72 +71,59 @@
   color: #fff;
 }
 
-.widget-grid {
+/* ── Widget grid ─────────────────────────────────────────────── */
+.widgets-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  padding: 1rem 2.5rem 2.5rem;
+  gap: 1.25rem;
+  padding: 0.5rem 2.5rem 2.5rem;
 }
 
-.widget-card {
+/* ── Base widget card ────────────────────────────────────────── */
+.widget {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid #e8dde2;
   box-shadow: 0 2px 8px rgba(142, 36, 70, 0.06);
-  padding: 1.75rem;
-  cursor: pointer;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    border-color 0.15s ease;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  text-decoration: none;
-  min-height: 10rem;
-  vertical-align: center;
+  gap: 0.75rem;
 }
 
-.widget-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(142, 36, 70, 0.13);
-  border-color: #8e2446;
+.widget-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #b07090;
+  margin: 0;
 }
 
-.widget-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 10px;
-  background: rgba(142, 36, 70, 0.08);
+.widget-loading,
+.widget-empty {
+  font-size: 0.875rem;
+  color: #aaa;
+  margin: 0;
+}
+
+.widget-header-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 0.25rem;
-  filter: brightness(0) saturate(100%) invert(16%) sepia(89%) saturate(900%)
-    hue-rotate(315deg);
+  justify-content: space-between;
 }
 
-.widget-icon-img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-}
-
-.widget-title {
-  font-size: 1rem;
+.widget-count {
+  background: #8e2446;
+  color: #fff;
+  font-size: 0.7rem;
   font-weight: 700;
-  color: #1a1a1a;
-  margin: 0;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
 }
 
-.widget-description {
-  font-size: 0.82rem;
-  color: #999;
-  margin: 0;
-  line-height: 1.4;
-}
-
-@media (max-width: 640px) {
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
   .user-header {
     padding: 1.25rem 1.25rem 0.5rem;
   }
@@ -114,14 +132,18 @@
     font-size: 1.1rem;
   }
 
-  .widget-grid {
+  .widgets-container {
     grid-template-columns: 1fr;
-    padding: 1rem 1.25rem 2rem;
+    padding: 0.5rem 1.25rem 2rem;
     gap: 1rem;
   }
 
-  .widget-card {
-    padding: 1.25rem;
+  .widget--loans,
+  .widget--stats,
+  .widget--profile,
+  .widget--achievements {
+    grid-column: 1;
+    grid-row: auto;
   }
 
 }
