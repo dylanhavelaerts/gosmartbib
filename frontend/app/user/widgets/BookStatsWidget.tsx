@@ -2,6 +2,7 @@ import "./BookStatsWidget.css";
 
 interface PersonalStats {
   totalBooksRead: number;
+  totalPagesRead: number;
   topGenres: string[];
 }
 
@@ -24,6 +25,10 @@ export default function BookStatsWidget({
             <div className="stat-block">
               <span className="stat-value">{stats?.totalBooksRead ?? 0}</span>
               <span className="stat-label">Boeken gelezen</span>
+            </div>
+            <div className="stat-block">
+              <span className="stat-value">{(stats?.totalPagesRead ?? 0).toLocaleString("nl-BE")}</span>
+              <span className="stat-label">Pagina's gelezen</span>
             </div>
             <div className="stat-block">
               <span className="stat-value">{stats?.topGenres?.[0] ?? "—"}</span>

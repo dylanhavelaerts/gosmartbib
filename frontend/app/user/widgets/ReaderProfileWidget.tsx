@@ -11,7 +11,7 @@ const PROFILE_ICONS: Record<string, string> = {
   AVONTURIER: "/badges/green.png",
   PIONIER: "/badges/pink.png",
   SPRINTER: "/badges/yellow.png",
-  TITAN: "/badges/blue.png",
+  TITAAN: "/badges/blue.png",
 };
 
 const PROFILE_DESCRIPTIONS: Record<string, string> = {
@@ -21,7 +21,7 @@ const PROFILE_DESCRIPTIONS: Record<string, string> = {
     "Terwijl anderen de populaire boeken pakken, kies jij de onontdekte parels. Jij geeft elk boek een kans, ook als niemand anders dat doet.",
   SPRINTER:
     "Boeken zijn voor jou geen hobby, het is een sport. Je leest snel, veel en zonder pauze. De bibliotheek kan jou nauwelijks bijhouden.",
-  TITAN:
+  TITAAN:
     "Dikke boeken? Geen probleem. Jij neemt de tijd voor lange, diepe verhalen en leest pagina's die anderen laten liggen.",
 };
 

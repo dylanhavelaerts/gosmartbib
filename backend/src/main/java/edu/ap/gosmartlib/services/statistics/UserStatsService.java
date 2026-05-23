@@ -30,10 +30,10 @@ public class UserStatsService {
 
     private final LoanHistoryRepository loanHistoryRepository;
     private final BookRepository bookRepository;
-    private final UserRepository userRepository;
 
     public PersonalReadingStatDTO getPersonalReadingStats(String uid) {
         int totalBooksRead = (int) loanHistoryRepository.sumQuantityBySmartschoolUserId(uid);
+        long totalPagesRead = loanHistoryRepository.sumPagesByUid(uid);
 
         List<String> topGenres = loanHistoryRepository
                 .findTopGenreForUser(uid, PageRequest.of(0, 3))
@@ -41,7 +41,7 @@ public class UserStatsService {
                 .map(row -> (String) row[0])
                 .toList();
 
-        return new PersonalReadingStatDTO(totalBooksRead, topGenres);
+        return new PersonalReadingStatDTO(totalBooksRead, totalPagesRead, topGenres);
     }
 
     public ReaderProfileDTO getReaderProfile(String uid) {
@@ -150,9 +150,9 @@ public class UserStatsService {
 
     private String pickWinner(double sprinter, double pionier, double titan, double avonturier) {
         Map<String, Double> scores = new LinkedHashMap<>();
-        scores.put("SPRINTER", sprinter);
         scores.put("PIONIER", pionier);
         scores.put("TITAN", titan);
+        scores.put("SPRINTER", sprinter);
         scores.put("AVONTURIER", avonturier);
 
         return scores.entrySet().stream()
@@ -166,7 +166,7 @@ public class UserStatsService {
             case "AVONTURIER" -> "Avonturier";
             case "PIONIER" -> "Pionier";
             case "SPRINTER" -> "Sprinter";
-            case "TITAN" -> "Titan";
+            case "TITAN" -> "Titaan";
             default -> null;
         };
     }

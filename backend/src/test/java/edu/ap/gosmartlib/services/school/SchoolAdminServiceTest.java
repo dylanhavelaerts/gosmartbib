@@ -195,7 +195,9 @@ class SchoolAdminServiceTest {
     void givenSchoolWithUsersClassesAndIntegration_whenDeleteSchool_thenDeletesInOrder() {
         SchoolEntity school = buildSchool(10L, "GO! Atheneum", "https://go.smartschool.be", true);
         UserEntity user1 = new UserEntity();
+        user1.setSmartschoolUid("uid-1");
         UserEntity user2 = new UserEntity();
+        user2.setSmartschoolUid("uid-2");
         SchoolClassEntity cls = new SchoolClassEntity();
         SchoolIntegrationEntity integration = new SchoolIntegrationEntity();
 

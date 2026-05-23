@@ -126,7 +126,7 @@ class ReviewControllerTest {
 
     @Test
     void givenValidPrincipal_whenSubmitReview_thenReturnsCreatedAndDelegatesToService() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f, false);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f, false, false);
         ReviewSummaryDTO expected = buildSummary(5L, "Reviewer Name", "Nice", 4.0f);
         when(principal.getAttribute("userID")).thenReturn("smart-uid-1");
         when(reviewService.submitReview(request, "smart-uid-1")).thenReturn(expected);
@@ -140,7 +140,7 @@ class ReviewControllerTest {
 
     @Test
     void givenMissingPrincipal_whenSubmitReview_thenThrowsUnauthorizedAndDoesNotCallService() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f, false);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f, false, false);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> reviewController.submitReview(request, null));
@@ -151,7 +151,7 @@ class ReviewControllerTest {
 
     @Test
     void givenPrincipalWithoutUserId_whenSubmitReview_thenThrowsUnauthorizedAndDoesNotCallService() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f, false);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000005", "Nice", 4.0f, false, false);
         when(principal.getAttribute("userID")).thenReturn(" ");
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
@@ -163,7 +163,7 @@ class ReviewControllerTest {
 
     @Test
     void givenValidPrincipal_whenEditReview_thenReturnsOkAndDelegatesToService() {
-        ReviewRequestDTO request = new ReviewRequestDTO("9780000000006", "Updated text", 3.0f, false);
+        ReviewRequestDTO request = new ReviewRequestDTO("9780000000006", "Updated text", 3.0f, false, false);
         ReviewSummaryDTO expected = buildSummary(42L, null, "Updated text", 3.0f);
         when(principal.getAttribute("userID")).thenReturn("smart-uid-2");
         when(reviewService.editReview(42L, request, "smart-uid-2")).thenReturn(expected);

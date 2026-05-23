@@ -3,10 +3,8 @@ package edu.ap.gosmartlib.services.schoolIntegration.schoolCampus;
 import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.CreateSchoolCampusRequest;
 import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.SchoolCampusDTO;
 import edu.ap.gosmartlib.entities.SchoolCampusEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolCampusRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +21,6 @@ public class SchoolCampusService {
 
     private final SchoolCampusRepository schoolCampusRepository;
     private final UserRepository userRepository;
-    private final SchoolRepository schoolRepository;
 
     @Transactional(readOnly = true)
     public List<SchoolCampusDTO> getCampusesForAdminSchool(String actorUid, Long schoolId) {
@@ -58,11 +55,8 @@ public class SchoolCampusService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Campus bestaat al voor deze school");
         }
 
-        SchoolEntity school = schoolRepository.findById(schoolId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School niet gevonden"));
-
         SchoolCampusEntity campus = new SchoolCampusEntity();
-        campus.setSchool(school);
+        campus.setSchool(actor.getSchool());
         campus.setName(campusName);
 
         SchoolCampusEntity savedCampus = schoolCampusRepository.save(campus);
@@ -100,7 +94,7 @@ public class SchoolCampusService {
         }
 
         // Global admin has no school and can access any school
-        if (actor.getRole() == UserRoles.ADMIN) return;
+        if (actor.getRole() == UserRoles.ADMIN && actor.getSchool() == null) return;
 
         if (!actor.getSchool().getId().equals(schoolId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang tot deze school");
