@@ -126,7 +126,7 @@ export default function LeaderboardPage() {
                     {student.smartschoolUid}
                   </span>
                   <span className="leaderboard-list-count">
-                    {student.loanCount} uitleeningen
+                    {student.loanCount} pagina's
                   </span>
                 </li>
               ))}

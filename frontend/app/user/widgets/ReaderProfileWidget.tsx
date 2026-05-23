@@ -59,7 +59,7 @@ export default function ReaderProfileWidget({
             <p className="profile-title">Nog niet ontgrendeld</p>
             <p className="profile-desc">
               Lees nog {needed} {needed === 1 ? "boek" : "boeken"} om je
-              lezersprofiel te ontdekken.
+              lezersprofiel te ontdekken
             </p>
             <div className="profile-progress">
               {Array.from({ length: total }).map((_, i) => (

@@ -57,6 +57,7 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
     JOIN u.classes sc
     WHERE u.school.id = :schoolId
+    AND u.role = edu.ap.gosmartlib.util.UserRoles.STUDENT
     GROUP BY sc.name, sc.grade, sc.schoolYear
     ORDER BY SUM(lh.quantity) DESC
     """)
@@ -107,10 +108,12 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     List<Object[]> findLoanDurationDistribution(Long schoolId, String className, String grade);
 
     @Query("""
-    SELECT lh.smartschoolUserId, SUM(lh.quantity)
+    SELECT lh.smartschoolUserId, COALESCE(SUM(b.pageCount * lh.quantity), 0)
     FROM LoanHistoryEntity lh
     JOIN UserEntity u ON u.smartschoolUid = lh.smartschoolUserId
+    LEFT JOIN BookEntity b ON b.isbn = lh.isbn
     WHERE u.school.id = :schoolId
+    AND u.role = edu.ap.gosmartlib.util.UserRoles.STUDENT
     AND (:className IS NULL OR EXISTS (
         SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className
             ))
@@ -118,7 +121,7 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
         SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.grade = :grade
             ))
     GROUP BY lh.smartschoolUserId
-    ORDER BY SUM(lh.quantity) DESC
+    ORDER BY COALESCE(SUM(b.pageCount * lh.quantity), 0) DESC
     """)
     List<Object[]> findTopReaders(Long schoolId, Pageable pageable, String className, String grade);
 

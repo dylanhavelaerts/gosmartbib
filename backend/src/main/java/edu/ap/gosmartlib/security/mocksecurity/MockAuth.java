@@ -93,7 +93,15 @@ public class MockAuth extends OncePerRequestFilter {
                                     newSchool.setName("AP Hogeschool (Mock)");
                                     newSchool.setAdminApproved(true);
                                     schoolRepository.save(newSchool);
-                                } catch (DataIntegrityViolationException ignored) {}
+                                } catch (DataIntegrityViolationException ignored) {
+                                    schoolRepository.findByDomain("https://aphogeschool.smartschool.be")
+                                            .ifPresent(existing -> {
+                                                if (!existing.isAdminApproved()) {
+                                                    existing.setAdminApproved(true);
+                                                    schoolRepository.save(existing);
+                                                }
+                                            });
+                                }
                             });
 
             // lokale gebruikers injecteren in de db
