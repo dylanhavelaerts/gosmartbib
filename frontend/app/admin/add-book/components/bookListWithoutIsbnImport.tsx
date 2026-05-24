@@ -5,33 +5,25 @@ import "./bookListImport.css";
 import type { SchoolCampusDTO } from "@/app/interfaces/schoolIntegration";
 import type { MeResponse } from "@/app/interfaces/user";
 import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
-
-type ImportMismatch = {
-  rowNumber: number;
-  isbn?: string;
-  excelTitle: string;
-  fetchedTitle?: string | null;
-  reason: string;
-};
-
-type ImportResult = {
-  totalRows: number;
-  savedCount: number;
-  mismatchCount: number;
-  mismatches: ImportMismatch[];
-};
+import type {
+  BulkImportResult,
+  DuplicateWarning,
+} from "@/app/interfaces/Book";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function BookListWithoutIsbnImport() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
   const [message, setMessage] = useState("");
   const [campusLoadError, setCampusLoadError] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingCampuses, setLoadingCampuses] = useState(false);
   const [campus, setCampus] = useState("");
   const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
+  const [duplicateWarnings, setDuplicateWarnings] = useState<DuplicateWarning[]>([]);
+  const [selectedDuplicateRows, setSelectedDuplicateRows] = useState<number[]>([]);
+  const [confirmingDuplicates, setConfirmingDuplicates] = useState(false);
 
   useEffect(() => {
     const loadCampusesForCurrentSchool = async () => {
@@ -79,10 +71,12 @@ export default function BookListWithoutIsbnImport() {
     const file = e.target.files?.[0] ?? null;
     setSelectedFile(file);
     setImportResult(null);
+    setDuplicateWarnings([]);
+    setSelectedDuplicateRows([]);
     setMessage("");
   };
 
-  const handleUploadExcel = async () => {
+  const handleUploadExcel = async (confirmDuplicates = false) => {
     if (!selectedFile) return;
 
     if (!API_URL) {
@@ -94,6 +88,11 @@ export default function BookListWithoutIsbnImport() {
     setMessage("");
     setImportResult(null);
 
+    if (!confirmDuplicates) {
+      setDuplicateWarnings([]);
+      setSelectedDuplicateRows([]);
+    }
+
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
@@ -104,13 +103,19 @@ export default function BookListWithoutIsbnImport() {
         formData.append("campus", trimmedCampus);
       }
 
-      const response = await fetch(`${API_URL}/books/import/no-isbn`, {
+      if (confirmDuplicates) {
+        selectedDuplicateRows.forEach((rowNumber) => {
+          formData.append("confirmedDuplicateRows", String(rowNumber));
+        });
+      }
+
+      const response = await fetch(`${API_URL}/books/import/no-isbn?confirmDuplicates=${confirmDuplicates}`, {
         method: "POST",
         credentials: "include",
         body: formData,
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
         setMessage(data?.message || "Er ging iets mis bij het importeren.");
@@ -118,7 +123,20 @@ export default function BookListWithoutIsbnImport() {
       }
 
       setImportResult(data);
-      setMessage(`Import klaar. ${data.savedCount} boek(en) opgeslagen.`);
+
+      if (!confirmDuplicates && data?.duplicateWarnings?.length > 0) {
+        setDuplicateWarnings(data.duplicateWarnings);
+        setSelectedDuplicateRows(
+          data.duplicateWarnings.map((warning: DuplicateWarning) => warning.rowNumber),
+        );
+        setMessage(
+          `Er zijn ${data.duplicateWarnings.length} mogelijke dubbele boeken gevonden. Kies per boek welke aantallen je wilt toevoegen.`,
+        );
+        return;
+      }
+
+      setDuplicateWarnings([]);
+      setMessage(`Import klaar. ${data.savedCount ?? 0} rij(en) verwerkt.`);
     } catch (error) {
       console.error(error);
       setMessage("Kan de server niet bereiken.");
@@ -196,7 +214,7 @@ export default function BookListWithoutIsbnImport() {
 
             <button
               type="button"
-              onClick={handleUploadExcel}
+              onClick={() => handleUploadExcel(false)}
               disabled={loading}
               className={uploadButtonClass}
             >
@@ -210,7 +228,7 @@ export default function BookListWithoutIsbnImport() {
         <div className="resultCard">
           <h2>Import resultaat</h2>
           <p>Totaal aantal rijen: {importResult.totalRows}</p>
-          <p>Opgeslagen boeken: {importResult.savedCount}</p>
+          <p>Verwerkte rijen: {importResult.savedCount}</p>
           <p>Mismatches / fouten: {importResult.mismatchCount}</p>
 
           {importResult.mismatches.length > 0 && (
@@ -232,6 +250,144 @@ export default function BookListWithoutIsbnImport() {
               </ul>
             </div>
           )}
+        </div>
+      )}
+
+      {duplicateWarnings.length > 0 && (
+        <div className="resultCard duplicateWarningCard">
+          <div className="duplicateWarningHeader">
+            <div>
+              <p className="duplicateEyebrow">Controle vereist</p>
+              <h2>Mogelijke dubbele boeken gevonden</h2>
+              <p>
+                Deze boeken lijken al te bestaan. Kies per boek of je de aantallen
+                wilt toevoegen aan het bestaande boek.
+              </p>
+            </div>
+
+            <span className="duplicateCountBadge">
+              {selectedDuplicateRows.length} van {duplicateWarnings.length} geselecteerd
+            </span>
+          </div>
+
+          <div className="duplicateToolbar">
+            <button
+              type="button"
+              className="secondaryButton"
+              onClick={() =>
+                setSelectedDuplicateRows(
+                  duplicateWarnings.map((warning) => warning.rowNumber),
+                )
+              }
+            >
+              Alles selecteren
+            </button>
+
+            <button
+              type="button"
+              className="secondaryButton"
+              onClick={() => setSelectedDuplicateRows([])}
+            >
+              Alles deselecteren
+            </button>
+          </div>
+
+          <div className="duplicateList">
+            {duplicateWarnings.map((warning) => {
+              const isSelected = selectedDuplicateRows.includes(warning.rowNumber);
+
+              return (
+                <label
+                  key={`${warning.rowNumber}-${warning.existingBookId}`}
+                  className={`duplicateItem ${isSelected ? "duplicateItemSelected" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedDuplicateRows((prev) => [
+                          ...prev,
+                          warning.rowNumber,
+                        ]);
+                      } else {
+                        setSelectedDuplicateRows((prev) =>
+                          prev.filter((rowNumber) => rowNumber !== warning.rowNumber),
+                        );
+                      }
+                    }}
+                  />
+
+                  <div className="duplicateItemContent">
+                    <div className="duplicateItemTop">
+                      <div>
+                        <p className="duplicateRowLabel">Rij {warning.rowNumber}</p>
+                        <h3>{warning.title}</h3>
+                      </div>
+
+                      <span className="duplicateStatusBadge">
+                        {isSelected ? "Wordt toegevoegd" : "Wordt overgeslagen"}
+                      </span>
+                    </div>
+
+                    <div className="duplicateMetaGrid">
+                      <div>
+                        <span>Auteur(s)</span>
+                        <strong>{warning.authors?.join(", ") || "Onbekend"}</strong>
+                      </div>
+
+                      <div>
+                        <span>Uitgever</span>
+                        <strong>{warning.publisher || "Onbekend"}</strong>
+                      </div>
+
+                      <div>
+                        <span>Campus</span>
+                        <strong>{warning.campus || "Geen campus"}</strong>
+                      </div>
+
+                      <div>
+                        <span>Huidige voorraad</span>
+                        <strong>
+                          {warning.currentTotalCopies} totaal /{" "}
+                          {warning.currentAvailableCopies} beschikbaar
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Toe te voegen</span>
+                        <strong>
+                          +{warning.totalCopiesToAdd} totaal / +{warning.availableCopiesToAdd} beschikbaar
+                        </strong>
+                      </div>
+                    </div>
+
+                    <p className="duplicateReason">{warning.reason}</p>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+
+          <div className="duplicateActions">
+            <button
+              type="button"
+              className="uploadButton"
+              disabled={confirmingDuplicates || loading}
+              onClick={async () => {
+                setConfirmingDuplicates(true);
+                try {
+                  await handleUploadExcel(true);
+                } finally {
+                  setConfirmingDuplicates(false);
+                }
+              }}
+            >
+              {confirmingDuplicates
+                ? "Geselecteerde aantallen toevoegen..."
+                : `Voeg geselecteerde aantallen toe (${selectedDuplicateRows.length})`}
+            </button>
+          </div>
         </div>
       )}
 

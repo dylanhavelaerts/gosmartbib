@@ -4,29 +4,18 @@ import { useEffect, useState } from "react";
 import "./bookListImport.css";
 import type { SchoolCampusDTO } from "@/app/interfaces/schoolIntegration";
 import type { MeResponse } from "@/app/interfaces/user";
+import type {
+  BulkImportResult,
+  DuplicateWarning,
+  ImportMismatch
+} from "@/app/interfaces/Book";
 import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
-
-type ImportMismatch = {
-  rowNumber: number;
-  isbn: string;
-  excelTitle: string;
-  fetchedTitle: string | null;
-  reason: string;
-  amount: number | null;
-};
-
-type ImportResult = {
-  totalRows: number;
-  savedCount: number;
-  mismatchCount: number;
-  mismatches: ImportMismatch[];
-};
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function BookListImport() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
   const [message, setMessage] = useState("");
   const [campusLoadError, setCampusLoadError] = useState("");
   const [loading, setLoading] = useState(false);

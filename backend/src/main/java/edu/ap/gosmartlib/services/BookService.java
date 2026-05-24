@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import edu.ap.gosmartlib.dto.importdto.BulkImportDuplicateWarningDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -42,9 +43,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.text.Normalizer;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 
@@ -449,7 +452,13 @@ public class BookService {
     public BulkImportResponseDTO importBooksWithoutIsbnFromExcel(
             MultipartFile file,
             String smartschoolUid,
-            String fallbackCampus) {
+            String fallbackCampus,
+            boolean confirmDuplicates,
+            List<Integer> confirmedDuplicateRows) {
+
+        Set<Integer> confirmedDuplicateRowSet = confirmedDuplicateRows == null
+                ? Set.of()
+                : new HashSet<>(confirmedDuplicateRows);
 
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Upload een excel file die niet leeg is");
@@ -458,6 +467,7 @@ public class BookService {
         SchoolEntity userSchool = resolveSchoolForUser(smartschoolUid);
 
         List<ImportMismatchDTO> mismatches = new ArrayList<>();
+        List<BulkImportDuplicateWarningDTO> duplicateWarnings = new ArrayList<>();
         int totalRows = 0;
         int savedCount = 0;
 
@@ -522,10 +532,72 @@ public class BookService {
 
                     validateInventoryCounts(totalCopies, availableCopies);
 
+                    List<String> parsedAuthors = splitImportList(authors);
+                    String normalizedPublisher = valueOrFallback(publisher, "Onbekende uitgever");
+
+                    String campusToUse = !rowCampus.isBlank()
+                            ? rowCampus
+                            : fallbackCampus;
+
+                    String normalizedCampus = normalizeCampus(campusToUse);
+
+                    BookEntity duplicateBook = findDuplicateBookForNoIsbnImport(
+                            title,
+                            parsedAuthors,
+                            normalizedPublisher,
+                            userSchool);
+
+                    if (duplicateBook != null) {
+                        int rowNumber = row.getRowNum() + 1;
+
+                        BookInventoryEntity affectedInventory = findInventory(
+                                duplicateBook,
+                                userSchool,
+                                normalizedCampus);
+
+                        if (!confirmDuplicates) {
+                            duplicateWarnings.add(new BulkImportDuplicateWarningDTO(
+                                    rowNumber,
+                                    duplicateBook.getId(),
+                                    duplicateBook.getTitle(),
+                                    duplicateBook.getAuthors(),
+                                    duplicateBook.getPublisher(),
+                                    normalizedCampus,
+                                    totalCopies,
+                                    availableCopies,
+                                    affectedInventory == null ? 0 : safeCopyCount(affectedInventory.getTotalCopies()),
+                                    affectedInventory == null ? 0
+                                            : safeCopyCount(affectedInventory.getAvailableCopies()),
+                                    affectedInventory == null
+                                            ? "Dit boek bestaat al op schoolniveau. Er zou een nieuwe campusvoorraad worden toegevoegd."
+                                            : "Dit boek bestaat al op deze campus. De aantallen zouden verhoogd worden."));
+
+                            continue;
+                        }
+
+                        if (!confirmedDuplicateRowSet.contains(rowNumber)) {
+                            continue;
+                        }
+
+                        addOrIncreaseInventory(
+                                duplicateBook,
+                                userSchool,
+                                normalizedCampus,
+                                totalCopies,
+                                availableCopies);
+
+                        savedCount++;
+                        continue;
+                    }
+
+                    if (!confirmDuplicates) {
+                        continue;
+                    }
+
                     BookEntity book = new BookEntity();
                     book.setTitle(title.trim());
-                    book.setAuthors(splitImportList(authors));
-                    book.setPublisher(valueOrFallback(publisher, "Onbekende uitgever"));
+                    book.setAuthors(parsedAuthors);
+                    book.setPublisher(normalizedPublisher);
                     book.setDescription(valueOrFallback(description, "Geen omschrijving beschikbaar"));
                     book.setPageCount(parseNonNegativeIntOrDefault(pageCount, 0, "Aantal pagina's"));
                     book.setCategories(splitImportList(categories));
@@ -540,14 +612,10 @@ public class BookService {
                     book.setAgeRange(null);
                     book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
 
-                    String campusToUse = !rowCampus.isBlank()
-                            ? rowCampus
-                            : fallbackCampus;
-
                     addInventory(
                             book,
                             userSchool,
-                            normalizeCampus(campusToUse),
+                            normalizedCampus,
                             totalCopies,
                             availableCopies);
 
@@ -569,11 +637,32 @@ public class BookService {
             throw new RuntimeException("Kon de excel file niet lezen", e);
         }
 
+        if (!confirmDuplicates) {
+            if (!duplicateWarnings.isEmpty()) {
+                return new BulkImportResponseDTO(
+                        totalRows,
+                        0,
+                        mismatches.size(),
+                        mismatches,
+                        duplicateWarnings.size(),
+                        duplicateWarnings);
+            }
+
+            return importBooksWithoutIsbnFromExcel(
+                    file,
+                    smartschoolUid,
+                    fallbackCampus,
+                    true,
+                    List.of());
+        }
+
         return new BulkImportResponseDTO(
                 totalRows,
                 savedCount,
                 mismatches.size(),
-                mismatches);
+                mismatches,
+                duplicateWarnings.size(),
+                duplicateWarnings);
     }
 
     public BookDTO updateBook(Long id, BookDTO updatedBook) {
@@ -856,6 +945,102 @@ public class BookService {
         inventory.setTotalCopies(totalCopies);
         inventory.setAvailableCopies(availableCopies);
         book.getInventories().add(inventory);
+    }
+
+    private void addOrIncreaseInventory(
+            BookEntity book,
+            SchoolEntity school,
+            String campus,
+            int totalCopiesToAdd,
+            int availableCopiesToAdd) {
+
+        BookInventoryEntity existingInventory = findInventory(book, school, campus);
+
+        if (existingInventory == null) {
+            addInventory(book, school, campus, totalCopiesToAdd, availableCopiesToAdd);
+        } else {
+            existingInventory.setTotalCopies(
+                    safeCopyCount(existingInventory.getTotalCopies()) + totalCopiesToAdd);
+
+            existingInventory.setAvailableCopies(
+                    safeCopyCount(existingInventory.getAvailableCopies()) + availableCopiesToAdd);
+        }
+
+        recomputeBookCopyTotals(book);
+        bookRepository.save(book);
+    }
+
+    private BookInventoryEntity findInventory(BookEntity book, SchoolEntity school, String campus) {
+        String normalizedCampus = normalizeCampus(campus);
+        Long schoolId = school.getId();
+
+        if (book.getInventories() == null) {
+            return null;
+        }
+
+        return book.getInventories().stream()
+                .filter(inventory -> inventory.getSchool() != null)
+                .filter(inventory -> Objects.equals(inventory.getSchool().getId(), schoolId))
+                .filter(inventory -> Objects.equals(normalizeCampus(inventory.getCampus()), normalizedCampus))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private int safeCopyCount(Integer value) {
+        return value == null ? 0 : value;
+    }
+
+    private BookEntity findDuplicateBookForNoIsbnImport(
+            String title,
+            List<String> authors,
+            String publisher,
+            SchoolEntity school) {
+
+        List<String> normalizedAuthors = normalizeDuplicateList(authors);
+
+        if (normalizedAuthors.isEmpty()) {
+            return null;
+        }
+
+        String normalizedTitle = normalizeDuplicateText(title);
+        String normalizedPublisher = normalizeDuplicateText(publisher);
+
+        return bookRepository.findPossibleDuplicateBooksWithoutIsbn(
+                title.trim(),
+                publisher,
+                school.getId())
+                .stream()
+                .filter(book -> Objects.equals(normalizeDuplicateText(book.getTitle()), normalizedTitle))
+                .filter(book -> Objects.equals(normalizeDuplicateText(book.getPublisher()), normalizedPublisher))
+                .filter(book -> Objects.equals(normalizeDuplicateList(book.getAuthors()), normalizedAuthors))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private List<String> normalizeDuplicateList(List<String> values) {
+        if (values == null) {
+            return List.of();
+        }
+
+        return values.stream()
+                .map(this::normalizeDuplicateText)
+                .filter(value -> !value.isBlank())
+                .sorted()
+                .toList();
+    }
+
+    private String normalizeDuplicateText(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        String withoutAccents = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+
+        return withoutAccents
+                .trim()
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", " ");
     }
 
     private void recomputeBookCopyTotals(BookEntity book) {

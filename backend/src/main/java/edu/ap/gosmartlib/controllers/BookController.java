@@ -243,12 +243,16 @@ public class BookController {
     public ResponseEntity<BulkImportResponseDTO> importBooksWithoutIsbn(
             @RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String campus,
+            @RequestParam(defaultValue = "false") boolean confirmDuplicates,
+            @RequestParam(required = false) List<Integer> confirmedDuplicateRows,
             @AuthenticationPrincipal OAuth2User principal) {
 
         BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                 file,
                 authHelper.extractUid(principal),
-                campus);
+                campus,
+                confirmDuplicates,
+                confirmedDuplicateRows == null ? List.of() : confirmedDuplicateRows);
 
         return new ResponseEntity<>(result, HttpStatus.OK);
     }

@@ -4,6 +4,7 @@ import edu.ap.gosmartlib.dto.*;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBookItem;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
+import edu.ap.gosmartlib.dto.importdto.BulkImportDuplicateWarningDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.BookInventoryEntity;
@@ -1618,6 +1619,245 @@ class BookServiceTest {
                 assertEquals("Kon de excel file niet lezen", ex.getMessage());
         }
 
+        // --- importBooksWithoutIsbnFromExcel Duplicate Tests ---
+
+        @Test
+        void givenDuplicateNoIsbnBookOnSameCampus_whenImportBooksWithoutIsbn_thenIncreasesExistingInventory()
+                        throws IOException {
+                MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
+                                { "De Hobbit", "J.R.R. Tolkien; John Doe", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                });
+
+                BookEntity existingBook = new BookEntity();
+                existingBook.setId(20L);
+                existingBook.setTitle("de hobbit");
+                existingBook.setAuthors(new ArrayList<>(List.of("John Doe", "J.R.R. Tolkien")));
+                existingBook.setPublisher("uitgeverij x");
+                existingBook.setIsbn("NOISBN-existing");
+                existingBook.setTotalCopies(2);
+                existingBook.setAvailableCopies(1);
+                existingBook.setInventories(new ArrayList<>());
+
+                BookInventoryEntity existingInventory = buildInventory(school, "Campus Zuid", 2, 1);
+                existingInventory.setBook(existingBook);
+                existingBook.getInventories().add(existingInventory);
+
+                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
+                                .thenReturn(List.of(existingBook));
+
+                BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
+                                file,
+                                STUDENT_UID,
+                                "Fallback Campus", true, List.of());
+
+                assertEquals(1, result.totalRows());
+                assertEquals(1, result.savedCount());
+                assertEquals(0, result.mismatchCount());
+
+                assertEquals(1, existingBook.getInventories().size());
+                assertEquals(5, existingInventory.getTotalCopies());
+                assertEquals(3, existingInventory.getAvailableCopies());
+
+                assertEquals(5, existingBook.getTotalCopies());
+                assertEquals(3, existingBook.getAvailableCopies());
+
+                ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
+                verify(bookRepository).save(captor.capture());
+                assertSame(existingBook, captor.getValue());
+        }
+
+        @Test
+        void givenDuplicateNoIsbnBookOnDifferentCampus_whenImportBooksWithoutIsbn_thenAddsNewInventoryRow()
+                        throws IOException {
+                MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
+                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                });
+
+                BookEntity existingBook = new BookEntity();
+                existingBook.setId(21L);
+                existingBook.setTitle("De Hobbit");
+                existingBook.setAuthors(new ArrayList<>(List.of("J.R.R. Tolkien")));
+                existingBook.setPublisher("Uitgeverij X");
+                existingBook.setIsbn("NOISBN-existing");
+                existingBook.setTotalCopies(2);
+                existingBook.setAvailableCopies(1);
+                existingBook.setInventories(new ArrayList<>());
+
+                BookInventoryEntity existingInventory = buildInventory(school, "Campus Noord", 2, 1);
+                existingInventory.setBook(existingBook);
+                existingBook.getInventories().add(existingInventory);
+
+                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
+                                .thenReturn(List.of(existingBook));
+
+                BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
+                                file,
+                                STUDENT_UID,
+                                "Fallback Campus", true, List.of());
+
+                assertEquals(1, result.totalRows());
+                assertEquals(1, result.savedCount());
+                assertEquals(0, result.mismatchCount());
+
+                assertEquals(2, existingBook.getInventories().size());
+
+                BookInventoryEntity newInventory = existingBook.getInventories()
+                                .stream()
+                                .filter(inventory -> "Campus Zuid".equals(inventory.getCampus()))
+                                .findFirst()
+                                .orElseThrow();
+
+                assertSame(existingBook, newInventory.getBook());
+                assertEquals(3, newInventory.getTotalCopies());
+                assertEquals(2, newInventory.getAvailableCopies());
+
+                assertEquals(5, existingBook.getTotalCopies());
+                assertEquals(3, existingBook.getAvailableCopies());
+
+                verify(bookRepository).save(existingBook);
+        }
+
+        @Test
+        void givenPossibleDuplicateWithDifferentAuthors_whenImportBooksWithoutIsbn_thenCreatesNewBook()
+                        throws IOException {
+                MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
+                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                });
+
+                BookEntity existingBook = new BookEntity();
+                existingBook.setId(22L);
+                existingBook.setTitle("De Hobbit");
+                existingBook.setAuthors(new ArrayList<>(List.of("Andere Auteur")));
+                existingBook.setPublisher("Uitgeverij X");
+                existingBook.setIsbn("NOISBN-existing");
+                existingBook.setTotalCopies(2);
+                existingBook.setAvailableCopies(1);
+                existingBook.setInventories(new ArrayList<>(List.of(
+                                buildInventory(school, "Campus Zuid", 2, 1))));
+
+                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
+                                .thenReturn(List.of(existingBook));
+
+                BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
+                                file,
+                                STUDENT_UID,
+                                "Fallback Campus", true, List.of());
+
+                assertEquals(1, result.totalRows());
+                assertEquals(1, result.savedCount());
+                assertEquals(0, result.mismatchCount());
+
+                ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
+                verify(bookRepository).save(captor.capture());
+
+                BookEntity savedBook = captor.getValue();
+
+                assertNotSame(existingBook, savedBook);
+                assertEquals("De Hobbit", savedBook.getTitle());
+                assertEquals(List.of("J.R.R. Tolkien"), savedBook.getAuthors());
+                assertEquals("Uitgeverij X", savedBook.getPublisher());
+                assertTrue(savedBook.getIsbn().startsWith("NOISBN-"));
+
+                assertEquals(3, savedBook.getTotalCopies());
+                assertEquals(2, savedBook.getAvailableCopies());
+                assertEquals(1, savedBook.getInventories().size());
+
+                assertEquals(2, existingBook.getTotalCopies());
+                assertEquals(1, existingBook.getAvailableCopies());
+        }
+
+        @Test
+        void givenNoAuthors_whenPossibleDuplicateCouldExist_thenDoesNotMergeAndCreatesNewBook()
+                        throws IOException {
+                MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
+                                { "De Hobbit", "", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                });
+
+                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+
+                BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
+                                file,
+                                STUDENT_UID,
+                                "Fallback Campus", true, List.of());
+
+                assertEquals(1, result.totalRows());
+                assertEquals(1, result.savedCount());
+                assertEquals(0, result.mismatchCount());
+
+                verify(bookRepository, never()).findPossibleDuplicateBooksWithoutIsbn(
+                                anyString(),
+                                anyString(),
+                                anyLong());
+
+                ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
+                verify(bookRepository).save(captor.capture());
+
+                BookEntity savedBook = captor.getValue();
+
+                assertEquals("De Hobbit", savedBook.getTitle());
+                assertTrue(savedBook.getAuthors().isEmpty());
+                assertEquals("Uitgeverij X", savedBook.getPublisher());
+                assertTrue(savedBook.getIsbn().startsWith("NOISBN-"));
+                assertEquals(3, savedBook.getTotalCopies());
+                assertEquals(2, savedBook.getAvailableCopies());
+        }
+
+        @Test
+        void givenDuplicateNoIsbnBook_whenImportBooksWithoutIsbnWithoutConfirmation_thenReturnsWarningAndDoesNotSave()
+                        throws IOException {
+                MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
+                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                });
+
+                BookEntity existingBook = new BookEntity();
+                existingBook.setId(20L);
+                existingBook.setTitle("De Hobbit");
+                existingBook.setAuthors(new ArrayList<>(List.of("J.R.R. Tolkien")));
+                existingBook.setPublisher("Uitgeverij X");
+                existingBook.setIsbn("NOISBN-existing");
+                existingBook.setTotalCopies(2);
+                existingBook.setAvailableCopies(1);
+                existingBook.setInventories(new ArrayList<>());
+
+                BookInventoryEntity existingInventory = buildInventory(school, "Campus Zuid", 2, 1);
+                existingInventory.setBook(existingBook);
+                existingBook.getInventories().add(existingInventory);
+
+                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
+                                .thenReturn(List.of(existingBook));
+
+                BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
+                                file,
+                                STUDENT_UID,
+                                "Fallback Campus",
+                                false, List.of());
+
+                assertEquals(1, result.totalRows());
+                assertEquals(0, result.savedCount());
+                assertEquals(0, result.mismatchCount());
+                assertEquals(1, result.duplicateWarningCount());
+                assertEquals(1, result.duplicateWarnings().size());
+
+                BulkImportDuplicateWarningDTO warning = result.duplicateWarnings().get(0);
+
+                assertEquals(20L, warning.existingBookId());
+                assertEquals("De Hobbit", warning.title());
+                assertEquals("Campus Zuid", warning.campus());
+                assertEquals(3, warning.totalCopiesToAdd());
+                assertEquals(2, warning.availableCopiesToAdd());
+                assertEquals(2, warning.currentTotalCopies());
+                assertEquals(1, warning.currentAvailableCopies());
+
+                assertEquals(2, existingInventory.getTotalCopies());
+                assertEquals(1, existingInventory.getAvailableCopies());
+
+                verify(bookRepository, never()).save(existingBook);
+        }
+
         // --- updateBook Service Tests ---
 
         @Test
@@ -2637,6 +2877,45 @@ class BookServiceTest {
                 b.setIsbn("978-" + id);
                 b.setRating(4.0);
                 return b;
+        }
+
+        private MockMultipartFile createNoIsbnExcelFile(String[][] rows) throws IOException {
+                try (Workbook workbook = new XSSFWorkbook();
+                                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+                        Sheet sheet = workbook.createSheet("Boekenlijst");
+
+                        String[] headers = {
+                                        "Titel",
+                                        "Auteurs",
+                                        "Uitgever",
+                                        "Campus",
+                                        "Totaal aantal boeken",
+                                        "Beschikbaar aantal boeken"
+                        };
+
+                        Row header = sheet.createRow(0);
+
+                        for (int i = 0; i < headers.length; i++) {
+                                header.createCell(i).setCellValue(headers[i]);
+                        }
+
+                        for (int rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+                                Row row = sheet.createRow(rowIndex + 1);
+
+                                for (int cellIndex = 0; cellIndex < rows[rowIndex].length; cellIndex++) {
+                                        row.createCell(cellIndex).setCellValue(rows[rowIndex][cellIndex]);
+                                }
+                        }
+
+                        workbook.write(out);
+
+                        return new MockMultipartFile(
+                                        "file",
+                                        "books-without-isbn.xlsx",
+                                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                        out.toByteArray());
+                }
         }
 
         // endregion

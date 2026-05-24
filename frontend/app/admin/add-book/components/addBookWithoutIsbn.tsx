@@ -185,31 +185,33 @@ for (const inventory of inventories) {
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setMessage(`Boek succesvol aan de database toegevoegd: "${data.title}"`);
-        setPreviewBook(null);
+      const data = await response.json().catch(() => null);
 
-        setTitle("");
-        setAuthors([""]);
-        setPublisher("");
-        setDescription("");
-        setPageCount(0);
-        setCategories([]);
-        setThumbnail("");
-        setLanguage("");
-        setPublishedYear(0);
-        setRating(0);
-        setOpenDropdown(false);
-        setOpenLabelDropdown(false);
-        setDidacticTag(false);
-        setLabels([]);
-        setReadingLevel("");
-        setAgeRange("");
-        setInventories(me?.school ? [createEmptyInventory(me.school)] : []);
-      } else {
-        setMessage("Er ging iets mis bij het opslaan van het boek.");
+      if (!response.ok) {
+        setMessage(data?.message || "Er ging iets mis bij het opslaan van het boek.");
+        return;
       }
+
+      setMessage(`Boek succesvol aan de database toegevoegd: "${data.title}"`);
+      setPreviewBook(null);
+
+      setTitle("");
+      setAuthors([""]);
+      setPublisher("");
+      setDescription("");
+      setPageCount(0);
+      setCategories([]);
+      setThumbnail("");
+      setLanguage("");
+      setPublishedYear(0);
+      setRating(0);
+      setOpenDropdown(false);
+      setOpenLabelDropdown(false);
+      setDidacticTag(false);
+      setLabels([]);
+      setReadingLevel("");
+      setAgeRange("");
+      setInventories(me?.school ? [createEmptyInventory(me.school)] : []);
     } catch (error) {
       console.error(error);
       setMessage("Kan de server niet bereiken.");

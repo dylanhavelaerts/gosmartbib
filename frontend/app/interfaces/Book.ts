@@ -78,3 +78,35 @@ export interface SnowballSection {
   value: string;
   books: Book[];
 }
+
+export type ImportMismatch = {
+  rowNumber: number;
+  isbn?: string;
+  excelTitle: string;
+  fetchedTitle?: string | null;
+  reason: string;
+  amount: number | null;
+};
+
+export type DuplicateWarning = {
+  rowNumber: number;
+  existingBookId: number;
+  title: string;
+  authors: string[];
+  publisher: string;
+  campus: string;
+  totalCopiesToAdd: number;
+  availableCopiesToAdd: number;
+  currentTotalCopies: number;
+  currentAvailableCopies: number;
+  reason: string;
+};
+
+export type BulkImportResult = {
+  totalRows: number;
+  savedCount: number;
+  mismatchCount: number;
+  mismatches: ImportMismatch[];
+  duplicateWarningCount: number;
+  duplicateWarnings: DuplicateWarning[];
+};
