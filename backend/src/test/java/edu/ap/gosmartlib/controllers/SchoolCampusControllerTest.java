@@ -2,6 +2,8 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.CreateSchoolCampusRequest;
 import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.SchoolCampusDTO;
+import edu.ap.gosmartlib.entities.AdminEntity;
+import edu.ap.gosmartlib.security.AdminPrincipal;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.schoolIntegration.schoolCampus.SchoolCampusService;
 import org.junit.jupiter.api.Test;
@@ -11,29 +13,22 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SchoolCampusControllerTest {
 
-    @Mock
-    private SchoolCampusService schoolCampusService;
+    @Mock private SchoolCampusService schoolCampusService;
+    @Mock private Authentication authentication;
+    @Mock private OAuth2User oAuth2User;
 
-    @Mock
-    private OAuth2User oAuth2User;
-
-    // @Spy gebruikt de echte implementatie van AuthHelper zodat extractUid/extractUidOrNull
-    // correct werken zonder elke test afzonderlijk te stubben.
     @Spy
     private AuthHelper authHelper = new AuthHelper();
 
@@ -46,16 +41,17 @@ class SchoolCampusControllerTest {
                 new SchoolCampusDTO(1L, "Campus Noord"),
                 new SchoolCampusDTO(2L, "Campus Zuid"));
 
-        when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
-        when(schoolCampusService.getCampusesForBibbeheerder("admin-uid", 100L)).thenReturn(expected);
+        when(authentication.getPrincipal()).thenReturn(oAuth2User);
+        when(oAuth2User.getAttribute("userID")).thenReturn("bibbeheerder-uid");
+        when(schoolCampusService.getCampusesForBibbeheerder("bibbeheerder-uid", 100L)).thenReturn(expected);
 
-        List<SchoolCampusDTO> result = schoolCampusController.getCampuses(100L, oAuth2User);
+        List<SchoolCampusDTO> result = schoolCampusController.getCampuses(100L, authentication);
 
         assertEquals(expected, result);
-
+        verify(authentication, times(2)).getPrincipal();
         verify(oAuth2User).getAttribute("userID");
-        verify(schoolCampusService).getCampusesForBibbeheerder("admin-uid", 100L);
-        verifyNoMoreInteractions(oAuth2User, schoolCampusService);
+        verify(schoolCampusService).getCampusesForBibbeheerder("bibbeheerder-uid", 100L);
+        verifyNoMoreInteractions(authentication, oAuth2User, schoolCampusService);
     }
 
     @Test
@@ -63,50 +59,54 @@ class SchoolCampusControllerTest {
         CreateSchoolCampusRequest request = new CreateSchoolCampusRequest("Campus Zuid");
         SchoolCampusDTO expected = new SchoolCampusDTO(3L, "Campus Zuid");
 
-        when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
-        when(schoolCampusService.createCampusForBibbeheerder("admin-uid", 100L, request)).thenReturn(expected);
+        when(authentication.getPrincipal()).thenReturn(oAuth2User);
+        when(oAuth2User.getAttribute("userID")).thenReturn("bibbeheerder-uid");
+        when(schoolCampusService.createCampusForBibbeheerder("bibbeheerder-uid", 100L, request)).thenReturn(expected);
 
-        SchoolCampusDTO result = schoolCampusController.createCampus(100L, request, oAuth2User);
+        SchoolCampusDTO result = schoolCampusController.createCampus(100L, request, authentication);
 
         assertEquals(expected, result);
-
+        verify(authentication, times(2)).getPrincipal();
         verify(oAuth2User).getAttribute("userID");
-        verify(schoolCampusService).createCampusForBibbeheerder("admin-uid", 100L, request);
-        verifyNoMoreInteractions(oAuth2User, schoolCampusService);
+        verify(schoolCampusService).createCampusForBibbeheerder("bibbeheerder-uid", 100L, request);
+        verifyNoMoreInteractions(authentication, oAuth2User, schoolCampusService);
     }
 
     @Test
     void givenValidOAuthUser_whenDeleteCampus_thenDelegatesWithExtractedUidSchoolIdAndCampusId() {
-        when(oAuth2User.getAttribute("userID")).thenReturn("admin-uid");
+        when(authentication.getPrincipal()).thenReturn(oAuth2User);
+        when(oAuth2User.getAttribute("userID")).thenReturn("bibbeheerder-uid");
 
-        schoolCampusController.deleteCampus(100L, 5L, oAuth2User);
+        schoolCampusController.deleteCampus(100L, 5L, authentication);
 
+        verify(authentication, times(2)).getPrincipal();
         verify(oAuth2User).getAttribute("userID");
-        verify(schoolCampusService).deleteCampusForBibbeheerder("admin-uid", 100L, 5L);
-        verifyNoMoreInteractions(oAuth2User, schoolCampusService);
+        verify(schoolCampusService).deleteCampusForBibbeheerder("bibbeheerder-uid", 100L, 5L);
+        verifyNoMoreInteractions(authentication, oAuth2User, schoolCampusService);
     }
 
     @Test
-    void givenNullOAuthUser_whenGetCampuses_thenThrowsUnauthorized() {
+    void givenNullPrincipal_whenGetCampuses_thenThrowsUnauthorized() {
+        when(authentication.getPrincipal()).thenReturn(null);
+
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusController.getCampuses(100L, null));
+                () -> schoolCampusController.getCampuses(100L, authentication));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
         assertEquals("Niet ingelogd", exception.getReason());
-
         verifyNoInteractions(schoolCampusService);
     }
 
     @Test
     void givenMissingUid_whenGetCampuses_thenThrowsUnauthorized() {
+        when(authentication.getPrincipal()).thenReturn(oAuth2User);
         when(oAuth2User.getAttribute("userID")).thenReturn(null);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusController.getCampuses(100L, oAuth2User));
+                () -> schoolCampusController.getCampuses(100L, authentication));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
         assertEquals("Geen geldige gebruiker", exception.getReason());
-
         verify(oAuth2User).getAttribute("userID");
         verifyNoInteractions(schoolCampusService);
     }
@@ -114,15 +114,71 @@ class SchoolCampusControllerTest {
     @Test
     void givenBlankUid_whenCreateCampus_thenThrowsUnauthorized() {
         CreateSchoolCampusRequest request = new CreateSchoolCampusRequest("Campus Zuid");
+        when(authentication.getPrincipal()).thenReturn(oAuth2User);
         when(oAuth2User.getAttribute("userID")).thenReturn("   ");
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusController.createCampus(100L, request, oAuth2User));
+                () -> schoolCampusController.createCampus(100L, request, authentication));
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
         assertEquals("Geen geldige gebruiker", exception.getReason());
-
         verify(oAuth2User).getAttribute("userID");
         verifyNoInteractions(schoolCampusService);
     }
+    @Test
+    void givenAdminPrincipal_whenGetCampuses_thenDelegatesForPlatformAdmin() {
+        AdminEntity adminEntity = new AdminEntity();
+        adminEntity.setId(1L);
+        AdminPrincipal adminPrincipal = new AdminPrincipal(adminEntity);
+
+        List<SchoolCampusDTO> expected = List.of(
+                new SchoolCampusDTO(1L, "Campus Noord"),
+                new SchoolCampusDTO(2L, "Campus Zuid"));
+
+        when(authentication.getPrincipal()).thenReturn(adminPrincipal);
+        when(schoolCampusService.getCampusesForPlatformAdmin(100L)).thenReturn(expected);
+
+        List<SchoolCampusDTO> result = schoolCampusController.getCampuses(100L, authentication);
+
+        assertEquals(expected, result);
+        verify(authentication).getPrincipal();
+        verify(schoolCampusService).getCampusesForPlatformAdmin(100L);
+        verifyNoMoreInteractions(authentication, schoolCampusService);
+    }
+
+    @Test
+    void givenAdminPrincipal_whenCreateCampus_thenDelegatesForPlatformAdmin() {
+        AdminEntity adminEntity = new AdminEntity();
+        adminEntity.setId(1L);
+        AdminPrincipal adminPrincipal = new AdminPrincipal(adminEntity);
+
+        CreateSchoolCampusRequest request = new CreateSchoolCampusRequest("Campus Noord");
+        SchoolCampusDTO expected = new SchoolCampusDTO(3L, "Campus Noord");
+
+        when(authentication.getPrincipal()).thenReturn(adminPrincipal);
+        when(schoolCampusService.createCampusForPlatformAdmin(100L, request)).thenReturn(expected);
+
+        SchoolCampusDTO result = schoolCampusController.createCampus(100L, request, authentication);
+
+        assertEquals(expected, result);
+        verify(authentication).getPrincipal();
+        verify(schoolCampusService).createCampusForPlatformAdmin(100L, request);
+        verifyNoMoreInteractions(authentication, schoolCampusService);
+    }
+
+    @Test
+    void givenAdminPrincipal_whenDeleteCampus_thenDelegatesForPlatformAdmin() {
+        AdminEntity adminEntity = new AdminEntity();
+        adminEntity.setId(1L);
+        AdminPrincipal adminPrincipal = new AdminPrincipal(adminEntity);
+
+        when(authentication.getPrincipal()).thenReturn(adminPrincipal);
+
+        schoolCampusController.deleteCampus(100L, 5L, authentication);
+
+        verify(authentication).getPrincipal();
+        verify(schoolCampusService).deleteCampusForPlatformAdmin(100L, 5L);
+        verifyNoMoreInteractions(authentication, schoolCampusService);
+    }
+
 }

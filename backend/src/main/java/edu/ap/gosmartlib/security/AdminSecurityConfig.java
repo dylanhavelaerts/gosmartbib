@@ -27,7 +27,7 @@ public class AdminSecurityConfig {
 
     @Bean
     @Order(1)
-    public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain adminFilterChain(HttpSecurity http) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(adminUserDetailsService);
         provider.setPasswordEncoder(new BCryptPasswordEncoder());
 
