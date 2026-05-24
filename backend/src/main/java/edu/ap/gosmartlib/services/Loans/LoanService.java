@@ -63,7 +63,10 @@ public class LoanService {
             UserEntity borrower = userRepository.findBySmartschoolUid(request.user().smartschoolUserId())
                     .orElseThrow(() -> new IllegalArgumentException("FOUT 1: Lener ("
                             + request.user().smartschoolUserId() + ") is niet gevonden in de lokale databank."));
-
+            if (book.isDidacticTag() && borrower.getRole() == UserRoles.STUDENT) {
+                throw new IllegalArgumentException(
+                        "Didactische boeken kunnen niet worden uitgeleend aan leerlingen.");
+            }
             // Check of de lener wel een school heeft (Voorkomt een NullPointerException)
             if (borrower.getSchool() == null) {
                 throw new IllegalArgumentException("FOUT 2: De lener met ID " + request.user().smartschoolUserId()
