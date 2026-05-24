@@ -46,46 +46,50 @@ export default function Navbar() {
           </button>
 
           <div className={`nav-links ${isOpen ? "open" : ""}`}>
-            <Link href="/">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/") ? "active" : ""}
-              >
-                Startpagina
-              </button>
-            </Link>
-            <Link href="/catalog">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/catalog") ? "active" : ""}
-              >
-                Catalogus
-              </button>
-            </Link>
-            <Link href="/leaderboard">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/leaderboard") ? "active" : ""}
-              >
-                Ranglijst
-              </button>
-            </Link>
-            <Link href="/reading-lists">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/reading-lists") ? "active" : ""}
-              >
-                Mijn leeslijsten
-              </button>
-            </Link>
-            <Link href="/lended-books">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/lended-books") ? "active" : ""}
-              >
-                Mijn ontleningen
-              </button>
-            </Link>{" "}
+            {user?.role !== "ADMIN" && (
+              <>
+                <Link href="/">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/") ? "active" : ""}
+                  >
+                    Startpagina
+                  </button>
+                </Link>
+                <Link href="/catalog">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/catalog") ? "active" : ""}
+                  >
+                    Catalogus
+                  </button>
+                </Link>
+                <Link href="/leaderboard">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/leaderboard") ? "active" : ""}
+                  >
+                    Ranglijst
+                  </button>
+                </Link>
+                <Link href="/reading-lists">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/reading-lists") ? "active" : ""}
+                  >
+                    Mijn leeslijsten
+                  </button>
+                </Link>
+                <Link href="/lended-books">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/lended-books") ? "active" : ""}
+                  >
+                    Mijn ontleningen
+                  </button>
+                </Link>{" "}
+              </>
+            )}
             {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
               user?.role === "ADMIN" ||
               user?.role === "TEACHER") && (

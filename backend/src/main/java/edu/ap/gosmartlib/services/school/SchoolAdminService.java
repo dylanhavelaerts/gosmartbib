@@ -6,10 +6,7 @@ import edu.ap.gosmartlib.dto.school.CreateSchoolResult;
 import edu.ap.gosmartlib.dto.school.SchoolDTO;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.SchoolClassRepository;
-import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
-import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.repositories.*;
 import edu.ap.gosmartlib.services.users.UserDeletionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,6 +25,7 @@ public class SchoolAdminService {
     private final UserDeletionService userDeletionService;
     private final SchoolClassRepository schoolClassRepository;
     private final SchoolIntegrationRepository schoolIntegrationRepository;
+    private final BookInventoryRepository bookInventoryRepository;
 
     public List<SchoolDTO> listAllSchools() {
         return schoolRepository.findAllByOrderByAdminApprovedAscNameAsc()
@@ -70,7 +68,7 @@ public class SchoolAdminService {
         schoolClassRepository.deleteAll(schoolClassRepository.findAllBySchool_IdOrderByNameAsc(schoolId));
 
         schoolIntegrationRepository.findBySchool_Id(schoolId).ifPresent(schoolIntegrationRepository::delete);
-
+        bookInventoryRepository.deleteAllBySchool_Id(schoolId);
         schoolRepository.delete(school);
     }
 

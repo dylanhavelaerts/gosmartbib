@@ -25,7 +25,7 @@ public class SchoolIntegrationService {
 
     @Transactional(readOnly = true)
     public SchoolIntegrationDTO getIntegration(String actorUid, Long schoolId) {
-        getCurrentAdmin(actorUid);
+        getCurrentBibbeheerder(actorUid);
 
         SchoolIntegrationEntity integration = schoolIntegrationRepository.findBySchool_Id(schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Integratie niet gevonden"));
@@ -40,7 +40,7 @@ public class SchoolIntegrationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body ontbreekt");
         }
 
-        getCurrentAdmin(actorUid);
+        getCurrentBibbeheerder(actorUid);
 
         validateRequest(request);
 
@@ -74,26 +74,62 @@ public class SchoolIntegrationService {
         return SchoolIntegrationDTO.from(integration);
     }
 
-    @Transactional(readOnly = true)
-    protected UserEntity getCurrentAdmin(String actorUid) {
+    protected UserEntity getCurrentBibbeheerder(String actorUid) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
-
-        if (actor.getRole() != UserRoles.ADMIN && actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER) {
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
+        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
-        }
-
         return actor;
     }
 
     @Transactional(readOnly = true)
-    public SchoolIntegrationEntity getIntegrationEntityForAdmin(String actorUid, Long schoolId) {
-        getCurrentAdmin(actorUid);
+    public SchoolIntegrationEntity getIntegrationEntityForBibbeheerder(String actorUid, Long schoolId) {
+        getCurrentBibbeheerder(actorUid);
 
         return schoolIntegrationRepository.findBySchool_Id(schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Integratie niet gevonden"));
     }
+    @Transactional(readOnly = true)
+    public SchoolIntegrationDTO getIntegrationForPlatformAdmin(Long schoolId) {
+        return SchoolIntegrationDTO.from(schoolIntegrationRepository.findBySchool_Id(schoolId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Integratie niet gevonden")));
+    }
+
+    @Transactional
+    public SchoolIntegrationDTO upsertIntegrationForPlatformAdmin(Long schoolId, UpsertSchoolIntegrationRequest request) {
+        if (request == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body ontbreekt");
+        validateRequest(request);
+
+        SchoolEntity school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School niet gevonden"));
+
+        SchoolIntegrationEntity integration = schoolIntegrationRepository.findBySchool_Id(schoolId)
+                .orElseGet(SchoolIntegrationEntity::new);
+
+        integration.setSchool(school);
+        integration.setSchoolBaseUrl(normalizeBaseUrl(request.schoolBaseUrl()));
+        integration.setOnerosterClientId(request.onerosterClientId().trim());
+
+        if (request.onerosterClientSecret() != null && !request.onerosterClientSecret().isBlank())
+            integration.setOnerosterClientSecret(request.onerosterClientSecret().trim());
+        else if (integration.getId() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Client secret ontbreekt");
+
+        if (request.onerosterEnabled() != null) integration.setOnerosterEnabled(request.onerosterEnabled());
+        if (request.smartschoolAccesscode() != null && !request.smartschoolAccesscode().isBlank())
+            integration.setSmartschoolAccesscode(request.smartschoolAccesscode().trim());
+        if (request.smartschoolSenderIdentifier() != null && !request.smartschoolSenderIdentifier().isBlank())
+            integration.setSmartschoolSenderIdentifier(request.smartschoolSenderIdentifier().trim());
+
+        return SchoolIntegrationDTO.from(schoolIntegrationRepository.save(integration));
+    }
+
+    @Transactional(readOnly = true)
+    public SchoolIntegrationEntity getIntegrationEntityForPlatformAdmin(Long schoolId) {
+        return schoolIntegrationRepository.findBySchool_Id(schoolId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Integratie niet gevonden"));
+    }
+
 
     private void validateRequest(UpsertSchoolIntegrationRequest request) {
         if (request.schoolBaseUrl() == null || request.schoolBaseUrl().isBlank()) {
