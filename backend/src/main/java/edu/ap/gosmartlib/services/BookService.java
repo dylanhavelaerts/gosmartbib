@@ -304,12 +304,14 @@ public class BookService {
     public Page<BookDTO> filterBooks(BookFilterRequest request, UserRoles callerRole, String currentUserUid) {
         bookFilterValidator.validate(request);
 
-        Pageable pageable = PageRequest.of(request.page(), request.size());
+        Pageable pageable = PageRequest.of(request.page(), request.size(), resolveSort(request.sortBy()));
         boolean includeDidactic = canSeeDidactic(callerRole);
+        boolean useRelevance = request.query() != null && !request.query().isBlank()
+                && (request.sortBy() == null || request.sortBy().isBlank() || "default".equals(request.sortBy()));
+
         if (restrictToOwnSchool(callerRole)) {
             Long schoolId = requireRequesterSchoolId(currentUserUid);
-
-            return bookRepository.filterBooksForSchool(
+            Page<BookEntity> raw = bookRepository.filterBooksForSchool(
                     includeDidactic,
                     request.query(),
                     request.language(),
@@ -323,28 +325,35 @@ public class BookService {
                     request.minRating(),
                     request.maxRating(),
                     schoolId,
-                    pageable)
-                    .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid));
+                    pageable);
+            if (useRelevance) {
+                return prioritizeTitleMatches(raw, request.query().trim(), pageable,
+                        book -> toVisibleBookDTO(book, callerRole, currentUserUid));
+            }
+            return raw.map(book -> toVisibleBookDTO(book, callerRole, currentUserUid));
         }
-        return bookRepository
-                .filterBooks(
-                        includeDidactic,
-                        request.query(),
-                        request.language(),
-                        request.categories(),
-                        request.labels(),
-                        request.readingLevel(),
-                        Boolean.TRUE.equals(request.didacticOnly()), // null-safe unbox moet erbij anders
-                                                                     // leerkrachtenpad geeft errors
-                        request.minPageCount(),
-                        request.maxPageCount(),
-                        request.minPubYear(),
-                        request.maxPubYear(),
-                        request.minRating(),
-                        request.maxRating(),
-                        pageable)
-                .map(this::toDTO);
+
+        Page<BookEntity> raw = bookRepository.filterBooks(
+                includeDidactic,
+                request.query(),
+                request.language(),
+                request.categories(),
+                request.labels(),
+                request.readingLevel(),
+                Boolean.TRUE.equals(request.didacticOnly()),// null-safe unbox moet erbij anders leerkrachtenpad geeft errors
+                request.minPageCount(),
+                request.maxPageCount(),
+                request.minPubYear(),
+                request.maxPubYear(),
+                request.minRating(),
+                request.maxRating(),
+                pageable);
+        if (useRelevance) {
+            return prioritizeTitleMatches(raw, request.query().trim(), pageable, this::toDTO);
+        }
+        return raw.map(this::toDTO);
     }
+
 
     public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid, String campus) {
         if (file == null || file.isEmpty()) {
@@ -1071,6 +1080,11 @@ public class BookService {
                     "Geen school gevonden voor de ingelogde gebruiker");
         }
         return schoolId;
+    }
+    private Sort resolveSort(String sortBy) {
+        if ("title_asc".equals(sortBy)) return Sort.by("title").ascending();
+        if ("newest".equals(sortBy)) return Sort.by("id").descending();
+        return Sort.unsorted();
     }
     // endregion
 }
