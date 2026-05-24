@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -91,8 +92,14 @@ public class AdminLoanService {
         UserEntity actor = accessGuard.requireBibliotheekbeheerder(actorUid);
         return schoolClassRepository.findAllBySchool_IdOrderByNameAsc(actor.getSchool().getId())
                 .stream()
-                .map(c -> new ReadingListAssignmentTargetsDTO.ClassTarget(
-                        c.getId(), c.getName(), null, null))
+                .collect(Collectors.toMap(
+                        SchoolClassEntity::getName,
+                        c -> new ReadingListAssignmentTargetsDTO.ClassTarget(c.getId(), c.getName(), null, null),
+                        (existing, duplicate) -> existing,  // bij duplicaatnaam: eerste houden
+                        LinkedHashMap::new
+                ))
+                .values()
+                .stream()
                 .toList();
     }
 
@@ -115,6 +122,7 @@ public class AdminLoanService {
                         UserEntity::getSmartschoolUid,
                         u -> u.getClasses().stream()
                                 .map(SchoolClassEntity::getName)
+                                .distinct()
                                 .sorted().toList()));
     }
 
