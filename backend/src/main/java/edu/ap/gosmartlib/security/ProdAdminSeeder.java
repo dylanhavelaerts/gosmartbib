@@ -20,15 +20,15 @@ public class ProdAdminSeeder {
     @Value("${admin.seed.username}")
     private String seedUsername;
 
-    @Value("${admin.seed.password}")
-    private String seedPassword;
+    @Value("${admin.seed.password-hash}")
+    private String seedPasswordHash;
 
     @PostConstruct
     public void seed() {
         if (adminRepository.findByUsername(seedUsername).isEmpty()) {
             AdminEntity admin = new AdminEntity();
             admin.setUsername(seedUsername);
-            admin.setPasswordHash(new BCryptPasswordEncoder().encode(seedPassword));
+            admin.setPasswordHash(seedPasswordHash);
             adminRepository.save(admin);
         }
     }

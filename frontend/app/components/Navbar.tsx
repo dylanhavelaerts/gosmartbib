@@ -46,16 +46,16 @@ export default function Navbar() {
           </button>
 
           <div className={`nav-links ${isOpen ? "open" : ""}`}>
-            <Link href="/">
-              <button
-                onClick={() => setIsOpen(false)}
-                className={isActive("/") ? "active" : ""}
-              >
-                Startpagina
-              </button>
-            </Link>
             {user?.role !== "ADMIN" && (
               <>
+                <Link href="/">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={isActive("/") ? "active" : ""}
+                  >
+                    Startpagina
+                  </button>
+                </Link>
                 <Link href="/catalog">
                   <button
                     onClick={() => setIsOpen(false)}
@@ -105,16 +105,15 @@ export default function Navbar() {
               </>
             )}
           </div>
-          {user?.role !== "ADMIN" && (
-            <Link
-              href="/user"
-              className={`user-icon-link${isActive("/user") ? " user-icon-active" : ""}`}
-              onClick={() => setIsOpen(false)}
-              title="Profiel"
-            >
-              <img src="/user.png" alt="Profiel" className="user-icon-img" />
-            </Link>
-          )}
+
+          <Link
+            href="/user"
+            className={`user-icon-link${isActive("/user") ? " user-icon-active" : ""}`}
+            onClick={() => setIsOpen(false)}
+            title="Profiel"
+          >
+            <img src="/user.png" alt="Profiel" className="user-icon-img" />
+          </Link>
         </nav>
       </div>
     </header>
