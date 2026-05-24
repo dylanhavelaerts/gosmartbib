@@ -6,8 +6,9 @@ import "./addBookPage.css";
 import AddBookWithIsbn from "./components/addBookWithIsbn";
 import AddBookWithoutIsbn from "./components/addBookWithoutIsbn";
 import BookListImport from "./components/bookListImport";
+import BookListWithoutIsbnImport from "./components/bookListWithoutIsbnImport";
 
-type TabId = "Boek" | "Boek zonder ISBN" | "Boekenlijst";
+type TabId = "Boek" | "Boek zonder ISBN" | "Boekenlijst" | "Boekenlijst zonder ISBN";
 
 export default function AddBookPage() {
   const [selected, setSelected] = useState<TabId>("Boek");
@@ -19,7 +20,7 @@ export default function AddBookPage() {
     <div className="mainPage">
       <nav className="lowerNav">
         <button className={cls("Boek")} onClick={() => setSelected("Boek")}>
-          Boek toe
+          Boek met ISBN
         </button>
         <button
           className={cls("Boek zonder ISBN")}
@@ -33,11 +34,18 @@ export default function AddBookPage() {
         >
           Boekenlijst toevoegen
         </button>
+        <button
+          className={cls("Boekenlijst zonder ISBN")}
+          onClick={() => setSelected("Boekenlijst zonder ISBN")}
+        >
+          Boekenlijst zonder ISBN
+        </button>
       </nav>
 
       {selected === "Boek" && <AddBookWithIsbn />}
       {selected === "Boek zonder ISBN" && <AddBookWithoutIsbn />}
       {selected === "Boekenlijst" && <BookListImport />}
+      {selected === "Boekenlijst zonder ISBN" && <BookListWithoutIsbnImport />}
     </div>
   );
 }

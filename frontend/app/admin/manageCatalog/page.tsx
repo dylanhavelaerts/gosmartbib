@@ -60,16 +60,30 @@ export default function ManageCatalogPage() {
     return () => clearTimeout(timer);
   }, [query, currentPage, pageSize, apiUrl]);
 
-  // Handle ?selectedId param — fetch the specific book by ID
+  // Handle ?selectedId param — fetch the specific book by ID.
+  // If ?edit=true is present, immediately open the edit modal for that book.
   useEffect(() => {
-    const selectedId = new URLSearchParams(window.location.search).get(
-      "selectedId",
-    );
+    const params = new URLSearchParams(window.location.search);
+    const selectedId = params.get("selectedId");
+    const shouldOpenEdit = params.get("edit") === "true";
+
     if (!selectedId) return;
+
     fetch(`${apiUrl}/books/${selectedId}`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((book) => {
-        if (book) setSelectedBook(book);
+      .then((book: Book | null) => {
+        if (!book) return;
+
+        setSelectedBook(book);
+
+        if (shouldOpenEdit) {
+          setFormData({
+            ...book,
+            inventories: book.inventories ?? [],
+          });
+          setModalOpen(true);
+          setError(null);
+        }
       })
       .catch(() => {});
   }, [apiUrl]);

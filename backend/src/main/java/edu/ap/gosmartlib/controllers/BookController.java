@@ -199,6 +199,20 @@ public class BookController {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
+    @PostMapping(value = "/import/no-isbn", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BulkImportResponseDTO> importBooksWithoutIsbn(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) String campus,
+            @AuthenticationPrincipal OAuth2User principal) {
+
+        BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
+                file,
+                authHelper.extractUid(principal),
+                campus);
+
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
     @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<BookDTO> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {

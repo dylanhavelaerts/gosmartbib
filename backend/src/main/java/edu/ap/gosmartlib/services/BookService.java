@@ -27,6 +27,7 @@ import org.springframework.web.client.RestTemplate;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -42,6 +43,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.text.Normalizer;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -427,6 +432,136 @@ public class BookService {
                             excelTitle,
                             null,
                             "Onverwachte fout bij het ophalen en opslaan"));
+                }
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Kon de excel file niet lezen", e);
+        }
+
+        return new BulkImportResponseDTO(
+                totalRows,
+                savedCount,
+                mismatches.size(),
+                mismatches);
+    }
+
+    public BulkImportResponseDTO importBooksWithoutIsbnFromExcel(
+            MultipartFile file,
+            String smartschoolUid,
+            String fallbackCampus) {
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Upload een excel file die niet leeg is");
+        }
+
+        SchoolEntity userSchool = resolveSchoolForUser(smartschoolUid);
+
+        List<ImportMismatchDTO> mismatches = new ArrayList<>();
+        int totalRows = 0;
+        int savedCount = 0;
+
+        DataFormatter formatter = new DataFormatter();
+
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = workbook.getSheet("Boekenlijst");
+
+            if (sheet == null) {
+                sheet = workbook.getSheetAt(0);
+            }
+
+            Row headerRow = sheet.getRow(0);
+            Map<String, Integer> columns = getImportColumnIndexes(headerRow, formatter);
+
+            if (!columns.containsKey("titel")) {
+                throw new IllegalArgumentException("Kolom 'Titel' ontbreekt in het Excelbestand");
+            }
+
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+
+                if (row == null || rowIsBlank(row, formatter)) {
+                    continue;
+                }
+
+                String title = getImportCell(row, columns, formatter, "titel");
+                totalRows++;
+
+                if (title.isBlank()) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            "",
+                            "",
+                            null,
+                            "Titel is verplicht"));
+                    continue;
+                }
+
+                try {
+                    String authors = getImportCell(row, columns, formatter, "auteurs");
+                    String publisher = getImportCell(row, columns, formatter, "uitgever");
+                    String description = getImportCell(row, columns, formatter, "omschrijving");
+                    String pageCount = getImportCell(row, columns, formatter, "aantal pagina's");
+                    String categories = getImportCell(row, columns, formatter, "categorieën");
+                    String labels = getImportCell(row, columns, formatter, "leefwereldlabels");
+                    String thumbnail = getImportCell(row, columns, formatter, "fotourl");
+                    String language = getImportCell(row, columns, formatter, "taal");
+                    String publishedYear = getImportCell(row, columns, formatter, "jaar van uitgave");
+                    String readingLevel = getImportCell(row, columns, formatter, "leesniveau");
+                    String didacticBook = getImportCell(row, columns, formatter, "didactisch boek");
+                    String rowCampus = getImportCell(row, columns, formatter, "campus");
+                    String totalCopiesValue = getImportCell(row, columns, formatter, "totaal aantal boeken");
+                    String availableCopiesValue = getImportCell(row, columns, formatter, "beschikbaar aantal boeken");
+
+                    int totalCopies = parsePositiveIntOrDefault(
+                            totalCopiesValue,
+                            1,
+                            "Totaal aantal boeken");
+                    int availableCopies = parseNonNegativeIntOrDefault(availableCopiesValue, totalCopies,
+                            "Beschikbaar aantal boeken");
+
+                    validateInventoryCounts(totalCopies, availableCopies);
+
+                    BookEntity book = new BookEntity();
+                    book.setTitle(title.trim());
+                    book.setAuthors(splitImportList(authors));
+                    book.setPublisher(valueOrFallback(publisher, "Onbekende uitgever"));
+                    book.setDescription(valueOrFallback(description, "Geen omschrijving beschikbaar"));
+                    book.setPageCount(parseNonNegativeIntOrDefault(pageCount, 0, "Aantal pagina's"));
+                    book.setCategories(splitImportList(categories));
+                    book.setLabels(splitImportList(labels));
+                    book.setThumbnail(valueOrFallback(thumbnail, ""));
+                    book.setLanguage(normalizeLanguage(language));
+                    book.setRating(0.0);
+                    book.setPublishedYear(parsePublishedYearOrNull(publishedYear));
+                    book.setSpotlight(false);
+                    book.setDidacticTag(parseDidacticBoolean(didacticBook));
+                    book.setReadingLevel(normalizeReadingLevel(readingLevel));
+                    book.setAgeRange(null);
+                    book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
+
+                    String campusToUse = !rowCampus.isBlank()
+                            ? rowCampus
+                            : fallbackCampus;
+
+                    addInventory(
+                            book,
+                            userSchool,
+                            normalizeCampus(campusToUse),
+                            totalCopies,
+                            availableCopies);
+
+                    recomputeBookCopyTotals(book);
+                    bookRepository.save(book);
+                    savedCount++;
+
+                } catch (Exception e) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            "",
+                            title,
+                            null,
+                            e.getMessage()));
                 }
             }
 
@@ -1071,6 +1206,178 @@ public class BookService {
                     "Geen school gevonden voor de ingelogde gebruiker");
         }
         return schoolId;
+    }
+
+    private Map<String, Integer> getImportColumnIndexes(Row headerRow, DataFormatter formatter) {
+        if (headerRow == null) {
+            throw new IllegalArgumentException("Het Excelbestand heeft geen header rij");
+        }
+
+        Map<String, Integer> columns = new HashMap<>();
+
+        for (Cell cell : headerRow) {
+            String key = normalizeImportHeader(formatter.formatCellValue(cell));
+
+            if (!key.isBlank()) {
+                columns.put(key, cell.getColumnIndex());
+            }
+        }
+
+        return columns;
+    }
+
+    private String normalizeImportHeader(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace("'", "")
+                .trim()
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", " ");
+    }
+
+    private String getImportCell(
+            Row row,
+            Map<String, Integer> columns,
+            DataFormatter formatter,
+            String columnName) {
+
+        Integer columnIndex = columns.get(normalizeImportHeader(columnName));
+
+        if (columnIndex == null) {
+            return "";
+        }
+
+        return formatter.formatCellValue(row.getCell(columnIndex)).trim();
+    }
+
+    private boolean rowIsBlank(Row row, DataFormatter formatter) {
+        short firstCell = row.getFirstCellNum();
+        short lastCell = row.getLastCellNum();
+
+        if (firstCell < 0 || lastCell < 0) {
+            return true;
+        }
+
+        for (int i = firstCell; i < lastCell; i++) {
+            if (!formatter.formatCellValue(row.getCell(i)).trim().isBlank()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private List<String> splitImportList(String value) {
+        if (value == null || value.isBlank()) {
+            return new ArrayList<>();
+        }
+
+        return new ArrayList<>(
+                List.of(value.split(";"))
+                        .stream()
+                        .map(String::trim)
+                        .filter(item -> !item.isBlank())
+                        .toList());
+    }
+
+    private String valueOrFallback(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+
+        return value.trim();
+    }
+
+    private String normalizeLanguage(String language) {
+        if (language == null || language.isBlank()) {
+            return "nl";
+        }
+
+        return switch (language.trim().toLowerCase(Locale.ROOT)) {
+            case "nl", "ne", "nederlands", "dutch" -> "nl";
+            case "en", "engels", "english" -> "en";
+            case "fr", "frans", "french" -> "fr";
+            default -> "nl";
+        };
+    }
+
+    private String normalizeReadingLevel(String readingLevel) {
+        if (readingLevel == null || readingLevel.isBlank()) {
+            return "A";
+        }
+
+        String normalized = readingLevel.trim().toUpperCase(Locale.ROOT);
+
+        return switch (normalized) {
+            case "A", "B", "C", "D" -> normalized;
+            default -> "A";
+        };
+    }
+
+    private boolean parseDidacticBoolean(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+
+        return switch (value.trim().toLowerCase(Locale.ROOT)) {
+            case "ja", "yes", "true", "1", "waar" -> true;
+            default -> false;
+        };
+    }
+
+    private Integer parsePublishedYearOrNull(String value) {
+        Integer parsed = parseIntegerOrNull(value);
+
+        if (parsed == null || parsed <= 0) {
+            return null;
+        }
+
+        if (parsed > Year.now().getValue()) {
+            throw new IllegalArgumentException("Jaar van uitgave mag niet in de toekomst liggen");
+        }
+
+        return parsed;
+    }
+
+    private int parsePositiveIntOrDefault(String value, int fallback, String fieldName) {
+        Integer parsed = parseIntegerOrNull(value);
+
+        if (parsed == null || parsed <= 0) {
+            return fallback;
+        }
+
+        return parsed;
+    }
+
+    private int parseNonNegativeIntOrDefault(String value, int fallback, String fieldName) {
+        Integer parsed = parseIntegerOrNull(value);
+
+        if (parsed == null) {
+            return fallback;
+        }
+
+        if (parsed < 0) {
+            throw new IllegalArgumentException(fieldName + " mag niet negatief zijn");
+        }
+
+        return parsed;
+    }
+
+    private Integer parseIntegerOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        try {
+            String normalized = value.trim().replace(",", ".");
+            return (int) Double.parseDouble(normalized);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("'" + value + "' is geen geldig getal");
+        }
     }
     // endregion
 }
