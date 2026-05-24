@@ -2,7 +2,6 @@
 
 import type { MeResponse, AdminUser, UserRole } from "@/app/interfaces/user";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import "./userAdmin.css";
 import Pagination from "@/app/catalog/pagination";
 import SyncModal from "./SyncModal";
@@ -83,6 +82,7 @@ export default function AdminUserPage() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [syncStep, setSyncStep] = useState(0);
   const [syncResult, setSyncResult] = useState<SyncSummary | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [approvedSchools, setApprovedSchools] = useState<ApprovedSchool[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
@@ -213,7 +213,7 @@ export default function AdminUserPage() {
 
     const timer = setTimeout(load, 300);
     return () => clearTimeout(timer);
-  }, [me, selectedSchoolId, currentPage, pageSize, searchQuery]);
+  }, [me, selectedSchoolId, currentPage, pageSize, searchQuery, refreshKey]);
 
   const handleSave = async (userId: number) => {
     if (!API_URL) return;
@@ -293,6 +293,7 @@ export default function AdminUserPage() {
     } finally {
       clearInterval(stepInterval);
       setSyncStatus("done");
+      setRefreshKey((prev) => prev + 1);
     }
   };
 
@@ -340,22 +341,12 @@ export default function AdminUserPage() {
                 )}
               </div>
               {me?.role === "ADMIN" && (
-                <div style={{ display: "flex", gap: "0.75rem" }}>
-                  <button
-                    className="adminPrimaryButton"
-                    onClick={() => setSyncStatus("confirm")}
-                  >
-                    Synchroniseer
-                  </button>
-                  <Link
-                    href={`/admin/school-integration${selectedSchoolId ? `?schoolId=${selectedSchoolId}` : ""}`}
-                    className="adminPrimaryLink"
-                  >
-                    <button className="adminPrimaryButton">
-                      Schoolintegratie
-                    </button>
-                  </Link>
-                </div>
+                <button
+                  className="adminPrimaryButton"
+                  onClick={() => setSyncStatus("confirm")}
+                >
+                  Sync alle scholen
+                </button>
               )}
             </div>
 
