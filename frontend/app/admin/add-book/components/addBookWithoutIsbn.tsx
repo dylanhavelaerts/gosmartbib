@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {  BOOK_CATEGORIES, BOOK_LABELS } from "../../../interfaces/Book";
+import {  BOOK_CATEGORIES, BOOK_LABELS, BOOK_LANGUAGE_PRESETS } from "../../../interfaces/Book";
 import type { Book, BookInventory } from "../../../interfaces/Book";
 import "./addBookForm.css";
 import type { MeResponse } from "@/app/interfaces/user";
@@ -26,6 +26,7 @@ export default function AddBookWithoutIsbn() {
   const [categories, setCategories] = useState<string[]>([]);
   const [thumbnail, setThumbnail] = useState("");
   const [language, setLanguage] = useState("");
+  const [languageInputMode, setLanguageInputMode] = useState("");
   const [publishedYear, setPublishedYear] = useState(0);
   const [rating, setRating] = useState(0);
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -40,6 +41,8 @@ export default function AddBookWithoutIsbn() {
   const [inventories, setInventories] = useState<BookInventory[]>([]);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  const CUSTOM_LANGUAGE_VALUE = "__custom_language__";
 
   const handleAuthorChange = (index: number, value: string) => {
     const updatedAuthors = [...authors];
@@ -124,6 +127,22 @@ export default function AddBookWithoutIsbn() {
     };
   }, []);
 
+  const languageSelectValue =
+    languageInputMode === CUSTOM_LANGUAGE_VALUE
+      ? CUSTOM_LANGUAGE_VALUE
+      : language.toLowerCase();
+
+  const handleLanguageSelectChange = (value: string) => {
+    setLanguageInputMode(value);
+
+    if (value === CUSTOM_LANGUAGE_VALUE) {
+      setLanguage("");
+      return;
+    }
+
+    setLanguage(value);
+};
+
   const handleConfirmAdd = async () => {
     if (!previewBook) return;
 
@@ -203,6 +222,7 @@ for (const inventory of inventories) {
       setCategories([]);
       setThumbnail("");
       setLanguage("");
+      setLanguageInputMode("");
       setPublishedYear(0);
       setRating(0);
       setOpenDropdown(false);
@@ -500,16 +520,30 @@ useEffect(() => {
         <div className="fieldGroup">
           <label className="label">Taal</label>
           <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
+            value={languageSelectValue}
+            onChange={(e) => handleLanguageSelectChange(e.target.value)}
             className="select"
             disabled={previewBook !== null}
           >
-            <option value="">Alle talen</option>
-            <option value="en">EN</option>
-            <option value="nl">NL</option>
-            <option value="fr">FR</option>
+            <option value="">Kies een taal</option>
+            {BOOK_LANGUAGE_PRESETS.map((languagePreset) => (
+              <option key={languagePreset} value={languagePreset}>
+                {languagePreset.toUpperCase()}
+              </option>
+            ))}
+            <option value={CUSTOM_LANGUAGE_VALUE}>Andere taal...</option>
           </select>
+
+          {languageInputMode === CUSTOM_LANGUAGE_VALUE && (
+            <input
+              type="text"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              placeholder="Geef een afkorting van een taal in"
+              className="input"
+              disabled={previewBook !== null}
+            />
+          )}
         </div>
 
         <div className="fieldGroup">

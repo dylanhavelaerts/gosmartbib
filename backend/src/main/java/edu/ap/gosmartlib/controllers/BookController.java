@@ -98,6 +98,11 @@ public class BookController {
         }
     }
 
+    @GetMapping("/languages")
+    public List<String> getAvailableLanguages(@AuthenticationPrincipal OAuth2User principal) {
+        return bookService.getAvailableLanguages(authHelper.extractUidOrNull(principal));
+    }
+
     /**
      * Geeft het boek terug met het opgegeven id.
      */

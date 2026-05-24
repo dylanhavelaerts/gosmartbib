@@ -24,6 +24,7 @@ export default function Home() {
 
   // Filters
   const [language, setLanguage] = useState("");
+  const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
   const [readingLevel, setReadingLevel] = useState("");
   const [categories, setCategories] = useState<Set<string>>(new Set());
   const [labels, setLabels] = useState<Set<string>>(new Set());
@@ -67,6 +68,19 @@ export default function Home() {
       const saved = sessionStorage.getItem("catalogSearch");
       if (saved) setQuery(saved);
     }
+  }, []);
+
+// -- Fetch alle talen voor school
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/languages`, {
+      credentials: "include",
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: string[]) => {
+        setAvailableLanguages(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setAvailableLanguages([]));
   }, []);
 
   // -- Fetch boeken ------------------------------------------------------------------------------------------------------------------------------
@@ -301,19 +315,21 @@ export default function Home() {
           <div className="filterBar">
             <div className="filterGroup">
               <span className="filterGroupLabel">Taal</span>
-              <select
-                value={language}
-                onChange={(e) => {
-                  setLanguage(e.target.value);
-                  resetPage();
-                }}
-                className="filterSelect"
-              >
-                <option value="">Alle talen</option>
-                <option value="nl">NL</option>
-                <option value="en">EN</option>
-                <option value="fr">FR</option>
-              </select>
+             <select
+              value={language}
+              onChange={(e) => {
+                setLanguage(e.target.value);
+                resetPage();
+              }}
+              className="filterSelect"
+            >
+              <option value="">Alle talen</option>
+              {availableLanguages.map((languageOption) => (
+                <option key={languageOption} value={languageOption}>
+                  {languageOption.toUpperCase()}
+                </option>
+              ))}
+            </select>
             </div>
 
             <div className="filterGroup">

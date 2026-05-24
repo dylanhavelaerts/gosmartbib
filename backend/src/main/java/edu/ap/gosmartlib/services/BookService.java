@@ -354,6 +354,34 @@ public class BookService {
                 .map(this::toDTO);
     }
 
+    @Transactional(readOnly = true)
+    public List<String> getAvailableLanguages(String currentUserUid) {
+        Long schoolId = currentUserUid == null || currentUserUid.isBlank()
+                ? null
+                : getRequesterSchoolId(currentUserUid);
+
+        List<String> rawLanguages = schoolId == null
+                ? bookRepository.findDistinctLanguages()
+                : bookRepository.findDistinctLanguagesForSchool(schoolId);
+
+        List<String> cleanedLanguages = rawLanguages.stream()
+                .map(this::safeTrim)
+                .filter(language -> language != null && !language.isBlank())
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+
+        List<String> availableLanguages = new ArrayList<>();
+        Set<String> seenLanguages = new HashSet<>();
+
+        for (String language : cleanedLanguages) {
+            if (seenLanguages.add(language.toLowerCase(Locale.ROOT))) {
+                availableLanguages.add(language);
+            }
+        }
+
+        return availableLanguages;
+    }
+
     public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid, String campus) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Upload een excel file die niet leeg is");
@@ -1479,14 +1507,16 @@ public class BookService {
 
     private String normalizeLanguage(String language) {
         if (language == null || language.isBlank()) {
-            return "nl";
+            return "Geen taal ingegeven";
         }
 
-        return switch (language.trim().toLowerCase(Locale.ROOT)) {
+        String trimmedLanguage = language.trim().toLowerCase(Locale.ROOT);
+
+        return switch (trimmedLanguage) {
             case "nl", "ne", "nederlands", "dutch" -> "nl";
             case "en", "engels", "english" -> "en";
             case "fr", "frans", "french" -> "fr";
-            default -> "nl";
+            default -> trimmedLanguage;
         };
     }
 
