@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -65,6 +66,13 @@ public class AdminLoginFilter extends AbstractAuthenticationProcessingFilter {
         context.setAuthentication(authResult);
         SecurityContextHolder.setContext(context);
         contextRepository.saveContext(context, request, response);
+
+        Cookie authenticatedCookie = new Cookie("AUTHENTICATED", "true");
+        authenticatedCookie.setPath("/");
+        authenticatedCookie.setHttpOnly(true);
+        authenticatedCookie.setSecure(request.isSecure());
+        response.addCookie(authenticatedCookie);
+
         response.setStatus(HttpServletResponse.SC_OK);
     }
 
