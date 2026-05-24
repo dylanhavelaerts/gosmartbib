@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveUsersRespons
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationTestResponse;
 import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.services.oneRoster.OneRosterSyncService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +23,12 @@ public class SchoolIntegrationAdminService {
     private final SmartschoolOneRosterAuthService authService;
     private final SmartschoolOneRosterClient oneRosterClient;
     private final SchoolIntegrationRepository schoolIntegrationRepository;
+    private final OneRosterSyncService oneRosterSyncService;
 
     @Transactional
     public SchoolIntegrationTestResponse testIntegration(String actorUid, Long schoolId) {
         SchoolIntegrationEntity integration = schoolIntegrationService.getIntegrationEntityForAdmin(actorUid, schoolId);
+        SchoolIntegrationTestResponse response;
 
         try {
             String token = authService.getAccessToken(integration);
@@ -36,7 +39,7 @@ public class SchoolIntegrationAdminService {
             integration.setOnerosterEnabled(true);
             schoolIntegrationRepository.save(integration);
 
-            return new SchoolIntegrationTestResponse(
+            response = new SchoolIntegrationTestResponse(
                     true,
                     true,
                     true,
@@ -46,13 +49,19 @@ public class SchoolIntegrationAdminService {
             integration.setLastError(ex.getMessage());
             schoolIntegrationRepository.save(integration);
 
-            return new SchoolIntegrationTestResponse(
+            response = new SchoolIntegrationTestResponse(
                     false,
                     false,
                     false,
                     0,
                     "Test mislukt: " + ex.getMessage());
         }
+
+        if (integration.isOnerosterEnabled()) {
+            oneRosterSyncService.syncSchool(integration);
+        }
+
+        return response;
     }
 
     @Transactional(readOnly = true)

@@ -27,6 +27,15 @@ export default function LendingPage() {
   const [searchResults, setSearchResults] = useState<Book[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
 
+  const availableForSchool = (book: Book): number => {
+    const schoolId = selectedUser?.schoolId ? parseInt(selectedUser.schoolId) : null;
+    if (schoolId && book.inventories?.length) {
+      const inv = book.inventories.find((i) => i.schoolId === schoolId);
+      if (inv !== undefined) return inv.availableCopies;
+    }
+    return book.availableCopies ?? 0;
+  };
+
   // --- Search Smartschool User (API Call) ---
   const handleSearchSmartschoolUser = async () => {
     if (!userQuery.trim()) {
@@ -92,8 +101,7 @@ export default function LendingPage() {
 
   // --- Cart Handlers ---
   const handleAddToCart = (book: Book) => {
-    const available =
-      book.availableCopies !== undefined ? book.availableCopies : 5;
+    const available = availableForSchool(book);
 
     if (available <= 0) {
       alert("Dit boek is momenteel helaas niet beschikbaar.");
@@ -114,10 +122,7 @@ export default function LendingPage() {
     setCart((prev) =>
       prev.map((item) => {
         if (item.book.id === bookId) {
-          const available =
-            item.book.availableCopies !== undefined
-              ? item.book.availableCopies
-              : 5;
+          const available = availableForSchool(item.book);
           const newQuantity = item.quantity + delta;
 
           if (newQuantity >= 1 && newQuantity <= available) {
@@ -168,7 +173,11 @@ export default function LendingPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Database error during registration.");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.message ||
+            "Er ging iets mis bij het uitlenen van de boeken. Controleer de verbinding en de voorraad.",
+        );
       }
 
       alert(
@@ -178,7 +187,9 @@ export default function LendingPage() {
     } catch (err) {
       console.error(err);
       alert(
-        "Er ging iets mis bij het uitlenen van de boeken. Controleer de verbinding en de voorraad.",
+        err instanceof Error
+          ? err.message
+          : "Er ging iets mis bij het uitlenen van de boeken. Controleer de verbinding en de voorraad.",
       );
     }
   };
@@ -312,8 +323,7 @@ export default function LendingPage() {
               <p className="placeholderText centered">Typ een zoekterm.</p>
             ) : (
               searchResults.map((book) => {
-                const available =
-                  book.availableCopies !== undefined ? book.availableCopies : 5;
+                const available = availableForSchool(book);
                 const cartItem = cart.find((item) => item.book.id === book.id);
 
                 return (

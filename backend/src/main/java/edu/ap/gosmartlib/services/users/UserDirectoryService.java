@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -139,6 +140,20 @@ public class UserDirectoryService {
                         resolvedDisplayNames.put(requestedUid, displayName);
                     }
                 }
+
+                // Fallback: match by onerosterSourcedId when smsc.legacyIdentifier is absent
+                String liveSourcedId = readString(liveUser.get("sourcedId"));
+                if (!liveSourcedId.isBlank()) {
+                    for (UserEntity knownUser : knownUsers) {
+                        if (liveSourcedId.equals(knownUser.getOnerosterSourcedId())) {
+                            String requestedUid = requestedUidByNormalizedUid.get(normalizeUid(knownUser.getSmartschoolUid()));
+                            if (requestedUid != null && !resolvedDisplayNames.containsKey(requestedUid)) {
+                                resolvedDisplayNames.put(requestedUid, displayName);
+                            }
+                            break;
+                        }
+                    }
+                }
             }
 
             List<String> unresolvedUids = requestedUids.stream()
@@ -214,6 +229,18 @@ public class UserDirectoryService {
 
                         liveDisplayNamesByNormalizedUid.putIfAbsent(normalizedCandidateUid, displayName);
                     }
+
+                    // Fallback: match by onerosterSourcedId when smsc.legacyIdentifier is absent
+                    String liveSourcedId = readString(liveUser.get("sourcedId"));
+                    if (!liveSourcedId.isBlank()) {
+                        for (UserEntity knownUser : knownUsers) {
+                            if (liveSourcedId.equals(knownUser.getOnerosterSourcedId())) {
+                                liveDisplayNamesByNormalizedUid.putIfAbsent(
+                                        normalizeUid(knownUser.getSmartschoolUid()), displayName);
+                                break;
+                            }
+                        }
+                    }
                 }
             } catch (Exception ignored) {
                 // Als live ophalen mislukt, vallen we terug op de gekende UID-zoeking.
@@ -255,6 +282,7 @@ public class UserDirectoryService {
                 .filter(user -> readString(user.name()).toLowerCase(Locale.ROOT).contains(normalizedQuery)
                         || readString(user.smartschoolUserId()).toLowerCase(Locale.ROOT).contains(normalizedQuery)
                         || readString(user.classGroup()).toLowerCase(Locale.ROOT).contains(normalizedQuery))
+                .sorted(Comparator.comparing(dto -> dto.name().toLowerCase(Locale.ROOT)))
                 .limit(20)
                 .toList();
     }

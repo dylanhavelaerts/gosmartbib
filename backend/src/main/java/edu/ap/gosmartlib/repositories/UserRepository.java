@@ -22,7 +22,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
   @EntityGraph(attributePaths = { "school", "classes" })
   List<UserEntity> findAllBySchool_IdOrderBySmartschoolUidAsc(Long schoolId);
 
-  @Query("SELECT u FROM UserEntity u WHERE u.school.id = :schoolId AND u.role <> edu.ap.gosmartlib.util.UserRoles.ADMIN AND (:name IS NULL OR LOWER(u.smartschoolUid) LIKE LOWER(CONCAT('%', :name, '%')))")
+  @Query("SELECT u FROM UserEntity u WHERE u.school.id = :schoolId AND u.role <> edu.ap.gosmartlib.util.UserRoles.ADMIN AND (:name IS NULL OR LOWER(u.smartschoolUid) LIKE LOWER(CONCAT('%', :name, '%'))) ORDER BY u.smartschoolUid ASC")
   Page<UserEntity> findBySchoolIdAndName(Long schoolId, String name, Pageable pageable);
 
   @EntityGraph(attributePaths = { "school", "classes" })
