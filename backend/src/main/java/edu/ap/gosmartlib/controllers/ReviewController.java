@@ -55,7 +55,7 @@ public class ReviewController {
     }
 
     @GetMapping("/moderation")
-    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole( 'BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<List<ReviewDetailDTO>> getModerationReviews(@AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(reviewService.findAllSchoolReviewsForModerator(authHelper.extractUid(principal)));
     }
@@ -74,21 +74,21 @@ public class ReviewController {
     }
 
     @PatchMapping("/{reviewId}/approve")
-    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole( 'BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<Void> approveReview(@PathVariable Long reviewId) {
         reviewService.approveReview(reviewId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{reviewId}/reject")
-    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<Void> rejectReview(@PathVariable Long reviewId) {
         reviewService.rejectReview(reviewId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{reviewId}/admin-delete")
-    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<Void> adminDeleteReview(@PathVariable Long reviewId,
                                                   @RequestBody AdminDeleteReviewRequestDTO request) {
         reviewService.adminDeleteReview(reviewId, request.reason());
@@ -111,7 +111,7 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{reviewId}/librarian")
-    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole( 'BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<Void> librarianDeleteReview(@PathVariable Long reviewId) {
         reviewService.librarianDeleteReview(reviewId);
         return ResponseEntity.noContent().build();
@@ -123,6 +123,6 @@ public class ReviewController {
         }
         return authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(role -> role.equals("ROLE_TEACHER") || role.equals("ROLE_BIBLIOTHEEKBEHEERDER"));
+                .anyMatch(role ->role.equals("ROLE_BIBLIOTHEEKBEHEERDER"));
     }
 }
