@@ -172,6 +172,7 @@ public class BookController {
     /**
      * Voegt een boek toe aan de database via ISBN (opgehaald van Google Books).
      */
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     @PostMapping("/add/{isbn}")
     public ResponseEntity<?> addBookByIsbn(@PathVariable String isbn,
             @RequestParam(required = false) String campus,
@@ -221,6 +222,7 @@ public class BookController {
     /**
      * Importeert boeken vanuit een Excel-bestand.
      */
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importBooks(@RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String campus, @AuthenticationPrincipal OAuth2User principal) {
@@ -251,6 +253,7 @@ public class BookController {
      * Voegt boek toe aan database
      */
     @PostMapping("/add")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request,
             @AuthenticationPrincipal OAuth2User principal) {
         try {

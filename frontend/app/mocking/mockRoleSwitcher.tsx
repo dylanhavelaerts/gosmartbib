@@ -8,7 +8,6 @@ const roles: { label: string; value: string }[] = [
   { label: "Leerling", value: "leerling" },
   { label: "Leerkracht", value: "leerkracht" },
   { label: "Bibliotheekbeheerder", value: "bibliotheekbeheerder" },
-  { label: "Administrator", value: "admin" },
 ];
 
 export default function MockRoleSwitcher() {

@@ -225,7 +225,7 @@ export default function LendingPage() {
                 */}
                 <div className="userInfo">
                   <p className="userName">{selectedUser.name}</p>
-                  <p>
+                  <p style={{ wordBreak: "break-all" }}>
                     <strong>ID:</strong> {selectedUser.smartschoolUserId}
                   </p>
                   <p>

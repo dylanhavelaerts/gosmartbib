@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,7 @@ public class AdminLoanController {
     private final AdminLoanService adminLoanService;
 
     @GetMapping("/school/active")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<Page<AdminActiveLoanDTO>> getActiveLoansForSchool(
             @AuthenticationPrincipal OAuth2User principal,
             @RequestParam(required = false) Long classId,
@@ -36,6 +38,7 @@ public class AdminLoanController {
     }
 
     @GetMapping("/school/history")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<Page<AdminLoanHistoryDTO>> getLoanHistoryForSchool(
             @AuthenticationPrincipal OAuth2User principal,
             @RequestParam(required = false) Long classId,
@@ -45,10 +48,11 @@ public class AdminLoanController {
         if (principal == null || principal.getAttribute("userID") == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        String actorUid = (String) principal.getAttribute("userID");
+        String actorUid = principal.getAttribute("userID");
         return ResponseEntity.ok(adminLoanService.getLoanHistoryForSchool(actorUid, classId, page, size));
     }
     @GetMapping("/school/classes")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<List<ReadingListAssignmentTargetsDTO.ClassTarget>> getSchoolClasses(
             @AuthenticationPrincipal OAuth2User principal) {
         if (principal == null || principal.getAttribute("userID") == null) {

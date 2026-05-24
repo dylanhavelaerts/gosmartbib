@@ -8,10 +8,7 @@ import edu.ap.gosmartlib.entities.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.SchoolClassRepository;
-import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
-import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.repositories.*;
 import edu.ap.gosmartlib.services.users.UserDeletionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +45,9 @@ class SchoolAdminServiceTest {
 
     @InjectMocks
     private SchoolAdminService schoolAdminService;
+
+    @Mock
+    private BookInventoryRepository bookInventoryRepository;
 
     // ── listAllSchools ────────────────────────────────────────────────────────
 
@@ -212,6 +212,7 @@ class SchoolAdminServiceTest {
         verify(userDeletionService).deleteUser(user2);
         verify(schoolClassRepository).deleteAll(List.of(cls));
         verify(schoolIntegrationRepository).delete(integration);
+        verify(bookInventoryRepository).deleteAllBySchool_Id(10L);
         verify(schoolRepository).delete(school);
     }
 
@@ -229,6 +230,7 @@ class SchoolAdminServiceTest {
         verifyNoInteractions(userDeletionService);
         verify(schoolClassRepository).deleteAll(List.of());
         verify(schoolIntegrationRepository, never()).delete(any());
+        verify(bookInventoryRepository).deleteAllBySchool_Id(11L);
         verify(schoolRepository).delete(school);
     }
 
@@ -240,7 +242,7 @@ class SchoolAdminServiceTest {
                 () -> schoolAdminService.deleteSchool(99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        verifyNoInteractions(userDeletionService, schoolClassRepository, schoolIntegrationRepository);
+        verifyNoInteractions(userDeletionService, schoolClassRepository, schoolIntegrationRepository, bookInventoryRepository);
         verify(schoolRepository, never()).delete(any());
     }
 

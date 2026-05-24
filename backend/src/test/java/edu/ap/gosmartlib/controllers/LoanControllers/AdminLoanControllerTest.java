@@ -1,6 +1,5 @@
 package edu.ap.gosmartlib.controllers.LoanControllers;
 
-import edu.ap.gosmartlib.controllers.LoanControllers.AdminLoanController;
 import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
