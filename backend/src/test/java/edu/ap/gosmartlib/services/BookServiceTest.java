@@ -1649,7 +1649,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of());
+                                "Fallback Campus", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1695,7 +1695,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of());
+                                "Fallback Campus", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1744,7 +1744,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of());
+                                "Fallback Campus", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1781,7 +1781,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of());
+                                "Fallback Campus", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -2183,6 +2183,31 @@ class BookServiceTest {
                 assertEquals(5, result.totalCopies());
                 assertEquals(3, result.availableCopies());
                 assertEquals(2, result.inventories().size());
+        }
+
+        @Test
+        void givenStudentUser_whenGetAvailableLanguages_thenReturnsLanguagesForOwnSchoolOnly() {
+                stubStudentSchoolLookup();
+
+                List<String> languages = new ArrayList<>();
+                languages.add("nl");
+                languages.add(" en ");
+                languages.add("swe");
+                languages.add("Geen taal ingegeven");
+                languages.add("EN");
+                languages.add("");
+                languages.add(null);
+
+                when(bookRepository.findDistinctLanguagesForSchool(1L))
+                                .thenReturn(languages);
+
+                List<String> result = bookService.getAvailableLanguages(STUDENT_UID);
+
+                assertEquals(List.of("en", "Geen taal ingegeven", "nl", "swe"), result);
+
+                verify(userRepository).findDetailedBySmartschoolUid(STUDENT_UID);
+                verify(bookRepository).findDistinctLanguagesForSchool(1L);
+                verify(bookRepository, never()).findDistinctLanguages();
         }
 
         @Test

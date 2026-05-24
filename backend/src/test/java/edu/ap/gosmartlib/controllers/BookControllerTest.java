@@ -988,6 +988,19 @@ class BookControllerTest {
         verifyNoMoreInteractions(bookService);
     }
 
+    @Test
+    void givenPrincipal_whenGetAvailableLanguages_thenDelegatesToServiceWithUid() {
+        OAuth2User principal = mockPrincipal("uid-123");
+        List<String> expected = List.of("nl", "swe", "Geen taal ingegeven");
+
+        when(bookService.getAvailableLanguages("uid-123")).thenReturn(expected);
+
+        List<String> result = bookController.getAvailableLanguages(principal);
+
+        assertEquals(expected, result);
+        verify(bookService).getAvailableLanguages("uid-123");
+    }
+
     // -- helper
     private Page<BookDTO> toPage(List<BookDTO> list) {
         return new PageImpl<>(list, PageRequest.of(0, 20), list.size());
