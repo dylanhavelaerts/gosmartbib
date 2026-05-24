@@ -6,6 +6,7 @@ import ProtectedRoute from "@/app/components/ProtectedRoute";
 import Pagination from "@/app/catalog/pagination";
 import { useEffect, useMemo, useState } from "react";
 import { ModerationReview, useReviewModeration } from "./useReviewModeration";
+import HardDeleteConfirmModal from "./components/HardDeleteConfirmModal";
 import "./adminReview.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -39,6 +40,9 @@ export default function AdminReviewsPage() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [currentPage, setCurrentPage] = useState(1);
+  const [hardDeleteTargetId, setHardDeleteTargetId] = useState<number | null>(
+    null,
+  );
 
   async function submitAdminDelete() {
     const wasSuccessful = await softRejectReview(deleteReviewId, deleteReason);
@@ -50,16 +54,18 @@ export default function AdminReviewsPage() {
     setDeleteReason("");
   }
 
-  async function handleHardDeleteReview(reviewId: number) {
-    const confirmed = window.confirm(
-      "Deze review wordt permanent verwijderd. Deze actie kan je niet ongedaan maken. Verdergaan?",
-    );
+  function openHardDeleteModal(reviewId: number) {
+    setHardDeleteTargetId(reviewId);
+  }
 
-    if (!confirmed) {
-      return;
-    }
-
-    await hardDeleteReview(reviewId);
+  function closeHardDeleteModal() {
+    if (hardDeletingReviewId !== null) return;
+    setHardDeleteTargetId(null);
+  }
+  async function confirmHardDelete() {
+    if (hardDeleteTargetId === null) return;
+    await hardDeleteReview(hardDeleteTargetId);
+    setHardDeleteTargetId(null);
   }
 
   function openDeleteModal(reviewId: number) {
@@ -199,7 +205,7 @@ export default function AdminReviewsPage() {
                   hardDeleting={hardDeletingReviewId === review.id}
                   onApprove={approveReview}
                   onOpenReject={openDeleteModal}
-                  onHardDelete={handleHardDeleteReview}
+                  onHardDelete={openHardDeleteModal}
                 />
               ))}
             </div>
@@ -224,6 +230,13 @@ export default function AdminReviewsPage() {
           onReasonChange={setDeleteReason}
           onCancel={closeDeleteModal}
           onSubmit={submitAdminDelete}
+        />
+
+        <HardDeleteConfirmModal
+          isOpen={hardDeleteTargetId !== null}
+          isDeleting={hardDeletingReviewId !== null}
+          onCancel={closeHardDeleteModal}
+          onConfirm={confirmHardDelete}
         />
       </main>
     </ProtectedRoute>
