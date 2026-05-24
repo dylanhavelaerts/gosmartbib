@@ -219,19 +219,32 @@ public class ReadingListService {
         requireStaff(currentUser);
 
         String normalizedQuery = query == null ? "" : query.trim();
+        Long schoolId = requireSchoolId(currentUser);
+
+        if (normalizedQuery.isEmpty()) {
+            return schoolClassRepository
+                    .findAllBySchool_IdOrderByNameAsc(schoolId)
+                    .stream()
+                    .map(schoolClass -> {
+                        Integer year = resolveYearFromClassName(schoolClass.getName());
+                        return new ReadingListAssignmentTargetsDTO.ClassTarget(
+                                schoolClass.getId(),
+                                schoolClass.getName(),
+                                year,
+                                resolveGradeFromYear(year));
+                    })
+                    .toList();
+        }
 
         if (normalizedQuery.length() < 2) {
             return List.of();
         }
-
-        Long schoolId = requireSchoolId(currentUser);
 
         return schoolClassRepository
                 .findTop20BySchool_IdAndNameContainingIgnoreCaseOrderByNameAsc(schoolId, normalizedQuery)
                 .stream()
                 .map(schoolClass -> {
                     Integer year = resolveYearFromClassName(schoolClass.getName());
-
                     return new ReadingListAssignmentTargetsDTO.ClassTarget(
                             schoolClass.getId(),
                             schoolClass.getName(),
@@ -239,6 +252,7 @@ public class ReadingListService {
                             resolveGradeFromYear(year));
                 })
                 .toList();
+
     }
 
     @Transactional
