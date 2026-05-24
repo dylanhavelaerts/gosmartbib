@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.AfterEach;
@@ -26,7 +27,7 @@ class MockAuthTest {
     void givenNoAuthentication_whenFilterRuns_thenInjectsMockUserAndSyncs() throws Exception {
         UserService userService = mock(UserService.class);
         FilterChain chain = mock(FilterChain.class);
-        MockAuth filter = new MockAuth(userService);
+        MockAuth filter = new MockAuth(userService, mock(SchoolRepository.class));
 
         filter.doFilterInternal(new MockHttpServletRequest(), new MockHttpServletResponse(), chain);
 
@@ -39,7 +40,7 @@ class MockAuthTest {
     void givenExistingAuthentication_whenFilterRuns_thenDoesNotSyncAgain() throws Exception {
         UserService userService = mock(UserService.class);
         FilterChain chain = mock(FilterChain.class);
-        MockAuth filter = new MockAuth(userService);
+        MockAuth filter = new MockAuth(userService, mock(SchoolRepository.class));
 
         SecurityContextHolder.getContext().setAuthentication(mock(org.springframework.security.core.Authentication.class));
 

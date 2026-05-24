@@ -4,5 +4,6 @@ public record ReviewRequestDTO(
         String bookIsbn,
         String text,
         float rating,
-        boolean spoiler
+        boolean spoiler,
+        boolean anonymous
 ){}

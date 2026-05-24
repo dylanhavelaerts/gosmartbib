@@ -98,30 +98,54 @@ public class DataSeeding implements CommandLineRunner {
                 return b;
         }
 
-        private SchoolEntity ensureSchool(String name, String domain) {
-                return schoolRepository.findByDomain(domain)
-                                .orElseGet(() -> {
-                                        SchoolEntity school = new SchoolEntity();
-                                        school.setName(name);
-                                        school.setDomain(domain);
-                                        return schoolRepository.save(school);
-                                });
-        }
+    private SchoolEntity ensureSchool(String name, String domain) {
+        return schoolRepository.findByDomain(domain)
+                .map(existing -> {
+                    if (!existing.isAdminApproved()) {
+                        existing.setAdminApproved(true);
+                        return schoolRepository.save(existing);
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> {
+                    SchoolEntity school = new SchoolEntity();
+                    school.setName(name);
+                    school.setDomain(domain);
+                    school.setAdminApproved(true);
+                    return schoolRepository.save(school);
+                });
+    }
 
         private List<BookInventoryEntity> createSeedInventories(BookEntity book, int totalCopies, int availableCopies) {
                 List<BookInventoryEntity> inventories = new ArrayList<>();
 
-                int primaryTotal = Math.max(1, (int) Math.ceil(totalCopies / 2.0));
-                int secondaryTotal = Math.max(0, totalCopies - primaryTotal);
+                // We verdelen de boeken nu over 3 locaties:
+                // 1. Primary school - Hoofdcampus (lege string)
+                // 2. Primary school - Extra Campus
+                // 3. Secondary school - Campus Zuid
 
-                int primaryAvailable = Math.min(availableCopies, primaryTotal);
-                int secondaryAvailable = Math.max(0, availableCopies - primaryAvailable);
+                int primaryMainTotal = Math.max(1, totalCopies / 3);
+                int primarySubTotal = Math.max(0, totalCopies / 3);
+                int secondaryTotal = Math.max(0, totalCopies - primaryMainTotal - primarySubTotal);
 
-                addInventory(inventories, book, seedSchoolPrimary, "", primaryTotal, primaryAvailable);
+                // Verdeel de beschikbare boeken op een vergelijkbare manier
+                int primaryMainAvailable = Math.min(availableCopies, primaryMainTotal);
+                int remainingAvailable = availableCopies - primaryMainAvailable;
+                
+                int primarySubAvailable = Math.min(remainingAvailable, primarySubTotal);
+                int secondaryAvailable = Math.max(0, remainingAvailable - primarySubAvailable);
 
+                // Voeg toe aan de standaard Hoofdcampus van jouw school
+                addInventory(inventories, book, seedSchoolPrimary, "", primaryMainTotal, primaryMainAvailable);
+
+                // Voeg toe aan een TWEEDE campus van jouw school (Dit is wat je nodig hebt om te testen!)
+                if (primarySubTotal > 0) {
+                        addInventory(inventories, book, seedSchoolPrimary, "Campus Groenenborger", primarySubTotal, primarySubAvailable);
+                }
+
+                // Voeg toe aan de tweede (andere) mock school
                 if (secondaryTotal > 0) {
-                        addInventory(inventories, book, seedSchoolSecondary, "Campus Zuid", secondaryTotal,
-                                        secondaryAvailable);
+                        addInventory(inventories, book, seedSchoolSecondary, "Campus Zuid", secondaryTotal, secondaryAvailable);
                 }
 
                 return inventories;
@@ -157,7 +181,7 @@ public class DataSeeding implements CommandLineRunner {
                                                         332, List.of("Fantasy", "Coming-of-age"),
                                                         "https://covers.openlibrary.org/b/isbn/9780747532743-L.jpg",
                                                         "en", 4.7, "9780747532743", 1997, true, false,
-                                                        List.of("Vriendschap", "School & prestatiedruk"), "B", 7, 5),
+                                                        List.of("Vriendschap", "School & prestatiedruk"), "B", 105, 105),
                                         book("Harry Potter and the Chamber of Secrets", List.of("J.K. Rowling"),
                                                         "Bloomsbury",
                                                         "Harry's second year at Hogwarts is filled with new challenges. Strange messages appear on the walls, and students are mysteriously being petrified. With the help of Ron and Hermione, Harry investigates the legend of the Chamber of Secrets and confronts a deadly monster hidden within the school. Along the way, he learns more about his connection to Voldemort and the power of loyalty and courage.",

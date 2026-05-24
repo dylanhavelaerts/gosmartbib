@@ -3,9 +3,11 @@ package edu.ap.gosmartlib.services.oneRoster;
 import edu.ap.gosmartlib.dto.sync.SchoolSyncResultDTO;
 import edu.ap.gosmartlib.dto.sync.SyncResultDTO;
 import edu.ap.gosmartlib.dto.sync.SyncSummaryDTO;
+import edu.ap.gosmartlib.entities.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
@@ -19,9 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,7 +34,9 @@ public class OneRosterSyncService {
     private final UserRepository userRepository;
     private final UserDeletionService userDeletionService;
     private final SchoolIntegrationRepository schoolIntegrationRepository;
+    private final SchoolClassRepository schoolClassRepository;
 
+    @Transactional
     public SyncSummaryDTO syncAll() {
         List<SchoolIntegrationEntity> integrations =
                 schoolIntegrationRepository.findAllByOnerosterEnabledTrue();
@@ -49,6 +51,8 @@ public class OneRosterSyncService {
                     integration.getSchool().getDomain(),
                     result.added(),
                     result.removed(),
+                    result.classesSynced(),
+                    result.enrollmentsSynced(),
                     result.errors()));
             totalAdded += result.added();
             totalRemoved += result.removed();
@@ -67,9 +71,12 @@ public class OneRosterSyncService {
         List<String> errors = new ArrayList<>();
         int added = 0;
         int removed = 0;
+        int classesSynced = 0;
+        int enrollmentsSynced = 0;
 
         try {
             String accessToken = authService.getAccessToken(integration);
+
             List<Map<String, Object>> onerosterUsers = client.getUsers(integration, accessToken);
 
             Map<String, Map<String, Object>> onerosterByUid = onerosterUsers.stream()
@@ -79,15 +86,17 @@ public class OneRosterSyncService {
                             u -> u,
                             (a, b) -> a));
 
-            Map<String, UserEntity> dbByUid = userRepository
-                    .findAllBySchool_IdOrderBySmartschoolUidAsc(integration.getSchool().getId())
-                    .stream()
+            List<UserEntity> dbUsers = userRepository
+                    .findAllBySchool_IdOrderBySmartschoolUidAsc(integration.getSchool().getId());
+
+            Map<String, UserEntity> dbByUid = dbUsers.stream()
                     .collect(Collectors.toMap(UserEntity::getSmartschoolUid, u -> u));
 
             for (Map.Entry<String, Map<String, Object>> entry : onerosterByUid.entrySet()) {
                 if (!dbByUid.containsKey(entry.getKey())) {
                     try {
-                        createUser(entry.getValue(), integration.getSchool());
+                        UserEntity created = createUser(entry.getValue(), integration.getSchool());
+                        dbByUid.put(created.getSmartschoolUid(), created);
                         added++;
                     } catch (Exception e) {
                         log.error("Failed to create user {}: {}", entry.getKey(), e.getMessage());
@@ -108,12 +117,72 @@ public class OneRosterSyncService {
                 }
             }
 
+            Map<String, SchoolClassEntity> classMap = new HashMap<>();
+            try {
+                List<Map<String, Object>> onerosterClasses = client.getClasses(integration, accessToken);
+                for (Map<String, Object> c : onerosterClasses) {
+                    String sourcedId = (String) c.get("sourcedId");
+                    if (sourcedId == null) continue;
+
+                    SchoolClassEntity entity = schoolClassRepository
+                            .findBySmartschoolGroupId(sourcedId)
+                            .orElse(new SchoolClassEntity());
+
+                    entity.setSchool(integration.getSchool());
+                    entity.setSmartschoolGroupId(sourcedId);
+                    entity.setName(extractTitle(c));
+                    entity.setGrade(extractGrade(c));
+                    schoolClassRepository.save(entity);
+                    classMap.put(sourcedId, entity);
+                    classesSynced++;
+                }
+                log.info("Classes synced for {}: {}", integration.getSchool().getDomain(), classesSynced);
+            } catch (Exception e) {
+                log.error("Class sync failed for {}: {}", integration.getSchool().getDomain(), e.getMessage());
+                errors.add("Klassen sync mislukt: " + e.getMessage());
+            }
+
+            Map<String, UserEntity> usersByOnerosterSourcedId = dbByUid.values().stream()
+                    .filter(u -> u.getOnerosterSourcedId() != null)
+                    .collect(Collectors.toMap(UserEntity::getOnerosterSourcedId, u -> u, (a, b) -> a));
+
+            for (UserEntity user : usersByOnerosterSourcedId.values()) {
+                user.getClasses().clear();
+            }
+
+            try {
+                List<Map<String, Object>> enrollments = client.getEnrollments(integration, accessToken);
+                for (Map<String, Object> enrollment : enrollments) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> userRef = (Map<String, Object>) enrollment.get("user");
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> classRef = (Map<String, Object>) enrollment.get("class");
+                    if (userRef == null || classRef == null) continue;
+
+                    String userSourcedId = (String) userRef.get("sourcedId");
+                    String classSourcedId = (String) classRef.get("sourcedId");
+
+                    UserEntity user = usersByOnerosterSourcedId.get(userSourcedId);
+                    SchoolClassEntity schoolClass = classMap.get(classSourcedId);
+
+                    if (user != null && schoolClass != null) {
+                        user.getClasses().add(schoolClass);
+                        enrollmentsSynced++;
+                    }
+                }
+                userRepository.saveAll(usersByOnerosterSourcedId.values());
+                log.info("Enrollments synced for {}: {}", integration.getSchool().getDomain(), enrollmentsSynced);
+            } catch (Exception e) {
+                log.error("Enrollment sync failed for {}: {}", integration.getSchool().getDomain(), e.getMessage());
+                errors.add("Inschrijvingen sync mislukt: " + e.getMessage());
+            }
+
             integration.setLastSyncAt(LocalDateTime.now());
             integration.setLastError(errors.isEmpty() ? null : String.join("; ", errors));
             schoolIntegrationRepository.save(integration);
 
-            log.info("Sync completed for school {}: {} added, {} removed, {} errors",
-                    integration.getSchool().getDomain(), added, removed, errors.size());
+            log.info("Sync completed for school {}: {} users added, {} removed, {} classes, {} enrollments, {} errors",
+                    integration.getSchool().getDomain(), added, removed, classesSynced, enrollmentsSynced, errors.size());
 
         } catch (Exception e) {
             log.error("Sync failed for school {}: {}", integration.getSchool().getDomain(), e.getMessage());
@@ -122,20 +191,41 @@ public class OneRosterSyncService {
             errors.add("Sync mislukt: " + e.getMessage());
         }
 
-        return new SyncResultDTO(added, removed, errors);
+        return new SyncResultDTO(added, removed, classesSynced, enrollmentsSynced, errors);
     }
 
-    private void createUser(Map<String, Object> onerosterUser, SchoolEntity school) {
+    private UserEntity createUser(Map<String, Object> onerosterUser, SchoolEntity school) {
         String uid = OneRosterUtils.extractSmartschoolUid(onerosterUser);
         String sourcedId = (String) onerosterUser.get("sourcedId");
         String role = (String) onerosterUser.get("role");
 
-        UserEntity user = new UserEntity();
+        UserEntity user = userRepository.findBySmartschoolUid(uid)
+                .orElseGet(UserEntity::new);
+
+        boolean isNew = user.getId() == null;
         user.setSmartschoolUid(uid);
         user.setOnerosterSourcedId(sourcedId);
         user.setSchool(school);
-        user.setRole(UserRoles.fromOneRoster(role));
+        if (isNew) {
+            user.setRole(UserRoles.fromOneRoster(role));
+        }
         userRepository.save(user);
-        log.info("Created user {} from OneRoster", uid);
+        log.info("{} user {} from OneRoster", isNew ? "Created" : "Updated", uid);
+        return user;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractTitle(Map<String, Object> c) {
+        Object title = c.get("title");
+        return title instanceof String s ? s : "Onbekende klas";
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractGrade(Map<String, Object> c) {
+        Object grades = c.get("grades");
+        if (grades instanceof List<?> list && !list.isEmpty()) {
+            return list.get(0).toString();
+        }
+        return null;
     }
 }

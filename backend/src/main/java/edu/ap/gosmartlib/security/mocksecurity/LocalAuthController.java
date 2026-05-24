@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import jakarta.servlet.http.Cookie;
@@ -28,6 +29,7 @@ public class LocalAuthController {
 
     private final UserService userService;
     private final UserRepository userRepository;
+    private final SchoolRepository schoolRepository;
     private final HttpSessionSecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
     @PostMapping("/mock-role/{role}")
@@ -74,6 +76,11 @@ public class LocalAuthController {
         response.addCookie(authenticatedCookie);
 
         userService.syncUser(mockUser);
+        schoolRepository.findByDomain("https://aphogeschool.smartschool.be")
+                .ifPresent(school -> {
+                    school.setAdminApproved(true);
+                    schoolRepository.save(school);
+                });
 
         if (role.equalsIgnoreCase("bibliotheekbeheerder")) {
             userRepository.findBySmartschoolUid("mock-librarian-local")
@@ -152,23 +159,23 @@ public class LocalAuthController {
                 attrs.put("parentGroups", List.of());
                 yield attrs;
             }
-            case "admin" -> {
-                Map<String, Object> attrs = new HashMap<>();
-                attrs.put("userID", "mock-admin-local");
-                attrs.put("name", "Admin");
-                attrs.put("surname", "Local");
-                attrs.put("fullname", "Local Admin");
-                attrs.put("username", "adminlocal");
-                attrs.put("email", "admin.local@ap.be");
-                attrs.put("basisrol", "Directie");
-                attrs.put("status", "actief");
-                attrs.put("platform", "https://aphogeschool.smartschool.be");
-                attrs.put("isMainAccount", 1);
-                attrs.put("isCoAccount", 0);
-                attrs.put("groups", List.of());
-                attrs.put("parentGroups", List.of());
-                yield attrs;
-            }
+//            case "admin" -> {
+//                Map<String, Object> attrs = new HashMap<>();
+//                attrs.put("userID", "mock-admin-local");
+//                attrs.put("name", "Admin");
+//                attrs.put("surname", "Local");
+//                attrs.put("fullname", "Local Admin");
+//                attrs.put("username", "adminlocal");
+//                attrs.put("email", "admin.local@ap.be");
+//                attrs.put("basisrol", "Directie");
+//                attrs.put("status", "actief");
+//                attrs.put("platform", "https://aphogeschool.smartschool.be");
+//                attrs.put("isMainAccount", 1);
+//                attrs.put("isCoAccount", 0);
+//                attrs.put("groups", List.of());
+//                attrs.put("parentGroups", List.of());
+//                yield attrs;
+//            }
             default -> null;
         };
     }

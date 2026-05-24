@@ -4,7 +4,7 @@ public enum UserRoles {
     STUDENT, // "Leerling"
     TEACHER, // "Leerkracht"
     BIBLIOTHEEKBEHEERDER, // Custom Role
-    ADMIN, // "Directie"
+    ADMIN, // "Overkoepelende platform-administrator"
     OTHER; // alle andere rollen
 
     /**
@@ -19,7 +19,7 @@ public enum UserRoles {
         return switch (basisrol.toLowerCase()) {
             case "leerling" -> STUDENT;
             case "leerkracht" -> TEACHER;
-            case "directie" -> ADMIN;
+            case "directie" -> BIBLIOTHEEKBEHEERDER; // moet mss weg als er geen directie word meegegeven
             case "bibliotheekbeheerder" -> BIBLIOTHEEKBEHEERDER;
             default -> OTHER;
         };
@@ -30,7 +30,7 @@ public enum UserRoles {
         return switch (role.toLowerCase()) {
             case "student" -> STUDENT;
             case "teacher" -> TEACHER;
-            case "administrator" -> ADMIN;
+//            case "administrator" -> ADMIN;
             default -> OTHER;
         };
     }

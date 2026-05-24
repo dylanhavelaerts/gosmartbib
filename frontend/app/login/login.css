@@ -106,6 +106,73 @@
   padding: 0.65rem 0.8rem;
 }
 
+.adminToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1.5rem;
+  cursor: pointer;
+  color: #8e8e8e;
+  font-size: 0.8rem;
+  user-select: none;
+}
+
+.adminToggle:hover {
+  color: #555;
+}
+
+.adminChevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.adminChevronOpen {
+  transform: rotate(180deg);
+}
+
+.adminSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.adminInput {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.adminInput:focus {
+  outline: 2px solid #8e1f42;
+  outline-offset: 1px;
+}
+
+.adminSubmitButton {
+  width: 100%;
+  padding: 0.6rem;
+  background: #8e1f42;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+
+.adminSubmitButton:hover:not(:disabled) {
+  background: #7a1937;
+}
+
+.adminSubmitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ── Responsive ── */
 @media (max-width: 420px) {
   .loginCard {

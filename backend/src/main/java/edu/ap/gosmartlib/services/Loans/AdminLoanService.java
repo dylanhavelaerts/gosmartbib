@@ -100,7 +100,7 @@ public class AdminLoanService {
         if (uids.isEmpty()) return Map.of();
         try {
             var response = userDirectoryService.resolveDisplayNames(
-                    actorUid, new ResolveDisplayNamesRequest(uids));
+                    actorUid, new ResolveDisplayNamesRequest(uids, null));
             if (response == null || !response.success() || response.displayNames() == null) return Map.of();
             return response.displayNames();
         } catch (Exception ex) {

@@ -8,7 +8,13 @@ export default function LoginPage() {
   const [hasError] = useState(() =>
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("error") === "true"
-      : false
+      : false,
+  );
+  const [schoolNotApproved] = useState(() =>
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("error") ===
+        "school_not_approved"
+      : false,
   );
 
   useEffect(() => {
@@ -24,6 +30,43 @@ export default function LoginPage() {
       return;
     }
     window.location.href = `${apiBaseUrl}/auth/login`;
+  };
+
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
+
+  const handleAdminLogin = async () => {
+    if (!apiBaseUrl) return;
+    setAdminLoading(true);
+    setAdminError(false);
+    try {
+      const res = await fetch(`${apiBaseUrl}/admin/login`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: adminUsername,
+          password: adminPassword,
+        }),
+      });
+      if (res.ok) {
+        window.location.href = "/admin/schools";
+      } else if (res.status === 429) {
+        setRateLimited(true);
+        setAdminError(false);
+      } else {
+        setAdminError(true);
+        setRateLimited(false);
+      }
+    } catch {
+      setAdminError(true);
+    } finally {
+      setAdminLoading(false);
+    }
   };
 
   return (
@@ -61,11 +104,64 @@ export default function LoginPage() {
             </picture>
           </button>
 
-          {hasError && (
+          {schoolNotApproved && (
+            <p className="loginError" role="alert">
+              Jouw school is nog niet toegevoegd aan het platform. Contacteer de
+              schooladministratie.
+            </p>
+          )}
+          {hasError && !schoolNotApproved && (
             <p className="loginError" role="alert">
               Er is een fout opgetreden tijdens het inloggen. Probeer het
               opnieuw.
             </p>
+          )}
+          <div className="adminToggle" onClick={() => setAdminOpen((o) => !o)}>
+            <span>Administratorlogin</span>
+            <span
+              className={`adminChevron ${adminOpen ? "adminChevronOpen" : ""}`}
+            >
+              ▾
+            </span>
+          </div>
+
+          {adminOpen && (
+            <div className="adminSection">
+              <input
+                className="adminInput"
+                type="text"
+                placeholder="Gebruikersnaam"
+                value={adminUsername}
+                onChange={(e) => setAdminUsername(e.target.value)}
+                autoComplete="username"
+              />
+              <input
+                className="adminInput"
+                type="password"
+                placeholder="Wachtwoord"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+              {adminError && (
+                <p className="loginError" role="alert">
+                  Ongeldige gebruikersnaam of wachtwoord.
+                </p>
+              )}
+              {rateLimited && (
+                <p className="loginError" role="alert">
+                  Te veel pogingen. Probeer het over 15 minuten opnieuw.
+                </p>
+              )}
+              <button
+                className="adminSubmitButton"
+                onClick={handleAdminLogin}
+                disabled={adminLoading}
+                type="button"
+              >
+                {adminLoading ? "Bezig..." : "Aanmelden"}
+              </button>
+            </div>
           )}
         </section>
       </main>

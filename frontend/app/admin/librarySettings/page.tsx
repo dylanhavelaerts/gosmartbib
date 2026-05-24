@@ -9,18 +9,28 @@ import { formatSchoolLabel } from "../reviews/components/ReviewCard";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const DEFAULT_LOAN_PERIOD = 14;
 const DEFAULT_EXTENSION_PERIOD = 3;
+const DEFAULT_REMINDER_DAYS = 3;
 
 export default function LibrarySettings() {
+  // --- Leenbeleid States ---
   const [loanPeriod, setLoanPeriod] = useState<number>(DEFAULT_LOAN_PERIOD);
-  const [extensionPeriod, setExtensionPeriod] = useState<number>(
-    DEFAULT_EXTENSION_PERIOD,
-  );
-  const [savedLoanPeriod, setSavedLoanPeriod] =
-    useState<number>(DEFAULT_LOAN_PERIOD);
-  const [savedExtensionPeriod, setSavedExtensionPeriod] = useState<number>(
-    DEFAULT_EXTENSION_PERIOD,
-  );
+  const [extensionPeriod, setExtensionPeriod] = useState<number>(DEFAULT_EXTENSION_PERIOD);
+  const [reminderDays, setReminderDays] = useState<number>(DEFAULT_REMINDER_DAYS);
+  const [savedLoanPeriod, setSavedLoanPeriod] = useState<number>(DEFAULT_LOAN_PERIOD);
+  const [savedExtensionPeriod, setSavedExtensionPeriod] = useState<number>(DEFAULT_EXTENSION_PERIOD);
+  const [savedReminderDays, setSavedReminderDays] = useState<number>(DEFAULT_REMINDER_DAYS);
 
+  // --- Homepage Weergave States ---
+  const [showSpotlight, setShowSpotlight] = useState<boolean>(true);
+  const [showNewInLibrary, setShowNewInLibrary] = useState<boolean>(true);
+  const [showReadingLists, setShowReadingLists] = useState<boolean>(true);
+  const [showUrgentLoans, setShowUrgentLoans] = useState<boolean>(true);
+  const [savedShowSpotlight, setSavedShowSpotlight] = useState<boolean>(true);
+  const [savedShowNewInLibrary, setSavedShowNewInLibrary] = useState<boolean>(true);
+  const [savedShowReadingLists, setSavedShowReadingLists] = useState<boolean>(true);
+  const [savedShowUrgentLoans, setSavedShowUrgentLoans] = useState<boolean>(true);
+
+  // --- Algemene States ---
   const [me, setMe] = useState<MeResponse | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -62,25 +72,45 @@ export default function LibrarySettings() {
           return;
         }
 
-        const policyResponse = await fetch(
-          `${API_URL}/admin/schools/${meData.school.id}/loan-policy`,
-          { credentials: "include" },
-        );
+        // Haal zowel leenbeleid als homepage instellingen tegelijk op
+        const [policyResponse, settingsResponse] = await Promise.all([
+          fetch(`${API_URL}/admin/schools/${meData.school.id}/loan-policy`, { credentials: "include" }),
+          fetch(`${API_URL}/admin/schools/${meData.school.id}/homepage-settings`, { credentials: "include" })
+        ]);
 
+        // Verwerk Leenbeleid
         if (policyResponse.status === 404) {
           setLoanPeriod(DEFAULT_LOAN_PERIOD);
           setExtensionPeriod(DEFAULT_EXTENSION_PERIOD);
+          setReminderDays(DEFAULT_REMINDER_DAYS);
           setSavedLoanPeriod(DEFAULT_LOAN_PERIOD);
           setSavedExtensionPeriod(DEFAULT_EXTENSION_PERIOD);
+          setSavedReminderDays(DEFAULT_REMINDER_DAYS);
         } else if (policyResponse.ok) {
           const data = await policyResponse.json();
           setLoanPeriod(data.defaultLoanPeriodDays);
           setExtensionPeriod(data.defaultExtensionPeriodDays);
+          setReminderDays(data.dueDateReminderDays);
           setSavedLoanPeriod(data.defaultLoanPeriodDays);
           setSavedExtensionPeriod(data.defaultExtensionPeriodDays);
+          setSavedReminderDays(data.dueDateReminderDays);
         } else {
-          throw new Error(`HTTP ${policyResponse.status}`);
+          throw new Error(`Fout bij ophalen leenbeleid: HTTP ${policyResponse.status}`);
         }
+
+        // Verwerk Homepage Instellingen
+        if (settingsResponse.ok) {
+          const settingsData = await settingsResponse.json();
+          setShowSpotlight(settingsData.showSpotlight ?? true);
+          setShowNewInLibrary(settingsData.showNewInLibrary ?? true);
+          setShowReadingLists(settingsData.showReadingLists ?? true);
+          setShowUrgentLoans(settingsData.showUrgentLoans ?? true);
+          setSavedShowSpotlight(settingsData.showSpotlight ?? true);
+          setSavedShowNewInLibrary(settingsData.showNewInLibrary ?? true);
+          setSavedShowReadingLists(settingsData.showReadingLists ?? true);
+          setSavedShowUrgentLoans(settingsData.showUrgentLoans ?? true);
+        }
+        
       } catch {
         setError("Er is een fout opgetreden bij het laden van de gegevens");
       } finally {
@@ -93,7 +123,7 @@ export default function LibrarySettings() {
 
   const handleSave = async () => {
     if (!API_URL || !schoolId) return;
-    if (loanPeriod < 1 || extensionPeriod < 1) {
+    if (loanPeriod < 1 || extensionPeriod < 1 || reminderDays < 1) {
       setError("Periodes moeten minimaal 1 dag zijn");
       return;
     }
@@ -103,37 +133,83 @@ export default function LibrarySettings() {
       setError("");
       setSuccess("");
 
-      const response = await fetch(
-        `${API_URL}/admin/schools/${schoolId}/loan-policy`,
-        {
-          method: "PUT",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            defaultLoanPeriodDays: loanPeriod,
-            defaultExtensionPeriodDays: extensionPeriod,
-          }),
-        },
-      );
+      // Start beide opslag-acties tegelijkertijd
+      const policyPromise = fetch(`${API_URL}/admin/schools/${schoolId}/loan-policy`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          defaultLoanPeriodDays: loanPeriod,
+          defaultExtensionPeriodDays: extensionPeriod,
+          dueDateReminderDays: reminderDays,
+        }),
+      });
 
-      if (!response.ok) {
-        const body = await response.text();
-        throw new Error(body || "Opslaan mislukt");
+      const settingsPromise = fetch(`${API_URL}/admin/schools/${schoolId}/homepage-settings`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          showSpotlight,
+          showNewInLibrary,
+          showReadingLists,
+          showUrgentLoans
+        }),
+      });
+
+      const [policyRes, settingsRes] = await Promise.all([policyPromise, settingsPromise]);
+
+      if (!policyRes.ok) {
+        const body = await policyRes.text();
+        throw new Error(body || "Opslaan van leenbeleid mislukt");
+      }
+      
+      if (!settingsRes.ok) {
+        const body = await settingsRes.text();
+        throw new Error(body || "Opslaan van weergave-instellingen mislukt");
       }
 
-      const saved = await response.json();
-      setLoanPeriod(saved.defaultLoanPeriodDays);
-      setExtensionPeriod(saved.defaultExtensionPeriodDays);
-      setSavedLoanPeriod(saved.defaultLoanPeriodDays);
-      setSavedExtensionPeriod(saved.defaultExtensionPeriodDays);
+      // Verwerk resultaten leenbeleid
+      const savedPolicy = await policyRes.json();
+      setLoanPeriod(savedPolicy.defaultLoanPeriodDays);
+      setExtensionPeriod(savedPolicy.defaultExtensionPeriodDays);
+      setReminderDays(savedPolicy.dueDateReminderDays);
+      setSavedLoanPeriod(savedPolicy.defaultLoanPeriodDays);
+      setSavedExtensionPeriod(savedPolicy.defaultExtensionPeriodDays);
+      setSavedReminderDays(savedPolicy.dueDateReminderDays);
+
+      // Verwerk resultaten homepage settings
+      const savedSettings = await settingsRes.json();
+      setShowSpotlight(savedSettings.showSpotlight);
+      setShowNewInLibrary(savedSettings.showNewInLibrary);
+      setShowReadingLists(savedSettings.showReadingLists);
+      setShowUrgentLoans(savedSettings.showUrgentLoans);
+      setSavedShowSpotlight(savedSettings.showSpotlight);
+      setSavedShowNewInLibrary(savedSettings.showNewInLibrary);
+      setSavedShowReadingLists(savedSettings.showReadingLists);
+      setSavedShowUrgentLoans(savedSettings.showUrgentLoans);
+
       setSuccess("Instellingen succesvol opgeslagen");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Er ging iets mis bij het opslaan",
+        err instanceof Error ? err.message : "Er ging iets mis bij het opslaan"
       );
     } finally {
       setSaving(false);
     }
+  };
+
+  // Een hulpmiddel voor de styling van de mooie checkbox rijen
+  const checkboxRowStyle: React.CSSProperties = {
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '1rem', 
+    cursor: 'pointer',
+    padding: '0.85rem 1rem',
+    backgroundColor: '#f9fafb',
+    border: '1px solid #e5e7eb',
+    borderRadius: '0.5rem',
+    transition: 'background-color 0.2s ease',
   };
 
   return (
@@ -160,49 +236,131 @@ export default function LibrarySettings() {
           <p className="loadingText">Gegevens laden...</p>
         ) : (
           <div className="pageColumns">
-            <section className="card">
-              <h2>Leenbeleid</h2>
-              <p className="help">
-                Stel de standaard termijnen in voor uitleningen en verlengingen.
-                Deze waarden worden gebruikt voor alle nieuwe uitleningen tenzij
-                anders opgegeven.
-              </p>
+            <div className="leftColumnSettings" style={{ display: "flex", flexDirection: "column", gap: "1.5rem", flex: 1 }}>
+              {/* --- LEENBELEID CARD --- */}
+              <section className="card">
+                <h2>Leenbeleid</h2>
+                <p className="help">
+                  Stel de standaard termijnen in voor uitleningen en verlengingen.
+                  Deze waarden worden gebruikt voor alle nieuwe uitleningen tenzij
+                  anders opgegeven.
+                </p>
 
-              <div className="form">
-                <label className="field">
-                  <span>Uitleenperiode</span>
-                  <div className="inputWithUnit">
-                    <input
-                      type="number"
-                      min={1}
-                      max={365}
-                      value={loanPeriod}
-                      onChange={(e) => setLoanPeriod(Number(e.target.value))}
-                      disabled={saving}
+                <div className="form">
+                  <label className="field">
+                    <span>Uitleenperiode</span>
+                    <div className="inputWithUnit">
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={loanPeriod}
+                        onChange={(e) => setLoanPeriod(Number(e.target.value))}
+                        disabled={saving}
+                      />
+                      <span className="unitLabel">dagen</span>
+                    </div>
+                  </label>
+
+                  <label className="field">
+                    <span>Verlengingsperiode</span>
+                    <div className="inputWithUnit">
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={extensionPeriod}
+                        onChange={(e) =>
+                          setExtensionPeriod(Number(e.target.value))
+                        }
+                        disabled={saving}
+                      />
+                      <span className="unitLabel">dagen</span>
+                    </div>
+                  </label>
+
+                  <label className="field">
+                    <span>Herinneringsperiode</span>
+                    <div className="inputWithUnit">
+                      <input
+                        type="number"
+                        value={reminderDays}
+                        onChange={(e) => setReminderDays(Number(e.target.value))}
+                        disabled={saving}
+                      />
+                      <span className="unitLabel">dagen</span>
+                    </div>
+                  </label>
+                </div>
+              </section>
+
+              {/* --- HOMEPAGE WEERGAVE CARD --- */}
+              <section className="card">
+                <h2>Weergave Homepage</h2>
+                <p className="help">
+                  Kies welke elementen standaard zichtbaar zijn voor leerlingen op de homepage van jouw school.
+                </p>
+
+                {/* Let op: geen className="form" of className="field" hier, anders verstoort de CSS de styling */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem" }}>
+                  
+                  <label style={checkboxRowStyle} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}>
+                    <input 
+                      type="checkbox" 
+                      style={{ width: "1.25rem", height: "1.25rem", margin: 0, cursor: 'pointer', accentColor: "var(--accent-color, #2563eb)" }}
+                      checked={showSpotlight} 
+                      onChange={(e) => setShowSpotlight(e.target.checked)} 
+                      disabled={saving} 
                     />
-                    <span className="unitLabel">dagen</span>
-                  </div>
-                </label>
-
-                <label className="field">
-                  <span>Verlengingsperiode</span>
-                  <div className="inputWithUnit">
-                    <input
-                      type="number"
-                      min={1}
-                      max={365}
-                      value={extensionPeriod}
-                      onChange={(e) =>
-                        setExtensionPeriod(Number(e.target.value))
-                      }
-                      disabled={saving}
+                    <span style={{ fontWeight: 500, color: '#374151', userSelect: 'none' }}>
+                      "In de kijker" tabblad tonen
+                    </span>
+                  </label>
+                  
+                  <label style={checkboxRowStyle} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}>
+                    <input 
+                      type="checkbox" 
+                      style={{ width: "1.25rem", height: "1.25rem", margin: 0, cursor: 'pointer', accentColor: "var(--accent-color, #2563eb)" }}
+                      checked={showNewInLibrary} 
+                      onChange={(e) => setShowNewInLibrary(e.target.checked)} 
+                      disabled={saving} 
                     />
-                    <span className="unitLabel">dagen</span>
-                  </div>
-                </label>
-              </div>
+                    <span style={{ fontWeight: 500, color: '#374151', userSelect: 'none' }}>
+                      "Nieuw in bibliotheek" tabblad tonen
+                    </span>
+                  </label>
 
-              <div className="actions">
+                  <label style={checkboxRowStyle} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}>
+                    <input 
+                      type="checkbox" 
+                      style={{ width: "1.25rem", height: "1.25rem", margin: 0, cursor: 'pointer', accentColor: "var(--accent-color, #2563eb)" }}
+                      checked={showReadingLists} 
+                      onChange={(e) => setShowReadingLists(e.target.checked)} 
+                      disabled={saving} 
+                    />
+                    <span style={{ fontWeight: 500, color: '#374151', userSelect: 'none' }}>
+                      Zijbalk met "Jouw leeslijsten" tonen
+                    </span>
+                  </label>
+
+                  <label style={checkboxRowStyle} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}>
+                    <input 
+                      type="checkbox" 
+                      style={{ width: "1.25rem", height: "1.25rem", margin: 0, cursor: 'pointer', accentColor: "var(--accent-color, #2563eb)" }}
+                      checked={showUrgentLoans} 
+                      onChange={(e) => setShowUrgentLoans(e.target.checked)} 
+                      disabled={saving} 
+                    />
+                    <span style={{ fontWeight: 500, color: '#374151', userSelect: 'none' }}>
+                      "Terug te brengen" tabblad tonen (indien items te laat zijn)
+                    </span>
+                  </label>
+
+                </div>
+              </section>
+
+              {/* --- OPSLAAN KNOP --- */}
+              <div className="actions" style={{ marginTop: "0.5rem" }}>
                 <button
                   className="button primaryButton"
                   onClick={handleSave}
@@ -211,9 +369,9 @@ export default function LibrarySettings() {
                   {saving ? "Opslaan..." : "Opslaan"}
                 </button>
               </div>
-            </section>
+            </div>
 
-            <section className="card">
+            <section className="card" style={{ alignSelf: "flex-start", flex: "0 0 350px" }}>
               <h2>Schooloverzicht</h2>
               <p className="help">Huidige opgeslagen instellingen</p>
 
@@ -231,7 +389,7 @@ export default function LibrarySettings() {
                 </div>
               </div>
 
-              <div className="infoPanel">
+              <div className="infoPanel" style={{ marginBottom: "0.75rem" }}>
                 <p className="infoPanelTitle">Leenbeleid</p>
                 <div className="infoRow">
                   <span className="infoLabel">Uitleenperiode</span>
@@ -242,6 +400,32 @@ export default function LibrarySettings() {
                   <strong className="infoValue">
                     {savedExtensionPeriod} dagen
                   </strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Herinneringsperiode</span>
+                  <strong className="infoValue">
+                    {savedReminderDays} dagen
+                  </strong>
+                </div>
+              </div>
+
+              <div className="infoPanel">
+                <p className="infoPanelTitle">Weergave Homepage</p>
+                <div className="infoRow">
+                  <span className="infoLabel">In de kijker</span>
+                  <strong className="infoValue">{savedShowSpotlight ? "Zichtbaar" : "Verborgen"}</strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Nieuw in bibliotheek</span>
+                  <strong className="infoValue">{savedShowNewInLibrary ? "Zichtbaar" : "Verborgen"}</strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Leeslijsten</span>
+                  <strong className="infoValue">{savedShowReadingLists ? "Zichtbaar" : "Verborgen"}</strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Terug te brengen</span>
+                  <strong className="infoValue">{savedShowUrgentLoans ? "Zichtbaar" : "Verborgen"}</strong>
                 </div>
               </div>
             </section>

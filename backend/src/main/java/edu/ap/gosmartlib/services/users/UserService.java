@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.services.users;
 
 import edu.ap.gosmartlib.dto.UserDTO;
 import edu.ap.gosmartlib.entities.SchoolClassEntity;
+import edu.ap.gosmartlib.exceptions.SchoolNotApprovedException;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolClassRepository;
@@ -45,7 +46,8 @@ public class UserService {
     public UserEntity syncUser(OAuth2User oauth2User) {
         String uid = oauth2User.getAttribute("userID");
         String role = oauth2User.getAttribute("basisrol");
-        String domain = oauth2User.getAttribute("platform");
+        String rawDomain = oauth2User.getAttribute("platform");
+        String domain = rawDomain != null ? rawDomain.trim().toLowerCase().replaceAll("/+$", "") : "";
 
         // Zoek een school op basis van domein, als de school niet bestaat maak een
         // nieuwe aan
@@ -59,8 +61,12 @@ public class UserService {
                 });
 
         // Zoek een gebruiker, als gebruiker niet bestaat -> maak aan
+        // Nieuwe gebruikers van een niet-goedgekeurde school worden geblokkeerd
         UserEntity user = userRepository.findBySmartschoolUid(uid)
                 .orElseGet(() -> {
+                    if (!school.isAdminApproved()) {
+                        throw new SchoolNotApprovedException(domain);
+                    }
                     log.info("Nieuwe gebruiker gevonden, toevoegen aan database: {} ({} - {})", uid, role, domain);
                     UserEntity u = new UserEntity();
                     u.setSmartschoolUid(uid);

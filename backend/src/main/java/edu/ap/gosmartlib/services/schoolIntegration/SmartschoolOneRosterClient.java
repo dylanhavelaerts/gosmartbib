@@ -30,6 +30,10 @@ public class SmartschoolOneRosterClient {
         return getCollection(integration, accessToken, "/ims/oneroster/v1p1/classes", "classes");
     }
 
+    public List<Map<String, Object>> getEnrollments(SchoolIntegrationEntity integration, String accessToken) {
+        return getCollection(integration, accessToken, "/ims/oneroster/v1p1/enrollments", "enrollments");
+    }
+
     public Map<String, Object> getUserBySourcedId(SchoolIntegrationEntity integration, String accessToken, String sourcedId) {
         return getSingle(integration, accessToken, "/ims/oneroster/v1p1/users/" + sourcedId, "user");
     }

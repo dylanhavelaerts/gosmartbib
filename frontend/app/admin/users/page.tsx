@@ -60,6 +60,8 @@ const replaceRoleName = (role: string): string => {
   }
 };
 
+type ApprovedSchool = { id: number; name: string };
+
 export default function AdminUserPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -73,37 +75,35 @@ export default function AdminUserPage() {
   const [succes, setSucces] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Paging
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
-  // Sync
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [syncStep, setSyncStep] = useState(0);
   const [syncResult, setSyncResult] = useState<SyncSummary | null>(null);
 
+  const [approvedSchools, setApprovedSchools] = useState<ApprovedSchool[]>([]);
+  const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
+
   useEffect(() => {
-    const load = async () => {
+    const init = async () => {
       if (!API_URL) {
         setError("NEXT_PUBLIC_API_URL ontbreekt");
         setLoading(false);
         return;
       }
-
       try {
-        const meResponse = await fetch(`${API_URL}/auth/me`, {
+        const meRes = await fetch(`${API_URL}/auth/me`, {
           credentials: "include",
         });
-
-        if (!meResponse.ok) {
+        if (!meRes.ok) {
           setError("Je bent niet ingelogd");
           setLoading(false);
           return;
         }
-
-        const meData: MeResponse = await meResponse.json();
+        const meData: MeResponse = await meRes.json();
         setMe(meData);
 
         if (meData.role !== "ADMIN" && meData.role !== "BIBLIOTHEEKBEHEERDER") {
@@ -112,27 +112,55 @@ export default function AdminUserPage() {
           return;
         }
 
-        const params = new URLSearchParams();
-        params.append("page", String(currentPage - 1));
-        params.append("size", String(pageSize));
-        if (searchQuery) {
-          params.append("name", searchQuery);
-        }
-
-        const userResponse = await fetch(
-          `${API_URL}/admin/users?${params.toString()}`,
-          {
+        if (meData.role === "ADMIN") {
+          const schoolRes = await fetch(`${API_URL}/admin/schools`, {
             credentials: "include",
-          },
-        );
-
-        if (!userResponse.ok) {
-          setError("Kon gebruikers niet ophalen");
+          });
+          if (schoolRes.ok) {
+            const all: (ApprovedSchool & { adminApproved: boolean })[] =
+              await schoolRes.json();
+            const approved = all.filter((s) => s.adminApproved);
+            setApprovedSchools(approved);
+            if (approved.length > 0) setSelectedSchoolId(approved[0].id);
+          }
           setLoading(false);
           return;
         }
 
-        const userData = await userResponse.json();
+        setLoading(false);
+      } catch {
+        setError("Er ging iets mis met het laden");
+        setLoading(false);
+      }
+    };
+    init();
+  }, []);
+
+  useEffect(() => {
+    if (!me) return;
+    if (me.role === "ADMIN" && selectedSchoolId === null) return;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.append("page", String(currentPage - 1));
+        params.append("size", String(pageSize));
+        if (searchQuery) params.append("name", searchQuery);
+        if (me.role === "ADMIN" && selectedSchoolId !== null)
+          params.append("schoolId", String(selectedSchoolId));
+
+        const userRes = await fetch(
+          `${API_URL}/admin/users?${params.toString()}`,
+          { credentials: "include" },
+        );
+
+        if (!userRes.ok) {
+          setError("Kon gebruikers niet ophalen");
+          return;
+        }
+
+        const userData = await userRes.json();
         setUsers(userData.content);
         setTotalPages(userData.totalPages);
         setTotalElements(userData.totalElements);
@@ -153,21 +181,23 @@ export default function AdminUserPage() {
 
         if (uniqueUids.length > 0) {
           try {
-            const displayNamesResponse = await fetch(
+            const displayNamesRes = await fetch(
               `${API_URL}/users/display-names`,
               {
                 method: "POST",
                 credentials: "include",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ uids: uniqueUids }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+              uids: uniqueUids,
+              ...(me?.role === "ADMIN" && selectedSchoolId !== null
+                ? { schoolId: selectedSchoolId }
+                : {}),
+            }),
               },
             );
-
-            if (displayNamesResponse.ok) {
+            if (displayNamesRes.ok) {
               const displayNamesData: DisplayNamesResponse =
-                await displayNamesResponse.json();
+                await displayNamesRes.json();
               setDisplayNames(displayNamesData.displayNames ?? {});
             }
           } catch (e) {
@@ -181,12 +211,9 @@ export default function AdminUserPage() {
       }
     };
 
-    const timer = setTimeout(() => {
-      load();
-    }, 300);
-
+    const timer = setTimeout(load, 300);
     return () => clearTimeout(timer);
-  }, [currentPage, pageSize, searchQuery]);
+  }, [me, selectedSchoolId, currentPage, pageSize, searchQuery]);
 
   const handleSave = async (userId: number) => {
     if (!API_URL) return;
@@ -199,14 +226,20 @@ export default function AdminUserPage() {
       setError("");
       setSucces("");
 
-      const response = await fetch(`${API_URL}/admin/users/${userId}/role`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
+      // Admin must pass schoolId as a query param (no school on their session)
+      const roleParams = new URLSearchParams();
+      if (me?.role === "ADMIN" && selectedSchoolId !== null)
+        roleParams.append("schoolId", String(selectedSchoolId));
+
+      const response = await fetch(
+        `${API_URL}/admin/users/${userId}/role?${roleParams.toString()}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role }),
         },
-        body: JSON.stringify({ role }),
-      });
+      );
 
       if (!response.ok) {
         setError("Rol aanpassen mislukt");
@@ -272,115 +305,150 @@ export default function AdminUserPage() {
       {error && <p className="adminMessage adminMessageError">{error}</p>}
       {succes && <p className="adminMessage adminMessageSuccess">{succes}</p>}
 
-      {!error && (me?.role === "ADMIN" || me?.role === "BIBLIOTHEEKBEHEERDER") && (
-        <div id="userMain">
-          <div className="adminPageHeader">
-            <h1>Gebruikersbeheer {me?.school?.name}</h1>
-            {me?.role === "ADMIN" && (
-              <div style={{ display: "flex", gap: "0.75rem" }}>
-                <button
-                  className="adminPrimaryButton"
-                  onClick={() => setSyncStatus("confirm")}
-                >
-                  Synchroniseer
-                </button>
-                <Link href="/admin/school-integration" className="adminPrimaryLink">
-                  <button className="adminPrimaryButton">Schoolintegratie</button>
-                </Link>
+      {!error &&
+        (me?.role === "ADMIN" || me?.role === "BIBLIOTHEEKBEHEERDER") && (
+          <div id="userMain">
+            <div className="adminPageHeader">
+              <div>
+                {/* Bibbeheerder sees their own school name; admin picks from a dropdown */}
+                {me?.role === "ADMIN" ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                    }}
+                  >
+                    <h1>Gebruikersbeheer</h1>
+                    <select
+                      className="pageSizeSelect"
+                      value={selectedSchoolId ?? ""}
+                      onChange={(e) => {
+                        setSelectedSchoolId(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                    >
+                      {approvedSchools.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <h1>Gebruikersbeheer {me?.school?.name}</h1>
+                )}
               </div>
-            )}
-          </div>
+              {me?.role === "ADMIN" && (
+                <div style={{ display: "flex", gap: "0.75rem" }}>
+                  <button
+                    className="adminPrimaryButton"
+                    onClick={() => setSyncStatus("confirm")}
+                  >
+                    Synchroniseer
+                  </button>
+                  <Link
+                    href={`/admin/school-integration${selectedSchoolId ? `?schoolId=${selectedSchoolId}` : ""}`}
+                    className="adminPrimaryLink"
+                  >
+                    <button className="adminPrimaryButton">
+                      Schoolintegratie
+                    </button>
+                  </Link>
+                </div>
+              )}
+            </div>
 
-          <div className="adminSearchbar">
-            <input
-              type="text"
-              placeholder="Zoek op naam"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-            <button id="searchButton" aria-label="Zoeken">
-              🔎︎
-            </button>
-          </div>
-
-          <div className="bookListToolbar">
-            <span className="resultCount">{totalElements} gebruikers</span>
-            <div className="pageSizeSelector">
-              <span className="pageSizeLabel">Per pagina:</span>
-              <select
-                value={pageSize}
+            <div className="adminSearchbar">
+              <input
+                type="text"
+                placeholder="Zoek op naam"
+                value={searchQuery}
                 onChange={(e) => {
-                  setPageSize(Number(e.target.value));
+                  setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="pageSizeSelect"
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
+              />
+              <button id="searchButton" aria-label="Zoeken">
+                🔎︎
+              </button>
             </div>
-          </div>
 
-          <table className="adminTable">
-            <thead>
-              <tr>
-                <th className="adminHeader">Gebruiker</th>
-                <th className="fullScreen adminHeader">Rol</th>
-                <th className="fullScreen adminHeader">Klassen</th>
-                <th className="adminHeader">Nieuwe rol</th>
-                <th className="adminHeader"></th>
-              </tr>
-            </thead>
+            <div className="bookListToolbar">
+              <span className="resultCount">{totalElements} gebruikers</span>
+              <div className="pageSizeSelector">
+                <span className="pageSizeLabel">Per pagina:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="pageSizeSelect"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
 
-            <tbody>
-              {users.map((user) => {
-                const selectedRole = selectedRoles[user.id] ?? user.role;
-                const changed = selectedRole !== user.role;
-                const resolvedName = displayNames[user.smartschoolUid];
+            <table className="adminTable">
+              <thead>
+                <tr>
+                  <th className="adminHeader">Gebruiker</th>
+                  <th className="fullScreen adminHeader">Rol</th>
+                  <th className="fullScreen adminHeader">Klassen</th>
+                  <th className="adminHeader">Nieuwe rol</th>
+                  <th className="adminHeader"></th>
+                </tr>
+              </thead>
 
-                return (
-                  <tr key={user.id}>
-                    <td className="adminCell uidCell">
-                      {resolvedName ? (
-                        <div>
-                          <div>{resolvedName}</div>
-                        </div>
-                      ) : (
-                        user.smartschoolUid
-                      )}
-                    </td>
+              <tbody>
+                {users.map((user) => {
+                  const selectedRole = selectedRoles[user.id] ?? user.role;
+                  const changed = selectedRole !== user.role;
+                  const resolvedName = displayNames[user.smartschoolUid];
 
-                    <td className="fullScreen adminCell">
-                      {replaceRoleName(user.role)}
-                    </td>
+                  return (
+                    <tr key={user.id}>
+                      <td className="adminCell uidCell">
+                        {resolvedName ? (
+                          <div>
+                            <div>{resolvedName}</div>
+                          </div>
+                        ) : (
+                          user.smartschoolUid
+                        )}
+                      </td>
 
-                    <td className="fullScreen adminCell">
-                      {user.classes.length === 0
-                        ? "-"
-                        : user.classes.map((c) => c.name).join(", ")}
-                    </td>
+                      <td className="fullScreen adminCell">
+                        {replaceRoleName(user.role)}
+                      </td>
 
-                    <td className="adminCell">
-                      <select
-                        value={selectedRole}
-                        onChange={(e) => {
-                          setSelectedRoles((prev) => ({
-                            ...prev,
-                            [user.id]: e.target.value as UserRole,
-                          }));
-                        }}
-                      >
-                        {ROLE_OPTIONS.map((role) => (
-                          <option key={role.value} value={role.value}>
-                            {role.label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
+                      <td className="fullScreen adminCell">
+                        {user.classes.length === 0
+                          ? "-"
+                          : user.classes.map((c) => c.name).join(", ")}
+                      </td>
+
+                      <td className="adminCell">
+                        <select
+                          value={selectedRole}
+                          onChange={(e) => {
+                            setSelectedRoles((prev) => ({
+                              ...prev,
+                              [user.id]: e.target.value as UserRole,
+                            }));
+                          }}
+                        >
+                          {ROLE_OPTIONS.map((role) => (
+                            <option key={role.value} value={role.value}>
+                              {role.label}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
 
                       <td className="saveButton adminCell">
                         <button
@@ -394,18 +462,18 @@ export default function AdminUserPage() {
                           {savingUserId === user.id ? "Opslaan..." : "Opslaan"}
                         </button>
                       </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       <SyncModal
         syncStatus={syncStatus}
         syncStep={syncStep}

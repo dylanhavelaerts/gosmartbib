@@ -18,34 +18,31 @@ public class RoleGuard {
 
     @Transactional(readOnly = true)
     public boolean isAdmin(Authentication authentication) {
-        return hasAnyRole(authentication, UserRoles.ADMIN);
+        return authentication != null && authentication.getPrincipal() instanceof AdminPrincipal;
     }
+
 
     @Transactional(readOnly = true)
     public boolean isBibbeheerder(Authentication authentication) {
-        return hasAnyRole(authentication, UserRoles.BIBLIOTHEEKBEHEERDER, UserRoles.ADMIN);
+        return hasAnyRole(authentication, UserRoles.BIBLIOTHEEKBEHEERDER);
     }
 
     private boolean hasAnyRole(Authentication authentication, UserRoles... allowedRoles) {
-        if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User oAuth2User)) {
-            return false;
-        }
+        if (authentication == null) return false;
+        if (!(authentication.getPrincipal() instanceof OAuth2User oAuth2User)) return false;
 
         String uid = oAuth2User.getAttribute("userID");
-        if (uid == null || uid.isBlank()) {
-            return false;
-        }
+        if (uid == null || uid.isBlank()) return false;
 
         return userRepository.findBySmartschoolUid(uid)
                 .map(UserEntity::getRole)
                 .map(role -> {
-                    for (UserRoles allowedRole : allowedRoles) {
-                        if (role == allowedRole) {
-                            return true;
-                        }
+                    for (UserRoles allowed : allowedRoles) {
+                        if (role == allowed) return true;
                     }
                     return false;
                 })
                 .orElse(false);
     }
+
 }

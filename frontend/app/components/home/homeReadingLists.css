@@ -9,10 +9,10 @@
   display: flex;
   gap: 1.5rem;
   border-bottom: 1px solid #ddd;
-  margin-bottom: 1.5rem; /* Gelijk aan dashboard.css */
+  margin-bottom: 1.5rem; 
   margin-top: 0;
-  height: 3.5rem; /* Forceer een vaste hoogte voor de navigatiebalk */
-  align-items: flex-end; /* Zorg dat de tekst en borders op de bodem plakken */
+  height: 3.5rem; 
+  align-items: flex-end; 
 }
 
 .titleTab {
@@ -23,14 +23,13 @@
   color: #8e1f42 !important;
   border-bottom: 3px solid #8e1f42;
   font-weight: bold;
-  line-height: 1.2; /* Forceer line-height voor consistentie */
+  line-height: 1.2; 
 
-  /* Verwijder de margin-bottom: -1px, deze trekt de border omhoog */
   margin-bottom: 0;
 
   display: flex;
   align-items: center;
-  height: 100%; /* Vul de volledige hoogte van de tabs-nav */
+  height: 100%; 
   box-sizing: border-box;
 }
 
@@ -133,9 +132,14 @@
   flex-wrap: wrap;
 }
 
+.homeReadingListsState .homeRlBtn {
+  flex-shrink: 0;
+}
+
+
 .homeReadingListsState p {
   flex: 1;
-  min-width: 125px; /* Adjust based on your text length */
+  min-width: 125px; 
 }
 
 .homeRlBtnGhost {
@@ -175,9 +179,9 @@
 
 @media (min-width: 1024px) {
   .homeReadingLists {
-    position: absolute;
-    inset: 0;
-    padding: 0 1.5rem 1.5rem;
+    flex: 1;
+    min-height: 0;
+    padding: 0;
   }
 
   .homeReadingListsGrid {
@@ -186,3 +190,4 @@
     min-height: 0;
   }
 }
+

@@ -9,6 +9,7 @@ import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.OneRosterUtils;
+import edu.ap.gosmartlib.util.UserRoles;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
 import lombok.RequiredArgsConstructor;
@@ -66,7 +67,7 @@ public class UserDirectoryService {
                     "Geen UIDs gevraagd");
         }
 
-        Long schoolId = actor.getSchool().getId();
+        Long schoolId = resolveSchoolId(actor, request.schoolId());
 
         List<UserEntity> knownUsers = userRepository.findAllBySchool_IdAndSmartschoolUidIn(
                 schoolId,
@@ -339,5 +340,15 @@ public class UserDirectoryService {
     private String extractLegacyIdentifier(Map<String, Object> liveUser) {
         String uid = OneRosterUtils.extractSmartschoolUid(liveUser);
         return uid != null ? uid : "";
+    }
+
+    private Long resolveSchoolId(UserEntity actor, Long schoolId) {
+        if (actor.getRole() == UserRoles.ADMIN) {
+            if (schoolId == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht voor admin");
+            }
+            return schoolId;
+        }
+        return actor.getSchool().getId();
     }
 }

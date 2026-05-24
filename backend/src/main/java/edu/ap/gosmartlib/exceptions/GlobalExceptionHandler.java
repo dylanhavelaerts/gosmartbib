@@ -87,4 +87,10 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", ex.getMessage(), "status", "403"));
     }
 
+    @ExceptionHandler(SchoolNotApprovedException.class)
+    public ResponseEntity<Map<String, String>> handleSchoolNotApproved(SchoolNotApprovedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", ex.getMessage(), "status", "403"));
+    }
+
 }

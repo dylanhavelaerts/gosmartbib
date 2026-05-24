@@ -27,7 +27,7 @@ public class UserEntity {
     private String smartschoolUid;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "school_id", nullable = false)
+    @JoinColumn(name = "school_id", nullable = true)
     private SchoolEntity school;
 
     @Enumerated(EnumType.STRING)
@@ -43,4 +43,7 @@ public class UserEntity {
 
     @Column(name = "oneroster_sourced_id", unique = true)
     private String onerosterSourcedId;
+
+    @Column(name = "anonymous_leaderboard", nullable = false)
+    private boolean anonymousLeaderboard = true;
 }

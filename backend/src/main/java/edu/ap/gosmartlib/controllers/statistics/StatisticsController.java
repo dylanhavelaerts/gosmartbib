@@ -61,7 +61,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getMostReadGenres(uid, className, grade));
     }
 
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
     @GetMapping("/highest-count-class")
     public ResponseEntity<List<ClassReadingStatsDTO>> highestCountClass(
             @AuthenticationPrincipal OAuth2User principal) {
@@ -97,7 +97,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getMostWantedBooks(uid));
     }
 
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
     @GetMapping("/top-readers")
     public ResponseEntity<List<TopReaderStudentDTO>> topReaders(
             @AuthenticationPrincipal OAuth2User principal,

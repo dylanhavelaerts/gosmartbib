@@ -19,6 +19,7 @@ import edu.ap.gosmartlib.util.ReviewFlagReason;
 import edu.ap.gosmartlib.util.ReviewStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -125,6 +126,7 @@ public class ReviewService {
     // endregion
 
     // region Post methods
+    @CacheEvict(value = "achievements", key = "#smartschoolUid")
     public ReviewSummaryDTO submitReview(ReviewRequestDTO request, String smartschoolUid) {
         try {
             UserEntity user = userRepository.findBySmartschoolUid(smartschoolUid)
@@ -158,6 +160,7 @@ public class ReviewService {
 
             review.setRating(request.rating());
             review.setSpoiler(request.spoiler());
+            review.setAnonymous(request.anonymous());
 
             review.setReviewDate(LocalDate.now());
             review.setReviewStatus(ReviewStatus.APPROVED);
@@ -186,6 +189,7 @@ public class ReviewService {
     // endregion
 
     // region Patch methods
+    @CacheEvict(value = "achievements", key = "#smartschoolUid")
     public ReviewSummaryDTO editReview(Long reviewId, ReviewRequestDTO request, String smartschoolUid) { // <--FIX: smartschoolUid toegevoegd voor ownership check
         try {
             ReviewEntity review = reviewRepository.findById(reviewId)
@@ -208,6 +212,7 @@ public class ReviewService {
 
             review.setRating(request.rating());
             review.setSpoiler(request.spoiler());
+            review.setAnonymous(request.anonymous());
             review.setReviewStatus(ReviewStatus.APPROVED);
             review.setAdminDeleteNote(null);
             review.setAdminDeleted(false);
@@ -410,7 +415,7 @@ public class ReviewService {
         try {
             var response = userDirectoryService.resolveDisplayNames(
                     actorUid,
-                    new ResolveDisplayNamesRequest(reviewerUids));
+                    new ResolveDisplayNamesRequest(reviewerUids, null));
 
             if (!response.success() || response.displayNames() == null) {
                 return Map.of();
@@ -423,6 +428,10 @@ public class ReviewService {
     }
 
     private String resolveReviewerName(ReviewEntity review, Map<String, String> displayNames) {
+        if (review.isAnonymous()) {
+            return "Anoniem";
+        }
+
         String reviewerUid = review.getUser().getSmartschoolUid();
         if (reviewerUid == null || reviewerUid.isBlank()) {
             return null;

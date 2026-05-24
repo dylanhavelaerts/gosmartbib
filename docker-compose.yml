@@ -89,6 +89,8 @@ services:
       - SMARTSCHOOL_CLIENT_SECRET
       - APP_CRYPTO_PASSWORD
       - APP_CRYPTO_SALT
+      - ADMIN_USERNAME
+      - ADMIN_PASSWORD_HASH
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`gosmartbib.tech`) && PathPrefix(`/api`)"
@@ -158,3 +160,7 @@ secrets:
     environment: APP_CRYPTO_PASSWORD
   APP_CRYPTO_SALT:
     environment: APP_CRYPTO_SALT
+  ADMIN_USERNAME:
+    environment: ADMIN_USERNAME
+  ADMIN_PASSWORD_HASH:
+    environment: ADMIN_PASSWORD_HASH

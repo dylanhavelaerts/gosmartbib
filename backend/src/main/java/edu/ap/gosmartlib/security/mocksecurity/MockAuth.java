@@ -1,5 +1,7 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
+import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.repositories.SchoolRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
 import jakarta.servlet.FilterChain;
@@ -12,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -24,6 +27,7 @@ import java.util.Map;
 public class MockAuth extends OncePerRequestFilter {
 
     private final UserService userService;
+    private final SchoolRepository schoolRepository;
 
     /**
      * Deze klasse injecteert een basis gebruiker in je sessie in de lokale omgeving
@@ -72,6 +76,33 @@ public class MockAuth extends OncePerRequestFilter {
                     "smartschool");
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // Goedkeuren voor syncUser loopt, anders blokkeert de gate nieuwe gebruikers
+            schoolRepository.findByDomain("https://aphogeschool.smartschool.be")
+                    .ifPresentOrElse(
+                            school -> {
+                                if (!school.isAdminApproved()) {
+                                    school.setAdminApproved(true);
+                                    schoolRepository.save(school);
+                                }
+                            },
+                            () -> {
+                                try {
+                                    SchoolEntity newSchool = new SchoolEntity();
+                                    newSchool.setDomain("https://aphogeschool.smartschool.be");
+                                    newSchool.setName("AP Hogeschool (Mock)");
+                                    newSchool.setAdminApproved(true);
+                                    schoolRepository.save(newSchool);
+                                } catch (DataIntegrityViolationException ignored) {
+                                    schoolRepository.findByDomain("https://aphogeschool.smartschool.be")
+                                            .ifPresent(existing -> {
+                                                if (!existing.isAdminApproved()) {
+                                                    existing.setAdminApproved(true);
+                                                    schoolRepository.save(existing);
+                                                }
+                                            });
+                                }
+                            });
 
             // lokale gebruikers injecteren in de db
             userService.syncUser(mockUser);

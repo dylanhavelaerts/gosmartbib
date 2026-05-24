@@ -20,15 +20,15 @@ public class UserAdminService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public Page<AdminUserDTO> listUsersForAdmin(String actorUid, String name, Pageable pageable) {
-        UserEntity actor = getCurrentAdmin(actorUid);
-        Long schoolId = actor.getSchool().getId();
-        Page<UserEntity> users = userRepository.findBySchoolIdAndName(schoolId, name, pageable);
+    public Page<AdminUserDTO> listUsersForBibbeheerder(String actorUid, Long schoolId, String name, Pageable pageable) {
+        UserEntity actor = getCurrentBibbeheerder(actorUid);
+        Long effectiveSchoolId = resolveSchoolId(actor, schoolId);
+        Page<UserEntity> users = userRepository.findBySchoolIdAndName(effectiveSchoolId, name, pageable);
         return users.map(AdminUserDTO::from);
     }
 
     @Transactional
-    public AdminUserDTO updateUserRole(String actorUid, Long targerUserId, UserRoles newRole) {
+    public AdminUserDTO updateUserRoleForBibbeheerder(String actorUid, Long schoolId, Long targerUserId, UserRoles newRole) {
         if (newRole == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieuwe rol ontbreekt");
         }
@@ -38,9 +38,10 @@ public class UserAdminService {
                     "Gebruikers mogen niet naar ADMIN worden aangepast");
         }
 
-        UserEntity actor = getCurrentAdmin(actorUid);
+        UserEntity actor = getCurrentBibbeheerder(actorUid);
+        Long effectiveSchoolId = resolveSchoolId(actor, schoolId);
 
-        UserEntity target = userRepository.findByIdAndSchool_Id(targerUserId, actor.getSchool().getId())
+        UserEntity target = userRepository.findByIdAndSchool_Id(targerUserId, effectiveSchoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gebruiker niet gevonden"));
 
         if (target.getId().equals(actor.getId())) {
@@ -51,17 +52,34 @@ public class UserAdminService {
 
         return AdminUserDTO.from(userRepository.save(target));
     }
-
     @Transactional(readOnly = true)
-    protected UserEntity getCurrentAdmin(String actorUid) {
+    public Page<AdminUserDTO> listUsersForPlatformAdmin(Long schoolId, String name, Pageable pageable) {
+        if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
+        return userRepository.findBySchoolIdAndName(schoolId, name, pageable).map(AdminUserDTO::from);
+    }
+
+    @Transactional
+    public AdminUserDTO updateUserRoleForPlatformAdmin(Long schoolId, Long targetUserId, UserRoles newRole) {
+        if (newRole == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieuwe rol ontbreekt");
+        if (newRole == UserRoles.ADMIN) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ongeldige rol");
+        if (schoolId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "schoolId is verplicht");
+
+        UserEntity target = userRepository.findByIdAndSchool_Id(targetUserId, schoolId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gebruiker niet gevonden"));
+        target.setRole(newRole);
+        return AdminUserDTO.from(userRepository.save(target));
+    }
+
+
+    private Long resolveSchoolId(UserEntity actor, Long schoolId) {
+        return actor.getSchool().getId();
+    }
+
+    protected UserEntity getCurrentBibbeheerder(String actorUid) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
-
-        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER && actor.getRole() != UserRoles.ADMIN) {
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
+        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
-        }
-
         return actor;
     }
 }

@@ -11,6 +11,7 @@ import edu.ap.gosmartlib.dto.statistics.ReturnPunctualityDTO;
 import edu.ap.gosmartlib.dto.statistics.TopReaderStudentDTO;
 import edu.ap.gosmartlib.entities.BookEntity;
 import edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus;
+import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.BookNotificationRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
@@ -149,7 +150,14 @@ public class StatisticsService {
         Long schoolId = resolveSchoolId(uid);
         return loanHistoryRepository.findTopReaders(schoolId, PageRequest.of(0, 10), className, grade)
                 .stream()
-                .map(row -> new TopReaderStudentDTO((String) row[0], (Long) row[1]))
+                .map(row -> {
+                    String studentUid = (String) row[0];
+                    long loanCount = (Long) row[1];
+                    boolean isAnonymous = userRepository.findBySmartschoolUid(studentUid)
+                            .map(UserEntity::isAnonymousLeaderboard)
+                            .orElse(false);
+                    return new TopReaderStudentDTO(isAnonymous ? "Anoniem" : studentUid, loanCount);
+                })
                 .toList();
     }
 
