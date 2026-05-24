@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Book } from "../../../interfaces/Book";
 import { SmartschoolUser } from "../../../interfaces/SmartschoolUser";
 import "./lending.css";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 
 interface CartItem {
   book: Book;
@@ -213,7 +214,7 @@ export default function LendingPage() {
   };
 
   return (
-    <>
+    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
       <main className="lendingPageLayout">
         <div className="pageHeader">
           <button className="backButton" onClick={() => router.back()}>
@@ -507,6 +508,6 @@ export default function LendingPage() {
           </button>
         </div>
       )}
-    </>
+    </ProtectedRoute>
   );
 }

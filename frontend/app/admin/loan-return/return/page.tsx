@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Book } from "../../../interfaces/Book";
 import { SmartschoolUser } from "../../../interfaces/SmartschoolUser";
 import "./returns.css";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 
 // Interface voor de boeken die de lener momenteel heeft (gebundeld per boek)
 interface BorrowedItem {
@@ -218,7 +219,7 @@ export default function ReturnsPage() {
   };
 
   return (
-    <>
+    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
       <main className="returnsPageLayout">
         <div className="pageHeader">
           <button className="backButton" onClick={() => router.back()}>
@@ -514,6 +515,6 @@ export default function ReturnsPage() {
           </button>
         </div>
       )}
-    </>
+    </ProtectedRoute>
   );
 }
