@@ -118,7 +118,7 @@ export default function BookListWithoutIsbnImport() {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setMessage(data?.message || "Er ging iets mis bij het importeren.");
+        setMessage(data?.message || "Er ging iets mis bij het importeren");
         return;
       }
 
@@ -139,7 +139,7 @@ export default function BookListWithoutIsbnImport() {
       setMessage(`Import klaar. ${data.savedCount ?? 0} rij(en) verwerkt.`);
     } catch (error) {
       console.error(error);
-      setMessage("Kan de server niet bereiken.");
+      setMessage("Kan de server niet bereiken");
     } finally {
       setLoading(false);
     }

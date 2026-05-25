@@ -86,7 +86,7 @@ export default function AddBookWithoutIsbn() {
     };
 
     setPreviewBook(book);
-    setMessage("Controleer de gegevens hieronder.");
+    setMessage("Controleer de gegevens hieronder");
   };
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -147,23 +147,23 @@ export default function AddBookWithoutIsbn() {
     if (!previewBook) return;
 
     if (inventories.length === 0) {
-  setMessage("Voeg minstens één inventarisregel toe.");
+  setMessage("Voeg minstens één inventarisregel toe");
   return;
 }
 
 for (const inventory of inventories) {
   if (!inventory.schoolId) {
-    setMessage("Elke inventarisregel moet een school hebben.");
+    setMessage("Elke inventarisregel moet een school hebben");
     return;
   }
 
   if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
-    setMessage("Aantallen mogen niet negatief zijn.");
+    setMessage("Aantallen mogen niet negatief zijn");
     return;
   }
 
   if (inventory.availableCopies > inventory.totalCopies) {
-    setMessage("Beschikbare exemplaren mogen niet groter zijn dan totaal.");
+    setMessage("Beschikbare exemplaren mogen niet groter zijn dan totaal");
     return;
   }
 }
@@ -207,7 +207,7 @@ for (const inventory of inventories) {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setMessage(data?.message || "Er ging iets mis bij het opslaan van het boek.");
+        setMessage(data?.message || "Er ging iets mis bij het opslaan van het boek");
         return;
       }
 
@@ -234,7 +234,7 @@ for (const inventory of inventories) {
       setInventories(me?.school ? [createEmptyInventory(me.school)] : []);
     } catch (error) {
       console.error(error);
-      setMessage("Kan de server niet bereiken.");
+      setMessage("Kan de server niet bereiken");
     } finally {
       setLoading(false);
     }
@@ -344,7 +344,7 @@ useEffect(() => {
       <h1 className="title">Nieuw boek toevoegen zonder ISBN nummer</h1>
 
       <p className="description">
-        Geef hier de nodige info om het boek aan te maken.
+        Geef hier de nodige info om het boek aan te maken
       </p>
 
       <form onSubmit={handlePreviewBook} className="form">

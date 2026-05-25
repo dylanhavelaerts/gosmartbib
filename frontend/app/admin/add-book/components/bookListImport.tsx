@@ -117,7 +117,7 @@ export default function BookListImport() {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setMessage(data?.message || data || "Er ging iets mis bij het importeren.");
+        setMessage(data?.message || data || "Er ging iets mis bij het importeren");
         return;
       }
 
@@ -138,7 +138,7 @@ export default function BookListImport() {
       setMessage(`Import klaar. ${data.savedCount ?? 0} rij(en) verwerkt.`);
     } catch (error) {
       console.error(error);
-      setMessage("Kan de server niet bereiken.");
+      setMessage("Kan de server niet bereiken");
     } finally {
       setLoading(false);
     }
@@ -196,7 +196,7 @@ export default function BookListImport() {
         }
 
         const errorText = await response.text();
-        setMessage(errorText || "Er ging iets mis bij het opslaan van het boek.");
+        setMessage(errorText || "Er ging iets mis bij het opslaan van het boek");
       } catch (error) {
         console.error(error);
         setMessage("Kan de server niet bereiken");
@@ -218,7 +218,7 @@ export default function BookListImport() {
       <h1 className="title">Excel file toevoegen</h1>
 
       <p className="text">
-        Hieronder vind u een link naar een template om boeken toe te voegen.
+        Hieronder vind u een link naar een template om boeken toe te voegen
       </p>
 
       <a href="/BoekenlijstTemplate.xlsx" download className="downloadLink">
