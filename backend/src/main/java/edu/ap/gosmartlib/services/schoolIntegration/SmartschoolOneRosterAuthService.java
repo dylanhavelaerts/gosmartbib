@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.services.schoolIntegration;
 
-import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
+import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

@@ -2,10 +2,10 @@ package edu.ap.gosmartlib.services.statistics;
 
 import edu.ap.gosmartlib.dto.statistics.PersonalReadingStatDTO;
 import edu.ap.gosmartlib.dto.statistics.ReaderProfileDTO;
-import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanHistoryEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
+import edu.ap.gosmartlib.entities.loanEntities.LoanHistoryEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
+import edu.ap.gosmartlib.repositories.loanRepositories.LoanHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;

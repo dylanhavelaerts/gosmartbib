@@ -1,13 +1,13 @@
 package edu.ap.gosmartlib.util;
 
-import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import edu.ap.gosmartlib.entities.BookEntities.BookInventoryEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookInventoryEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.repositories.SchoolRepository;
 
 import java.util.ArrayList;

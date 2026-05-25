@@ -1,6 +1,6 @@
-package edu.ap.gosmartlib.entities.LoanEntities;
+package edu.ap.gosmartlib.entities.loanEntities;
 
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;

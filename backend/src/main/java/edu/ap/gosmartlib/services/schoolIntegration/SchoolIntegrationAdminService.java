@@ -4,7 +4,7 @@ import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveClassesRespo
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveSchoolsResponse;
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveUsersResponse;
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationTestResponse;
-import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
+import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.services.oneRoster.OneRosterSyncService;
 import lombok.RequiredArgsConstructor;

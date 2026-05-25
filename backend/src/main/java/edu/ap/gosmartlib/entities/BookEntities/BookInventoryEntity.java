@@ -1,6 +1,6 @@
-package edu.ap.gosmartlib.entities.BookEntities;
+package edu.ap.gosmartlib.entities.bookEntities;
 
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

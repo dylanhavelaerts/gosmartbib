@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.repositories.bookRepositories;
 
-import edu.ap.gosmartlib.entities.BookEntities.BookCopyEntity;
-import edu.ap.gosmartlib.entities.BookEntities.BookInventoryEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookCopyEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookInventoryEntity;
 import edu.ap.gosmartlib.util.BookCopyCondition;
 import org.springframework.data.repository.CrudRepository;
 

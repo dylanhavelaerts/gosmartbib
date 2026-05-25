@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.repositories;
 
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
