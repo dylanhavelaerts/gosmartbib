@@ -12,7 +12,7 @@ import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.apache.poi.ss.usermodel.Row;

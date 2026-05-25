@@ -5,7 +5,7 @@ import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveUsersRespons
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationTestResponse;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
-import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolIntegrationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

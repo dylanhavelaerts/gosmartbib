@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
-import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.AfterEach;

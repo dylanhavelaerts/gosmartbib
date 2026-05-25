@@ -4,7 +4,7 @@ import edu.ap.gosmartlib.dto.school.HomepageSettingsDTO;
 import edu.ap.gosmartlib.entities.HomepageSettingsEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.repositories.HomepageSettingsRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

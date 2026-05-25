@@ -12,7 +12,7 @@ import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.exceptions.NegativeValueException;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
 import org.springframework.data.domain.*;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;

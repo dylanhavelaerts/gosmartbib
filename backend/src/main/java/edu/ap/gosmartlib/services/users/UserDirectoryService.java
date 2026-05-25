@@ -6,7 +6,7 @@ import edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.OneRosterUtils;
 import edu.ap.gosmartlib.util.UserRoles;

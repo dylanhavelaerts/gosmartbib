@@ -3,7 +3,7 @@ package edu.ap.gosmartlib.services.messages;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolSoapClient;

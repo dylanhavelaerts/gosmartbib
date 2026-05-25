@@ -14,7 +14,7 @@ import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
-import edu.ap.gosmartlib.repositories.SchoolClassRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.util.ReadingListTargetType;

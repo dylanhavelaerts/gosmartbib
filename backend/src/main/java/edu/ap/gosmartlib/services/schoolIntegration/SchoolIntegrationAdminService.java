@@ -5,7 +5,7 @@ import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveSchoolsRespo
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveUsersResponse;
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationTestResponse;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
-import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.services.oneRoster.OneRosterSyncService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

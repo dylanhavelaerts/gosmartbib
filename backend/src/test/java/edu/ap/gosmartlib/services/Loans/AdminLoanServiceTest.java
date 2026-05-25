@@ -9,7 +9,7 @@ import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import edu.ap.gosmartlib.repositories.loanRepositories.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.loanRepositories.LoanRepository;
-import edu.ap.gosmartlib.repositories.SchoolClassRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import org.junit.jupiter.api.Test;

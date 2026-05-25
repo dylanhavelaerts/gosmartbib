@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.repositories;
+package edu.ap.gosmartlib.repositories.schoolRepositories;
 
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import org.springframework.data.jpa.repository.JpaRepository;

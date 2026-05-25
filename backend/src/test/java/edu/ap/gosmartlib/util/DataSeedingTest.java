@@ -3,7 +3,7 @@ package edu.ap.gosmartlib.util;
 import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

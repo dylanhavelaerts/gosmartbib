@@ -5,7 +5,7 @@ import edu.ap.gosmartlib.dto.loan.UpsertLoanPolicyRequest;
 import edu.ap.gosmartlib.entities.loanEntities.LoanPolicyEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.repositories.loanRepositories.LoanPolicyRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
