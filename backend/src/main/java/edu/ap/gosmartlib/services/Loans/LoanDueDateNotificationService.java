@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.services.Loans;
+package edu.ap.gosmartlib.services.loans;
 
 import edu.ap.gosmartlib.entities.loanEntities.LoanEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;

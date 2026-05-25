@@ -3,7 +3,7 @@ package edu.ap.gosmartlib.controllers.loanControllers;
 import edu.ap.gosmartlib.dto.loan.LibrarianActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.LibrarianLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
-import edu.ap.gosmartlib.services.Loans.AdminLoanService;
+import edu.ap.gosmartlib.services.loans.AdminLoanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;

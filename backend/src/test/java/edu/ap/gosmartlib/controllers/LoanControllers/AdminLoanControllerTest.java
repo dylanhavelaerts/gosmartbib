@@ -3,7 +3,7 @@ package edu.ap.gosmartlib.controllers.loanControllers;
 import edu.ap.gosmartlib.dto.loan.LibrarianActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.LibrarianLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
-import edu.ap.gosmartlib.services.Loans.AdminLoanService;
+import edu.ap.gosmartlib.services.loans.AdminLoanService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
