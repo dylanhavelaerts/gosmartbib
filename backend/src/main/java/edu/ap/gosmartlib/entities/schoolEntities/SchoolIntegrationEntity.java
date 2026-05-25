@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.entities;
+package edu.ap.gosmartlib.entities.schoolEntities;
 
 import edu.ap.gosmartlib.security.SecretCryptoConverter;
 import jakarta.persistence.*;

@@ -2,10 +2,10 @@ package edu.ap.gosmartlib.services.Loans;
 
 import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
-import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanHistoryEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
+import edu.ap.gosmartlib.entities.loanEntities.LoanEntity;
+import edu.ap.gosmartlib.entities.loanEntities.LoanExtensionStatus;
+import edu.ap.gosmartlib.entities.loanEntities.LoanHistoryEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

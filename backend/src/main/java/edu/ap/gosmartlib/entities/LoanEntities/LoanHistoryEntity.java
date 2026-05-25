@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.entities.LoanEntities;
+package edu.ap.gosmartlib.entities.loanEntities;
 
 import jakarta.persistence.*;
 import lombok.Getter;

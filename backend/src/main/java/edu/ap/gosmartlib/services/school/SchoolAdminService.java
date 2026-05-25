@@ -4,7 +4,7 @@ import edu.ap.gosmartlib.dto.school.ApproveSchoolRequest;
 import edu.ap.gosmartlib.dto.school.CreateSchoolRequest;
 import edu.ap.gosmartlib.dto.school.CreateSchoolResult;
 import edu.ap.gosmartlib.dto.school.SchoolDTO;
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.*;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookInventoryRepository;

@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.entities;
+package edu.ap.gosmartlib.entities.schoolEntities;
 
 import jakarta.persistence.*;
 import lombok.*;

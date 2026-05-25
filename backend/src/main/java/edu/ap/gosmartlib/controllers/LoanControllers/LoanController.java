@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers.LoanControllers;
+package edu.ap.gosmartlib.controllers.loanControllers;
 
 import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;

@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.repositories.bookRepositories;
 
-import edu.ap.gosmartlib.entities.BookEntities.BookNotificationEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookNotificationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;

@@ -3,7 +3,7 @@ package edu.ap.gosmartlib.services;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;

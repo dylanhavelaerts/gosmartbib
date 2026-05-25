@@ -1,6 +1,6 @@
-package edu.ap.gosmartlib.repositories.LoanRepositories;
+package edu.ap.gosmartlib.repositories.loanRepositories;
 
-import edu.ap.gosmartlib.entities.LoanEntities.LoanHistoryEntity;
+import edu.ap.gosmartlib.entities.loanEntities.LoanHistoryEntity;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;

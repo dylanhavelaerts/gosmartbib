@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.services.messages;
 
-import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
-import edu.ap.gosmartlib.entities.BookEntities.BookNotificationEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookNotificationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookNotificationRepository;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;

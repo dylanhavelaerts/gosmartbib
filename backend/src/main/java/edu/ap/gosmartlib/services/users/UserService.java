@@ -1,9 +1,9 @@
 package edu.ap.gosmartlib.services.users;
 
 import edu.ap.gosmartlib.dto.UserDTO;
-import edu.ap.gosmartlib.entities.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
 import edu.ap.gosmartlib.exceptions.SchoolNotApprovedException;
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.SchoolRepository;

@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.messages.BookNotificationService;

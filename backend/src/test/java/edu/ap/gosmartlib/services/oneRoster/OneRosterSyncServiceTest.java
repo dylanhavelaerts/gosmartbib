@@ -2,8 +2,8 @@ package edu.ap.gosmartlib.services.oneRoster;
 
 import edu.ap.gosmartlib.dto.sync.SyncResultDTO;
 import edu.ap.gosmartlib.dto.sync.SyncSummaryDTO;
-import edu.ap.gosmartlib.entities.SchoolEntity;
-import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;

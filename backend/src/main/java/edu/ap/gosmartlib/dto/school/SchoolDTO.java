@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.dto.school;
 
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 
 public record SchoolDTO(
         Long id,

@@ -2,8 +2,8 @@ package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
-import edu.ap.gosmartlib.entities.SchoolEntity;
-import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;

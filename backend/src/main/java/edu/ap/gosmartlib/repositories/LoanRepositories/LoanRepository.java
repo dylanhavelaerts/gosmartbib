@@ -1,7 +1,7 @@
-package edu.ap.gosmartlib.repositories.LoanRepositories;
+package edu.ap.gosmartlib.repositories.loanRepositories;
 
-import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus;
+import edu.ap.gosmartlib.entities.loanEntities.LoanEntity;
+import edu.ap.gosmartlib.entities.loanEntities.LoanExtensionStatus;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -80,7 +80,7 @@ public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
             SELECT COUNT(l)
             FROM LoanEntity l
             JOIN UserEntity u ON u.smartschoolUid = l.smartschoolUserId
-            WHERE u.school.id = :schoolId AND l.extensionStatus = edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus.PENDING
+            WHERE u.school.id = :schoolId AND l.extensionStatus = edu.ap.gosmartlib.entities.loanEntities.LoanExtensionStatus.PENDING
             AND (:className IS NULL OR EXISTS (
                 SELECT sc FROM SchoolClassEntity sc WHERE sc MEMBER OF u.classes AND sc.name = :className))
             AND (:grade IS NULL OR EXISTS (

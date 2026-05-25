@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.dto.schoolIntegration;
 
-import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
 
 import java.time.LocalDateTime;
 

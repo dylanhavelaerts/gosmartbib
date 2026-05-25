@@ -2,7 +2,7 @@ package edu.ap.gosmartlib.services.school;
 
 import edu.ap.gosmartlib.dto.school.HomepageSettingsDTO;
 import edu.ap.gosmartlib.entities.HomepageSettingsEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.repositories.HomepageSettingsRepository;
 import edu.ap.gosmartlib.repositories.SchoolRepository;
 import lombok.RequiredArgsConstructor;

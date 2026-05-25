@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.controllers.LoanControllers.LoanController;
+import edu.ap.gosmartlib.controllers.loanControllers.LoanController;
 import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;

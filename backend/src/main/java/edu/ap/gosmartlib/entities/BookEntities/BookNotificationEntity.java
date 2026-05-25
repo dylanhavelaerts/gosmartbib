@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.entities.BookEntities;
+package edu.ap.gosmartlib.entities.bookEntities;
 
 import edu.ap.gosmartlib.entities.UserEntity;
 import jakarta.persistence.*;

@@ -4,7 +4,7 @@ import edu.ap.gosmartlib.dto.reviews.ReviewDetailDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewFlagDetailDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewRequestDTO;
 import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
-import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.entities.ReviewEntity;
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.entities.UserEntity;
