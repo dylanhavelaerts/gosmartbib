@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BOOK_CATEGORIES, BOOK_LABELS, BOOK_LANGUAGE_PRESETS } from "../../interfaces/Book";
+import {
+  BOOK_CATEGORIES,
+  BOOK_LABELS,
+  BOOK_LANGUAGE_PRESETS,
+} from "../../interfaces/Book";
 import type { Book, BookInventory } from "../../interfaces/Book";
 import type { MeResponse } from "../../interfaces/user";
 import type { SchoolCampusDTO } from "../../interfaces/schoolIntegration";
@@ -37,8 +41,12 @@ export default function ManageCatalogPage() {
   const [loadingCampuses, setLoadingCampuses] = useState(false);
   const [campusLoadError, setCampusLoadError] = useState("");
 
-  const router = useRouter();
+  const [barcodesEnabled, setBarcodesEnabled] = useState(false);
+  const [labelModalOpen, setLabelModalOpen] = useState(false);
+  const [printLabels, setPrintLabels] = useState<BookCopyLabel[]>([]);
+  const [loadingLabels, setLoadingLabels] = useState(false);
 
+  const router = useRouter();
 
   // Fetch paged books from backend (with search debounce)
   useEffect(() => {
@@ -89,7 +97,6 @@ export default function ManageCatalogPage() {
 
           setLanguageInputMode(getLanguageInputMode(book.language));
 
-
           setModalOpen(true);
           setError(null);
         }
@@ -117,6 +124,14 @@ export default function ManageCatalogPage() {
         if (data.school?.id) {
           const campusData = await fetchSchoolCampuses(apiUrl, data.school.id);
           setCampuses(campusData);
+          const libRes = await fetch(
+            `${apiUrl}/admin/schools/${data.school.id}/library-settings`,
+            { credentials: "include" },
+          );
+          if (libRes.ok) {
+            const libData = await libRes.json();
+            setBarcodesEnabled(libData.barcodesEnabled ?? false);
+          }
         }
       } catch (err) {
         console.error("Fout bij ophalen gebruiker of campussen:", err);
@@ -168,18 +183,18 @@ export default function ManageCatalogPage() {
   }
 
   function getLanguageInputMode(language?: string | null) {
-  if (!language || language.trim() === "") {
-    return "";
+    if (!language || language.trim() === "") {
+      return "";
+    }
+
+    const normalizedLanguage = language.trim().toLowerCase();
+
+    if (BOOK_LANGUAGE_PRESETS.includes(normalizedLanguage)) {
+      return normalizedLanguage;
+    }
+
+    return CUSTOM_LANGUAGE_VALUE;
   }
-
-  const normalizedLanguage = language.trim().toLowerCase();
-
-  if (BOOK_LANGUAGE_PRESETS.includes(normalizedLanguage)) {
-    return normalizedLanguage;
-  }
-
-  return CUSTOM_LANGUAGE_VALUE;
-}
 
   function handleLanguageSelectChange(value: string) {
     setLanguageInputMode(value);
@@ -365,14 +380,36 @@ export default function ManageCatalogPage() {
     }));
   }
 
+  async function handleOpenLabels(inventoryId: number) {
+    if (!selectedBook) return;
+    setLoadingLabels(true);
+    try {
+      const res = await fetch(
+        `${apiUrl}/books/${selectedBook.id}/copies/labels?inventoryId=${inventoryId}`,
+        { credentials: "include" },
+      );
+      if (!res.ok) throw new Error();
+      const data: BookCopyLabel[] = await res.json();
+      setPrintLabels(data);
+      setLabelModalOpen(true);
+    } catch {
+      setError("Kon labels niet ophalen.");
+    } finally {
+      setLoadingLabels(false);
+    }
+  }
+
   const editableInventoryRows = (formData.inventories ?? [])
     .map((inventory, index) => ({ inventory, index }))
     .filter(({ inventory }) => inventory.schoolId === me?.school?.id);
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
-      <div>
-        <main className="manage-main-layout">
+<ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
+  <main className="manage-main-layout">
+    <div className="manage-page-header">
+      <h1>Catalogusbeheer</h1>
+      <p>Beheer boeken, inventaris en exemplaren voor jouw bibliotheek.</p>
+    </div>
           <div className="manage-wrapper">
             {/* EILAND LIJST */}
             <div className="eiland-lijst">
@@ -551,13 +588,18 @@ export default function ManageCatalogPage() {
 
                         {selectedBook.inventories &&
                         selectedBook.inventories.length > 0 ? (
+                          <div className="details-table-wrapper">
                           <table className="details-table">
                             <thead>
                               <tr>
                                 <th>School</th>
                                 <th>Campus</th>
-                                <th>Totaal</th>
-                                <th>Beschikbaar</th>
+                                <th>Tot.</th>
+                                <th>Beschikb.</th>
+                                <th>Beschad.</th>
+                                <th>Kapot</th>
+                                <th>Verloren</th>
+                                {barcodesEnabled && <th></th>}
                               </tr>
                             </thead>
                             <tbody>
@@ -577,11 +619,32 @@ export default function ManageCatalogPage() {
                                     <td>{inventory.campus || ""}</td>
                                     <td>{inventory.totalCopies}</td>
                                     <td>{inventory.availableCopies}</td>
+                                    <td>{inventory.damagedCopies ?? 0}</td>
+                                    <td>{inventory.brokenCopies ?? 0}</td>
+                                    <td>{inventory.lostCopies ?? 0}</td>
+                                    {barcodesEnabled && (
+                                      <td>
+                                        <button
+                                          type="button"
+                                          className="btn-secondary"
+                                          disabled={
+                                            loadingLabels ||
+                                            inventory.id == null
+                                          }
+                                          onClick={() =>
+                                            handleOpenLabels(inventory.id!)
+                                          }
+                                        >
+                                          Labels afdrukken
+                                        </button>
+                                      </td>
+                                    )}
                                   </tr>
                                 ),
                               )}
                             </tbody>
                           </table>
+                          </div>
                         ) : (
                           <p>Geen inventarisgegevens beschikbaar.</p>
                         )}
@@ -853,7 +916,9 @@ export default function ManageCatalogPage() {
                       id="languageSelect"
                       className="modal-input"
                       value={languageInputMode}
-                      onChange={(e) => handleLanguageSelectChange(e.target.value)}
+                      onChange={(e) =>
+                        handleLanguageSelectChange(e.target.value)
+                      }
                     >
                       <option value="">Kies een taal</option>
                       {BOOK_LANGUAGE_PRESETS.map((languagePreset) => (
@@ -861,7 +926,9 @@ export default function ManageCatalogPage() {
                           {languagePreset.toUpperCase()}
                         </option>
                       ))}
-                      <option value={CUSTOM_LANGUAGE_VALUE}>Andere taal...</option>
+                      <option value={CUSTOM_LANGUAGE_VALUE}>
+                        Andere taal...
+                      </option>
                     </select>
 
                     {languageInputMode === CUSTOM_LANGUAGE_VALUE && (
@@ -1054,8 +1121,64 @@ export default function ManageCatalogPage() {
               </div>
             </div>
           )}
+          {labelModalOpen && (
+            <div
+              className="modal-overlay"
+              onClick={() => setLabelModalOpen(false)}
+            >
+              <div
+                className="modal-box label-print-modal"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="modal-header">
+                  <h2>Labels afdrukken</h2>
+                  <button
+                    type="button"
+                    className="modal-btn-cancel"
+                    onClick={() => setLabelModalOpen(false)}
+                  >
+                    Sluiten
+                  </button>
+                </div>
+                <div className="modal-body">
+                  <p
+                    style={{
+                      marginBottom: "1rem",
+                      fontSize: "0.875rem",
+                      color: "#6f4d5d",
+                    }}
+                  >
+                    {printLabels.length} label
+                    {printLabels.length !== 1 ? "s" : ""} — klik op
+                    &quot;Afdrukken&quot; om ze te printen.
+                  </p>
+                  <button
+                    type="button"
+                    className="modal-btn-save"
+                    style={{ marginBottom: "1.5rem" }}
+                    onClick={() => window.print()}
+                  >
+                    Afdrukken
+                  </button>
+                  <div className="label-grid" id="label-print-area">
+                    {printLabels.map((label) => (
+                      <div key={label.copyId} className="label-card">
+                        <p className="label-title">{label.bookTitle}</p>
+                        <p className="label-copy">
+                          Exemplaar {label.copyNumber}
+                        </p>
+                        {label.campus && (
+                          <p className="label-campus">{label.campus}</p>
+                        )}
+                        <p className="label-barcode">{label.barcode}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
-      </div>
     </ProtectedRoute>
   );
 }

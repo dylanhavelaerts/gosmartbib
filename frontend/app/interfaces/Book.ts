@@ -73,6 +73,9 @@ export interface BookInventory {
   campus: string;
   totalCopies: number;
   availableCopies: number;
+  damagedCopies?: number;
+  brokenCopies?: number;
+  lostCopies?: number;
 }
 
 export interface SnowballSection {
