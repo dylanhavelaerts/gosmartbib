@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.school;
 
 import edu.ap.gosmartlib.dto.school.ApproveSchoolRequest;
 import edu.ap.gosmartlib.dto.school.CreateSchoolRequest;

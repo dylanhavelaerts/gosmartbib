@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.school;
 
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationDTO;
 import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveClassesResponse;

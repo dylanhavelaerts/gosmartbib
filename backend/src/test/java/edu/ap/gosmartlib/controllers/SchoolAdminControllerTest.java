@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
+import edu.ap.gosmartlib.controllers.school.SchoolAdminController;
 import edu.ap.gosmartlib.dto.school.ApproveSchoolRequest;
 import edu.ap.gosmartlib.dto.school.CreateSchoolRequest;
 import edu.ap.gosmartlib.dto.school.CreateSchoolResult;
