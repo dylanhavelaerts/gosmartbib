@@ -24,6 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -488,6 +490,30 @@ public class LoanService {
             return dto;
         }).collect(Collectors.toList());
     }
+    public Page<LoanHistoryDTO> getLoanHistoryByUser(String smartschoolUid, Pageable pageable) {
+        Page<LoanHistoryEntity> historyPage = loanHistoryRepository
+                .findBySmartschoolUserIdOrderByReturnDateDesc(smartschoolUid, pageable);
+
+        return historyPage.map(history -> {
+            LoanHistoryDTO dto = new LoanHistoryDTO();
+            dto.setId(history.getId());
+
+            BookEntity book = bookRepository.findByIsbn(history.getIsbn()).orElse(null);
+            if (book != null) {
+                dto.setBookTitle(book.getTitle());
+                dto.setAuthor(String.join(", ", book.getAuthors()));
+            } else {
+                dto.setBookTitle("Onbekend Boek (ISBN: " + history.getIsbn() + ")");
+                dto.setAuthor("Onbekende Auteur");
+            }
+
+            dto.setLoanDate(history.getLoanDate());
+            dto.setReturnDate(history.getReturnDate());
+            dto.setQuantity(history.getQuantity());
+            return dto;
+        });
+    }
+
 
     private Map<String, String> resolveDisplayNamesMap(String actorUid, List<String> uids) {
         if (uids == null || uids.isEmpty()) {

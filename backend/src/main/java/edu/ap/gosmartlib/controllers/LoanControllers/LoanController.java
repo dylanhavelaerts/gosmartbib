@@ -9,6 +9,9 @@ import edu.ap.gosmartlib.services.Loans.LoanPolicyService;
 import edu.ap.gosmartlib.services.Loans.LoanService;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -134,19 +137,18 @@ public class LoanController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<LoanHistoryDTO>> getLoanHistory(@AuthenticationPrincipal OAuth2User principal) {
-        // Controleer of de gebruiker is ingelogd
+    public ResponseEntity<Page<LoanHistoryDTO>> getLoanHistory(
+            @AuthenticationPrincipal OAuth2User principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         if (principal == null || principal.getAttribute("userID") == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
-        // Haal het Smartschool UID op uit de sessie
         String smartschoolUid = principal.getAttribute("userID");
-
-        // Haal data op via service
-        List<LoanHistoryDTO> history = loanService.getLoanHistoryByUser(smartschoolUid);
-        return ResponseEntity.ok(history);
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(loanService.getLoanHistoryByUser(smartschoolUid, pageable));
     }
+
     @GetMapping("/reminder-days")
     public ResponseEntity<Integer> getReminderDays(@AuthenticationPrincipal OAuth2User principal) {
         if (principal == null || principal.getAttribute("userID") == null) {

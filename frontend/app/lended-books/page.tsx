@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import "./lended-books.css";
 import { useAuth } from "../context/AuthContext";
+import Pagination from "../catalog/pagination";
 
 // --- Types ---
 type ExtensionStatus = "NONE" | "PENDING" | "APPROVED" | "DENIED";
@@ -37,43 +38,63 @@ interface LoanHistory {
 
 export default function MijnBoekenPage() {
   const { user } = useAuth();
+
   const [activeLoans, setActiveLoans] = useState<ActiveLoan[]>([]);
   const [loanHistory, setLoanHistory] = useState<LoanHistory[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [requestingLoanId, setRequestingLoanId] = useState<number | null>(null);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotalPages, setHistoryTotalPages] = useState(0);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   const canRequestExtension =
     user?.role === "STUDENT" || user?.role === "TEACHER";
-
   useEffect(() => {
-    const fetchAllLoans = async () => {
+    const fetchActiveLoans = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-        const [activeRes, historyRes] = await Promise.all([
-          fetch(`${apiUrl}/loans/active`, { credentials: "include" }),
-          fetch(`${apiUrl}/loans/history`, { credentials: "include" }),
-        ]);
-
-        if (!activeRes.ok || !historyRes.ok) {
+        const res = await fetch(`${apiUrl}/loans/active`, {
+          credentials: "include",
+        });
+        if (!res.ok)
           throw new Error("Kon je leningen niet ophalen. Ben je wel ingelogd?");
-        }
-
-        const activeData = await activeRes.json();
-        const historyData = await historyRes.json();
-
-        setActiveLoans(activeData);
-        setLoanHistory(historyData);
+        setActiveLoans(await res.json());
       } catch (err: any) {
         setError(err.message || "Er is een onbekende fout opgetreden");
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchAllLoans();
+    fetchActiveLoans();
   }, []);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setIsHistoryLoading(true);
+      setHistoryError(null);
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+        const res = await fetch(
+          `${apiUrl}/loans/history?page=${historyPage - 1}&size=10`,
+          { credentials: "include" },
+        );
+        if (!res.ok) throw new Error("Kon je historiek niet ophalen.");
+        const data = await res.json();
+        setLoanHistory(data.content);
+        setHistoryTotalPages(data.totalPages);
+      } catch (err: any) {
+        setHistoryError(err.message || "Er is een onbekende fout opgetreden");
+      } finally {
+        setIsHistoryLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [historyPage]);
 
   // --- Helpers ---
   const formatDate = (dateString: string) => {
@@ -342,7 +363,11 @@ export default function MijnBoekenPage() {
             <h2>Ontleengeschiedenis</h2>
           </div>
 
-          {loanHistory.length === 0 ? (
+          {isHistoryLoading ? (
+            <p>Laden...</p>
+          ) : historyError ? (
+            <p>{historyError}</p>
+          ) : loanHistory.length === 0 ? (
             <div className="emptyState">
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
@@ -388,6 +413,11 @@ export default function MijnBoekenPage() {
                   ))}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={historyPage}
+                totalPages={historyTotalPages}
+                onPageChange={setHistoryPage}
+              />
             </div>
           )}
         </section>
