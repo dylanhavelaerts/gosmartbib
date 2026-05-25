@@ -272,7 +272,6 @@ export default function DetailPage({
               label="Notificaties aanzetten"
             />
           )}
-
           {currentUser && (
             <div className="availabilityWrapper">
               <span
@@ -282,45 +281,6 @@ export default function DetailPage({
                   ? `${available}/${total} beschikbaar`
                   : "Niet beschikbaar"}
               </span>
-              {showCampusBreakdown && (
-                <div className="campusBreakdown">
-                  <p className="campusBreakdownTitle">Locaties:</p>
-                  <ul className="campusList">
-                    {userInventories.map((inv, idx) => {
-                      const formatSchoolName = (name: string | undefined) => {
-                        if (!name) return "";
-                        let cleanName = name
-                          .replace("https://", "")
-                          .replace(".smartschool.be", "")
-                          .replace("/", "");
-                        return cleanName
-                          .split("-")
-                          .map(
-                            (word) =>
-                              word.charAt(0).toUpperCase() + word.slice(1),
-                          )
-                          .join(" ");
-                      };
-                      const displayName =
-                        isStaff && inv.schoolName
-                          ? `${formatSchoolName(inv.schoolName)} (${inv.campus || "Hoofdcampus"})`
-                          : inv.campus || "Hoofdcampus";
-                      return (
-                        <li key={idx} className="campusItem">
-                          <span className="campusName" title={displayName}>
-                            {displayName}
-                          </span>
-                          <span
-                            className={`campusCount ${inv.availableCopies > 0 ? "text-success" : "text-error"}`}
-                          >
-                            {inv.availableCopies}/{inv.totalCopies}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
             </div>
           )}
 
@@ -403,6 +363,44 @@ export default function DetailPage({
               </p>
             </div>
           </div>
+          {showCampusBreakdown && (
+            <div className="campusBreakdown">
+              <p className="campusBreakdownTitle">Locaties:</p>
+              <ul className="campusList">
+                {userInventories.map((inv, idx) => {
+                  const formatSchoolName = (name: string | undefined) => {
+                    if (!name) return "";
+                    let cleanName = name
+                      .replace("https://", "")
+                      .replace(".smartschool.be", "")
+                      .replace("/", "");
+                    return cleanName
+                      .split("-")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1),
+                      )
+                      .join(" ");
+                  };
+                  const displayName =
+                    isStaff && inv.schoolName
+                      ? `${formatSchoolName(inv.schoolName)} (${inv.campus || "Hoofdcampus"})`
+                      : inv.campus || "Hoofdcampus";
+                  return (
+                    <li key={idx} className="campusItem">
+                      <span className="campusName" title={displayName}>
+                        {displayName}
+                      </span>
+                      <span
+                        className={`campusCount ${inv.availableCopies > 0 ? "text-success" : "text-error"}`}
+                      >
+                        {inv.availableCopies}/{inv.totalCopies}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           <div className="detailInfoSection">
             <p className="detailInfoSectionTitle">Informatie</p>
