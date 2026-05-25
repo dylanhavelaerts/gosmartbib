@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {  BOOK_CATEGORIES, BOOK_LABELS } from "../../../interfaces/Book";
+import {  BOOK_CATEGORIES, BOOK_LABELS, BOOK_LANGUAGE_PRESETS } from "../../../interfaces/Book";
 import type { Book, BookInventory } from "../../../interfaces/Book";
 import "./addBookForm.css";
 import type { MeResponse } from "@/app/interfaces/user";
@@ -26,6 +26,7 @@ export default function AddBookWithoutIsbn() {
   const [categories, setCategories] = useState<string[]>([]);
   const [thumbnail, setThumbnail] = useState("");
   const [language, setLanguage] = useState("");
+  const [languageInputMode, setLanguageInputMode] = useState("");
   const [publishedYear, setPublishedYear] = useState(0);
   const [rating, setRating] = useState(0);
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -40,6 +41,8 @@ export default function AddBookWithoutIsbn() {
   const [inventories, setInventories] = useState<BookInventory[]>([]);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  const CUSTOM_LANGUAGE_VALUE = "__custom_language__";
 
   const handleAuthorChange = (index: number, value: string) => {
     const updatedAuthors = [...authors];
@@ -83,7 +86,7 @@ export default function AddBookWithoutIsbn() {
     };
 
     setPreviewBook(book);
-    setMessage("Controleer de gegevens hieronder.");
+    setMessage("Controleer de gegevens hieronder");
   };
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -124,27 +127,43 @@ export default function AddBookWithoutIsbn() {
     };
   }, []);
 
+  const languageSelectValue =
+    languageInputMode === CUSTOM_LANGUAGE_VALUE
+      ? CUSTOM_LANGUAGE_VALUE
+      : language.toLowerCase();
+
+  const handleLanguageSelectChange = (value: string) => {
+    setLanguageInputMode(value);
+
+    if (value === CUSTOM_LANGUAGE_VALUE) {
+      setLanguage("");
+      return;
+    }
+
+    setLanguage(value);
+};
+
   const handleConfirmAdd = async () => {
     if (!previewBook) return;
 
     if (inventories.length === 0) {
-  setMessage("Voeg minstens één inventarisregel toe.");
+  setMessage("Voeg minstens één inventarisregel toe");
   return;
 }
 
 for (const inventory of inventories) {
   if (!inventory.schoolId) {
-    setMessage("Elke inventarisregel moet een school hebben.");
+    setMessage("Elke inventarisregel moet een school hebben");
     return;
   }
 
   if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
-    setMessage("Aantallen mogen niet negatief zijn.");
+    setMessage("Aantallen mogen niet negatief zijn");
     return;
   }
 
   if (inventory.availableCopies > inventory.totalCopies) {
-    setMessage("Beschikbare exemplaren mogen niet groter zijn dan totaal.");
+    setMessage("Beschikbare exemplaren mogen niet groter zijn dan totaal");
     return;
   }
 }
@@ -185,34 +204,37 @@ for (const inventory of inventories) {
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setMessage(`Boek succesvol aan de database toegevoegd: "${data.title}"`);
-        setPreviewBook(null);
+      const data = await response.json().catch(() => null);
 
-        setTitle("");
-        setAuthors([""]);
-        setPublisher("");
-        setDescription("");
-        setPageCount(0);
-        setCategories([]);
-        setThumbnail("");
-        setLanguage("");
-        setPublishedYear(0);
-        setRating(0);
-        setOpenDropdown(false);
-        setOpenLabelDropdown(false);
-        setDidacticTag(false);
-        setLabels([]);
-        setReadingLevel("");
-        setAgeRange("");
-        setInventories(me?.school ? [createEmptyInventory(me.school)] : []);
-      } else {
-        setMessage("Er ging iets mis bij het opslaan van het boek.");
+      if (!response.ok) {
+        setMessage(data?.message || "Er ging iets mis bij het opslaan van het boek");
+        return;
       }
+
+      setMessage(`Boek succesvol aan de database toegevoegd: "${data.title}"`);
+      setPreviewBook(null);
+
+      setTitle("");
+      setAuthors([""]);
+      setPublisher("");
+      setDescription("");
+      setPageCount(0);
+      setCategories([]);
+      setThumbnail("");
+      setLanguage("");
+      setLanguageInputMode("");
+      setPublishedYear(0);
+      setRating(0);
+      setOpenDropdown(false);
+      setOpenLabelDropdown(false);
+      setDidacticTag(false);
+      setLabels([]);
+      setReadingLevel("");
+      setAgeRange("");
+      setInventories(me?.school ? [createEmptyInventory(me.school)] : []);
     } catch (error) {
       console.error(error);
-      setMessage("Kan de server niet bereiken.");
+      setMessage("Kan de server niet bereiken");
     } finally {
       setLoading(false);
     }
@@ -322,7 +344,7 @@ useEffect(() => {
       <h1 className="title">Nieuw boek toevoegen zonder ISBN nummer</h1>
 
       <p className="description">
-        Geef hier de nodige info om het boek aan te maken.
+        Geef hier de nodige info om het boek aan te maken
       </p>
 
       <form onSubmit={handlePreviewBook} className="form">
@@ -498,16 +520,30 @@ useEffect(() => {
         <div className="fieldGroup">
           <label className="label">Taal</label>
           <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
+            value={languageSelectValue}
+            onChange={(e) => handleLanguageSelectChange(e.target.value)}
             className="select"
             disabled={previewBook !== null}
           >
-            <option value="">Alle talen</option>
-            <option value="en">EN</option>
-            <option value="ne">NE</option>
-            <option value="fr">FR</option>
+            <option value="">Kies een taal</option>
+            {BOOK_LANGUAGE_PRESETS.map((languagePreset) => (
+              <option key={languagePreset} value={languagePreset}>
+                {languagePreset.toUpperCase()}
+              </option>
+            ))}
+            <option value={CUSTOM_LANGUAGE_VALUE}>Andere taal...</option>
           </select>
+
+          {languageInputMode === CUSTOM_LANGUAGE_VALUE && (
+            <input
+              type="text"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              placeholder="Geef een afkorting van een taal in"
+              className="input"
+              disabled={previewBook !== null}
+            />
+          )}
         </div>
 
         <div className="fieldGroup">

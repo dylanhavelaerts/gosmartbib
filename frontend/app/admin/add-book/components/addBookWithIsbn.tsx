@@ -6,10 +6,12 @@ import type { MeResponse } from "@/app/interfaces/user";
 import type { SchoolCampusDTO } from "@/app/interfaces/schoolIntegration";
 import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
 import "./addBookForm.css";
+import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function AddBookWithIsbn() {
+  const router = useRouter();
   const [isbn, setIsbn] = useState("");
   const [message, setMessage] = useState("");
   const [campusLoadError, setCampusLoadError] = useState("");
@@ -80,9 +82,9 @@ export default function AddBookWithIsbn() {
         setPreviewBook(data);
         setMessage("Boek gevonden! Controleer de gegevens hieronder.");
       } else if (response.status === 404) {
-        setMessage("Geen boek gevonden met dit ISBN-nummer bij Google Books.");
+        setMessage("Geen boek gevonden met dit ISBN-nummer bij Google Books");
       } else {
-        setMessage("Er is een onverwachte serverfout opgetreden.");
+        setMessage("Er is een onverwachte serverfout opgetreden");
       }
     } catch (error) {
       console.error(error);
@@ -114,16 +116,22 @@ export default function AddBookWithIsbn() {
 
       if (response.ok) {
         const data = await response.json();
+
+        if (data.id) {
+          router.push(`/admin/manageCatalog?selectedId=${data.id}&edit=true`);
+          return;
+        }
+        
         setMessage(`Boek succesvol aan de database toegevoegd: "${data.title}"`);
         setIsbn("");
         setCampus("");
         setPreviewBook(null);
       } else {
-        setMessage("Er ging iets mis bij het opslaan van het boek.");
+        setMessage("Er ging iets mis bij het opslaan van het boek");
       }
     } catch (error) {
       console.error(error);
-      setMessage("Kan de server niet bereiken.");
+      setMessage("Kan de server niet bereiken");
     } finally {
       setLoading(false);
     }

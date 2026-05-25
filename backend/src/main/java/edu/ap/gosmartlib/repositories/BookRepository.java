@@ -111,7 +111,37 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
 
     List<BookEntity> findByIsbnIn(Collection<String> isbns);
 
+    @EntityGraph(attributePaths = { "inventories", "inventories.school" })
+    @Query("""
+            SELECT DISTINCT b
+            FROM BookEntity b
+            JOIN b.inventories inv
+            WHERE LOWER(TRIM(b.title)) = LOWER(TRIM(:title))
+              AND LOWER(TRIM(COALESCE(b.publisher, ''))) = LOWER(TRIM(:publisher))
+              AND inv.school.id = :schoolId
+            """)
+    List<BookEntity> findPossibleDuplicateBooksWithoutIsbn(
+            @Param("title") String title,
+            @Param("publisher") String publisher,
+            @Param("schoolId") Long schoolId);
+
     boolean existsByIsbn(String isbn);
+
+    @Query("""
+            SELECT DISTINCT b.language
+            FROM BookEntity b
+            WHERE b.language IS NOT NULL
+            """)
+    List<String> findDistinctLanguages();
+
+    @Query("""
+            SELECT DISTINCT b.language
+            FROM BookEntity b
+            JOIN b.inventories inv
+            WHERE inv.school.id = :schoolId
+              AND b.language IS NOT NULL
+            """)
+    List<String> findDistinctLanguagesForSchool(@Param("schoolId") Long schoolId);
 
     /**
      * Zoek boeken op titel, auteur of ISBN, case-insensitive en ondersteunt
@@ -158,6 +188,15 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
 
     @EntityGraph(attributePaths = { "inventories", "inventories.school" })
     Optional<BookEntity> findByIsbn(String isbn);
+
+    @EntityGraph(attributePaths = { "inventories", "inventories.school" })
+    @Query("""
+            SELECT b
+            FROM BookEntity b
+            WHERE REPLACE(REPLACE(LOWER(b.isbn), '-', ''), ' ', '') =
+                  REPLACE(REPLACE(LOWER(:isbn), '-', ''), ' ', '')
+            """)
+    Optional<BookEntity> findByNormalizedIsbn(@Param("isbn") String isbn);
 
     @Query(value = """
             SELECT DISTINCT b FROM BookEntity b

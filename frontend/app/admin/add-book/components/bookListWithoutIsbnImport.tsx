@@ -4,16 +4,15 @@ import { useEffect, useState } from "react";
 import "./bookListImport.css";
 import type { SchoolCampusDTO } from "@/app/interfaces/schoolIntegration";
 import type { MeResponse } from "@/app/interfaces/user";
+import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
 import type {
   BulkImportResult,
   DuplicateWarning,
-  ImportMismatch
 } from "@/app/interfaces/Book";
-import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export default function BookListImport() {
+export default function BookListWithoutIsbnImport() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
   const [message, setMessage] = useState("");
@@ -25,7 +24,6 @@ export default function BookListImport() {
   const [duplicateWarnings, setDuplicateWarnings] = useState<DuplicateWarning[]>([]);
   const [selectedDuplicateRows, setSelectedDuplicateRows] = useState<number[]>([]);
   const [confirmingDuplicates, setConfirmingDuplicates] = useState(false);
-
 
   useEffect(() => {
     const loadCampusesForCurrentSchool = async () => {
@@ -73,19 +71,24 @@ export default function BookListImport() {
     const file = e.target.files?.[0] ?? null;
     setSelectedFile(file);
     setImportResult(null);
-    setMessage("");
     setDuplicateWarnings([]);
     setSelectedDuplicateRows([]);
+    setMessage("");
   };
 
-    const handleUploadExcel = async (confirmDuplicates = false) => {
+  const handleUploadExcel = async (confirmDuplicates = false) => {
     if (!selectedFile) return;
+
+    if (!API_URL) {
+      setMessage("NEXT_PUBLIC_API_URL ontbreekt.");
+      return;
+    }
 
     setLoading(true);
     setMessage("");
+    setImportResult(null);
 
     if (!confirmDuplicates) {
-      setImportResult(null);
       setDuplicateWarnings([]);
       setSelectedDuplicateRows([]);
     }
@@ -95,6 +98,7 @@ export default function BookListImport() {
       formData.append("file", selectedFile);
 
       const trimmedCampus = campus.trim();
+
       if (trimmedCampus) {
         formData.append("campus", trimmedCampus);
       }
@@ -105,19 +109,16 @@ export default function BookListImport() {
         });
       }
 
-      const response = await fetch(
-        `${API_URL}/books/import?confirmDuplicates=${confirmDuplicates}`,
-        {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        },
-      );
+      const response = await fetch(`${API_URL}/books/import/no-isbn?confirmDuplicates=${confirmDuplicates}`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
 
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setMessage(data?.message || data || "Er ging iets mis bij het importeren");
+        setMessage(data?.message || "Er ging iets mis bij het importeren");
         return;
       }
 
@@ -129,7 +130,7 @@ export default function BookListImport() {
           data.duplicateWarnings.map((warning: DuplicateWarning) => warning.rowNumber),
         );
         setMessage(
-          `Er zijn ${data.duplicateWarnings.length} bestaande ISBN's gevonden. Kies per boek welke aantallen je wilt toevoegen.`,
+          `Er zijn ${data.duplicateWarnings.length} mogelijke dubbele boeken gevonden. Kies per boek welke aantallen je wilt toevoegen.`,
         );
         return;
       }
@@ -144,69 +145,9 @@ export default function BookListImport() {
     }
   };
 
-   const addSingleBook = async (mismatch: ImportMismatch) => {
-      setLoading(true);
-
-      try {
-        const params = new URLSearchParams();
-
-        const trimmedCampus = campus.trim();
-
-        if (trimmedCampus) {
-          params.set("campus", trimmedCampus);
-        }
-
-        if (mismatch.amount !== null && mismatch.amount !== undefined) {
-          params.set("amount", String(mismatch.amount));
-        }
-
-        const queryString = params.toString();
-
-        const response = await fetch(
-          `${API_URL}/books/add/${mismatch.isbn}${
-            queryString ? `?${queryString}` : ""
-          }`,
-          {
-            method: "POST",
-            credentials: "include",
-          },
-        );
-
-        if (response.ok) {
-          setImportResult((prev) => {
-            if (!prev) return prev;
-
-            setMessage(`Import klaar. ${prev.savedCount + 1} boek(en) opgeslagen.`);
-
-            return {
-              ...prev,
-              savedCount: prev.savedCount + 1,
-              mismatchCount: prev.mismatchCount - 1,
-              mismatches: prev.mismatches.filter(
-                (item) =>
-                  !(
-                    item.rowNumber === mismatch.rowNumber &&
-                    item.isbn === mismatch.isbn
-                  ),
-              ),
-            };
-          });
-
-          return;
-        }
-
-        const errorText = await response.text();
-        setMessage(errorText || "Er ging iets mis bij het opslaan van het boek");
-      } catch (error) {
-        console.error(error);
-        setMessage("Kan de server niet bereiken");
-      } finally {
-        setLoading(false);
-      }
-    };
-
   const uploadButtonClass =
     `uploadButton ${loading ? "uploadButtonLoading" : ""}`.trim();
+
   const messageClass = `message ${
     message.includes("klaar") || message.includes("opgeslagen")
       ? "messageSuccess"
@@ -215,15 +156,28 @@ export default function BookListImport() {
 
   return (
     <>
-      <h1 className="title">Excel file toevoegen</h1>
+      <h1 className="title">Excelbestand zonder ISBN toevoegen</h1>
 
       <p className="text">
-        Hieronder vind u een link naar een template om boeken toe te voegen
+        Gebruik deze import voor boeken zonder ISBN. Enkel titel is verplicht. Al de rest krijgt een basiswaarde als deze leeg zijn.
       </p>
 
-      <a href="/BoekenlijstTemplate.xlsx" download className="downloadLink">
+      <p className="text">
+        Hieronder vindt u een link naar een template om boeken toe te voegen
+      </p>
+
+      <a
+        href="/BoekenlijstTemplateZonderISBN.xlsx"
+        download
+        className="downloadLink"
+      >
         Download Excelbestand
       </a>
+
+      <p className="helperText">
+        Deze campus wordt gebruikt als basis voor rijen waar de Campus-kolom
+        leeg is
+      </p>
 
       <label className="campusField">
         Campus
@@ -244,60 +198,53 @@ export default function BookListImport() {
           ))}
         </select>
       </label>
+
       {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
 
-      <p className="helperText">
-        Deze campus wordt toegepast op alle boeken waar de Campus-kolom leeg is
-      </p>
+      <p className="spacedText">Voeg hieronder de aangevulde Excel-file toe</p>
 
-        <p className="spacedText">
-          Voeg hieronder de aangevulde excel file toe
-        </p>
+      <div className="fileInputBox">
+        <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} />
+      </div>
 
-        <div className="fileInputBox">
-          <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} />
-        </div>
+      {selectedFile && (
+        <div className="selectedFile">
+          <div className="selectedFileRow">
+            <p>Geselecteerd bestand: {selectedFile.name}</p>
 
-        {selectedFile && (
-          <div className="selectedFile">
-            <div className="selectedFileRow">
-              <p>Geselecteerd bestand: {selectedFile.name}</p>
-
-              <button
-                type="button"
-                onClick={() => handleUploadExcel(false)}
-                disabled={loading}
-                className={uploadButtonClass}
-              >
-                {loading ? "Bezig met importeren..." : "Importeer Excelbestand"}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => handleUploadExcel(false)}
+              disabled={loading}
+              className={uploadButtonClass}
+            >
+              {loading ? "Bezig met importeren..." : "Importeer Excelbestand"}
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
       {importResult && (
         <div className="resultCard">
           <h2>Import resultaat</h2>
           <p>Totaal aantal rijen: {importResult.totalRows}</p>
-          <p>Opgeslagen boeken: {importResult.savedCount}</p>
+          <p>Verwerkte rijen: {importResult.savedCount}</p>
           <p>Mismatches / fouten: {importResult.mismatchCount}</p>
 
           {importResult.mismatches.length > 0 && (
             <div className="mismatchSection">
               <p>Problemen gevonden in deze rijen:</p>
+
               <ul>
                 {importResult.mismatches.map((mismatch, index) => (
-                  <li className="mismatchElement" key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
-                    <p className="mismatchTitle">Rij {mismatch.rowNumber}: {mismatch.isbn} | {mismatch.excelTitle} |
-                    {" "}Reden: {mismatch.reason}</p>{mismatch.reason.includes("De titel komt niet overeen") && (
-                      <button
-                        className="mismatchButton"
-                        onClick={() => addSingleBook(mismatch)}
-                        disabled={loading}
-                      >
-                        Toch opslaan
-                      </button>
-                    )}
+                  <li
+                    className="mismatchElement"
+                    key={`${mismatch.rowNumber}-${index}`}
+                  >
+                    <p className="mismatchTitle">
+                      Rij {mismatch.rowNumber}: {mismatch.excelTitle || "Geen titel"}{" "}
+                      | Reden: {mismatch.reason}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -306,15 +253,15 @@ export default function BookListImport() {
         </div>
       )}
 
-            {duplicateWarnings.length > 0 && (
+      {duplicateWarnings.length > 0 && (
         <div className="resultCard duplicateWarningCard">
           <div className="duplicateWarningHeader">
             <div>
               <p className="duplicateEyebrow">Controle vereist</p>
-              <h2>Bestaande ISBN&apos;s gevonden</h2>
+              <h2>Mogelijke dubbele boeken gevonden</h2>
               <p>
-                Deze ISBN&apos;s bestaan al in de database. Kies per boek of je de
-                aantallen wilt toevoegen aan het bestaande boek.
+                Deze boeken lijken al te bestaan. Kies per boek of je de aantallen
+                wilt toevoegen aan het bestaande boek.
               </p>
             </div>
 
@@ -410,8 +357,7 @@ export default function BookListImport() {
                       <div>
                         <span>Toe te voegen</span>
                         <strong>
-                          +{warning.totalCopiesToAdd} totaal / +{warning.availableCopiesToAdd}{" "}
-                          beschikbaar
+                          +{warning.totalCopiesToAdd} totaal / +{warning.availableCopiesToAdd} beschikbaar
                         </strong>
                       </div>
                     </div>

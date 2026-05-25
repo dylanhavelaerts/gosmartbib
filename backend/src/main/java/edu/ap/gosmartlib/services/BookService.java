@@ -24,9 +24,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import edu.ap.gosmartlib.dto.importdto.BulkImportDuplicateWarningDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -41,7 +43,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
+import java.text.Normalizer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -354,39 +362,96 @@ public class BookService {
         return raw.map(this::toDTO);
     }
 
+    @Transactional(readOnly = true)
+    public List<String> getAvailableLanguages(String currentUserUid) {
+        Long schoolId = currentUserUid == null || currentUserUid.isBlank()
+                ? null
+                : getRequesterSchoolId(currentUserUid);
+
+        List<String> rawLanguages = schoolId == null
+                ? bookRepository.findDistinctLanguages()
+                : bookRepository.findDistinctLanguagesForSchool(schoolId);
+
+        List<String> cleanedLanguages = rawLanguages.stream()
+                .map(this::safeTrim)
+                .filter(language -> language != null && !language.isBlank())
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+
+        List<String> availableLanguages = new ArrayList<>();
+        Set<String> seenLanguages = new HashSet<>();
+
+        for (String language : cleanedLanguages) {
+            if (seenLanguages.add(language.toLowerCase(Locale.ROOT))) {
+                availableLanguages.add(language);
+            }
+        }
+
+        return availableLanguages;
+    }
 
     public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid, String campus) {
+        return importBooksFromExcel(file, smartschoolUid, campus, false, List.of());
+    }
+
+    public BulkImportResponseDTO importBooksFromExcel(
+            MultipartFile file,
+            String smartschoolUid,
+            String fallbackCampus,
+            boolean confirmDuplicates,
+            List<Integer> confirmedDuplicateRows) {
+
+        Set<Integer> confirmedDuplicateRowSet = confirmedDuplicateRows == null
+                ? Set.of()
+                : new HashSet<>(confirmedDuplicateRows);
+
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Upload een excel file die niet leeg is");
         }
 
+        SchoolEntity userSchool = resolveSchoolForUser(smartschoolUid);
+
         List<ImportMismatchDTO> mismatches = new ArrayList<>();
+        List<BulkImportDuplicateWarningDTO> duplicateWarnings = new ArrayList<>();
         int totalRows = 0;
         int savedCount = 0;
 
         DataFormatter formatter = new DataFormatter();
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
+            Sheet sheet = workbook.getSheet("Boekenlijst");
+
+            if (sheet == null) {
+                sheet = workbook.getSheetAt(0);
+            }
+
+            Row headerRow = sheet.getRow(0);
+            Map<String, Integer> columns = getImportColumnIndexes(headerRow, formatter);
+
+            if (!columns.containsKey("isbn")) {
+                throw new IllegalArgumentException("Kolom 'ISBN' ontbreekt in het Excelbestand");
+            }
+
+            if (!columns.containsKey("titel")) {
+                throw new IllegalArgumentException("Kolom 'Titel' ontbreekt in het Excelbestand");
+            }
 
             for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                 Row row = sheet.getRow(rowIndex);
-                if (row == null) {
+
+                if (row == null || rowIsBlank(row, formatter)) {
                     continue;
                 }
 
-                String isbn = formatter.formatCellValue(row.getCell(0)).trim();
-                String excelTitle = formatter.formatCellValue(row.getCell(1)).trim();
-
-                if (isbn.isBlank() && excelTitle.isBlank()) {
-                    continue;
-                }
+                String isbn = getImportCell(row, columns, formatter, "isbn");
+                String excelTitle = getImportCell(row, columns, formatter, "titel");
+                int rowNumber = row.getRowNum() + 1;
 
                 totalRows++;
 
                 if (isbn.isBlank() || excelTitle.isBlank()) {
                     mismatches.add(new ImportMismatchDTO(
-                            rowIndex + 1,
+                            rowNumber,
                             isbn,
                             excelTitle,
                             null,
@@ -394,44 +459,109 @@ public class BookService {
                     continue;
                 }
 
-                if (bookRepository.existsByIsbn(isbn)) {
-                    mismatches.add(new ImportMismatchDTO(
-                            rowIndex + 1,
-                            isbn,
-                            excelTitle,
-                            null,
-                            "Boek bestaat al in de database"));
-                    continue;
-                }
-
                 try {
+                    String categories = getImportCell(row, columns, formatter, "categorieën");
+                    String labels = getImportCell(row, columns, formatter, "leefwereldlabels");
+                    String readingLevel = getImportCell(row, columns, formatter, "leesniveau");
+                    String rowCampus = getImportCell(row, columns, formatter, "campus");
+                    String totalCopiesValue = getImportCell(row, columns, formatter, "totaal aantal boeken");
+                    String availableCopiesValue = getImportCell(row, columns, formatter, "beschikbaar aantal boeken");
+
+                    int totalCopies = parsePositiveIntOrDefault(
+                            totalCopiesValue,
+                            1,
+                            "Totaal aantal boeken");
+                    int availableCopies = parseNonNegativeIntOrDefault(
+                            availableCopiesValue,
+                            totalCopies,
+                            "Beschikbaar aantal boeken");
+
+                    validateInventoryCounts(totalCopies, availableCopies);
+
+                    String campusToUse = !rowCampus.isBlank()
+                            ? rowCampus
+                            : fallbackCampus;
+                    String normalizedCampus = normalizeCampus(campusToUse);
+
+                    BookEntity duplicateBook = bookRepository.findByNormalizedIsbn(isbn)
+                            .orElse(null);
+
+                    if (duplicateBook != null) {
+                        BookInventoryEntity affectedInventory = findInventory(
+                                duplicateBook,
+                                userSchool,
+                                normalizedCampus);
+
+                        if (!confirmDuplicates) {
+                            duplicateWarnings.add(new BulkImportDuplicateWarningDTO(
+                                    rowNumber,
+                                    duplicateBook.getId(),
+                                    duplicateBook.getTitle(),
+                                    cleanStringList(duplicateBook.getAuthors()),
+                                    duplicateBook.getPublisher(),
+                                    normalizedCampus,
+                                    totalCopies,
+                                    availableCopies,
+                                    affectedInventory == null ? 0 : safeCopyCount(affectedInventory.getTotalCopies()),
+                                    affectedInventory == null ? 0
+                                            : safeCopyCount(affectedInventory.getAvailableCopies()),
+                                    affectedInventory == null
+                                            ? "Dit ISBN bestaat al in de database. Er zou een nieuwe campusvoorraad worden toegevoegd."
+                                            : "Dit ISBN bestaat al op deze campus. De aantallen zouden verhoogd worden."));
+
+                            continue;
+                        }
+
+                        if (!confirmedDuplicateRowSet.contains(rowNumber)) {
+                            continue;
+                        }
+
+                        addOrIncreaseInventory(
+                                duplicateBook,
+                                userSchool,
+                                normalizedCampus,
+                                totalCopies,
+                                availableCopies);
+
+                        savedCount++;
+                        continue;
+                    }
+
+                    if (!confirmDuplicates) {
+                        continue;
+                    }
+
                     BookEntity fetchedBook = buildBookEntityFromGoogle(isbn);
-                    applySingleInventoryForCurrentUser(fetchedBook, smartschoolUid, campus, 1, 1);
-                    recomputeBookCopyTotals(fetchedBook);
 
                     if (!titlesMatch(excelTitle, fetchedBook.getTitle())) {
                         mismatches.add(new ImportMismatchDTO(
-                                rowIndex + 1,
+                                rowNumber,
                                 isbn,
                                 excelTitle,
                                 fetchedBook.getTitle(),
-                                "De titel komt niet overeen (" + fetchedBook.getTitle() + ")"));
+                                "De titel komt niet overeen (" + fetchedBook.getTitle() + ")",
+                                totalCopies));
                         continue;
                     }
+
+                    applyBulkIsbnImportFields(fetchedBook, categories, labels, readingLevel);
+                    fetchedBook.getInventories().clear();
+                    addInventory(fetchedBook, userSchool, normalizedCampus, totalCopies, availableCopies);
+                    recomputeBookCopyTotals(fetchedBook);
 
                     bookRepository.save(fetchedBook);
                     savedCount++;
 
                 } catch (IllegalArgumentException e) {
                     mismatches.add(new ImportMismatchDTO(
-                            rowIndex + 1,
+                            rowNumber,
                             isbn,
                             excelTitle,
                             null,
-                            "Geen boeken gevonden in Google Books"));
+                            e.getMessage()));
                 } catch (Exception e) {
                     mismatches.add(new ImportMismatchDTO(
-                            rowIndex + 1,
+                            rowNumber,
                             isbn,
                             excelTitle,
                             null,
@@ -443,11 +573,248 @@ public class BookService {
             throw new RuntimeException("Kon de excel file niet lezen", e);
         }
 
+        if (!confirmDuplicates) {
+            if (!duplicateWarnings.isEmpty()) {
+                return new BulkImportResponseDTO(
+                        totalRows,
+                        0,
+                        mismatches.size(),
+                        mismatches,
+                        duplicateWarnings.size(),
+                        duplicateWarnings);
+            }
+
+            return importBooksFromExcel(
+                    file,
+                    smartschoolUid,
+                    fallbackCampus,
+                    true,
+                    List.of());
+        }
+
         return new BulkImportResponseDTO(
                 totalRows,
                 savedCount,
                 mismatches.size(),
-                mismatches);
+                mismatches,
+                duplicateWarnings.size(),
+                duplicateWarnings);
+    }
+
+    public BulkImportResponseDTO importBooksWithoutIsbnFromExcel(
+            MultipartFile file,
+            String smartschoolUid,
+            String fallbackCampus,
+            boolean confirmDuplicates,
+            List<Integer> confirmedDuplicateRows) {
+
+        Set<Integer> confirmedDuplicateRowSet = confirmedDuplicateRows == null
+                ? Set.of()
+                : new HashSet<>(confirmedDuplicateRows);
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Upload een excel file die niet leeg is");
+        }
+
+        SchoolEntity userSchool = resolveSchoolForUser(smartschoolUid);
+
+        List<ImportMismatchDTO> mismatches = new ArrayList<>();
+        List<BulkImportDuplicateWarningDTO> duplicateWarnings = new ArrayList<>();
+        int totalRows = 0;
+        int savedCount = 0;
+
+        DataFormatter formatter = new DataFormatter();
+
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = workbook.getSheet("Boekenlijst");
+
+            if (sheet == null) {
+                sheet = workbook.getSheetAt(0);
+            }
+
+            Row headerRow = sheet.getRow(0);
+            Map<String, Integer> columns = getImportColumnIndexes(headerRow, formatter);
+
+            if (!columns.containsKey("titel")) {
+                throw new IllegalArgumentException("Kolom 'Titel' ontbreekt in het Excelbestand");
+            }
+
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+
+                if (row == null || rowIsBlank(row, formatter)) {
+                    continue;
+                }
+
+                String title = getImportCell(row, columns, formatter, "titel");
+                totalRows++;
+
+                if (title.isBlank()) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            "",
+                            "",
+                            null,
+                            "Titel is verplicht"));
+                    continue;
+                }
+
+                try {
+                    String authors = getImportCell(row, columns, formatter, "auteurs");
+                    String publisher = getImportCell(row, columns, formatter, "uitgever");
+                    String description = getImportCell(row, columns, formatter, "omschrijving");
+                    String pageCount = getImportCell(row, columns, formatter, "aantal pagina's");
+                    String categories = getImportCell(row, columns, formatter, "categorieën");
+                    String labels = getImportCell(row, columns, formatter, "leefwereldlabels");
+                    String thumbnail = getImportCell(row, columns, formatter, "fotourl");
+                    String language = getImportCell(row, columns, formatter, "taal");
+                    String publishedYear = getImportCell(row, columns, formatter, "jaar van uitgave");
+                    String readingLevel = getImportCell(row, columns, formatter, "leesniveau");
+                    String didacticBook = getImportCell(row, columns, formatter, "didactisch boek");
+                    String rowCampus = getImportCell(row, columns, formatter, "campus");
+                    String totalCopiesValue = getImportCell(row, columns, formatter, "totaal aantal boeken");
+                    String availableCopiesValue = getImportCell(row, columns, formatter, "beschikbaar aantal boeken");
+
+                    int totalCopies = parsePositiveIntOrDefault(
+                            totalCopiesValue,
+                            1,
+                            "Totaal aantal boeken");
+                    int availableCopies = parseNonNegativeIntOrDefault(availableCopiesValue, totalCopies,
+                            "Beschikbaar aantal boeken");
+
+                    validateInventoryCounts(totalCopies, availableCopies);
+
+                    List<String> parsedAuthors = splitImportList(authors);
+                    String normalizedPublisher = valueOrFallback(publisher, "Onbekende uitgever");
+
+                    String campusToUse = !rowCampus.isBlank()
+                            ? rowCampus
+                            : fallbackCampus;
+
+                    String normalizedCampus = normalizeCampus(campusToUse);
+
+                    BookEntity duplicateBook = findDuplicateBookForNoIsbnImport(
+                            title,
+                            parsedAuthors,
+                            normalizedPublisher,
+                            userSchool);
+
+                    if (duplicateBook != null) {
+                        int rowNumber = row.getRowNum() + 1;
+
+                        BookInventoryEntity affectedInventory = findInventory(
+                                duplicateBook,
+                                userSchool,
+                                normalizedCampus);
+
+                        if (!confirmDuplicates) {
+                            duplicateWarnings.add(new BulkImportDuplicateWarningDTO(
+                                    rowNumber,
+                                    duplicateBook.getId(),
+                                    duplicateBook.getTitle(),
+                                    cleanStringList(duplicateBook.getAuthors()),
+                                    duplicateBook.getPublisher(),
+                                    normalizedCampus,
+                                    totalCopies,
+                                    availableCopies,
+                                    affectedInventory == null ? 0 : safeCopyCount(affectedInventory.getTotalCopies()),
+                                    affectedInventory == null ? 0
+                                            : safeCopyCount(affectedInventory.getAvailableCopies()),
+                                    affectedInventory == null
+                                            ? "Dit boek bestaat al op schoolniveau. Er zou een nieuwe campusvoorraad worden toegevoegd."
+                                            : "Dit boek bestaat al op deze campus. De aantallen zouden verhoogd worden."));
+
+                            continue;
+                        }
+
+                        if (!confirmedDuplicateRowSet.contains(rowNumber)) {
+                            continue;
+                        }
+
+                        addOrIncreaseInventory(
+                                duplicateBook,
+                                userSchool,
+                                normalizedCampus,
+                                totalCopies,
+                                availableCopies);
+
+                        savedCount++;
+                        continue;
+                    }
+
+                    if (!confirmDuplicates) {
+                        continue;
+                    }
+
+                    BookEntity book = new BookEntity();
+                    book.setTitle(title.trim());
+                    book.setAuthors(parsedAuthors);
+                    book.setPublisher(normalizedPublisher);
+                    book.setDescription(valueOrFallback(description, "Geen omschrijving beschikbaar"));
+                    book.setPageCount(parseNonNegativeIntOrDefault(pageCount, 0, "Aantal pagina's"));
+                    book.setCategories(splitImportList(categories));
+                    book.setLabels(splitImportList(labels));
+                    book.setThumbnail(valueOrFallback(thumbnail, ""));
+                    book.setLanguage(normalizeLanguage(language));
+                    book.setRating(0.0);
+                    book.setPublishedYear(parsePublishedYearOrNull(publishedYear));
+                    book.setSpotlight(false);
+                    book.setDidacticTag(parseDidacticBoolean(didacticBook));
+                    book.setReadingLevel(normalizeReadingLevel(readingLevel));
+                    book.setAgeRange(null);
+                    book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
+
+                    addInventory(
+                            book,
+                            userSchool,
+                            normalizedCampus,
+                            totalCopies,
+                            availableCopies);
+
+                    recomputeBookCopyTotals(book);
+                    bookRepository.save(book);
+                    savedCount++;
+
+                } catch (Exception e) {
+                    mismatches.add(new ImportMismatchDTO(
+                            rowIndex + 1,
+                            "",
+                            title,
+                            null,
+                            e.getMessage()));
+                }
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Kon de excel file niet lezen", e);
+        }
+
+        if (!confirmDuplicates) {
+            if (!duplicateWarnings.isEmpty()) {
+                return new BulkImportResponseDTO(
+                        totalRows,
+                        0,
+                        mismatches.size(),
+                        mismatches,
+                        duplicateWarnings.size(),
+                        duplicateWarnings);
+            }
+
+            return importBooksWithoutIsbnFromExcel(
+                    file,
+                    smartschoolUid,
+                    fallbackCampus,
+                    true,
+                    List.of());
+        }
+
+        return new BulkImportResponseDTO(
+                totalRows,
+                savedCount,
+                mismatches.size(),
+                mismatches,
+                duplicateWarnings.size(),
+                duplicateWarnings);
     }
 
     public BookDTO updateBook(Long id, BookDTO updatedBook) {
@@ -732,6 +1099,102 @@ public class BookService {
         book.getInventories().add(inventory);
     }
 
+    private void addOrIncreaseInventory(
+            BookEntity book,
+            SchoolEntity school,
+            String campus,
+            int totalCopiesToAdd,
+            int availableCopiesToAdd) {
+
+        BookInventoryEntity existingInventory = findInventory(book, school, campus);
+
+        if (existingInventory == null) {
+            addInventory(book, school, campus, totalCopiesToAdd, availableCopiesToAdd);
+        } else {
+            existingInventory.setTotalCopies(
+                    safeCopyCount(existingInventory.getTotalCopies()) + totalCopiesToAdd);
+
+            existingInventory.setAvailableCopies(
+                    safeCopyCount(existingInventory.getAvailableCopies()) + availableCopiesToAdd);
+        }
+
+        recomputeBookCopyTotals(book);
+        bookRepository.save(book);
+    }
+
+    private BookInventoryEntity findInventory(BookEntity book, SchoolEntity school, String campus) {
+        String normalizedCampus = normalizeCampus(campus);
+        Long schoolId = school.getId();
+
+        if (book.getInventories() == null) {
+            return null;
+        }
+
+        return book.getInventories().stream()
+                .filter(inventory -> inventory.getSchool() != null)
+                .filter(inventory -> Objects.equals(inventory.getSchool().getId(), schoolId))
+                .filter(inventory -> Objects.equals(normalizeCampus(inventory.getCampus()), normalizedCampus))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private int safeCopyCount(Integer value) {
+        return value == null ? 0 : value;
+    }
+
+    private BookEntity findDuplicateBookForNoIsbnImport(
+            String title,
+            List<String> authors,
+            String publisher,
+            SchoolEntity school) {
+
+        List<String> normalizedAuthors = normalizeDuplicateList(authors);
+
+        if (normalizedAuthors.isEmpty()) {
+            return null;
+        }
+
+        String normalizedTitle = normalizeDuplicateText(title);
+        String normalizedPublisher = normalizeDuplicateText(publisher);
+
+        return bookRepository.findPossibleDuplicateBooksWithoutIsbn(
+                title.trim(),
+                publisher,
+                school.getId())
+                .stream()
+                .filter(book -> Objects.equals(normalizeDuplicateText(book.getTitle()), normalizedTitle))
+                .filter(book -> Objects.equals(normalizeDuplicateText(book.getPublisher()), normalizedPublisher))
+                .filter(book -> Objects.equals(normalizeDuplicateList(book.getAuthors()), normalizedAuthors))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private List<String> normalizeDuplicateList(List<String> values) {
+        if (values == null) {
+            return List.of();
+        }
+
+        return values.stream()
+                .map(this::normalizeDuplicateText)
+                .filter(value -> !value.isBlank())
+                .sorted()
+                .toList();
+    }
+
+    private String normalizeDuplicateText(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        String withoutAccents = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+
+        return withoutAccents
+                .trim()
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", " ");
+    }
+
     private void recomputeBookCopyTotals(BookEntity book) {
         int totalCopies = book.getInventories() == null
                 ? 0
@@ -751,6 +1214,22 @@ public class BookService {
 
         book.setTotalCopies(totalCopies);
         book.setAvailableCopies(availableCopies);
+    }
+
+    private void applyBulkIsbnImportFields(
+            BookEntity book,
+            String categories,
+            String labels,
+            String readingLevel) {
+
+        if (categories != null && !categories.isBlank()) {
+            book.setCategories(splitImportList(categories));
+        } else if (book.getCategories() == null) {
+            book.setCategories(new ArrayList<>());
+        }
+
+        book.setLabels(splitImportList(labels));
+        book.setReadingLevel(normalizeReadingLevel(readingLevel));
     }
 
     private void validateInventoryCounts(int totalCopies, int availableCopies) {
@@ -1085,6 +1564,180 @@ public class BookService {
         if ("title_asc".equals(sortBy)) return Sort.by("title").ascending();
         if ("newest".equals(sortBy)) return Sort.by("id").descending();
         return Sort.unsorted();
+    }
+
+    private Map<String, Integer> getImportColumnIndexes(Row headerRow, DataFormatter formatter) {
+        if (headerRow == null) {
+            throw new IllegalArgumentException("Het Excelbestand heeft geen header rij");
+        }
+
+        Map<String, Integer> columns = new HashMap<>();
+
+        for (Cell cell : headerRow) {
+            String key = normalizeImportHeader(formatter.formatCellValue(cell));
+
+            if (!key.isBlank()) {
+                columns.put(key, cell.getColumnIndex());
+            }
+        }
+
+        return columns;
+    }
+
+    private String normalizeImportHeader(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace("'", "")
+                .trim()
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", " ");
+    }
+
+    private String getImportCell(
+            Row row,
+            Map<String, Integer> columns,
+            DataFormatter formatter,
+            String columnName) {
+
+        Integer columnIndex = columns.get(normalizeImportHeader(columnName));
+
+        if (columnIndex == null) {
+            return "";
+        }
+
+        return formatter.formatCellValue(row.getCell(columnIndex)).trim();
+    }
+
+    private boolean rowIsBlank(Row row, DataFormatter formatter) {
+        short firstCell = row.getFirstCellNum();
+        short lastCell = row.getLastCellNum();
+
+        if (firstCell < 0 || lastCell < 0) {
+            return true;
+        }
+
+        for (int i = firstCell; i < lastCell; i++) {
+            if (!formatter.formatCellValue(row.getCell(i)).trim().isBlank()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private List<String> splitImportList(String value) {
+        if (value == null || value.isBlank()) {
+            return new ArrayList<>();
+        }
+
+        return new ArrayList<>(
+                List.of(value.split(";"))
+                        .stream()
+                        .map(String::trim)
+                        .filter(item -> !item.isBlank())
+                        .toList());
+    }
+
+    private String valueOrFallback(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+
+        return value.trim();
+    }
+
+    private String normalizeLanguage(String language) {
+        if (language == null || language.isBlank()) {
+            return "Geen taal ingegeven";
+        }
+
+        String trimmedLanguage = language.trim().toLowerCase(Locale.ROOT);
+
+        return switch (trimmedLanguage) {
+            case "nl", "ne", "nederlands", "dutch" -> "nl";
+            case "en", "engels", "english" -> "en";
+            case "fr", "frans", "french" -> "fr";
+            default -> trimmedLanguage;
+        };
+    }
+
+    private String normalizeReadingLevel(String readingLevel) {
+        if (readingLevel == null || readingLevel.isBlank()) {
+            return "A";
+        }
+
+        String normalized = readingLevel.trim().toUpperCase(Locale.ROOT);
+
+        return switch (normalized) {
+            case "A", "B", "C", "D" -> normalized;
+            default -> "A";
+        };
+    }
+
+    private boolean parseDidacticBoolean(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+
+        return switch (value.trim().toLowerCase(Locale.ROOT)) {
+            case "ja", "yes", "true", "1", "waar" -> true;
+            default -> false;
+        };
+    }
+
+    private Integer parsePublishedYearOrNull(String value) {
+        Integer parsed = parseIntegerOrNull(value);
+
+        if (parsed == null || parsed <= 0) {
+            return null;
+        }
+
+        if (parsed > Year.now().getValue()) {
+            throw new IllegalArgumentException("Jaar van uitgave mag niet in de toekomst liggen");
+        }
+
+        return parsed;
+    }
+
+    private int parsePositiveIntOrDefault(String value, int fallback, String fieldName) {
+        Integer parsed = parseIntegerOrNull(value);
+
+        if (parsed == null || parsed <= 0) {
+            return fallback;
+        }
+
+        return parsed;
+    }
+
+    private int parseNonNegativeIntOrDefault(String value, int fallback, String fieldName) {
+        Integer parsed = parseIntegerOrNull(value);
+
+        if (parsed == null) {
+            return fallback;
+        }
+
+        if (parsed < 0) {
+            throw new IllegalArgumentException(fieldName + " mag niet negatief zijn");
+        }
+
+        return parsed;
+    }
+
+    private Integer parseIntegerOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        try {
+            String normalized = value.trim().replace(",", ".");
+            return (int) Double.parseDouble(normalized);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("'" + value + "' is geen geldig getal");
+        }
     }
     // endregion
 }

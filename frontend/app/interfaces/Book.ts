@@ -25,6 +25,8 @@ export const AGE_RANGE = ["Eerste graad", "Tweede graad", "Derde graad"];
 
 export const BOOK_READING_LEVELS = ["A", "B", "C", "D"];
 
+export const BOOK_LANGUAGE_PRESETS = ["nl", "en", "fr"];
+
 export const BOOK_CATEGORIES = [
   "Fictie algemeen",
   "Literaire roman",
@@ -78,3 +80,35 @@ export interface SnowballSection {
   value: string;
   books: Book[];
 }
+
+export type ImportMismatch = {
+  rowNumber: number;
+  isbn?: string;
+  excelTitle: string;
+  fetchedTitle?: string | null;
+  reason: string;
+  amount: number | null;
+};
+
+export type DuplicateWarning = {
+  rowNumber: number;
+  existingBookId: number;
+  title: string;
+  authors: string[];
+  publisher: string;
+  campus: string;
+  totalCopiesToAdd: number;
+  availableCopiesToAdd: number;
+  currentTotalCopies: number;
+  currentAvailableCopies: number;
+  reason: string;
+};
+
+export type BulkImportResult = {
+  totalRows: number;
+  savedCount: number;
+  mismatchCount: number;
+  mismatches: ImportMismatch[];
+  duplicateWarningCount: number;
+  duplicateWarnings: DuplicateWarning[];
+};
