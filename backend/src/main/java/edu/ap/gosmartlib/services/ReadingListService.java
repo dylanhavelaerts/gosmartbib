@@ -9,11 +9,7 @@ import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
-<<<<<<< HEAD
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
-=======
-import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
->>>>>>> 4f936deee088529c0230b4241700c7fa8a61f9ca
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;

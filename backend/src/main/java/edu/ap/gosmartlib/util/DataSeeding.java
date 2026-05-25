@@ -7,11 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import edu.ap.gosmartlib.entities.bookEntities.BookInventoryEntity;
-<<<<<<< HEAD
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
-=======
-import edu.ap.gosmartlib.entities.school.SchoolEntity;
->>>>>>> 4f936deee088529c0230b4241700c7fa8a61f9ca
 import edu.ap.gosmartlib.repositories.SchoolRepository;
 
 import java.util.ArrayList;

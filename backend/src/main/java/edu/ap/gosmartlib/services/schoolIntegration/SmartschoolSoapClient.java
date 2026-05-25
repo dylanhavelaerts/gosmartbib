@@ -1,10 +1,6 @@
 package edu.ap.gosmartlib.services.schoolIntegration;
 
-<<<<<<< HEAD
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
-=======
-import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
->>>>>>> 4f936deee088529c0230b4241700c7fa8a61f9ca
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;

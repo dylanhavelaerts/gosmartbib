@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:backend/src/main/java/edu/ap/gosmartlib/entities/schoolEntities/SchoolIntegrationEntity.java
 package edu.ap.gosmartlib.entities.schoolEntities;
-========
-package edu.ap.gosmartlib.entities.school;
->>>>>>>> 4f936deee088529c0230b4241700c7fa8a61f9ca:backend/src/main/java/edu/ap/gosmartlib/entities/school/SchoolIntegrationEntity.java
 
 import edu.ap.gosmartlib.security.SecretCryptoConverter;
 import jakarta.persistence.*;
