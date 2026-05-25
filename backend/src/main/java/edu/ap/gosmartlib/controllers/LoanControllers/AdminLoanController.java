@@ -3,10 +3,10 @@ package edu.ap.gosmartlib.controllers.LoanControllers;
 import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
+import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.Loans.AdminLoanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +21,8 @@ import java.util.List;
 public class AdminLoanController {
 
     private final AdminLoanService adminLoanService;
+    private final AuthHelper authHelper;
+
 
     @GetMapping("/school/active")
     @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
@@ -30,11 +32,9 @@ public class AdminLoanController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        if (principal == null || principal.getAttribute("userID") == null)
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        String smartschoolUid = authHelper.extractUid(principal);
 
-        String actorUid = principal.getAttribute("userID");
-        return ResponseEntity.ok(adminLoanService.getActiveLoansForSchool(actorUid, classId, page, size));
+        return ResponseEntity.ok(adminLoanService.getActiveLoansForSchool(smartschoolUid, classId, page, size));
     }
 
     @GetMapping("/school/history")
@@ -45,20 +45,16 @@ public class AdminLoanController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        if (principal == null || principal.getAttribute("userID") == null)
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        String smartschoolUid = authHelper.extractUid(principal);
 
-        String actorUid = principal.getAttribute("userID");
-        return ResponseEntity.ok(adminLoanService.getLoanHistoryForSchool(actorUid, classId, page, size));
+        return ResponseEntity.ok(adminLoanService.getLoanHistoryForSchool(smartschoolUid, classId, page, size));
     }
     @GetMapping("/school/classes")
     @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<List<ReadingListAssignmentTargetsDTO.ClassTarget>> getSchoolClasses(
             @AuthenticationPrincipal OAuth2User principal) {
-        if (principal == null || principal.getAttribute("userID") == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String actorUid = principal.getAttribute("userID");
-        return ResponseEntity.ok(adminLoanService.getSchoolClasses(actorUid));
+        String smartschoolUid = authHelper.extractUid(principal);
+
+        return ResponseEntity.ok(adminLoanService.getSchoolClasses(smartschoolUid));
     }
 }
