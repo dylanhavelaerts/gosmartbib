@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -428,14 +429,30 @@ class BookControllerTest {
                 List.of(new ImportMismatchDTO(4, "9780132350884", "Wrong Title", "Clean Code",
                         "De titel komt niet overeen (Clean Code)")));
 
-        when(bookService.importBooksFromExcel(any(MultipartFile.class), eq("uid-123"), eq("Campus Zuid")))
+        when(bookService.importBooksFromExcel(
+                any(MultipartFile.class),
+                eq("uid-123"),
+                eq("Campus Zuid"),
+                eq(true),
+                eq(List.of(2))))
                 .thenReturn(expected);
 
-        ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", principal);
+        ResponseEntity<?> result = bookController.importBooks(
+                file,
+                "Campus Zuid",
+                true,
+                List.of(2),
+                principal);
 
         assertEquals(200, result.getStatusCode().value());
         assertSame(expected, result.getBody());
-        verify(bookService, times(1)).importBooksFromExcel(file, "uid-123", "Campus Zuid");
+
+        verify(bookService, times(1)).importBooksFromExcel(
+                file,
+                "uid-123",
+                "Campus Zuid",
+                true,
+                List.of(2));
     }
 
     @Test
@@ -447,14 +464,33 @@ class BookControllerTest {
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 new byte[0]);
 
-        when(bookService.importBooksFromExcel(any(MultipartFile.class), eq("uid-123"), eq("Campus Zuid")))
+        when(bookService.importBooksFromExcel(
+                any(MultipartFile.class),
+                eq("uid-123"),
+                eq("Campus Zuid"),
+                eq(true),
+                eq(List.of(2))))
                 .thenThrow(new IllegalArgumentException("Upload een excel file die niet leeg is"));
 
-        ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", principal);
+        ResponseEntity<?> result = bookController.importBooks(
+                file,
+                "Campus Zuid",
+                true,
+                List.of(2),
+                principal);
 
         assertEquals(400, result.getStatusCode().value());
-        assertEquals("Upload een excel file die niet leeg is", result.getBody());
-        verify(bookService, times(1)).importBooksFromExcel(file, "uid-123", "Campus Zuid");
+        assertInstanceOf(Map.class, result.getBody());
+
+        Map<?, ?> body = (Map<?, ?>) result.getBody();
+        assertEquals("Upload een excel file die niet leeg is", body.get("message"));
+
+        verify(bookService, times(1)).importBooksFromExcel(
+                file,
+                "uid-123",
+                "Campus Zuid",
+                true,
+                List.of(2));
     }
 
     @Test
@@ -466,14 +502,33 @@ class BookControllerTest {
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 "dummy".getBytes());
 
-        when(bookService.importBooksFromExcel(any(MultipartFile.class), eq("uid-123"), eq("Campus Zuid")))
+        when(bookService.importBooksFromExcel(
+                any(MultipartFile.class),
+                eq("uid-123"),
+                eq("Campus Zuid"),
+                eq(true),
+                eq(List.of(2))))
                 .thenThrow(new RuntimeException("DB down"));
 
-        ResponseEntity<?> result = bookController.importBooks(file, "Campus Zuid", principal);
+        ResponseEntity<?> result = bookController.importBooks(
+                file,
+                "Campus Zuid",
+                true,
+                List.of(2),
+                principal);
 
         assertEquals(500, result.getStatusCode().value());
-        assertEquals("An error occurred while importing the Excel file.", result.getBody());
-        verify(bookService, times(1)).importBooksFromExcel(file, "uid-123", "Campus Zuid");
+        assertInstanceOf(Map.class, result.getBody());
+
+        Map<?, ?> body = (Map<?, ?>) result.getBody();
+        assertEquals("Er is een fout opgetreden bij het importeren van het Excelbestand.", body.get("message"));
+
+        verify(bookService, times(1)).importBooksFromExcel(
+                file,
+                "uid-123",
+                "Campus Zuid",
+                true,
+                List.of(2));
     }
 
     // --- updateBook Controller Tests ---
