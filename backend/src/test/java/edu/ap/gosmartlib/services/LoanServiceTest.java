@@ -13,7 +13,7 @@ import edu.ap.gosmartlib.repositories.*;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanPolicyRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
-import edu.ap.gosmartlib.services.Loans.LoanService;
+import edu.ap.gosmartlib.services.loans.LoanService;
 import edu.ap.gosmartlib.services.messages.BookNotificationService;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.util.UserRoles;

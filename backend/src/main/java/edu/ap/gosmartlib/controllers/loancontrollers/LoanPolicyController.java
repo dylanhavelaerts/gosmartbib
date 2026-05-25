@@ -1,8 +1,8 @@
-package edu.ap.gosmartlib.controllers.LoanControllers;
+package edu.ap.gosmartlib.controllers.loancontrollers;
 
 import edu.ap.gosmartlib.dto.loan.LoanPolicyDTO;
 import edu.ap.gosmartlib.dto.loan.UpsertLoanPolicyRequest;
-import edu.ap.gosmartlib.services.Loans.LoanPolicyService;
+import edu.ap.gosmartlib.services.loans.LoanPolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

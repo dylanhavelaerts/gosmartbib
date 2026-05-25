@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers.LoanControllers;
+package edu.ap.gosmartlib.controllers.loancontrollers;
 
 import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
@@ -6,9 +6,9 @@ import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
 import edu.ap.gosmartlib.security.AuthHelper;
-import edu.ap.gosmartlib.services.Loans.LoanDueDateNotificationService;
-import edu.ap.gosmartlib.services.Loans.LoanPolicyService;
-import edu.ap.gosmartlib.services.Loans.LoanService;
+import edu.ap.gosmartlib.services.loans.LoanDueDateNotificationService;
+import edu.ap.gosmartlib.services.loans.LoanPolicyService;
+import edu.ap.gosmartlib.services.loans.LoanService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
