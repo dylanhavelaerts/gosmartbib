@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.controllers.loanControllers;
 
-import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
 import edu.ap.gosmartlib.services.Loans.AdminLoanService;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class AdminLoanController {
 
     @GetMapping("/school/active")
     @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
-    public ResponseEntity<Page<AdminActiveLoanDTO>> getActiveLoansForSchool(
+    public ResponseEntity<Page<LibrarianActiveLoanDTO>> getActiveLoansForSchool(
             @AuthenticationPrincipal OAuth2User principal,
             @RequestParam(required = false) Long classId,
             @RequestParam(defaultValue = "0") int page,
@@ -39,7 +39,7 @@ public class AdminLoanController {
 
     @GetMapping("/school/history")
     @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
-    public ResponseEntity<Page<AdminLoanHistoryDTO>> getLoanHistoryForSchool(
+    public ResponseEntity<Page<LibrarianLoanHistoryDTO>> getLoanHistoryForSchool(
             @AuthenticationPrincipal OAuth2User principal,
             @RequestParam(required = false) Long classId,
             @RequestParam(defaultValue = "0") int page,

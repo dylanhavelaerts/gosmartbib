@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.controllers.loanControllers;
 
-import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
 import edu.ap.gosmartlib.services.Loans.AdminLoanService;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ class AdminLoanControllerTest {
 
     @Test
     void givenNullPrincipal_whenGetActiveLoans_thenReturnsUnauthorized() {
-        ResponseEntity<Page<AdminActiveLoanDTO>> response =
+        ResponseEntity<Page<LibrarianActiveLoanDTO>> response =
                 adminLoanController.getActiveLoansForSchool(null, null, 0, 10);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -41,7 +41,7 @@ class AdminLoanControllerTest {
     void givenPrincipalWithoutUserID_whenGetActiveLoans_thenReturnsUnauthorized() {
         when(principal.getAttribute("userID")).thenReturn(null);
 
-        ResponseEntity<Page<AdminActiveLoanDTO>> response =
+        ResponseEntity<Page<LibrarianActiveLoanDTO>> response =
                 adminLoanController.getActiveLoansForSchool(principal, null, 0, 10);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -52,7 +52,7 @@ class AdminLoanControllerTest {
         when(principal.getAttribute("userID")).thenReturn("uid-1");
         when(adminLoanService.getActiveLoansForSchool("uid-1", null, 0, 10)).thenReturn(Page.empty());
 
-        ResponseEntity<Page<AdminActiveLoanDTO>> response =
+        ResponseEntity<Page<LibrarianActiveLoanDTO>> response =
                 adminLoanController.getActiveLoansForSchool(principal, null, 0, 10);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -63,7 +63,7 @@ class AdminLoanControllerTest {
 
     @Test
     void givenNullPrincipal_whenGetLoanHistory_thenReturnsUnauthorized() {
-        ResponseEntity<Page<AdminLoanHistoryDTO>> response =
+        ResponseEntity<Page<LibrarianLoanHistoryDTO>> response =
                 adminLoanController.getLoanHistoryForSchool(null, null, 0, 10);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -75,7 +75,7 @@ class AdminLoanControllerTest {
         when(principal.getAttribute("userID")).thenReturn("uid-1");
         when(adminLoanService.getLoanHistoryForSchool("uid-1", 5L, 1, 10)).thenReturn(Page.empty());
 
-        ResponseEntity<Page<AdminLoanHistoryDTO>> response =
+        ResponseEntity<Page<LibrarianLoanHistoryDTO>> response =
                 adminLoanController.getLoanHistoryForSchool(principal, 5L, 1, 10);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());

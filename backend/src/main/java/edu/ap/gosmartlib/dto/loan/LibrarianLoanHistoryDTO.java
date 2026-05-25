@@ -3,7 +3,7 @@ package edu.ap.gosmartlib.dto.loan;
 import java.time.LocalDate;
 import java.util.List;
 
-public record AdminLoanHistoryDTO(
+public record LibrarianLoanHistoryDTO(
         Long id,
         String bookTitle,
         String author,
@@ -11,5 +11,8 @@ public record AdminLoanHistoryDTO(
         LocalDate returnDate,
         int quantity,
         String borrowerDisplayName,
-        List<String> borrowerClassNames
+        List<String> borrowerClassNames,
+        int damagedCount,
+        int brokenCount,
+        int lostCount
 ) {}

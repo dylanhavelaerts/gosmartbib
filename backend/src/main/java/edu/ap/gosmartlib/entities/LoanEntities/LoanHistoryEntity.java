@@ -32,4 +32,13 @@ public class LoanHistoryEntity {
 
     @Column(nullable = false)
     private LocalDate returnDate; // Datum waarop het is teruggebracht
+
+    @Column(nullable = false)
+    private int damagedCount = 0;
+
+    @Column(nullable = false)
+    private int brokenCount = 0;
+
+    @Column(nullable = false)
+    private int lostCount = 0;
 }

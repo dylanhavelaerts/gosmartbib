@@ -3,7 +3,7 @@ package edu.ap.gosmartlib.dto.loan;
 import java.time.LocalDate;
 import java.util.List;
 
-public record AdminActiveLoanDTO(
+public record LibrarianActiveLoanDTO(
         Long loanId,
         String smartschoolUserId,
         String borrowerDisplayName,

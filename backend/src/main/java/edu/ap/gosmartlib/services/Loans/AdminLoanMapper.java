@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.services.Loans;
 
-import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianLoanHistoryDTO;
 import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.entities.loanEntities.LoanEntity;
 import edu.ap.gosmartlib.entities.loanEntities.LoanExtensionStatus;
@@ -15,7 +15,7 @@ import java.util.Map;
 @Component
 public class AdminLoanMapper {
 
-    public AdminActiveLoanDTO toActiveDTO(
+    public LibrarianActiveLoanDTO toActiveDTO(
             LoanEntity loan,
             Map<String, String> displayNames,
             Map<String, List<String>> classMap,
@@ -26,7 +26,7 @@ public class AdminLoanMapper {
         String extensionStatus = loan.getExtensionStatus() != null
                 ? loan.getExtensionStatus().name() : LoanExtensionStatus.NONE.name();
 
-        return new AdminActiveLoanDTO(
+        return new LibrarianActiveLoanDTO(
                 loan.getId(), uid,
                 displayNames.getOrDefault(uid, "Leerling"),
                 classMap.getOrDefault(uid, List.of()),
@@ -34,7 +34,7 @@ public class AdminLoanMapper {
                 extensionStatus, toBookDTO(book));
     }
 
-    public AdminLoanHistoryDTO toHistoryDTO(
+    public LibrarianLoanHistoryDTO toHistoryDTO(
             LoanHistoryEntity history,
             Map<String, String> displayNames,
             Map<String, List<String>> classMap,
@@ -53,18 +53,18 @@ public class AdminLoanMapper {
             author = "Onbekende Auteur";
         }
 
-        return new AdminLoanHistoryDTO(
+        return new LibrarianLoanHistoryDTO(
                 history.getId(), bookTitle, author,
                 history.getLoanDate(), history.getReturnDate(), history.getQuantity(),
                 displayNames.getOrDefault(uid, "Leerling"),
                 classMap.getOrDefault(uid, List.of()));
     }
 
-    private AdminActiveLoanDTO.LoanBookDTO toBookDTO(BookEntity book) {
+    private LibrarianActiveLoanDTO.LoanBookDTO toBookDTO(BookEntity book) {
         if (book == null) return null;
         List<String> authors = book.getAuthors() != null
                 ? new ArrayList<>(book.getAuthors()) : new ArrayList<>();
-        return new AdminActiveLoanDTO.LoanBookDTO(
+        return new LibrarianActiveLoanDTO.LoanBookDTO(
                 book.getId(), book.getTitle(), book.getThumbnail(), book.getIsbn(), authors);
     }
 }

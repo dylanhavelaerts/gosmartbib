@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.services.Loans;
 
-import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
@@ -57,7 +57,7 @@ class AdminLoanServiceTest {
         when(loanRepository.findAllActiveBySchoolId(eq(1L), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
-        Page<AdminActiveLoanDTO> result = adminLoanService.getActiveLoansForSchool("uid", null, 0, 10);
+        Page<LibrarianActiveLoanDTO> result = adminLoanService.getActiveLoansForSchool("uid", null, 0, 10);
 
         assertTrue(result.isEmpty());
         verify(mapper, never()).toActiveDTO(any(), any(), any(), any());
@@ -78,10 +78,10 @@ class AdminLoanServiceTest {
         when(bookRepository.findByIsbnIn(any())).thenReturn(List.of());
         when(userRepository.findAllBySchool_IdAndSmartschoolUidIn(any(), any())).thenReturn(List.of());
 
-        AdminActiveLoanDTO dto = mock(AdminActiveLoanDTO.class);
+        LibrarianActiveLoanDTO dto = mock(LibrarianActiveLoanDTO.class);
         when(mapper.toActiveDTO(any(), any(), any(), any())).thenReturn(dto);
 
-        Page<AdminActiveLoanDTO> result = adminLoanService.getActiveLoansForSchool("uid", null, 0, 10);
+        Page<LibrarianActiveLoanDTO> result = adminLoanService.getActiveLoansForSchool("uid", null, 0, 10);
 
         assertEquals(1, result.getTotalElements());
         assertEquals(dto, result.getContent().get(0));
@@ -109,7 +109,7 @@ class AdminLoanServiceTest {
         when(loanHistoryRepository.findAllBySchoolIdOrderByReturnDateDesc(eq(1L), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
-        Page<AdminLoanHistoryDTO> result = adminLoanService.getLoanHistoryForSchool("uid", null, 0, 10);
+        Page<LibrarianLoanHistoryDTO> result = adminLoanService.getLoanHistoryForSchool("uid", null, 0, 10);
 
         assertTrue(result.isEmpty());
     }
