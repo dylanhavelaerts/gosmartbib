@@ -1,7 +1,11 @@
 package edu.ap.gosmartlib.services.messages;
 
 import edu.ap.gosmartlib.entities.*;
+import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
+import edu.ap.gosmartlib.entities.BookEntities.BookNotificationEntity;
 import edu.ap.gosmartlib.repositories.*;
+import edu.ap.gosmartlib.repositories.bookRepositories.BookNotificationRepository;
+import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

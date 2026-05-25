@@ -1,6 +1,6 @@
-package edu.ap.gosmartlib.repositories;
+package edu.ap.gosmartlib.repositories.bookRepositories;
 
-import edu.ap.gosmartlib.entities.BookEntity;
+import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
 
 import java.util.Collection;
 import java.util.List;

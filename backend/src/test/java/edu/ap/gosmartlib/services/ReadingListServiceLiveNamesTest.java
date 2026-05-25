@@ -5,7 +5,7 @@ import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.BookRepository;
+import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
 import edu.ap.gosmartlib.repositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;

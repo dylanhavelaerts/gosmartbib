@@ -7,6 +7,7 @@ import edu.ap.gosmartlib.dto.school.SchoolDTO;
 import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.*;
+import edu.ap.gosmartlib.repositories.bookRepositories.BookInventoryRepository;
 import edu.ap.gosmartlib.services.users.UserDeletionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

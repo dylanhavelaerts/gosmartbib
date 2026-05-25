@@ -2,7 +2,7 @@ package edu.ap.gosmartlib.services.Loans;
 
 import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
-import edu.ap.gosmartlib.entities.BookEntity;
+import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
 import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
 import edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus;
 import edu.ap.gosmartlib.entities.LoanEntities.LoanHistoryEntity;

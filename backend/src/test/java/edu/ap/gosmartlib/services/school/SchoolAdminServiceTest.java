@@ -9,6 +9,7 @@ import edu.ap.gosmartlib.entities.SchoolEntity;
 import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.*;
+import edu.ap.gosmartlib.repositories.bookRepositories.BookInventoryRepository;
 import edu.ap.gosmartlib.services.users.UserDeletionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

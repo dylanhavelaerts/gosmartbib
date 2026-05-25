@@ -1,8 +1,8 @@
 package edu.ap.gosmartlib.util;
 
-import edu.ap.gosmartlib.entities.BookEntity;
+import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
 import edu.ap.gosmartlib.entities.SchoolEntity;
-import edu.ap.gosmartlib.repositories.BookRepository;
+import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import edu.ap.gosmartlib.repositories.SchoolRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

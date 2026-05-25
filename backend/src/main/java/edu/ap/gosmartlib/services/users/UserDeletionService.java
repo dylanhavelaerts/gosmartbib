@@ -4,6 +4,7 @@ import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.*;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
+import edu.ap.gosmartlib.repositories.bookRepositories.BookNotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

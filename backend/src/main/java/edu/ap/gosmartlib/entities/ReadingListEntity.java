@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.entities;
 
+import edu.ap.gosmartlib.entities.BookEntities.BookEntity;
 import edu.ap.gosmartlib.util.ReadingListTargetType;
 import edu.ap.gosmartlib.util.ReadingListType;
 import jakarta.persistence.*;
