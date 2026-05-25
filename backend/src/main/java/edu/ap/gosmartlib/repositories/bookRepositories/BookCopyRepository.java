@@ -17,4 +17,6 @@ public interface BookCopyRepository extends CrudRepository<BookCopyEntity, Long>
     long countByInventoryAndCondition(BookInventoryEntity inventory, BookCopyCondition condition);
 
     List<BookCopyEntity> findByInventoryAndCondition(BookInventoryEntity inventory, BookCopyCondition condition);
+
+    long countByInventoryAndConditionNot(BookInventoryEntity inventory, BookCopyCondition condition);
 }
