@@ -98,6 +98,11 @@ public class BookController {
         }
     }
 
+    @GetMapping("/languages")
+    public List<String> getAvailableLanguages(@AuthenticationPrincipal OAuth2User principal) {
+        return bookService.getAvailableLanguages(authHelper.extractUidOrNull(principal));
+    }
+
     /**
      * Geeft het boek terug met het opgegeven id.
      */
@@ -227,7 +232,8 @@ public class BookController {
     public ResponseEntity<?> importBooks(@RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String campus, @AuthenticationPrincipal OAuth2User principal) {
         try {
-            BulkImportResponseDTO result = bookService.importBooksFromExcel(file, authHelper.extractUidOrNull(principal),
+            BulkImportResponseDTO result = bookService.importBooksFromExcel(file,
+                    authHelper.extractUidOrNull(principal),
                     campus);
             return new ResponseEntity<>(result, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
@@ -235,6 +241,25 @@ public class BookController {
         } catch (RuntimeException e) {
             return ResponseEntity.internalServerError().body("An error occurred while importing the Excel file.");
         }
+    }
+
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PostMapping(value = "/import/no-isbn", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BulkImportResponseDTO> importBooksWithoutIsbn(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) String campus,
+            @RequestParam(defaultValue = "false") boolean confirmDuplicates,
+            @RequestParam(required = false) List<Integer> confirmedDuplicateRows,
+            @AuthenticationPrincipal OAuth2User principal) {
+
+        BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
+                file,
+                authHelper.extractUid(principal),
+                campus,
+                confirmDuplicates,
+                confirmedDuplicateRows == null ? List.of() : confirmedDuplicateRows);
+
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")

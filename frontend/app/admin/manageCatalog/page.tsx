@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BOOK_CATEGORIES, BOOK_LABELS } from "../../interfaces/Book";
+import { BOOK_CATEGORIES, BOOK_LABELS, BOOK_LANGUAGE_PRESETS } from "../../interfaces/Book";
 import type { Book, BookInventory } from "../../interfaces/Book";
 import type { MeResponse } from "../../interfaces/user";
 import type { SchoolCampusDTO } from "../../interfaces/schoolIntegration";
@@ -20,8 +20,11 @@ export default function ManageCatalogPage() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Book>>({});
+  const [languageInputMode, setLanguageInputMode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+  const CUSTOM_LANGUAGE_VALUE = "__custom_language__";
 
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [labelDropdownOpen, setLabelDropdownOpen] = useState(false);
@@ -33,7 +36,9 @@ export default function ManageCatalogPage() {
   const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
   const [loadingCampuses, setLoadingCampuses] = useState(false);
   const [campusLoadError, setCampusLoadError] = useState("");
+
   const router = useRouter();
+
 
   // Fetch paged books from backend (with search debounce)
   useEffect(() => {
@@ -60,16 +65,34 @@ export default function ManageCatalogPage() {
     return () => clearTimeout(timer);
   }, [query, currentPage, pageSize, apiUrl]);
 
-  // Handle ?selectedId param — fetch the specific book by ID
+  // Handle ?selectedId param — fetch the specific book by ID.
+  // If ?edit=true is present, immediately open the edit modal for that book.
   useEffect(() => {
-    const selectedId = new URLSearchParams(window.location.search).get(
-      "selectedId",
-    );
+    const params = new URLSearchParams(window.location.search);
+    const selectedId = params.get("selectedId");
+    const shouldOpenEdit = params.get("edit") === "true";
+
     if (!selectedId) return;
+
     fetch(`${apiUrl}/books/${selectedId}`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((book) => {
-        if (book) setSelectedBook(book);
+      .then((book: Book | null) => {
+        if (!book) return;
+
+        setSelectedBook(book);
+
+        if (shouldOpenEdit) {
+          setFormData({
+            ...book,
+            inventories: book.inventories ?? [],
+          });
+
+          setLanguageInputMode(getLanguageInputMode(book.language));
+
+
+          setModalOpen(true);
+          setError(null);
+        }
       })
       .catch(() => {});
   }, [apiUrl]);
@@ -113,6 +136,9 @@ export default function ManageCatalogPage() {
       ...selectedBook,
       inventories: buildFallbackInventories(selectedBook),
     });
+
+    setLanguageInputMode(getLanguageInputMode(selectedBook.language));
+
     setModalOpen(true);
     setError(null);
   }
@@ -140,6 +166,38 @@ export default function ManageCatalogPage() {
             : value,
     }));
   }
+
+  function getLanguageInputMode(language?: string | null) {
+  if (!language || language.trim() === "") {
+    return "";
+  }
+
+  const normalizedLanguage = language.trim().toLowerCase();
+
+  if (BOOK_LANGUAGE_PRESETS.includes(normalizedLanguage)) {
+    return normalizedLanguage;
+  }
+
+  return CUSTOM_LANGUAGE_VALUE;
+}
+
+  function handleLanguageSelectChange(value: string) {
+    setLanguageInputMode(value);
+
+    if (value === CUSTOM_LANGUAGE_VALUE) {
+      setFormData((prev) => ({
+        ...prev,
+        language: "",
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      language: value,
+    }));
+  }
+
   function handleArrayChange(
     e: React.ChangeEvent<HTMLInputElement>,
     field: keyof Book,
@@ -787,21 +845,38 @@ export default function ManageCatalogPage() {
                   </div>
 
                   <div className="modal-row">
-                    <label className="modal-label" htmlFor="description">
+                    <label className="modal-label" htmlFor="languageSelect">
                       Taal
                     </label>
+
                     <select
-                      name="language"
+                      id="languageSelect"
                       className="modal-input"
-                      value={formData.language ?? ""}
-                      onChange={handleChange}
+                      value={languageInputMode}
+                      onChange={(e) => handleLanguageSelectChange(e.target.value)}
                     >
-                      <option value="">Alle talen</option>
-                      <option value="NE">NE</option>
-                      <option value="EN">EN</option>
-                      <option value="FR">FR</option>
+                      <option value="">Kies een taal</option>
+                      {BOOK_LANGUAGE_PRESETS.map((languagePreset) => (
+                        <option key={languagePreset} value={languagePreset}>
+                          {languagePreset.toUpperCase()}
+                        </option>
+                      ))}
+                      <option value={CUSTOM_LANGUAGE_VALUE}>Andere taal...</option>
                     </select>
+
+                    {languageInputMode === CUSTOM_LANGUAGE_VALUE && (
+                      <input
+                        id="language"
+                        name="language"
+                        className="modal-input"
+                        type="text"
+                        value={formData.language ?? ""}
+                        onChange={handleChange}
+                        placeholder="Geef een afkorting van een taal in"
+                      />
+                    )}
                   </div>
+
                   <div className="modal-row">
                     <label className="modal-label" htmlFor="description">
                       Leesniveau

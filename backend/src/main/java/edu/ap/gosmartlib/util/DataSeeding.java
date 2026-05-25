@@ -36,6 +36,19 @@ public class DataSeeding implements CommandLineRunner {
                 };
         }
 
+        private String normalizeLanguage(String language) {
+                if (language == null || language.isBlank()) {
+                        return "nl";
+                }
+
+                return switch (language.trim().toLowerCase()) {
+                        case "ne", "nl", "nederlands", "dutch" -> "nl";
+                        case "en", "engels", "english" -> "en";
+                        case "fr", "frans", "french" -> "fr";
+                        default -> "nl";
+                };
+        }
+
         private BookEntity book(
                         String title,
                         List<String> authors,
@@ -63,7 +76,7 @@ public class DataSeeding implements CommandLineRunner {
                                 pageCount,
                                 categories,
                                 thumbnail,
-                                language,
+                                normalizeLanguage(language),
                                 rating,
                                 isbn,
                                 publishedYear,
@@ -74,12 +87,12 @@ public class DataSeeding implements CommandLineRunner {
                                 availableCopies,
                                 ageRange);
                 b.setSpotlight(spotlight);
-                
+
                 // AANGEPAST: Geef de previewLink in deze mock data standaard null
-                // Als gebruikers via de app op ISBN boeken toevoegen, wordt dit veld door 
+                // Als gebruikers via de app op ISBN boeken toevoegen, wordt dit veld door
                 // BookService ingevuld via de Google API
-                b.setPreviewLink(null); 
-                
+                b.setPreviewLink(null);
+
                 List<BookInventoryEntity> inventories = createSeedInventories(b, totalCopies, availableCopies);
                 b.setInventories(inventories);
                 return b;
