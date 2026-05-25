@@ -26,6 +26,11 @@ public class RoleGuard {
     public boolean isBibbeheerder(Authentication authentication) {
         return hasAnyRole(authentication, UserRoles.BIBLIOTHEEKBEHEERDER);
     }
+    @Transactional(readOnly = true)
+    public boolean isTeacherOrBibbeheerder(Authentication authentication) {
+        return hasAnyRole(authentication, UserRoles.TEACHER, UserRoles.BIBLIOTHEEKBEHEERDER);
+    }
+
 
     private boolean hasAnyRole(Authentication authentication, UserRoles... allowedRoles) {
         if (authentication == null) return false;

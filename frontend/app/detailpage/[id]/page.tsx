@@ -15,6 +15,7 @@ import "./detailpage.css";
 import ReviewSection from "@/app/components/reviewsection/reviewsection";
 import NotificationBell from "@/app/components/Notifications/Notification";
 import BookCarousel from "@/app/components/BookCarousel";
+import LessonTipSection from "./LessonTipSection";
 
 interface ReviewWithRating {
   rating: number;
@@ -52,11 +53,16 @@ export default function DetailPage({
   const [snowballSections, setSnowballSections] = useState<SnowballSection[]>(
     [],
   );
+  const [activeTab, setActiveTab] = useState<"info" | "lestips">("info");
 
   const isStaff =
     currentUser?.role === "TEACHER" ||
     currentUser?.role === "BIBLIOTHEEKBEHEERDER" ||
     currentUser?.role === "ADMIN";
+
+  const canSeeLestips =
+    currentUser?.role === "TEACHER" ||
+    currentUser?.role === "BIBLIOTHEEKBEHEERDER";
 
   const normalizedRating =
     typeof averageReviewRating === "number"
@@ -214,17 +220,27 @@ export default function DetailPage({
   // Studenten zien enkel hun eigen school (wordt ook al door backend gefilterd)
   // Staff ziet alle scholen en campussen.
   const userInventories = currentUser
-    ? book.inventories?.filter((i) => isStaff || i.schoolId === currentUser.school?.id) || []
+    ? book.inventories?.filter(
+        (i) => isStaff || i.schoolId === currentUser.school?.id,
+      ) || []
     : [];
 
   // Bereken de totalen over alle gefilterde campussen
-  const available = userInventories.reduce((acc, inv) => acc + (inv.availableCopies || 0), 0);
-  const total = userInventories.reduce((acc, inv) => acc + (inv.totalCopies || 0), 0);
-  
+  const available = userInventories.reduce(
+    (acc, inv) => acc + (inv.availableCopies || 0),
+    0,
+  );
+  const total = userInventories.reduce(
+    (acc, inv) => acc + (inv.totalCopies || 0),
+    0,
+  );
+
   // Bepaal of het campus-lijstje zichtbaar moet zijn:
   // Altijd voor staf (zien scholen), voor studenten enkel als er minstens één echte campusnaam is ingevuld.
-  const showCampusBreakdown = userInventories.length > 0 && 
-    (isStaff || userInventories.some(inv => inv.campus && inv.campus.trim() !== ""));
+  const showCampusBreakdown =
+    userInventories.length > 0 &&
+    (isStaff ||
+      userInventories.some((inv) => inv.campus && inv.campus.trim() !== ""));
 
   // Fix http naar https als de opgeslagen link nog http is
   let displayLink = book.previewLink;
@@ -257,39 +273,46 @@ export default function DetailPage({
             />
           )}
 
-          {/* Beschikbaarheid en campus breakdown */}
           {currentUser && (
             <div className="availabilityWrapper">
               <span
                 className={`coverBadge ${available > 0 ? "available" : "unavailable"}`}
               >
-                {userInventories.length > 0 ? `${available}/${total} beschikbaar` : "Niet beschikbaar"}
+                {userInventories.length > 0
+                  ? `${available}/${total} beschikbaar`
+                  : "Niet beschikbaar"}
               </span>
-
-              {/* GECORRIGEERD: Lijst met campussen tonen op basis van showCampusBreakdown */}
               {showCampusBreakdown && (
                 <div className="campusBreakdown">
                   <p className="campusBreakdownTitle">Locaties:</p>
                   <ul className="campusList">
                     {userInventories.map((inv, idx) => {
-                      // Helper om de schoolnaam netjes te formatteren
                       const formatSchoolName = (name: string | undefined) => {
                         if (!name) return "";
-                        let cleanName = name.replace("https://", "").replace(".smartschool.be", "").replace("/", "");
-                        return cleanName.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                        let cleanName = name
+                          .replace("https://", "")
+                          .replace(".smartschool.be", "")
+                          .replace("/", "");
+                        return cleanName
+                          .split("-")
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() + word.slice(1),
+                          )
+                          .join(" ");
                       };
-
-                      const displayName = isStaff && inv.schoolName 
-                        ? `${formatSchoolName(inv.schoolName)} (${inv.campus || "Hoofdcampus"})` 
-                        : (inv.campus || "Hoofdcampus");
-
+                      const displayName =
+                        isStaff && inv.schoolName
+                          ? `${formatSchoolName(inv.schoolName)} (${inv.campus || "Hoofdcampus"})`
+                          : inv.campus || "Hoofdcampus";
                       return (
                         <li key={idx} className="campusItem">
-                          {/* title attribuut zorgt voor een tooltip bij hoveren */}
                           <span className="campusName" title={displayName}>
                             {displayName}
                           </span>
-                          <span className={`campusCount ${inv.availableCopies > 0 ? "text-success" : "text-error"}`}>
+                          <span
+                            className={`campusCount ${inv.availableCopies > 0 ? "text-success" : "text-error"}`}
+                          >
                             {inv.availableCopies}/{inv.totalCopies}
                           </span>
                         </li>
@@ -301,7 +324,6 @@ export default function DetailPage({
             </div>
           )}
 
-          {/* Toevoegen aan leeslijst */}
           {currentUser && (
             <div className="addToListWrapper" ref={dropdownRef}>
               <button
@@ -314,7 +336,6 @@ export default function DetailPage({
                   {dropdownOpen ? "▲" : "▼"}
                 </span>
               </button>
-
               {dropdownOpen && (
                 <div className="addToListDropdown">
                   {readingLists.length === 0 ? (
@@ -343,7 +364,6 @@ export default function DetailPage({
                   )}
                 </div>
               )}
-
               {addMsg && (
                 <p className={`addToListMsg addToListMsg--${addMsg.type}`}>
                   {addMsg.text}
@@ -407,10 +427,11 @@ export default function DetailPage({
         <div className="detailRight">
           <h1 className="detailTitle">{book.title}</h1>
           <p className="detailAuthors">
-            door {book.authors?.map((author, index) => (
+            door{" "}
+            {book.authors?.map((author, index) => (
               <span key={index}>
-                <Link 
-                  href={`/catalog?search=${encodeURIComponent(author)}`} 
+                <Link
+                  href={`/catalog?search=${encodeURIComponent(author)}`}
                   className="authorLink"
                 >
                   {author}
@@ -420,77 +441,105 @@ export default function DetailPage({
             ))}
           </p>
 
+          {canSeeLestips && (
+            <nav className="detailNavBar">
+              <button
+                className={activeTab === "info" ? "active" : ""}
+                onClick={() => setActiveTab("info")}
+              >
+                Boekinfo
+              </button>
+              <button
+                className={activeTab === "lestips" ? "active" : ""}
+                onClick={() => setActiveTab("lestips")}
+              >
+                Lestips
+              </button>
+            </nav>
+          )}
+
           <div className="tabContent">
-            <div className="detailDescription">
-              <h2>Waar gaat het over?</h2>
-              <p>{book.description}</p>
-            </div>
-
-            <hr className="detailDivider" />
-
-            <div className="detailMetaRow">
-              {book.readingLevel && (
-                <div className="metaCol">
-                  <span className="metaLabel">Leesniveau</span>
-                  <span className="metaValue">{book.readingLevel}</span>
+            {activeTab === "info" && (
+              <>
+                <div className="detailDescription">
+                  <h2>Waar gaat het over?</h2>
+                  <p>{book.description}</p>
                 </div>
-              )}
-              {book.categories?.length > 0 && (
-                <div className="metaCol">
-                  <span className="metaLabel">Genre</span>
-                  <span className="metaValue">
-                    {book.categories.join(", ")}
-                  </span>
+
+                <hr className="detailDivider" />
+
+                <div className="detailMetaRow">
+                  {book.readingLevel && (
+                    <div className="metaCol">
+                      <span className="metaLabel">Leesniveau</span>
+                      <span className="metaValue">{book.readingLevel}</span>
+                    </div>
+                  )}
+                  {book.categories?.length > 0 && (
+                    <div className="metaCol">
+                      <span className="metaLabel">Genre</span>
+                      <span className="metaValue">
+                        {book.categories.join(", ")}
+                      </span>
+                    </div>
+                  )}
+                  <div className="metaCol">
+                    <span className="metaLabel">Taal</span>
+                    <span className="metaValue">
+                      {book.language?.toUpperCase()}
+                    </span>
+                  </div>
+                  {book.pageCount && (
+                    <div className="metaCol">
+                      <span className="metaLabel">Dikte</span>
+                      <span className="metaValue">
+                        {book.pageCount} pagina's
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="metaCol">
-                <span className="metaLabel">Taal</span>
-                <span className="metaValue">
-                  {book.language?.toUpperCase()}
-                </span>
-              </div>
-              {book.pageCount && (
-                <div className="metaCol">
-                  <span className="metaLabel">Dikte</span>
-                  <span className="metaValue">{book.pageCount} pagina's</span>
+
+                <hr className="detailDivider" />
+
+                <div className="detailPreviewSection">
+                  <h2>Leesvoorbeeld</h2>
+                  {displayLink ? (
+                    <a
+                      href={displayLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="detailPreviewBtn"
+                    >
+                      Bekijk de eerste pagina's
+                    </a>
+                  ) : (
+                    <p className="detailPreviewEmpty">
+                      Voor dit boek is helaas geen digitaal leesvoorbeeld
+                      beschikbaar.
+                    </p>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <hr className="detailDivider" />
+                <hr className="detailDivider" />
 
-            {/* DE KNOP NAAR GOOGLE PLAY BOOKS PREVIEW */}
-            <div className="detailPreviewSection">
-              <h2>Leesvoorbeeld</h2>
+                <div className="detailReviews">
+                  <ReviewSection
+                    isbn={book.isbn}
+                    onReviewSubmitted={() =>
+                      fetchAverageReviewRating(book.isbn)
+                    }
+                  />
+                </div>
+              </>
+            )}
 
-              {displayLink ? (
-                <a
-                  href={displayLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="detailPreviewBtn"
-                >
-                  Bekijk de eerste pagina's
-                </a>
-              ) : (
-                <p className="detailPreviewEmpty">
-                  Voor dit boek is helaas geen digitaal leesvoorbeeld
-                  beschikbaar.
-                </p>
-              )}
-            </div>
-
-            <hr className="detailDivider" />
-
-            <div className="detailReviews">
-              <ReviewSection
-                isbn={book.isbn}
-                onReviewSubmitted={() => fetchAverageReviewRating(book.isbn)}
-              />
-            </div>
+            {activeTab === "lestips" && canSeeLestips && (
+              <LessonTipSection bookId={book.id} />
+            )}
           </div>
         </div>
       </div>
+
       {snowballSections.length > 0 && (
         <div className="snowballContainer">
           {snowballSections.map((section, i) => (
