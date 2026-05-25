@@ -1,6 +1,10 @@
 package edu.ap.gosmartlib.repositories;
 
+<<<<<<< HEAD
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
+=======
+import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
+>>>>>>> 4f936deee088529c0230b4241700c7fa8a61f9ca
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 

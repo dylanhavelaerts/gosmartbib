@@ -6,7 +6,11 @@ import edu.ap.gosmartlib.dto.reviews.ReviewSummaryDTO;
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.entities.ReviewEntity;
+<<<<<<< HEAD
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+=======
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+>>>>>>> 4f936deee088529c0230b4241700c7fa8a61f9ca
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.AlreadyReviewedException;
 import edu.ap.gosmartlib.exceptions.OutOfBoundsException;

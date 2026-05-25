@@ -2,8 +2,13 @@ package edu.ap.gosmartlib.services.schoolIntegration;
 
 import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.CreateSchoolCampusRequest;
 import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.SchoolCampusDTO;
+<<<<<<< HEAD
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolCampusEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+=======
+import edu.ap.gosmartlib.entities.school.SchoolCampusEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+>>>>>>> 4f936deee088529c0230b4241700c7fa8a61f9ca
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.SchoolCampusRepository;
 import edu.ap.gosmartlib.repositories.SchoolRepository;

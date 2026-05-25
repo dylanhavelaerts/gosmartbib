@@ -4,7 +4,11 @@ import edu.ap.gosmartlib.dto.school.ApproveSchoolRequest;
 import edu.ap.gosmartlib.dto.school.CreateSchoolRequest;
 import edu.ap.gosmartlib.dto.school.CreateSchoolResult;
 import edu.ap.gosmartlib.dto.school.SchoolDTO;
+<<<<<<< HEAD
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+=======
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+>>>>>>> 4f936deee088529c0230b4241700c7fa8a61f9ca
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.*;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookInventoryRepository;

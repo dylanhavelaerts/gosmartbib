@@ -3,8 +3,13 @@ package edu.ap.gosmartlib.services.Loans;
 import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
+<<<<<<< HEAD
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+=======
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+>>>>>>> 4f936deee088529c0230b4241700c7fa8a61f9ca
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import edu.ap.gosmartlib.repositories.loanRepositories.LoanHistoryRepository;

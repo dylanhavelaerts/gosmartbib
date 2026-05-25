@@ -8,8 +8,13 @@ import edu.ap.gosmartlib.dto.readinglist.ReadingListVisibilityDTO;
 import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
+<<<<<<< HEAD
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+=======
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+>>>>>>> 4f936deee088529c0230b4241700c7fa8a61f9ca
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
 import edu.ap.gosmartlib.repositories.SchoolClassRepository;
