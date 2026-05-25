@@ -13,6 +13,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -20,6 +23,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -142,29 +146,22 @@ class LoanControllerTest {
 
     @Test
     void givenValidPrincipal_whenGetLoanHistory_thenReturnsOkWithHistory() {
-        // Arrange
         String uid = "uid-123";
-        List<LoanHistoryDTO> expectedHistory = List.of(mock(LoanHistoryDTO.class));
+        Page<LoanHistoryDTO> expectedPage = new PageImpl<>(List.of(mock(LoanHistoryDTO.class)));
 
         when(principal.getAttribute("userID")).thenReturn(uid);
-        when(loanService.getLoanHistoryByUser(uid)).thenReturn(expectedHistory);
+        when(loanService.getLoanHistoryByUser(eq(uid), any(Pageable.class))).thenReturn(expectedPage);
 
-        // Act
-        ResponseEntity<List<LoanHistoryDTO>> response = loanController.getLoanHistory(principal);
+        ResponseEntity<Page<LoanHistoryDTO>> response = loanController.getLoanHistory(principal, 0, 10);
 
-        // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(expectedHistory, response.getBody());
-        verify(loanService, times(1)).getLoanHistoryByUser(uid);
+        assertEquals(expectedPage, response.getBody());
+        verify(loanService, times(1)).getLoanHistoryByUser(eq(uid), any(Pageable.class));
     }
 
     @Test
-    void givenNullPrincipal_whenGetLoanHistory_thenReturnsUnauthorized() {
-        // Act
-        ResponseEntity<List<LoanHistoryDTO>> response = loanController.getLoanHistory(null);
-
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    void givenNullPrincipal_whenGetLoanHistory_thenThrowsException() {
+        assertThrows(Exception.class, () -> loanController.getLoanHistory(null, 0, 10));
         verifyNoInteractions(loanService);
     }
 

@@ -66,9 +66,7 @@ public class SchoolIntegrationService {
         if (request.smartschoolAccesscode() != null && !request.smartschoolAccesscode().isBlank()) {
             integration.setSmartschoolAccesscode(request.smartschoolAccesscode().trim());
         }
-        if (request.smartschoolSenderIdentifier() != null && !request.smartschoolSenderIdentifier().isBlank()) {
-            integration.setSmartschoolSenderIdentifier(request.smartschoolSenderIdentifier().trim());
-        }
+
 
         integration = schoolIntegrationRepository.save(integration);
         return SchoolIntegrationDTO.from(integration);
@@ -118,8 +116,6 @@ public class SchoolIntegrationService {
         if (request.onerosterEnabled() != null) integration.setOnerosterEnabled(request.onerosterEnabled());
         if (request.smartschoolAccesscode() != null && !request.smartschoolAccesscode().isBlank())
             integration.setSmartschoolAccesscode(request.smartschoolAccesscode().trim());
-        if (request.smartschoolSenderIdentifier() != null && !request.smartschoolSenderIdentifier().isBlank())
-            integration.setSmartschoolSenderIdentifier(request.smartschoolSenderIdentifier().trim());
 
         return SchoolIntegrationDTO.from(schoolIntegrationRepository.save(integration));
     }

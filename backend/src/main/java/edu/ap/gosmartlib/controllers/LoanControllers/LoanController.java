@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
 import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
 import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
 import edu.ap.gosmartlib.security.AuthHelper;
+import edu.ap.gosmartlib.services.Loans.LoanDueDateNotificationService;
 import edu.ap.gosmartlib.services.Loans.LoanPolicyService;
 import edu.ap.gosmartlib.services.Loans.LoanService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,6 +29,7 @@ public class LoanController {
     private final LoanService loanService;
     private final LoanPolicyService loanPolicyService;
     private final AuthHelper authHelper;
+    private final LoanDueDateNotificationService loanDueDateNotificationService;
 
 
 
@@ -139,4 +142,14 @@ public class LoanController {
 
         return ResponseEntity.ok(loanPolicyService.getReminderDaysForUser(smartschoolUid));
     }
+    @PostMapping("/{loanId}/overdue-warning")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    public ResponseEntity<Void> sendOverdueWarning(
+            @PathVariable Long loanId,
+            @AuthenticationPrincipal OAuth2User principal) {
+        String actorUid = authHelper.extractUid(principal);
+        loanDueDateNotificationService.sendOverdueWarning(actorUid, loanId);
+        return ResponseEntity.ok().build();
+    }
+
 }

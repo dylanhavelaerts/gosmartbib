@@ -12,10 +12,10 @@ public class SmartschoolSoapClient {
     private final RestClient restClient = RestClient.create();
 
 
-    public void sendMessage(SchoolIntegrationEntity integration, String username, String title, String body) {
+    public void sendMessage(SchoolIntegrationEntity integration, String senderIdentifier,
+                            String username, String title, String body) {
         String accesscode = escapeXml(integration.getSmartschoolAccesscode());
-        String sender = escapeXml(integration.getSmartschoolSenderIdentifier() != null
-                ? integration.getSmartschoolSenderIdentifier() : "");
+        String sender = escapeXml(senderIdentifier != null ? senderIdentifier : "");
         String endpoint = integration.getSchoolBaseUrl() + "/Webservices/V3";
         String safeUsername = escapeXml(username);
         String safeTitle = escapeXml(title);

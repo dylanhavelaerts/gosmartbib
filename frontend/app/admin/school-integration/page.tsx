@@ -71,7 +71,6 @@ export default function SchoolIntegrationPage() {
   const schoolDomain = me?.school?.domain ?? "";
 
   const [smartschoolAccesscode, setSmartschoolAccesscode] = useState("");
-  const [senderIdentifier, setSenderIdentifier] = useState("");
 
   const [showClientSecret, setShowClientSecret] = useState(false);
   const [showAccesscode, setShowAccesscode] = useState(false);
@@ -111,8 +110,11 @@ export default function SchoolIntegrationPage() {
           return;
         }
 
-        const paramId = Number(new URLSearchParams(window.location.search).get("schoolId")) || null;
-        const effectiveSchoolId = (meData.role === "ADMIN" ? paramId : meData.school?.id) ?? null;
+        const paramId =
+          Number(new URLSearchParams(window.location.search).get("schoolId")) ||
+          null;
+        const effectiveSchoolId =
+          (meData.role === "ADMIN" ? paramId : meData.school?.id) ?? null;
         if (!effectiveSchoolId) {
           setError("Geen school gevonden voor de ingelogde gebruiker");
           setLoading(false);
@@ -152,7 +154,6 @@ export default function SchoolIntegrationPage() {
         setClientId("");
         setClientSecret("");
         setSmartschoolAccesscode(""); //altijd leeg na het laden als successvol
-        setSenderIdentifier("");
         setEnabled(false);
         return;
       }
@@ -168,7 +169,6 @@ export default function SchoolIntegrationPage() {
       setClientId(data.onerosterClientId ?? "");
       setClientSecret("");
       setSmartschoolAccesscode(""); //altijd leeg na het laden als successvol
-      setSenderIdentifier(data.smartschoolSenderIdentifier ?? ""); //?
       setEnabled(Boolean(data.onerosterEnabled));
     } catch (err) {
       console.error(err);
@@ -289,7 +289,6 @@ export default function SchoolIntegrationPage() {
         onerosterClientSecret: clientSecret,
         onerosterEnabled: enabled,
         smartschoolAccesscode: smartschoolAccesscode,
-        smartschoolSenderIdentifier: senderIdentifier,
       };
 
       const response = await fetch(
@@ -647,19 +646,6 @@ export default function SchoolIntegrationPage() {
                     />
                   </button>
                 </div>
-              </label>
-
-              <label className="field">
-                <span>
-                  Smartschool afzender vanaf dit smartschool account zullen de
-                  berichten verstuurd worden
-                </span>
-                <input
-                  type="text"
-                  value={senderIdentifier}
-                  onChange={(e) => setSenderIdentifier(e.target.value)}
-                  placeholder="bv. jan.janssen"
-                />
               </label>
 
               <label className="checkbox">

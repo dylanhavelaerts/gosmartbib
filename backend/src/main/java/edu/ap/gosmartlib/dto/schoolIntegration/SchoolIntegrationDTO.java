@@ -11,7 +11,6 @@ public record SchoolIntegrationDTO(
         boolean onerosterEnabled,
         boolean clientSecretConfigured,
         boolean smartschoolAccesscodeConfigured,
-        String smartschoolSenderIdentifier,
         LocalDateTime lastTestSuccessfulAt,
         LocalDateTime lastSyncAt,
         String lastError) {
@@ -23,7 +22,6 @@ public record SchoolIntegrationDTO(
                 entity.isOnerosterEnabled(),
                 entity.getOnerosterClientSecret() != null && !entity.getOnerosterClientSecret().isBlank(),
                 entity.getSmartschoolAccesscode() != null && !entity.getSmartschoolAccesscode().isBlank(),
-                entity.getSmartschoolSenderIdentifier(),
                 entity.getLastTestSuccessfulAt(),
                 entity.getLastSyncAt(),
                 entity.getLastError());

@@ -5,7 +5,6 @@ export interface SchoolIntegrationDTO {
   onerosterEnabled: boolean;
   clientSecretConfigured: boolean;
   smartschoolAccesscodeConfigured: boolean;
-  smartschoolSenderIdentifier: string | null;
   lastTestSuccessfulAt: string | null;
   lastSyncAt: string | null;
   lastError: string | null;
@@ -17,7 +16,6 @@ export interface UpsertSchoolIntegrationRequest {
   onerosterClientSecret: string;
   onerosterEnabled: boolean;
   smartschoolAccesscode?: string;
-  smartschoolSenderIdentifier?: string;
 }
 
 export interface SchoolIntegrationTestResponse {

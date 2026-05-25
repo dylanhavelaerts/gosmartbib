@@ -27,7 +27,6 @@ export default function NewSchoolPage() {
   const [showSecret, setShowSecret] = useState(false);
   const [smartschoolAccesscode, setSmartschoolAccesscode] = useState("");
   const [showAccesscode, setShowAccesscode] = useState(false);
-  const [senderIdentifier, setSenderIdentifier] = useState("");
   const [onerosterEnabled, setOnerosterEnabled] = useState(true);
 
   const [saving, setSaving] = useState(false);
@@ -49,7 +48,10 @@ export default function NewSchoolPage() {
     fetch(`${API_URL}/auth/me`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((me) => {
-        if (!me || me.role !== "ADMIN") { router.replace("/"); return; }
+        if (!me || me.role !== "ADMIN") {
+          router.replace("/");
+          return;
+        }
         setChecking(false);
       })
       .catch(() => router.replace("/"));
@@ -96,7 +98,12 @@ export default function NewSchoolPage() {
         schoolName = created.name;
       }
 
-      if (baseUrl.trim() || clientId.trim() || clientSecret.trim() || smartschoolAccesscode.trim() || senderIdentifier.trim()) {
+      if (
+        baseUrl.trim() ||
+        clientId.trim() ||
+        clientSecret.trim() ||
+        smartschoolAccesscode.trim()
+      ) {
         const intRes = await fetch(
           `${API_URL}/admin/schools/${schoolId}/integration`,
           {
@@ -109,7 +116,6 @@ export default function NewSchoolPage() {
               onerosterClientSecret: clientSecret.trim(),
               onerosterEnabled,
               smartschoolAccesscode: smartschoolAccesscode.trim(),
-              smartschoolSenderIdentifier: senderIdentifier.trim(),
             }),
           },
         );
@@ -124,7 +130,9 @@ export default function NewSchoolPage() {
       }
 
       setSavedSchoolId(schoolId);
-      setSuccess(`School "${schoolName}" succesvol ${wasUpdated ? "bijgewerkt" : "aangemaakt"}.`);
+      setSuccess(
+        `School "${schoolName}" succesvol ${wasUpdated ? "bijgewerkt" : "aangemaakt"}.`,
+      );
     } catch {
       setError("Er ging iets mis bij het opslaan.");
     } finally {
@@ -285,16 +293,7 @@ export default function NewSchoolPage() {
               </button>
             </div>
           </div>
-          <div className="field">
-            <span>Smartschool afzender</span>
-            <input
-              type="text"
-              placeholder="bv. jan.janssen"
-              value={senderIdentifier}
-              onChange={(e) => setSenderIdentifier(e.target.value)}
-              disabled={!!savedSchoolId}
-            />
-          </div>
+
           <label className="checkbox">
             <input
               type="checkbox"

@@ -31,6 +31,10 @@ public class HomepageSettingsEntity {
     @Column(columnDefinition = "boolean default true")
     private boolean showUrgentLoans = true;
 
+    @Column(name = "smartschool_sender_identifier", length = 255)
+    private String smartschoolSenderIdentifier;
+
+
     public HomepageSettingsEntity(SchoolEntity school) {
         this.school = school;
     }
