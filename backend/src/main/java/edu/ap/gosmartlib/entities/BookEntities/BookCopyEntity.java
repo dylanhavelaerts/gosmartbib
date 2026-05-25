@@ -24,8 +24,8 @@ public class BookCopyEntity {
     private String barcode;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private BookCopyCondition condition = BookCopyCondition.GOOD;
+    @Column(name = "copy_condition")
+    private BookCopyCondition copyCondition = BookCopyCondition.GOOD;
 
     @Column(columnDefinition = "TEXT")
     private String notes;

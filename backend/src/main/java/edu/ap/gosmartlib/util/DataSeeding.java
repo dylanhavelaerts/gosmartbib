@@ -971,7 +971,7 @@ public class DataSeeding implements CommandLineRunner {
                                         for (int i = 1; i <= inventory.getTotalCopies(); i++) {
                                                 BookCopyEntity copy = new BookCopyEntity();
                                                 copy.setInventory(inventory);
-                                                copy.setCondition(BookCopyCondition.GOOD);
+                                                copy.setCopyCondition(BookCopyCondition.GOOD);
                                                 copy.setCopyNumber(i);
                                                 copies.add(copy);
                                         }

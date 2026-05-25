@@ -14,9 +14,14 @@ public interface BookCopyRepository extends CrudRepository<BookCopyEntity, Long>
 
     Optional<BookCopyEntity> findByBarcode(String barcode);
 
-    long countByInventoryAndCondition(BookInventoryEntity inventory, BookCopyCondition condition);
+    List<BookCopyEntity> findByInventoryAndCopyConditionNot(BookInventoryEntity inventory, BookCopyCondition condition);
 
-    List<BookCopyEntity> findByInventoryAndCondition(BookInventoryEntity inventory, BookCopyCondition condition);
+    List<BookCopyEntity> findByInventoryAndCopyCondition(BookInventoryEntity inventory, BookCopyCondition condition);
 
-    long countByInventoryAndConditionNot(BookInventoryEntity inventory, BookCopyCondition condition);
+    long countByInventoryAndCopyCondition(BookInventoryEntity inventory, BookCopyCondition condition);
+
+    long countByInventoryAndCopyConditionNot(BookInventoryEntity inventory, BookCopyCondition condition);
+
+
+
 }

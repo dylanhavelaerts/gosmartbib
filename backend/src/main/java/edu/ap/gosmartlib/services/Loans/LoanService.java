@@ -562,8 +562,8 @@ public class LoanService {
                 throw new IllegalArgumentException("Exemplaar behoort niet tot dit boek.");
             }
 
-            BookCopyCondition previousCondition = copy.getCondition();
-            copy.setCondition(c.condition());
+            BookCopyCondition previousCondition = copy.getCopyCondition();
+            copy.setCopyCondition(c.condition());
             if (c.notes() != null) copy.setNotes(c.notes());
             bookCopyRepository.save(copy);
 
@@ -594,14 +594,14 @@ public class LoanService {
     private List<BookCopyEntity> markCopies(BookInventoryEntity inventory, int count, BookCopyCondition newCondition) {
         if (count <= 0) return List.of();
 
-        List<BookCopyEntity> candidates = new ArrayList<>(bookCopyRepository.findByInventoryAndCondition(inventory, BookCopyCondition.GOOD));
+        List<BookCopyEntity> candidates = new ArrayList<>(bookCopyRepository.findByInventoryAndCopyCondition(inventory, BookCopyCondition.GOOD));
 
         if (candidates.size() < count && newCondition != BookCopyCondition.DAMAGED) {
-            candidates.addAll(bookCopyRepository.findByInventoryAndCondition(inventory, BookCopyCondition.DAMAGED));
+            candidates.addAll(bookCopyRepository.findByInventoryAndCopyCondition(inventory, BookCopyCondition.DAMAGED));
         }
 
         List<BookCopyEntity> toUpdate = candidates.stream().limit(count).toList();
-        toUpdate.forEach(c -> c.setCondition(newCondition));
+        toUpdate.forEach(c -> c.setCopyCondition(newCondition));
         bookCopyRepository.saveAll(toUpdate);
 
         return toUpdate;

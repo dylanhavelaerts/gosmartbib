@@ -885,8 +885,8 @@ public class BookService {
         BookCopyEntity copy = bookCopyRepository.findById(copyId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exemplaar niet gevonden."));
 
-        BookCopyCondition previousCondition = copy.getCondition();
-        copy.setCondition(newCondition);
+        BookCopyCondition previousCondition = copy.getCopyCondition();
+        copy.setCopyCondition(newCondition);
         if (notes != null) copy.setNotes(notes);
         bookCopyRepository.save(copy);
 
@@ -960,9 +960,9 @@ public class BookService {
     }
 
     private BookInventoryDTO toInventoryDTO(BookInventoryEntity inventory) {
-        int damaged = (int) bookCopyRepository.countByInventoryAndCondition(inventory, BookCopyCondition.DAMAGED);
-        int broken = (int) bookCopyRepository.countByInventoryAndCondition(inventory, BookCopyCondition.BROKEN);
-        int lost = (int) bookCopyRepository.countByInventoryAndCondition(inventory, BookCopyCondition.LOST);
+        int damaged = (int) bookCopyRepository.countByInventoryAndCopyCondition(inventory, BookCopyCondition.DAMAGED);
+        int broken = (int) bookCopyRepository.countByInventoryAndCopyCondition(inventory, BookCopyCondition.BROKEN);
+        int lost = (int) bookCopyRepository.countByInventoryAndCopyCondition(inventory, BookCopyCondition.LOST);
 
         return new BookInventoryDTO(
                 inventory.getId(),
