@@ -7,6 +7,7 @@ import AddBookWithIsbn from "./components/addBookWithIsbn";
 import AddBookWithoutIsbn from "./components/addBookWithoutIsbn";
 import BookListImport from "./components/bookListImport";
 import BookListWithoutIsbnImport from "./components/bookListWithoutIsbnImport";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 
 type TabId = "Boek" | "Boek zonder ISBN" | "Boekenlijst" | "Boekenlijst zonder ISBN";
 
@@ -17,35 +18,37 @@ export default function AddBookPage() {
     `tabBtn ${selected === id ? "selectedCategory" : ""}`.trim();
 
   return (
-    <div className="mainPage">
-      <nav className="lowerNav">
-        <button className={cls("Boek")} onClick={() => setSelected("Boek")}>
-          Boek met ISBN
-        </button>
-        <button
-          className={cls("Boek zonder ISBN")}
-          onClick={() => setSelected("Boek zonder ISBN")}
-        >
-          Boek zonder ISBN
-        </button>
-        <button
-          className={cls("Boekenlijst")}
-          onClick={() => setSelected("Boekenlijst")}
-        >
-          Boekenlijst toevoegen
-        </button>
-        <button
-          className={cls("Boekenlijst zonder ISBN")}
-          onClick={() => setSelected("Boekenlijst zonder ISBN")}
-        >
-          Boekenlijst zonder ISBN
-        </button>
-      </nav>
+    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
+      <div className="mainPage">
+        <nav className="lowerNav">
+          <button className={cls("Boek")} onClick={() => setSelected("Boek")}>
+            Boek met ISBN
+          </button>
+          <button
+            className={cls("Boek zonder ISBN")}
+            onClick={() => setSelected("Boek zonder ISBN")}
+          >
+            Boek zonder ISBN
+          </button>
+          <button
+            className={cls("Boekenlijst")}
+            onClick={() => setSelected("Boekenlijst")}
+          >
+            Boekenlijst toevoegen
+          </button>
+          <button
+            className={cls("Boekenlijst zonder ISBN")}
+            onClick={() => setSelected("Boekenlijst zonder ISBN")}
+          >
+            Boekenlijst zonder ISBN
+          </button>
+        </nav>
 
-      {selected === "Boek" && <AddBookWithIsbn />}
-      {selected === "Boek zonder ISBN" && <AddBookWithoutIsbn />}
-      {selected === "Boekenlijst" && <BookListImport />}
-      {selected === "Boekenlijst zonder ISBN" && <BookListWithoutIsbnImport />}
-    </div>
+        {selected === "Boek" && <AddBookWithIsbn />}
+        {selected === "Boek zonder ISBN" && <AddBookWithoutIsbn />}
+        {selected === "Boekenlijst" && <BookListImport />}
+        {selected === "Boekenlijst zonder ISBN" && <BookListWithoutIsbnImport />}
+      </div>
+    </ProtectedRoute>
   );
 }
