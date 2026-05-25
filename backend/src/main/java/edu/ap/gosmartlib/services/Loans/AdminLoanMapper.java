@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.entities.loanEntities.LoanEntity;
 import edu.ap.gosmartlib.entities.loanEntities.LoanExtensionStatus;
 import edu.ap.gosmartlib.entities.loanEntities.LoanHistoryEntity;
+import edu.ap.gosmartlib.util.BookDisplayUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -43,21 +44,17 @@ public class AdminLoanMapper {
         String uid = history.getSmartschoolUserId();
         BookEntity book = bookMap.get(history.getIsbn());
 
-        String bookTitle;
-        String author;
-        if (book != null) {
-            bookTitle = book.getTitle();
-            author = String.join(", ", book.getAuthors());
-        } else {
-            bookTitle = "Onbekend Boek (ISBN: " + history.getIsbn() + ")";
-            author = "Onbekende Auteur";
-        }
+        String bookTitle = BookDisplayUtil.resolveTitle(book, history.getIsbn());
+        String author = BookDisplayUtil.resolveAuthor(book);
 
         return new LibrarianLoanHistoryDTO(
                 history.getId(), bookTitle, author,
                 history.getLoanDate(), history.getReturnDate(), history.getQuantity(),
                 displayNames.getOrDefault(uid, "Leerling"),
-                classMap.getOrDefault(uid, List.of()));
+                classMap.getOrDefault(uid, List.of()),
+                history.getDamagedCount(),
+                history.getBrokenCount(),
+                history.getLostCount());
     }
 
     private LibrarianActiveLoanDTO.LoanBookDTO toBookDTO(BookEntity book) {
