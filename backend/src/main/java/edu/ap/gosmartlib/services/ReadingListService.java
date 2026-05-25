@@ -20,6 +20,7 @@ import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.util.ReadingListTargetType;
 import edu.ap.gosmartlib.util.ReadingListType;
 import edu.ap.gosmartlib.util.UserRoles;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -293,6 +294,16 @@ public class ReadingListService {
 
         return readingListRepository.save(list);
     }
+
+    @Transactional(readOnly = true)
+    public List<Long> getBookIds(Long readingListId) {
+        return readingListRepository.findByIdWithBooks(readingListId)
+                .orElseThrow(() -> new EntityNotFoundException("Leeslijst niet gevonden"))
+                .getBooks().stream()
+                .map(BookEntity::getId)
+                .toList();
+    }
+
 
     @Transactional
     public ReadingListEntity updatePersonalList(Long id, CreateReadingListDTO dto, String smartschoolUid) {

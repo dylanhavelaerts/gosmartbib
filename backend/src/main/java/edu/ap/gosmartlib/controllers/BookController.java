@@ -5,13 +5,11 @@ import edu.ap.gosmartlib.dto.BookFilterRequest;
 import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
 import edu.ap.gosmartlib.dto.SnowballSectionDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
-import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.exceptions.BookNotFoundException;
-import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.BookService;
+import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
-import org.springframework.dao.DataAccessException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,16 +25,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/books")
+@RequiredArgsConstructor
 public class BookController {
     private final BookService bookService;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final AuthHelper authHelper;
 
-    public BookController(BookService bookService, UserRepository userRepository, AuthHelper authHelper) {
-        this.bookService = bookService;
-        this.userRepository = userRepository;
-        this.authHelper = authHelper;
-    }
+
 
     /**
      * Geeft alle boeken terug met server-side paginatie.
@@ -277,8 +272,7 @@ public class BookController {
         String uid = principal.getAttribute("userID");
         if (uid == null)
             return UserRoles.STUDENT;
-        return userRepository.findBySmartschoolUid(uid)
-                .map(UserEntity::getRole)
-                .orElse(UserRoles.STUDENT);
+        return userService.getRoleBySmartschoolUid(uid);
     }
+
 }
