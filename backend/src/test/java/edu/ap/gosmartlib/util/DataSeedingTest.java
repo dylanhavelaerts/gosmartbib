@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.util;
 
 import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+import edu.ap.gosmartlib.repositories.bookRepositories.BookCopyRepository;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
 import org.junit.jupiter.api.Test;
@@ -27,12 +28,16 @@ class DataSeedingTest {
     private BookRepository bookRepository;
 
     @Mock
+    private BookCopyRepository bookCopyRepository;
+
+    @Mock
     private SchoolRepository schoolRepository;
 
     @InjectMocks
     private DataSeeding dataSeeding;
 
     @Test
+    @SuppressWarnings("unchecked")
     void givenEmptyDatabase_whenRun_thenSeedsConfiguredBooks() {
         when(bookRepository.count()).thenReturn(0L);
 

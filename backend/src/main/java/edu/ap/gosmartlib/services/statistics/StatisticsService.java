@@ -107,6 +107,8 @@ public class StatisticsService {
                 case APPROVED -> approved = count;
                 case PENDING  -> pending  = count;
                 case DENIED   -> denied   = count;
+                case NONE      -> {
+                }
             }
         }
         return new ReturnPunctualityDTO(onTime, late, approved, pending, denied);

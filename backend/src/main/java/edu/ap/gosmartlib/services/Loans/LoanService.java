@@ -14,6 +14,7 @@ import edu.ap.gosmartlib.repositories.loanRepositories.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.loanRepositories.LoanPolicyRepository;
 import edu.ap.gosmartlib.repositories.loanRepositories.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.services.InventoryAdjustmentService;
 import edu.ap.gosmartlib.services.messages.BookNotificationService;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.util.BookCopyCondition;
@@ -53,6 +54,7 @@ public class LoanService {
 
     private final UserDirectoryService userDirectoryService;
     private final BookNotificationService bookNotificationService;
+    private final InventoryAdjustmentService inventoryAdjustmentService;
 
 
     private static final Logger logger = LoggerFactory.getLogger(LoanService.class);
@@ -124,6 +126,10 @@ public class LoanService {
             @CacheEvict(value = "achievements", allEntries = true),
             @CacheEvict(value = "profileDistribution", allEntries = true)
     })
+    public void returnBook(Long loanId, int returnQuantity) {
+        returnBook(loanId, returnQuantity, 0, 0, 0);
+    }
+
     public void returnBook(Long loanId, int returnQuantity, int damagedCount, int brokenCount, int lostCount) {
         LoanEntity loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Uitleen-record niet gevonden."));
@@ -561,7 +567,7 @@ public class LoanService {
             if (c.notes() != null) copy.setNotes(c.notes());
             bookCopyRepository.save(copy);
 
-            adjustAvailability(copy.getInventory(), book, previousCondition, c.condition());
+            inventoryAdjustmentService.adjustForConditionChange(copy.getInventory(), previousCondition, c.condition());
         }
     }
 
@@ -579,10 +585,10 @@ public class LoanService {
         markCopies(inventory, damagedCount, BookCopyCondition.DAMAGED);
 
         List<BookCopyEntity> brokenCopies = markCopies(inventory, brokenCount, BookCopyCondition.BROKEN);
-        brokenCopies.forEach(c -> adjustAvailability(inventory, book, BookCopyCondition.GOOD, BookCopyCondition.BROKEN));
+        brokenCopies.forEach(c -> inventoryAdjustmentService.adjustForConditionChange(inventory, BookCopyCondition.GOOD, BookCopyCondition.BROKEN));
 
         List<BookCopyEntity> lostCopies = markCopies(inventory, lostCount, BookCopyCondition.LOST);
-        lostCopies.forEach(c -> adjustAvailability(inventory, book, BookCopyCondition.GOOD, BookCopyCondition.LOST));
+        lostCopies.forEach(c -> inventoryAdjustmentService.adjustForConditionChange(inventory, BookCopyCondition.GOOD, BookCopyCondition.LOST));
     }
 
     private List<BookCopyEntity> markCopies(BookInventoryEntity inventory, int count, BookCopyCondition newCondition) {
@@ -599,41 +605,5 @@ public class LoanService {
         bookCopyRepository.saveAll(toUpdate);
 
         return toUpdate;
-    }
-
-    private void adjustAvailability(BookInventoryEntity inventory, BookEntity book, BookCopyCondition from, BookCopyCondition to) {
-
-        switch (to) {
-            case BROKEN -> {
-                if (from == BookCopyCondition.GOOD || from == BookCopyCondition.DAMAGED) {
-                    inventory.setAvailableCopies(Math.max(0, inventory.getAvailableCopies() - 1));
-                    book.setAvailableCopies(Math.max(0, book.getAvailableCopies() - 1));
-                }
-            }
-            case LOST -> {
-                if (from == BookCopyCondition.GOOD || from == BookCopyCondition.DAMAGED) {
-                    inventory.setAvailableCopies(Math.max(0, inventory.getAvailableCopies() - 1));
-                    inventory.setTotalCopies(Math.max(0, inventory.getTotalCopies() - 1));
-                    book.setAvailableCopies(Math.max(0, book.getAvailableCopies() - 1));
-                    book.setTotalCopies(Math.max(0, book.getTotalCopies() - 1));
-                } else if (from == BookCopyCondition.BROKEN) {
-                    inventory.setTotalCopies(Math.max(0, inventory.getTotalCopies() - 1));
-                    book.setTotalCopies(Math.max(0, book.getTotalCopies() - 1));
-                }
-            }
-            case GOOD, DAMAGED -> {
-                if (from == BookCopyCondition.BROKEN) {
-                    inventory.setAvailableCopies(inventory.getAvailableCopies() + 1);
-                    book.setAvailableCopies(book.getAvailableCopies() + 1);
-                } else if (from == BookCopyCondition.LOST) {
-                    inventory.setAvailableCopies(inventory.getAvailableCopies() + 1);
-                    inventory.setTotalCopies(inventory.getTotalCopies() + 1);
-                    book.setAvailableCopies(book.getAvailableCopies() + 1);
-                    book.setTotalCopies(book.getTotalCopies() + 1);
-                }
-            }
-        }
-
-        bookRepository.save(book);
     }
 }

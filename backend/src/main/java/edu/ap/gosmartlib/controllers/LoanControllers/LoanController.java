@@ -129,7 +129,7 @@ public class LoanController {
     // testing)
     @PostMapping("/{loanId}/return")
     public ResponseEntity<Void> returnBook(@PathVariable Long loanId, @RequestParam int quantity) {
-        loanService.returnBook(loanId, quantity);
+        loanService.returnBook(loanId, quantity, 0, 0, 0);
         return ResponseEntity.ok().build();
     }
 
@@ -140,7 +140,7 @@ public class LoanController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // Haal het Smartschool UID op uit de sessie
+        // Haal de Smartschool UID op uit de sessie
         String smartschoolUid = principal.getAttribute("userID");
 
         // Haal data op via service

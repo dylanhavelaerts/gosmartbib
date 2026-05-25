@@ -1,6 +1,5 @@
 package edu.ap.gosmartlib.dto.loan;
 
-import lombok.Data;
 import java.time.LocalDate;
 
 public record LoanHistoryDTO (

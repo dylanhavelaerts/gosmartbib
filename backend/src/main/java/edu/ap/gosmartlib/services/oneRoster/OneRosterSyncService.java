@@ -214,13 +214,11 @@ public class OneRosterSyncService {
         return user;
     }
 
-    @SuppressWarnings("unchecked")
     private String extractTitle(Map<String, Object> c) {
         Object title = c.get("title");
         return title instanceof String s ? s : "Onbekende klas";
     }
 
-    @SuppressWarnings("unchecked")
     private String extractGrade(Map<String, Object> c) {
         Object grades = c.get("grades");
         if (grades instanceof List<?> list && !list.isEmpty()) {

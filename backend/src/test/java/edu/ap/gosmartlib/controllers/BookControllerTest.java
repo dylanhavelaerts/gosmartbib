@@ -1014,7 +1014,7 @@ class BookControllerTest {
 
     private BookInventoryDTO buildInventoryDTO(Long id, Long schoolId, String schoolName, String campus,
             Integer totalCopies, Integer availableCopies) {
-        return new BookInventoryDTO(id, schoolId, schoolName, campus, totalCopies, availableCopies);
+        return new BookInventoryDTO(id, schoolId, schoolName, campus, totalCopies, availableCopies, 0, 0, 0);
     }
 
     private CreateBookInventoryRequestDTO buildCreateInventoryRequest(Long schoolId, String campus,

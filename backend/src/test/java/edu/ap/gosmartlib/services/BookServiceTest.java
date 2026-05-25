@@ -2308,8 +2308,8 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
-                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0, 0),
+                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0, 0)));
 
                 BookDTO result = bookService.updateBook(10L, update);
 
@@ -2360,7 +2360,7 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 2, 3)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 2, 3, 0, 0, 0)));
 
                 IllegalArgumentException ex = assertThrows(
                                 IllegalArgumentException.class,
@@ -2607,8 +2607,8 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
-                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0, 0),
+                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0, 0)));
 
                 BookDTO result = bookService.updateBook(10L, update);
 

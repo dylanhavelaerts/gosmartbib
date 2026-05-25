@@ -66,6 +66,8 @@ public class BookService {
     private final SchoolRepository schoolRepository;
     private final BookCopyRepository bookCopyRepository;
 
+    private final InventoryAdjustmentService inventoryAdjustmentService;
+
     @Value("${google.books.api.url}")
     private String googleBooksApiUrl;
 
@@ -879,6 +881,20 @@ public class BookService {
                 .toList();
     }
 
+    public void updateCopyCondition(Long copyId, BookCopyCondition newCondition, String notes) {
+        BookCopyEntity copy = bookCopyRepository.findById(copyId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exemplaar niet gevonden."));
+
+        BookCopyCondition previousCondition = copy.getCondition();
+        copy.setCondition(newCondition);
+        if (notes != null) copy.setNotes(notes);
+        bookCopyRepository.save(copy);
+
+        if (previousCondition != newCondition) {
+            inventoryAdjustmentService.adjustForConditionChange(copy.getInventory(), previousCondition, newCondition);
+        }
+    }
+
     // region Helper functies
     private static String generateEan13(long copyId) {
         // prefix 200-299 is gereserveerd voor intern gebruik (we moeten niet aan registratie aanmaken bij GS1 als we hiertussen blijven)
@@ -1650,34 +1666,5 @@ public class BookService {
         }
     }
 
-    private void reconcileCopiesForInventory(BookInventoryEntity inventory) {
-        long nonLostCount = bookCopyRepository.countByInventoryAndConditionNot(inventory, BookCopyCondition.LOST);
-        int targetCount = safeCopyCount(inventory.getTotalCopies());
-
-        if (nonLostCount < targetCount) {
-            int nextNumber = bookCopyRepository.findByInventory(inventory).stream()
-                    .map(BookCopyEntity::getCopyNumber)
-                    .filter(Objects::nonNull)
-                    .max(Integer::compareTo)
-                    .orElse(0) + 1;
-
-            List<BookCopyEntity> toCreate = new ArrayList<>();
-            for (long i = nonLostCount; i < targetCount; i++) {
-                BookCopyEntity copy = new BookCopyEntity();
-                copy.setInventory(inventory);
-                copy.setCondition(BookCopyCondition.GOOD);
-                copy.setCopyNumber(nextNumber++);
-                toCreate.add(copy);
-            }
-            bookCopyRepository.saveAll(toCreate);
-        }
-    }
-
-    private BookEntity saveAndReconcile(BookEntity book) {
-        BookEntity saved = bookRepository.save(book);
-        saved.getInventories().forEach(this::reconcileCopiesForInventory);
-
-        return saved;
-    }
     // endregion
 }

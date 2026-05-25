@@ -10,6 +10,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -49,8 +50,8 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
 
         log.info("=== GROUPINFO ===");
 
-        List<Map<String, Object>> groups = (List<Map<String, Object>>) groupInfoResponse.get("groups");
-        List<Map<String, Object>> parentGroups = (List<Map<String, Object>>) groupInfoResponse.get("parentGroups");
+        List<Map<String, Object>> groups = extractGroupList(groupInfoResponse.get("groups"));
+        List<Map<String, Object>> parentGroups = extractGroupList(groupInfoResponse.get("parentGroups"));
 
         // goede formatting
         if (groups != null) {
@@ -100,5 +101,25 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
             log.warn("Failed to fetch groupinfo from Smartschool: {}", e.getMessage());
             return Collections.emptyMap();
         }
+    }
+
+    private List<Map<String, Object>> extractGroupList(Object value) {
+        if (!(value instanceof List<?> list)) {
+            return null;
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> map) {
+                Map<String, Object> entry = new HashMap<>();
+                for (Map.Entry<?, ?> pair : map.entrySet()) {
+                    if (pair.getKey() != null) {
+                        entry.put(pair.getKey().toString(), pair.getValue());
+                    }
+                }
+                result.add(entry);
+            }
+        }
+        return result;
     }
 }

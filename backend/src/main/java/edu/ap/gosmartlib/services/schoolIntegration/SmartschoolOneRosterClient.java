@@ -3,6 +3,7 @@ package edu.ap.gosmartlib.services.schoolIntegration;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -45,11 +46,12 @@ public class SmartschoolOneRosterClient {
             String path,
             String... responseKeys) {
 
-        ResponseEntity<Map> response = restClient.get()
+        ResponseEntity<Map<String, Object>> response = restClient.get()
                 .uri(integration.getSchoolBaseUrl() + path)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .retrieve()
-                .toEntity(Map.class);
+            .toEntity(new ParameterizedTypeReference<Map<String, Object>>() {
+            });
 
         Map<String, Object> body = response.getBody();
         if (body == null) {
@@ -73,11 +75,12 @@ public class SmartschoolOneRosterClient {
             String responseKey) {
 
         try {
-            ResponseEntity<Map> response = restClient.get()
+                ResponseEntity<Map<String, Object>> response = restClient.get()
                     .uri(integration.getSchoolBaseUrl() + path)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                     .retrieve()
-                    .toEntity(Map.class);
+                    .toEntity(new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
 
             Map<String, Object> body = response.getBody();
             if (body == null) return Map.of();
