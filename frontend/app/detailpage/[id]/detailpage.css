@@ -611,18 +611,17 @@ align-self: center;
 }
 
 .campusBreakdown {
-  background-color: #f9fafb;
-  border-radius: 8px;
-  padding: 12px;
-  border: 1px solid #e5e7eb;
+  border-top: 1px solid #e4d5de;
+  padding-top: 0.75rem;
 }
 
 .campusBreakdownTitle {
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
-  margin-top: 0;
-  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+  color: #8e2446;
+  margin: 0 0 0.6rem 0;
+  letter-spacing: 0.06em;
+  text-align: center;
 }
 
 .campusList {
@@ -631,7 +630,7 @@ align-self: center;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .campusItem {
@@ -639,7 +638,7 @@ align-self: center;
   justify-content: space-between;
   align-items: center;
   font-size: 0.85rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e4d5de;
   padding-bottom: 4px;
 }
 
@@ -649,11 +648,119 @@ align-self: center;
 }
 
 .campusName {
-  color: #4b5563;
+  color: #4a4a4a;
 }
 
 .campusCount {
   font-weight: 600;
+}
+
+.campusToggleItem {
+  list-style: none;
+  padding-top: 2px;
+}
+
+.campusToggleBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  color: #8e2446;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.campusItemExpandable {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.campusItemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0 0 4px 0;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  text-align: left;
+}
+
+.campusChevron {
+  display: inline-block;
+  margin-right: 4px;
+  font-size: 0.7rem;
+  color: #8e2446;
+}
+
+.copyList {
+  list-style: none;
+  padding: 4px 0 4px 8px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-left: 2px solid #e4d5de;
+}
+
+.copyItem {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #4a4a4a;
+}
+
+.copyItem--loading {
+  display: block;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.copyNumber {
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.copyBarcode {
+  color: #4a4a4a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copyCondition {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.copyCondition--good {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.copyCondition--damaged {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.copyCondition--broken {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.copyCondition--lost {
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 .text-success {
