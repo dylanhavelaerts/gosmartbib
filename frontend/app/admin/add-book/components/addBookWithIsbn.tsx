@@ -82,9 +82,9 @@ export default function AddBookWithIsbn() {
         setPreviewBook(data);
         setMessage("Boek gevonden! Controleer de gegevens hieronder.");
       } else if (response.status === 404) {
-        setMessage("Geen boek gevonden met dit ISBN-nummer bij Google Books.");
+        setMessage("Geen boek gevonden met dit ISBN-nummer bij Google Books");
       } else {
-        setMessage("Er is een onverwachte serverfout opgetreden.");
+        setMessage("Er is een onverwachte serverfout opgetreden");
       }
     } catch (error) {
       console.error(error);
@@ -127,11 +127,11 @@ export default function AddBookWithIsbn() {
         setCampus("");
         setPreviewBook(null);
       } else {
-        setMessage("Er ging iets mis bij het opslaan van het boek.");
+        setMessage("Er ging iets mis bij het opslaan van het boek");
       }
     } catch (error) {
       console.error(error);
-      setMessage("Kan de server niet bereiken.");
+      setMessage("Kan de server niet bereiken");
     } finally {
       setLoading(false);
     }

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/books")
@@ -226,17 +227,27 @@ public class BookController {
      */
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> importBooks(@RequestParam("file") MultipartFile file,
-            @RequestParam(required = false) String campus, @AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<?> importBooks(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) String campus,
+            @RequestParam(defaultValue = "false") boolean confirmDuplicates,
+            @RequestParam(required = false) List<Integer> confirmedDuplicateRows,
+            @AuthenticationPrincipal OAuth2User principal) {
         try {
-            BulkImportResponseDTO result = bookService.importBooksFromExcel(file,
+            BulkImportResponseDTO result = bookService.importBooksFromExcel(
+                    file,
                     authHelper.extractUidOrNull(principal),
-                    campus);
-            return new ResponseEntity<>(result, HttpStatus.OK);
+                    campus,
+                    confirmDuplicates,
+                    confirmedDuplicateRows == null ? List.of() : confirmedDuplicateRows);
+
+            return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (RuntimeException e) {
-            return ResponseEntity.internalServerError().body("An error occurred while importing the Excel file.");
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", "Er is een fout opgetreden bij het importeren van het Excelbestand."));
         }
     }
 

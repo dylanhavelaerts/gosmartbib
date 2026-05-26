@@ -1507,13 +1507,22 @@ class BookServiceTest {
         @Test
         void givenValidExcelRow_whenImportBooksFromExcel_thenSavesBookAndReturnsCorrectSummary() throws IOException {
                 MockMultipartFile file = createExcelFile(new String[][] {
-                                { "9780132350884", "Clean Code" }
+                                {
+                                                "9780132350884",
+                                                "Clean Code",
+                                                "Programming; Software Engineering",
+                                                "Toekomst & technologie",
+                                                "A",
+                                                "Campus Zuid",
+                                                "3",
+                                                "2"
+                                }
                 });
 
                 GoogleBooksResponse googleResponse = createMockGoogleResponse("Clean Code", "Robert C. Martin");
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
+                when(bookRepository.findByNormalizedIsbn("9780132350884")).thenReturn(Optional.empty());
                 when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class))).thenReturn(googleResponse);
                 when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> {
                         BookEntity saved = invocation.getArgument(0);
@@ -1527,28 +1536,126 @@ class BookServiceTest {
                 assertEquals(1, result.savedCount());
                 assertEquals(0, result.mismatchCount());
                 assertTrue(result.mismatches().isEmpty());
+                assertEquals(0, result.duplicateWarningCount());
+                assertTrue(result.duplicateWarnings().isEmpty());
 
                 ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
                 verify(bookRepository).save(captor.capture());
-                assertEquals("Clean Code", captor.getValue().getTitle());
-                assertEquals("9780132350884", captor.getValue().getIsbn());
+
+                BookEntity savedBook = captor.getValue();
+
+                assertEquals("Clean Code", savedBook.getTitle());
+                assertEquals("9780132350884", savedBook.getIsbn());
+                assertEquals(List.of("Programming", "Software Engineering"), savedBook.getCategories());
+                assertEquals(List.of("Toekomst & technologie"), savedBook.getLabels());
+                assertEquals("A", savedBook.getReadingLevel());
+                assertEquals(3, savedBook.getTotalCopies());
+                assertEquals(2, savedBook.getAvailableCopies());
+                assertEquals(1, savedBook.getInventories().size());
+                assertEquals("Campus Zuid", savedBook.getInventories().get(0).getCampus());
         }
 
         @Test
-        void givenBookAlreadyExistsInDatabase_whenImportBooksFromExcel_thenAddsMismatchAndDoesNotSave()
+        void givenDuplicateIsbn_whenImportBooksFromExcelWithoutConfirmation_thenReturnsDuplicateWarningAndDoesNotSave()
                         throws IOException {
                 MockMultipartFile file = createExcelFile(new String[][] {
-                                { "9780132350884", "Clean Code" }
+                                {
+                                                "9780132350884",
+                                                "Clean Code",
+                                                "Programming",
+                                                "Toekomst & technologie",
+                                                "A",
+                                                "Campus Zuid",
+                                                "3",
+                                                "2"
+                                }
                 });
 
-                when(bookRepository.existsByIsbn("9780132350884")).thenReturn(true);
+                BookEntity existingBook = buildBook();
+                existingBook.setId(20L);
+                existingBook.setIsbn("9780132350884");
+                existingBook.setTotalCopies(2);
+                existingBook.setAvailableCopies(1);
+                existingBook.setInventories(new ArrayList<>(List.of(
+                                buildInventory(school, "Campus Zuid", 2, 1))));
+
+                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+                when(bookRepository.findByNormalizedIsbn("9780132350884")).thenReturn(Optional.of(existingBook));
 
                 BulkImportResponseDTO result = bookService.importBooksFromExcel(file, STUDENT_UID, "Campus Zuid");
 
                 assertEquals(1, result.totalRows());
                 assertEquals(0, result.savedCount());
-                assertEquals(1, result.mismatchCount());
+                assertEquals(0, result.mismatchCount());
+                assertEquals(1, result.duplicateWarningCount());
+                assertEquals(1, result.duplicateWarnings().size());
+
+                BulkImportDuplicateWarningDTO warning = result.duplicateWarnings().get(0);
+
+                assertEquals(2, warning.rowNumber());
+                assertEquals(20L, warning.existingBookId());
+                assertEquals("Clean Code", warning.title());
+                assertEquals("Campus Zuid", warning.campus());
+                assertEquals(3, warning.totalCopiesToAdd());
+                assertEquals(2, warning.availableCopiesToAdd());
+                assertEquals(2, warning.currentTotalCopies());
+                assertEquals(1, warning.currentAvailableCopies());
+
                 verify(bookRepository, never()).save(any(BookEntity.class));
+                verify(restTemplate, never()).getForObject(anyString(), eq(GoogleBooksResponse.class));
+        }
+
+        @Test
+        void givenConfirmedDuplicateIsbn_whenImportBooksFromExcel_thenIncreasesExistingInventory()
+                        throws IOException {
+                MockMultipartFile file = createExcelFile(new String[][] {
+                                {
+                                                "9780132350884",
+                                                "Clean Code",
+                                                "Programming",
+                                                "Toekomst & technologie",
+                                                "A",
+                                                "Campus Zuid",
+                                                "3",
+                                                "2"
+                                }
+                });
+
+                BookEntity existingBook = buildBook();
+                existingBook.setId(20L);
+                existingBook.setIsbn("9780132350884");
+                existingBook.setTotalCopies(2);
+                existingBook.setAvailableCopies(1);
+                existingBook.setInventories(new ArrayList<>(List.of(
+                                buildInventory(school, "Campus Zuid", 2, 1))));
+
+                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+                when(bookRepository.findByNormalizedIsbn("9780132350884")).thenReturn(Optional.of(existingBook));
+                when(bookRepository.save(any(BookEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+                BulkImportResponseDTO result = bookService.importBooksFromExcel(
+                                file,
+                                STUDENT_UID,
+                                "Fallback Campus",
+                                true,
+                                List.of(2));
+
+                assertEquals(1, result.totalRows());
+                assertEquals(1, result.savedCount());
+                assertEquals(0, result.mismatchCount());
+                assertEquals(0, result.duplicateWarningCount());
+
+                ArgumentCaptor<BookEntity> captor = ArgumentCaptor.forClass(BookEntity.class);
+                verify(bookRepository).save(captor.capture());
+
+                BookEntity savedBook = captor.getValue();
+
+                assertEquals(5, savedBook.getTotalCopies());
+                assertEquals(3, savedBook.getAvailableCopies());
+                assertEquals(1, savedBook.getInventories().size());
+                assertEquals(5, savedBook.getInventories().get(0).getTotalCopies());
+                assertEquals(3, savedBook.getInventories().get(0).getAvailableCopies());
+
                 verify(restTemplate, never()).getForObject(anyString(), eq(GoogleBooksResponse.class));
         }
 
@@ -1559,8 +1666,8 @@ class BookServiceTest {
                                 { "9780132350884", "Clean Code" }
                 });
 
-                when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+                when(bookRepository.findByNormalizedIsbn("9780132350884")).thenReturn(Optional.empty());
                 when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class)))
                                 .thenReturn(createMockGoogleResponse("Refactoring", "Martin Fowler"));
 
@@ -1569,6 +1676,8 @@ class BookServiceTest {
                 assertEquals(1, result.totalRows());
                 assertEquals(0, result.savedCount());
                 assertEquals(1, result.mismatchCount());
+                assertEquals(0, result.duplicateWarningCount());
+
                 verify(bookRepository, never()).save(any(BookEntity.class));
         }
 
@@ -1579,7 +1688,8 @@ class BookServiceTest {
                                 { "9780132350884", "Clean Code" }
                 });
 
-                when(bookRepository.existsByIsbn("9780132350884")).thenReturn(false);
+                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+                when(bookRepository.findByNormalizedIsbn("9780132350884")).thenReturn(Optional.empty());
                 when(restTemplate.getForObject(anyString(), eq(GoogleBooksResponse.class)))
                                 .thenReturn(new GoogleBooksResponse());
 
@@ -1588,6 +1698,8 @@ class BookServiceTest {
                 assertEquals(1, result.totalRows());
                 assertEquals(0, result.savedCount());
                 assertEquals(1, result.mismatchCount());
+                assertEquals(0, result.duplicateWarningCount());
+
                 verify(bookRepository, never()).save(any(BookEntity.class));
         }
 
@@ -1599,11 +1711,15 @@ class BookServiceTest {
                                 { "", "Clean Code" }
                 });
 
+                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+
                 BulkImportResponseDTO result = bookService.importBooksFromExcel(file, STUDENT_UID, "Campus Zuid");
 
                 assertEquals(2, result.totalRows());
                 assertEquals(0, result.savedCount());
                 assertEquals(2, result.mismatchCount());
+                assertEquals(0, result.duplicateWarningCount());
+
                 verify(bookRepository, never()).save(any(BookEntity.class));
                 verify(restTemplate, never()).getForObject(anyString(), eq(GoogleBooksResponse.class));
         }
@@ -1611,14 +1727,16 @@ class BookServiceTest {
         @Test
         void givenUnreadableExcelFile_whenImportBooksFromExcel_thenThrowsRuntimeException() throws IOException {
                 MultipartFile file = mock(MultipartFile.class);
+
                 when(file.isEmpty()).thenReturn(false);
+                when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(file.getInputStream()).thenThrow(new IOException("boom"));
 
                 RuntimeException ex = assertThrows(RuntimeException.class,
                                 () -> bookService.importBooksFromExcel(file, STUDENT_UID, "Campus Zuid"));
+
                 assertEquals("Kon de excel file niet lezen", ex.getMessage());
         }
-
         // --- importBooksWithoutIsbnFromExcel Duplicate Tests ---
 
         @Test
@@ -2856,22 +2974,38 @@ class BookServiceTest {
                 try (Workbook workbook = new XSSFWorkbook();
                                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-                        Sheet sheet = workbook.createSheet("Books");
+                        Sheet sheet = workbook.createSheet("Boekenlijst");
+
+                        String[] headers = {
+                                        "ISBN",
+                                        "Titel",
+                                        "Categorieën",
+                                        "Leefwereldlabels",
+                                        "Leesniveau",
+                                        "Campus",
+                                        "Totaal aantal boeken",
+                                        "Beschikbaar aantal boeken"
+                        };
 
                         Row header = sheet.createRow(0);
-                        header.createCell(0).setCellValue("ISBN");
-                        header.createCell(1).setCellValue("Title");
 
-                        for (int i = 0; i < rows.length; i++) {
-                                Row row = sheet.createRow(i + 1);
-                                row.createCell(0).setCellValue(rows[i][0]);
-                                row.createCell(1).setCellValue(rows[i][1]);
+                        for (int i = 0; i < headers.length; i++) {
+                                header.createCell(i).setCellValue(headers[i]);
+                        }
+
+                        for (int rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+                                Row row = sheet.createRow(rowIndex + 1);
+
+                                for (int cellIndex = 0; cellIndex < rows[rowIndex].length; cellIndex++) {
+                                        row.createCell(cellIndex).setCellValue(rows[rowIndex][cellIndex]);
+                                }
                         }
 
                         workbook.write(out);
 
                         return new MockMultipartFile(
-                                        "file", "books.xlsx",
+                                        "file",
+                                        "books.xlsx",
                                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                         out.toByteArray());
                 }
