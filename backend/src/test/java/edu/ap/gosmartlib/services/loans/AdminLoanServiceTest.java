@@ -1,15 +1,15 @@
 package edu.ap.gosmartlib.services.loans;
 
-import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
-import edu.ap.gosmartlib.entities.SchoolClassEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.BookRepository;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
-import edu.ap.gosmartlib.repositories.SchoolClassRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanHistoryRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import org.junit.jupiter.api.Test;
@@ -57,7 +57,7 @@ class AdminLoanServiceTest {
         when(loanRepository.findAllActiveBySchoolId(eq(1L), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
-        Page<AdminActiveLoanDTO> result = adminLoanService.getActiveLoansForSchool("uid", null, 0, 10);
+        Page<LibrarianActiveLoanDTO> result = adminLoanService.getActiveLoansForSchool("uid", null, 0, 10);
 
         assertTrue(result.isEmpty());
         verify(mapper, never()).toActiveDTO(any(), any(), any(), any());
@@ -68,20 +68,20 @@ class AdminLoanServiceTest {
         UserEntity actor = mockActor(1L);
         when(accessGuard.requireBibliotheekbeheerder("uid")).thenReturn(actor);
 
-        var loan = mock(edu.ap.gosmartlib.entities.LoanEntities.LoanEntity.class);
+        var loan = mock(edu.ap.gosmartlib.entities.loan.LoanEntity.class);
         when(loan.getSmartschoolUserId()).thenReturn("student1");
         when(loan.getIsbn()).thenReturn("isbn1");
 
-        Page<edu.ap.gosmartlib.entities.LoanEntities.LoanEntity> loanPage =
+        Page<edu.ap.gosmartlib.entities.loan.LoanEntity> loanPage =
                 new PageImpl<>(List.of(loan), PageRequest.of(0, 10), 1);
         when(loanRepository.findAllActiveBySchoolId(eq(1L), any(Pageable.class))).thenReturn(loanPage);
         when(bookRepository.findByIsbnIn(any())).thenReturn(List.of());
         when(userRepository.findAllBySchool_IdAndSmartschoolUidIn(any(), any())).thenReturn(List.of());
 
-        AdminActiveLoanDTO dto = mock(AdminActiveLoanDTO.class);
+        LibrarianActiveLoanDTO dto = mock(LibrarianActiveLoanDTO.class);
         when(mapper.toActiveDTO(any(), any(), any(), any())).thenReturn(dto);
 
-        Page<AdminActiveLoanDTO> result = adminLoanService.getActiveLoansForSchool("uid", null, 0, 10);
+        Page<LibrarianActiveLoanDTO> result = adminLoanService.getActiveLoansForSchool("uid", null, 0, 10);
 
         assertEquals(1, result.getTotalElements());
         assertEquals(dto, result.getContent().get(0));
@@ -109,7 +109,7 @@ class AdminLoanServiceTest {
         when(loanHistoryRepository.findAllBySchoolIdOrderByReturnDateDesc(eq(1L), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
-        Page<AdminLoanHistoryDTO> result = adminLoanService.getLoanHistoryForSchool("uid", null, 0, 10);
+        Page<LibrarianLoanHistoryDTO> result = adminLoanService.getLoanHistoryForSchool("uid", null, 0, 10);
 
         assertTrue(result.isEmpty());
     }

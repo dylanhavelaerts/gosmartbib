@@ -28,7 +28,6 @@ export default function LibrarySettings() {
   const [savedReminderDays, setSavedReminderDays] = useState<number>(
     DEFAULT_REMINDER_DAYS,
   );
-
   // --- Homepage Weergave States ---
   const [showSpotlight, setShowSpotlight] = useState<boolean>(true);
   const [showNewInLibrary, setShowNewInLibrary] = useState<boolean>(true);
@@ -41,6 +40,11 @@ export default function LibrarySettings() {
     useState<boolean>(true);
   const [savedShowUrgentLoans, setSavedShowUrgentLoans] =
     useState<boolean>(true);
+
+  // --- Bibliotheekfuncties States ---
+  const [barcodesEnabled, setBarcodesEnabled] = useState<boolean>(false);
+  const [savedBarcodesEnabled, setSavedBarcodesEnabled] =
+    useState<boolean>(false);
 
   // --- Algemene States ---
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -88,16 +92,20 @@ export default function LibrarySettings() {
           return;
         }
 
-        // Haal zowel leenbeleid als homepage instellingen tegelijk op
-        const [policyResponse, settingsResponse] = await Promise.all([
-          fetch(`${API_URL}/admin/schools/${meData.school.id}/loan-policy`, {
-            credentials: "include",
-          }),
-          fetch(
-            `${API_URL}/admin/schools/${meData.school.id}/homepage-settings`,
-            { credentials: "include" },
-          ),
-        ]);
+        const [policyResponse, settingsResponse, librarySettingsResponse] =
+          await Promise.all([
+            fetch(`${API_URL}/admin/schools/${meData.school.id}/loan-policy`, {
+              credentials: "include",
+            }),
+            fetch(
+              `${API_URL}/admin/schools/${meData.school.id}/homepage-settings`,
+              { credentials: "include" },
+            ),
+            fetch(
+              `${API_URL}/admin/schools/${meData.school.id}/library-settings`,
+              { credentials: "include" },
+            ),
+          ]);
 
         // Verwerk Leenbeleid
         if (policyResponse.status === 404) {
@@ -136,6 +144,13 @@ export default function LibrarySettings() {
           setSavedSenderIdentifier(
             settingsData.smartschoolSenderIdentifier ?? "",
           );
+        }
+
+        // Verwerk Bibliotheekfuncties
+        if (librarySettingsResponse.ok) {
+          const libData = await librarySettingsResponse.json();
+          setBarcodesEnabled(libData.barcodesEnabled ?? false);
+          setSavedBarcodesEnabled(libData.barcodesEnabled ?? false);
         }
       } catch {
         setError("Er is een fout opgetreden bij het laden van de gegevens");
@@ -190,22 +205,35 @@ export default function LibrarySettings() {
         },
       );
 
-      const [policyRes, settingsRes] = await Promise.all([
+      const librarySettingsPromise = fetch(
+        `${API_URL}/admin/schools/${schoolId}/library-settings`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ barcodesEnabled }),
+        },
+      );
+
+      const [policyRes, settingsRes, librarySettingsRes] = await Promise.all([
         policyPromise,
         settingsPromise,
+        librarySettingsPromise,
       ]);
 
       if (!policyRes.ok) {
         const body = await policyRes.text();
         throw new Error(body || "Opslaan van leenbeleid mislukt");
       }
-
       if (!settingsRes.ok) {
         const body = await settingsRes.text();
         throw new Error(body || "Opslaan van weergave-instellingen mislukt");
       }
+      if (!librarySettingsRes.ok) {
+        const body = await librarySettingsRes.text();
+        throw new Error(body || "Opslaan van bibliotheekfuncties mislukt");
+      }
 
-      // Verwerk resultaten leenbeleid
       const savedPolicy = await policyRes.json();
       setLoanPeriod(savedPolicy.defaultLoanPeriodDays);
       setExtensionPeriod(savedPolicy.defaultExtensionPeriodDays);
@@ -214,7 +242,6 @@ export default function LibrarySettings() {
       setSavedExtensionPeriod(savedPolicy.defaultExtensionPeriodDays);
       setSavedReminderDays(savedPolicy.dueDateReminderDays);
 
-      // Verwerk resultaten homepage settings
       const savedSettings = await settingsRes.json();
       setShowSpotlight(savedSettings.showSpotlight);
       setShowNewInLibrary(savedSettings.showNewInLibrary);
@@ -224,6 +251,10 @@ export default function LibrarySettings() {
       setSavedShowNewInLibrary(savedSettings.showNewInLibrary);
       setSavedShowReadingLists(savedSettings.showReadingLists);
       setSavedShowUrgentLoans(savedSettings.showUrgentLoans);
+
+      const savedLibSettings = await librarySettingsRes.json();
+      setBarcodesEnabled(savedLibSettings.barcodesEnabled);
+      setSavedBarcodesEnabled(savedLibSettings.barcodesEnabled);
       setSenderIdentifier(savedSettings.smartschoolSenderIdentifier ?? "");
       setSavedSenderIdentifier(savedSettings.smartschoolSenderIdentifier ?? "");
 
@@ -338,27 +369,6 @@ export default function LibrarySettings() {
                       />
                       <span className="unitLabel">dagen</span>
                     </div>
-                  </label>
-                </div>
-              </section>
-
-              {/* --- SMARTSCHOOL AFZENDER CARD --- */}
-              <section className="card">
-                <h2>Smartschool Berichten</h2>
-                <p className="help">
-                  Vanuit welk Smartschool-account worden berichten naar
-                  gebruikers verstuurd.
-                </p>
-                <div className="form">
-                  <label className="field">
-                    <span>Afzender (gebruikersnaam)</span>
-                    <input
-                      type="text"
-                      value={senderIdentifier}
-                      onChange={(e) => setSenderIdentifier(e.target.value)}
-                      placeholder="bv. jan.janssen"
-                      disabled={saving}
-                    />
                   </label>
                 </div>
               </section>
@@ -515,6 +525,56 @@ export default function LibrarySettings() {
                 </div>
               </section>
 
+              {/* --- BIBLIOTHEEKFUNCTIES CARD --- */}
+              <section className="card">
+                <h2>Bibliotheekfuncties</h2>
+                <p className="help">
+                  Schakel extra functionaliteiten in of uit voor jouw
+                  bibliotheek.
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.75rem",
+                    marginTop: "1rem",
+                  }}
+                >
+                  <label
+                    style={checkboxRowStyle}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f3f4f6")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f9fafb")
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      style={{
+                        width: "1.25rem",
+                        height: "1.25rem",
+                        margin: 0,
+                        cursor: "pointer",
+                        accentColor: "var(--accent-color, #2563eb)",
+                      }}
+                      checked={barcodesEnabled}
+                      onChange={(e) => setBarcodesEnabled(e.target.checked)}
+                      disabled={saving}
+                    />
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        color: "#374151",
+                        userSelect: "none",
+                      }}
+                    >
+                      Streepjescodes inschakelen voor exemplaren
+                    </span>
+                  </label>
+                </div>
+              </section>
+
               {/* --- OPSLAAN KNOP --- */}
               <div className="actions" style={{ marginTop: "0.5rem" }}>
                 <button
@@ -566,14 +626,15 @@ export default function LibrarySettings() {
                     {savedReminderDays} dagen
                   </strong>
                 </div>
-                <div className="infoPanel" style={{ marginBottom: "0.75rem" }}>
-                  <p className="infoPanelTitle">Smartschool Berichten</p>
-                  <div className="infoRow">
-                    <span className="infoLabel">Afzender</span>
-                    <strong className="infoValue">
-                      {savedSenderIdentifier || "—"}
-                    </strong>
-                  </div>
+              </div>
+
+              <div className="infoPanel" style={{ marginBottom: "0.75rem" }}>
+                <p className="infoPanelTitle">Bibliotheekfuncties</p>
+                <div className="infoRow">
+                  <span className="infoLabel">Streepjescodes</span>
+                  <strong className="infoValue">
+                    {savedBarcodesEnabled ? "Ingeschakeld" : "Uitgeschakeld"}
+                  </strong>
                 </div>
               </div>
 

@@ -9,12 +9,12 @@ import edu.ap.gosmartlib.dto.statistics.MostWantedBookDTO;
 import edu.ap.gosmartlib.dto.statistics.OverviewStatsDTO;
 import edu.ap.gosmartlib.dto.statistics.ReturnPunctualityDTO;
 import edu.ap.gosmartlib.dto.statistics.TopReaderStudentDTO;
-import edu.ap.gosmartlib.entities.BookEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.loan.LoanExtensionStatus;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.BookNotificationRepository;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
+import edu.ap.gosmartlib.repositories.book.BookNotificationRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanHistoryRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -107,6 +107,8 @@ public class StatisticsService {
                 case APPROVED -> approved = count;
                 case PENDING  -> pending  = count;
                 case DENIED   -> denied   = count;
+                case NONE      -> {
+                }
             }
         }
         return new ReturnPunctualityDTO(onTime, late, approved, pending, denied);

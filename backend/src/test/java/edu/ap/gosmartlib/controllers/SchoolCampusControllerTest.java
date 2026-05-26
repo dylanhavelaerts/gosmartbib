@@ -1,11 +1,12 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.CreateSchoolCampusRequest;
-import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.SchoolCampusDTO;
+import edu.ap.gosmartlib.controllers.school.SchoolCampusController;
+import edu.ap.gosmartlib.dto.schoolintegration.schoolCampus.CreateSchoolCampusRequest;
+import edu.ap.gosmartlib.dto.schoolintegration.schoolCampus.SchoolCampusDTO;
 import edu.ap.gosmartlib.entities.AdminEntity;
 import edu.ap.gosmartlib.security.AdminPrincipal;
 import edu.ap.gosmartlib.security.AuthHelper;
-import edu.ap.gosmartlib.services.schoolIntegration.schoolCampus.SchoolCampusService;
+import edu.ap.gosmartlib.services.schoolintegration.schoolCampus.SchoolCampusService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

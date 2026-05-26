@@ -1,8 +1,8 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.dto.purchaseRequest.CreatePurchaseRequestDTO;
-import edu.ap.gosmartlib.dto.purchaseRequest.PurchaseRequestDTO;
-import edu.ap.gosmartlib.dto.purchaseRequest.PurchaseRequestNoteDTO;
+import edu.ap.gosmartlib.dto.purchaserequest.CreatePurchaseRequestDTO;
+import edu.ap.gosmartlib.dto.purchaserequest.PurchaseRequestDTO;
+import edu.ap.gosmartlib.dto.purchaserequest.PurchaseRequestNoteDTO;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.PurchaseRequestService;
 import lombok.RequiredArgsConstructor;

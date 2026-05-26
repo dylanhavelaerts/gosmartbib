@@ -1,13 +1,13 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.readinglist.ReadingListOverviewDTO;
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.entities.ReadingListEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.BookRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
-import edu.ap.gosmartlib.repositories.SchoolClassRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.util.ReadingListTargetType;

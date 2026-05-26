@@ -1,42 +1,46 @@
 package edu.ap.gosmartlib.services.loans;
 
-import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
-import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
-import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
-import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
-import edu.ap.gosmartlib.entities.BookEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanHistoryEntity;
+import edu.ap.gosmartlib.dto.loan.*;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
-import edu.ap.gosmartlib.repositories.BookRepository;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanPolicyRepository;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
+import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanHistoryRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanPolicyRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.services.InventoryAdjustmentService;
 import edu.ap.gosmartlib.services.messages.BookNotificationService;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
+import edu.ap.gosmartlib.util.BookCopyCondition;
+import edu.ap.gosmartlib.util.BookDisplayUtil;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.entities.BookInventoryEntity;
+import edu.ap.gosmartlib.entities.book.BookCopyEntity;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
+import edu.ap.gosmartlib.entities.loan.LoanEntity;
+import edu.ap.gosmartlib.entities.loan.LoanExtensionStatus;
+import edu.ap.gosmartlib.entities.loan.LoanHistoryEntity;
+
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.Comparator;
 
 @Service
@@ -47,9 +51,13 @@ public class LoanService {
     private final LoanHistoryRepository loanHistoryRepository;
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
-    private final BookNotificationService bookNotificationService;
+    private final BookCopyRepository bookCopyRepository;
     private final LoanPolicyRepository loanPolicyRepository;
+
     private final UserDirectoryService userDirectoryService;
+    private final BookNotificationService bookNotificationService;
+    private final InventoryAdjustmentService inventoryAdjustmentService;
+
 
     private static final Logger logger = LoggerFactory.getLogger(LoanService.class);
 
@@ -120,10 +128,14 @@ public class LoanService {
 
     // --- BOEKEN TERUGBRENGEN ---
     @Caching(evict = {
-        @CacheEvict(value = "achievements", allEntries = true),
-        @CacheEvict(value = "profileDistribution", allEntries = true)
+            @CacheEvict(value = "achievements", allEntries = true),
+            @CacheEvict(value = "profileDistribution", allEntries = true)
     })
     public void returnBook(Long loanId, int returnQuantity) {
+        returnBook(loanId, returnQuantity, 0, 0, 0);
+    }
+
+    public void returnBook(Long loanId, int returnQuantity, int damagedCount, int brokenCount, int lostCount) {
         LoanEntity loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Uitleen-record niet gevonden."));
 
@@ -139,6 +151,9 @@ public class LoanService {
         history.setLoanDate(loan.getLoanDate());
         history.setDueDate(loan.getDueDate());
         history.setReturnDate(LocalDate.now());
+        history.setDamagedCount(damagedCount);
+        history.setBrokenCount(brokenCount);
+        history.setLostCount(lostCount);
         loanHistoryRepository.save(history);
 
         // 2. Verhoog de voorraad in de boeken tabel én de school-inventory
@@ -416,40 +431,58 @@ public class LoanService {
 
     // --- BULK BOEKEN TERUGBRENGEN (Vanuit Frontend Mandje) ---
     @Caching(evict = {
-        @CacheEvict(value = "achievements", allEntries = true),
-        @CacheEvict(value = "profileDistribution", allEntries = true)
+            @CacheEvict(value = "achievements", allEntries = true),
+            @CacheEvict(value = "profileDistribution", allEntries = true)
     })
     public void returnBooksBulk(List<ReturnBulkRequestDTO> returnRequests) {
         for (ReturnBulkRequestDTO request : returnRequests) {
-            // 1. Zoek op welk ISBN bij dit bookId hoort
             BookEntity book = bookRepository.findById(request.bookId())
                     .orElseThrow(() -> new BookNotFoundException(request.bookId()));
 
-            // 2. Haal ALLE actieve leningen op van deze user voor dit specifieke boek
             List<LoanEntity> activeLoans = loanRepository.findBySmartschoolUserIdAndIsbn(
                     request.smartschoolUserId(), book.getIsbn());
 
-            // 3. Sorteer ze op inleverdatum (dichtstbijzijnde datum eerst)
             activeLoans.sort(Comparator.comparing(LoanEntity::getDueDate));
 
-            // Hoeveel moeten er in totaal worden teruggebracht?
             int remainingToReturn = request.quantity();
+            boolean damageCountsApplied = false;
 
-            // 4. Loop door de leningen en schrijf ze af
+            // In barcode mode the frontend sends copyConditions and leaves the counts as 0.
+            // Derive the actual counts from the scanned copies so the history record is correct.
+            int historyDamagedCount = request.damagedCount();
+            int historyBrokenCount  = request.brokenCount();
+            int historyLostCount    = request.lostCount();
+            if (request.copyConditions() != null && !request.copyConditions().isEmpty()) {
+                historyDamagedCount = (int) request.copyConditions().stream()
+                        .filter(c -> c.condition() == BookCopyCondition.DAMAGED).count();
+                historyBrokenCount  = (int) request.copyConditions().stream()
+                        .filter(c -> c.condition() == BookCopyCondition.BROKEN).count();
+                historyLostCount    = (int) request.copyConditions().stream()
+                        .filter(c -> c.condition() == BookCopyCondition.LOST).count();
+            }
+
             for (LoanEntity loan : activeLoans) {
-                if (remainingToReturn <= 0)
-                    break; // Alle teruggebrachte exemplaren zijn verwerkt!
+                if (remainingToReturn <= 0) break;
 
-                // Bepaal hoeveel we van DEZE specifieke record kunnen afhalen
-                // (Kies de kleinste van de twee: wat we nog moeten inleveren vs wat er in deze
-                // record staat)
                 int returnForThisLoan = Math.min(remainingToReturn, loan.getQuantity());
 
-                // 5. Hergebruik jouw bestaande logica om het in de geschiedenis te zetten!
-                returnBook(loan.getId(), returnForThisLoan);
+                if (!damageCountsApplied) {
+                    returnBook(loan.getId(), returnForThisLoan,
+                            historyDamagedCount, historyBrokenCount, historyLostCount);
+                    damageCountsApplied = true;
+                } else {
+                    returnBook(loan.getId(), returnForThisLoan, 0, 0, 0);
+                }
 
-                // Verminder het aantal dat we nog moeten afhandelen
                 remainingToReturn -= returnForThisLoan;
+            }
+
+            // Process copy conditions after availability is restored
+            if (request.copyConditions() != null && !request.copyConditions().isEmpty()) {
+                processBarcodeConditions(request.copyConditions(), book);
+            } else if (request.damagedCount() > 0 || request.brokenCount() > 0 || request.lostCount() > 0) {
+                processNoBarcodeConditions(book, request.smartschoolUserId(),
+                        request.damagedCount(), request.brokenCount(), request.lostCount());
             }
 
             if (remainingToReturn > 0) {
@@ -460,60 +493,29 @@ public class LoanService {
         }
     }
 
-    // --- HISTORIEK OPHALEN ---
-    public List<LoanHistoryDTO> getLoanHistoryByUser(String smartschoolUid) {
-        List<LoanHistoryEntity> historyList = loanHistoryRepository
-                .findBySmartschoolUserIdOrderByReturnDateDesc(smartschoolUid);
-
-        return historyList.stream().map(history -> {
-            LoanHistoryDTO dto = new LoanHistoryDTO();
-            dto.setId(history.getId());
-
-            // Omdat history enkel een ISBN opslaat en geen BookEntity,
-            // moeten we het boek even opzoeken via de repository.
-            BookEntity book = bookRepository.findByIsbn(history.getIsbn()).orElse(null);
-
-            if (book != null) {
-                dto.setBookTitle(book.getTitle());
-                // In jullie BookEntity is authors een List<String>, we maken hier een mooie
-                // string van
-                dto.setAuthor(String.join(", ", book.getAuthors()));
-            } else {
-                // Fallback voor als het boek intussen verwijderd zou zijn uit de databank
-                dto.setBookTitle("Onbekend Boek (ISBN: " + history.getIsbn() + ")");
-                dto.setAuthor("Onbekende Auteur");
-            }
-
-            dto.setLoanDate(history.getLoanDate());
-            dto.setReturnDate(history.getReturnDate());
-            dto.setQuantity(history.getQuantity());
-            return dto;
-        }).collect(Collectors.toList());
-    }
     public Page<LoanHistoryDTO> getLoanHistoryByUser(String smartschoolUid, Pageable pageable) {
         Page<LoanHistoryEntity> historyPage = loanHistoryRepository
                 .findBySmartschoolUserIdOrderByReturnDateDesc(smartschoolUid, pageable);
 
         return historyPage.map(history -> {
-            LoanHistoryDTO dto = new LoanHistoryDTO();
-            dto.setId(history.getId());
-
             BookEntity book = bookRepository.findByIsbn(history.getIsbn()).orElse(null);
-            if (book != null) {
-                dto.setBookTitle(book.getTitle());
-                dto.setAuthor(String.join(", ", book.getAuthors()));
-            } else {
-                dto.setBookTitle("Onbekend Boek (ISBN: " + history.getIsbn() + ")");
-                dto.setAuthor("Onbekende Auteur");
-            }
 
-            dto.setLoanDate(history.getLoanDate());
-            dto.setReturnDate(history.getReturnDate());
-            dto.setQuantity(history.getQuantity());
-            return dto;
+            String bookTitle = BookDisplayUtil.resolveTitle(book, history.getIsbn());
+            String author = BookDisplayUtil.resolveAuthor(book);
+
+            return new LoanHistoryDTO(
+                    history.getId(),
+                    bookTitle,
+                    author,
+                    history.getLoanDate(),
+                    history.getReturnDate(),
+                    history.getQuantity(),
+                    history.getDamagedCount(),
+                    history.getBrokenCount(),
+                    history.getLostCount()
+            );
         });
     }
-
 
     private Map<String, String> resolveDisplayNamesMap(String actorUid, List<String> uids) {
         if (uids == null || uids.isEmpty()) {
@@ -559,5 +561,68 @@ public class LoanService {
         }
 
         return "Gebruiker";
+    }
+
+    private void processBarcodeConditions(List<BookCopyReturnConditionDTO> conditions, BookEntity book) {
+        for (BookCopyReturnConditionDTO c : conditions) {
+            BookCopyEntity copy;
+
+            if (c.copyId() != null) {
+                copy = bookCopyRepository.findById(c.copyId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exemplaar niet gevonden: " + c.copyId()));
+            } else if (c.barcode() != null) {
+                copy = bookCopyRepository.findByBarcode(c.barcode())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode niet gevonden: " + c.barcode()));
+            } else {
+                continue;
+            }
+
+            if (!copy.getInventory().getBook().getId().equals(book.getId())) {
+                throw new IllegalArgumentException("Exemplaar behoort niet tot dit boek.");
+            }
+
+            BookCopyCondition previousCondition = copy.getCopyCondition();
+            copy.setCopyCondition(c.condition());
+            if (c.notes() != null) copy.setNotes(c.notes());
+            bookCopyRepository.save(copy);
+
+            inventoryAdjustmentService.adjustForConditionChange(copy.getInventory(), previousCondition, c.condition());
+        }
+    }
+
+    private void processNoBarcodeConditions(BookEntity book, String smartschoolUserId, int damagedCount, int brokenCount, int lostCount) {
+        UserEntity borrower = userRepository.findBySmartschoolUid(smartschoolUserId).orElse(null);
+        if (borrower == null || borrower.getSchool() == null) return;
+
+        BookInventoryEntity inventory = book.getInventories().stream()
+                .filter(inv -> inv.getSchool() != null && inv.getSchool().getId().equals(borrower.getSchool().getId()))
+                .findFirst()
+                .orElse(null);
+
+        if (inventory == null) return;
+
+        markCopies(inventory, damagedCount, BookCopyCondition.DAMAGED);
+
+        List<BookCopyEntity> brokenCopies = markCopies(inventory, brokenCount, BookCopyCondition.BROKEN);
+        brokenCopies.forEach(c -> inventoryAdjustmentService.adjustForConditionChange(inventory, BookCopyCondition.GOOD, BookCopyCondition.BROKEN));
+
+        List<BookCopyEntity> lostCopies = markCopies(inventory, lostCount, BookCopyCondition.LOST);
+        lostCopies.forEach(c -> inventoryAdjustmentService.adjustForConditionChange(inventory, BookCopyCondition.GOOD, BookCopyCondition.LOST));
+    }
+
+    private List<BookCopyEntity> markCopies(BookInventoryEntity inventory, int count, BookCopyCondition newCondition) {
+        if (count <= 0) return List.of();
+
+        List<BookCopyEntity> candidates = new ArrayList<>(bookCopyRepository.findByInventoryAndCopyCondition(inventory, BookCopyCondition.GOOD));
+
+        if (candidates.size() < count && newCondition != BookCopyCondition.DAMAGED) {
+            candidates.addAll(bookCopyRepository.findByInventoryAndCopyCondition(inventory, BookCopyCondition.DAMAGED));
+        }
+
+        List<BookCopyEntity> toUpdate = candidates.stream().limit(count).toList();
+        toUpdate.forEach(c -> c.setCopyCondition(newCondition));
+        bookCopyRepository.saveAll(toUpdate);
+
+        return toUpdate;
     }
 }

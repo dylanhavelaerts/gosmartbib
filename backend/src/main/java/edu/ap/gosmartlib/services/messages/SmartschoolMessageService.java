@@ -1,12 +1,12 @@
 package edu.ap.gosmartlib.services.messages;
 
-import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
+import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.HomepageSettingsRepository;
-import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolSoapClient;
+import edu.ap.gosmartlib.repositories.school.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolOneRosterAuthService;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolOneRosterClient;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolSoapClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;

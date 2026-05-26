@@ -3,16 +3,19 @@ package edu.ap.gosmartlib.services;
 import edu.ap.gosmartlib.dto.*;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
-import edu.ap.gosmartlib.entities.BookEntity;
-import edu.ap.gosmartlib.entities.BookInventoryEntity;
-import edu.ap.gosmartlib.entities.SchoolClassEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.book.BookCopyEntity;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.exceptions.NegativeValueException;
-import edu.ap.gosmartlib.repositories.BookRepository;
+import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolRepository;
+import edu.ap.gosmartlib.util.BookCopyCondition;
 import org.springframework.data.domain.*;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +64,9 @@ public class BookService {
     private final UserRepository userRepository;
     private final BookFilterValidator bookFilterValidator;
     private final SchoolRepository schoolRepository;
+    private final BookCopyRepository bookCopyRepository;
+
+    private final InventoryAdjustmentService inventoryAdjustmentService;
 
     @Value("${google.books.api.url}")
     private String googleBooksApiUrl;
@@ -114,6 +120,7 @@ public class BookService {
         applySingleInventoryForCurrentUser(newBook, smartschoolUid, campus, totalCopies, totalCopies);
         recomputeBookCopyTotals(newBook);
         BookEntity savedBook = bookRepository.save(newBook);
+        savedBook.getInventories().forEach(this::reconcileCopiesForInventory);
         return toDTO(savedBook);
     }
 
@@ -878,7 +885,9 @@ public class BookService {
 
         recomputeBookCopyTotals(book);
 
-        return toDTO(bookRepository.save(book));
+        BookEntity savedBook = bookRepository.save(book);
+        savedBook.getInventories().forEach(this::reconcileCopiesForInventory);
+        return toDTO(savedBook);
     }
 
     public BookDTO addManualBook(CreateBookRequestDTO request, String smartschoolUid) {
@@ -915,6 +924,7 @@ public class BookService {
         recomputeBookCopyTotals(book);
 
         BookEntity saved = bookRepository.saveAndFlush(book);
+        saved.getInventories().forEach(this::reconcileCopiesForInventory);
 
         BookEntity reloaded = bookRepository.findDetailedById(saved.getId())
                 .orElseThrow(() -> new IllegalStateException(
@@ -966,7 +976,84 @@ public class BookService {
         return sections;
     }
 
+    public BookCopyLabelDTO getCopyByBarcode(Long bookId, String barcode) {
+        BookCopyEntity copy = bookCopyRepository.findByBarcode(barcode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode niet gevonden"));
+
+        if (!Objects.equals(copy.getInventory().getBook().getId(), bookId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode hoort niet bij dit boek");
+        }
+
+        return new BookCopyLabelDTO(
+                copy.getId(),
+                copy.getBarcode(),
+                copy.getCopyNumber(),
+                copy.getInventory().getBook().getTitle(),
+                copy.getInventory().getBook().getIsbn(),
+                normalizeCampus(copy.getInventory().getCampus()));
+    }
+
+    public List<BookCopyLabelDTO> getCopyLabelsForInventory(Long bookId, Long inventoryId) {
+        BookEntity book = bookRepository.findDetailedById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(bookId));
+
+        BookInventoryEntity inventory = book.getInventories().stream()
+                .filter(inv -> Objects.equals(inv.getId(), inventoryId))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventaris niet gevonden"));
+
+        List<BookCopyEntity> copies = bookCopyRepository.findByInventory(inventory);
+
+        List<BookCopyEntity> needsBarcode = copies.stream()
+                .filter(c -> c.getBarcode() == null)
+                .toList();
+
+        if (!needsBarcode.isEmpty()) {
+            needsBarcode.forEach(c -> c.setBarcode(generateEan13(c.getId())));
+            bookCopyRepository.saveAll(needsBarcode);
+        }
+
+        String campus = normalizeCampus(inventory.getCampus());
+
+        return copies.stream()
+                .map(c -> new BookCopyLabelDTO(
+                        c.getId(),
+                        c.getBarcode(),
+                        c.getCopyNumber(),
+                        book.getTitle(),
+                        book.getIsbn(),
+                        campus))
+                .toList();
+    }
+
+    public void updateCopyCondition(Long copyId, BookCopyCondition newCondition, String notes) {
+        BookCopyEntity copy = bookCopyRepository.findById(copyId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exemplaar niet gevonden."));
+
+        BookCopyCondition previousCondition = copy.getCopyCondition();
+        copy.setCopyCondition(newCondition);
+        if (notes != null) copy.setNotes(notes);
+        bookCopyRepository.save(copy);
+
+        if (previousCondition != newCondition) {
+            inventoryAdjustmentService.adjustForConditionChange(copy.getInventory(), previousCondition, newCondition);
+        }
+    }
+
     // region Helper functies
+    private static String generateEan13(long copyId) {
+        // prefix 200-299 is gereserveerd voor intern gebruik (we moeten niet aan registratie aanmaken bij GS1 als we hiertussen blijven)
+        String raw = String.format("200%09d", copyId);
+
+        int sum = 0;
+        for (int i = 0; i < 12; i++) {
+            int digit = raw.charAt(i) - '0';
+            sum += (i % 2 == 0) ? digit : digit * 3;
+        }
+        int checkDigit = (10 - (sum % 10)) % 10;
+
+        return raw + checkDigit;
+    }
 
     private BookDTO toDTO(BookEntity book) {
         List<String> authors = book.getAuthors() == null
@@ -1017,14 +1104,65 @@ public class BookService {
                 inventories);
     }
 
+    /**
+     * Zorgt dat het aantal exemplaren in de database overeenkomt met het aantal dat in de inventaris staat. 
+     * Als er te weinig exemplaren zijn, worden er nieuwe exemplaren aangemaakt. 
+     * Als er te veel exemplaren zijn, worden er exemplaren verwijderd, waarbij eerst exemplaren in slechte staat worden verwijderd.
+     * @param inventory
+     */
+    public void reconcileCopiesForInventory(BookInventoryEntity inventory) {
+        List<BookCopyEntity> allCopies = bookCopyRepository.findByInventory(inventory);
+        List<BookCopyEntity> nonLostCopies = allCopies.stream()
+                .filter(c -> c.getCopyCondition() != BookCopyCondition.LOST)
+                .toList();
+
+        int target = inventory.getTotalCopies() == null ? 0 : inventory.getTotalCopies();
+        int current = nonLostCopies.size();
+
+        if (current < target) {
+            int maxCopyNumber = allCopies.stream()
+                    .mapToInt(BookCopyEntity::getCopyNumber)
+                    .max().orElse(0);
+            List<BookCopyEntity> toCreate = new ArrayList<>();
+            for (int i = 1; i <= (target - current); i++) {
+                BookCopyEntity copy = new BookCopyEntity();
+                copy.setInventory(inventory);
+                copy.setCopyCondition(BookCopyCondition.GOOD);
+                copy.setCopyNumber(maxCopyNumber + i);
+                toCreate.add(copy);
+            }
+            bookCopyRepository.saveAll(toCreate);
+        } else if (current > target) {
+            List<BookCopyEntity> candidates = new ArrayList<>();
+            nonLostCopies.stream()
+                    .filter(c -> c.getCopyCondition() == BookCopyCondition.BROKEN)
+                    .forEach(candidates::add);
+            nonLostCopies.stream()
+                    .filter(c -> c.getCopyCondition() == BookCopyCondition.DAMAGED)
+                    .forEach(candidates::add);
+            nonLostCopies.stream()
+                    .filter(c -> c.getCopyCondition() == BookCopyCondition.GOOD)
+                    .forEach(candidates::add);
+            int toRemove = current - target;
+            bookCopyRepository.deleteAll(candidates.subList(0, Math.min(toRemove, candidates.size())));
+        }
+    }
+
     private BookInventoryDTO toInventoryDTO(BookInventoryEntity inventory) {
+        int damaged = (int) bookCopyRepository.countByInventoryAndCopyCondition(inventory, BookCopyCondition.DAMAGED);
+        int broken = (int) bookCopyRepository.countByInventoryAndCopyCondition(inventory, BookCopyCondition.BROKEN);
+        int lost = (int) bookCopyRepository.countByInventoryAndCopyCondition(inventory, BookCopyCondition.LOST);
+
         return new BookInventoryDTO(
                 inventory.getId(),
                 inventory.getSchool().getId(),
                 inventory.getSchool().getName(),
                 normalizeCampus(inventory.getCampus()),
                 inventory.getTotalCopies(),
-                inventory.getAvailableCopies());
+                inventory.getAvailableCopies(),
+                damaged,
+                broken,
+                lost);
     }
 
     private void replaceInventoriesFromRequest(BookEntity book,
@@ -1263,8 +1401,7 @@ public class BookService {
             // De eerste API Call (met fout-afvanging)
             response = restTemplate.getForObject(url, GoogleBooksResponse.class);
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            // Dit vangt fouten zoals 429 (Too Many Requests) of 403 (Quota Exceeded) netjes
-            // af
+            // Dit vangt fouten zoals 429 (Too Many Requests) of 403 (Quota Exceeded) netjes af
             log.error("Google API weigerde het verzoek! Status: {}, Reden: {}", e.getStatusCode(),
                     e.getResponseBodyAsString());
             throw new RuntimeException("De Google API weigert het verzoek tijdelijk (Status " + e.getStatusCode()
@@ -1304,7 +1441,6 @@ public class BookService {
         book.setTotalCopies(0);
         book.setAvailableCopies(0);
 
-        // --- NIEUW: Bulletproof Link Extractie mét Titel-Check ---
         String finalReaderLink = null;
 
         try {
@@ -1739,5 +1875,6 @@ public class BookService {
             throw new IllegalArgumentException("'" + value + "' is geen geldig getal");
         }
     }
+
     // endregion
 }

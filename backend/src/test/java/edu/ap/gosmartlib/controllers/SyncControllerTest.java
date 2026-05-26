@@ -2,7 +2,7 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.sync.SyncSummaryDTO;
 import edu.ap.gosmartlib.repositories.UserRepository;
-import edu.ap.gosmartlib.services.oneRoster.OneRosterSyncService;
+import edu.ap.gosmartlib.services.oneroster.OneRosterSyncService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

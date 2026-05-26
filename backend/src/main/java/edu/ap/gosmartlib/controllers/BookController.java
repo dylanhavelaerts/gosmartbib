@@ -1,9 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.dto.BookDTO;
-import edu.ap.gosmartlib.dto.BookFilterRequest;
-import edu.ap.gosmartlib.dto.CreateBookRequestDTO;
-import edu.ap.gosmartlib.dto.SnowballSectionDTO;
+import edu.ap.gosmartlib.dto.*;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.BookService;
@@ -264,6 +261,25 @@ public class BookController {
             @AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(
                 bookService.getSnowballSections(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
+    }
+
+    @GetMapping("/{bookId}/copies/labels")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    public ResponseEntity<List<BookCopyLabelDTO>> getCopyLabels(@PathVariable Long bookId, @RequestParam Long inventoryId) {
+        return ResponseEntity.ok(bookService.getCopyLabelsForInventory(bookId, inventoryId));
+    }
+
+    @GetMapping("/{bookId}/copies/by-barcode")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    public ResponseEntity<BookCopyLabelDTO> getCopyByBarcode(@PathVariable Long bookId, @RequestParam String barcode) {
+        return ResponseEntity.ok(bookService.getCopyByBarcode(bookId, barcode));
+    }
+
+    @PatchMapping("/copies/{copyId}/condition")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateCopyCondition(@PathVariable Long copyId, @RequestBody UpdateCopyConditionRequest request) {
+        bookService.updateCopyCondition(copyId, request.condition(), request.notes());
     }
 
     private UserRoles callerRole(OAuth2User principal) {

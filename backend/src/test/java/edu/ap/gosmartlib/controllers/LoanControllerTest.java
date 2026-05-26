@@ -1,5 +1,11 @@
 package edu.ap.gosmartlib.controllers;
 
+import edu.ap.gosmartlib.controllers.loan.LoanController;
+import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
+import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
+import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
+import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
 import edu.ap.gosmartlib.config.TestSecurityConfig;
 import edu.ap.gosmartlib.services.loans.LoanDueDateNotificationService;
 import edu.ap.gosmartlib.services.loans.LoanPolicyService;

@@ -1,10 +1,10 @@
 package edu.ap.gosmartlib.services.messages;
 
-import edu.ap.gosmartlib.entities.BookEntity;
-import edu.ap.gosmartlib.entities.BookNotificationEntity;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.book.BookNotificationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.BookNotificationRepository;
-import edu.ap.gosmartlib.repositories.BookRepository;
+import edu.ap.gosmartlib.repositories.book.BookNotificationRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

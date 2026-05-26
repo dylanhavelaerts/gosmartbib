@@ -106,7 +106,6 @@ class OAuth2UserServiceTest {
     void givenInvalidPlatform_whenFetchGroupInfo_thenReturnsEmptyMap() {
         OAuth2UserService service = new OAuth2UserService();
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> result = ReflectionTestUtils.invokeMethod(
                 service,
                 "fetchGroupInfo",

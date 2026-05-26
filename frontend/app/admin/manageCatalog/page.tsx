@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BOOK_CATEGORIES, BOOK_LABELS, BOOK_LANGUAGE_PRESETS } from "../../interfaces/Book";
+import {
+  BOOK_CATEGORIES,
+  BOOK_LABELS,
+  BOOK_LANGUAGE_PRESETS,
+} from "../../interfaces/Book";
 import type { Book, BookInventory } from "../../interfaces/Book";
 import type { MeResponse } from "../../interfaces/user";
 import type { SchoolCampusDTO } from "../../interfaces/schoolIntegration";
@@ -9,6 +13,7 @@ import {
   fetchSchoolCampuses,
   getCampusSelectOptions,
 } from "../../utils/schoolCampuses";
+import { formatSchoolLabel } from "../reviews/components/ReviewCard";
 import { useRouter } from "next/navigation";
 import "../../catalog/bookList.css";
 import "./editbook.css";
@@ -37,8 +42,12 @@ export default function ManageCatalogPage() {
   const [loadingCampuses, setLoadingCampuses] = useState(false);
   const [campusLoadError, setCampusLoadError] = useState("");
 
-  const router = useRouter();
+  const [barcodesEnabled, setBarcodesEnabled] = useState(false);
+  const [labelModalOpen, setLabelModalOpen] = useState(false);
+  const [printLabels, setPrintLabels] = useState<BookCopyLabel[]>([]);
+  const [loadingLabels, setLoadingLabels] = useState(false);
 
+  const router = useRouter();
 
   // Fetch paged books from backend (with search debounce)
   useEffect(() => {
@@ -89,7 +98,6 @@ export default function ManageCatalogPage() {
 
           setLanguageInputMode(getLanguageInputMode(book.language));
 
-
           setModalOpen(true);
           setError(null);
         }
@@ -117,6 +125,14 @@ export default function ManageCatalogPage() {
         if (data.school?.id) {
           const campusData = await fetchSchoolCampuses(apiUrl, data.school.id);
           setCampuses(campusData);
+          const libRes = await fetch(
+            `${apiUrl}/admin/schools/${data.school.id}/library-settings`,
+            { credentials: "include" },
+          );
+          if (libRes.ok) {
+            const libData = await libRes.json();
+            setBarcodesEnabled(libData.barcodesEnabled ?? false);
+          }
         }
       } catch (err) {
         console.error("Fout bij ophalen gebruiker of campussen:", err);
@@ -168,18 +184,18 @@ export default function ManageCatalogPage() {
   }
 
   function getLanguageInputMode(language?: string | null) {
-  if (!language || language.trim() === "") {
-    return "";
+    if (!language || language.trim() === "") {
+      return "";
+    }
+
+    const normalizedLanguage = language.trim().toLowerCase();
+
+    if (BOOK_LANGUAGE_PRESETS.includes(normalizedLanguage)) {
+      return normalizedLanguage;
+    }
+
+    return CUSTOM_LANGUAGE_VALUE;
   }
-
-  const normalizedLanguage = language.trim().toLowerCase();
-
-  if (BOOK_LANGUAGE_PRESETS.includes(normalizedLanguage)) {
-    return normalizedLanguage;
-  }
-
-  return CUSTOM_LANGUAGE_VALUE;
-}
 
   function handleLanguageSelectChange(value: string) {
     setLanguageInputMode(value);
@@ -365,697 +381,802 @@ export default function ManageCatalogPage() {
     }));
   }
 
+  async function handleOpenLabels(inventoryId: number) {
+    if (!selectedBook) return;
+    setLoadingLabels(true);
+    try {
+      const res = await fetch(
+        `${apiUrl}/books/${selectedBook.id}/copies/labels?inventoryId=${inventoryId}`,
+        { credentials: "include" },
+      );
+      if (!res.ok) throw new Error();
+      const data: BookCopyLabel[] = await res.json();
+      setPrintLabels(data);
+      setLabelModalOpen(true);
+    } catch {
+      setError("Kon labels niet ophalen.");
+    } finally {
+      setLoadingLabels(false);
+    }
+  }
+
   const editableInventoryRows = (formData.inventories ?? [])
     .map((inventory, index) => ({ inventory, index }))
     .filter(({ inventory }) => inventory.schoolId === me?.school?.id);
 
   return (
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
-      <div>
-        <main className="manage-main-layout">
-          <div className="manage-wrapper">
-            {/* EILAND LIJST */}
-            <div className="eiland-lijst">
-              <div className="headerdiv">
-                <button
-                  onClick={() => router.push("/admin/add-book")}
-                  className="modal-btn-save"
-                  type="button"
-                >
-                  + Boek(en) toevoegen
-                </button>
-              </div>
-
-              <div className="search-container">
-                <input
-                  type="text"
-                  placeholder="Zoek op titel, auteur of ISBN..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="search-input"
-                />
-              </div>
-
-              <div className="list-container">
-                {books.length === 0 ? (
-                  <p className="empty-message">Geen boeken gevonden.</p>
-                ) : (
-                  <ul className="book-list">
-                    {books.map((book) => {
-                      const isSelected = selectedBook?.id === book.id;
-                      const schoolInventory = book.inventories?.find(
-                        (inv) => inv.schoolId === me?.school?.id,
-                      );
-                      const displayAvailable =
-                        schoolInventory !== undefined
-                          ? schoolInventory.availableCopies
-                          : book.availableCopies;
-                      const displayTotal =
-                        schoolInventory !== undefined
-                          ? schoolInventory.totalCopies
-                          : book.totalCopies;
-                      return (
-                        <li
-                          key={book.id}
-                          onClick={() => setSelectedBook(book)}
-                          className={`book-list-item ${isSelected ? "selected" : ""}`}
-                        >
-                          <div className="book-list-thumb">
-                            {book.thumbnail && book.thumbnail.trim() !== "" ? (
-                              <img src={book.thumbnail} alt={book.title} />
-                            ) : (
-                              <span>Geen cover</span>
-                            )}
-                          </div>
-
-                          <div className="book-list-info">
-                            <h3 className="book-list-title">{book.title}</h3>
-                            <p className="book-list-authors">
-                              {book.authors
-                                ? book.authors.join(", ")
-                                : "Onbekend"}
-                            </p>
-                            <p className="book-list-isbn">
-                              ISBN: {book.isbn || "-"}
-                            </p>
-                            <div className="copies-container">
-                              <span
-                                className={`copies-pill ${displayAvailable === 0 ? "copies-pill--empty" : "copies-pill--available"}`}
-                              >
-                                {displayAvailable ?? "-"} beschikbaar
-                              </span>
-                              <span className="copies-pill copies-pill--total">
-                                {displayTotal ?? "-"} totaal
-                              </span>
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-
-              <div className="list-footer">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
+      <main className="manage-main-layout">
+        <div className="manage-page-header">
+          <h1>Catalogusbeheer</h1>
+          <p>Beheer boeken, inventaris en exemplaren voor jouw bibliotheek.</p>
+        </div>
+        <div className="manage-wrapper">
+          {/* EILAND LIJST */}
+          <div className="eiland-lijst">
+            <div className="headerdiv">
+              <button
+                onClick={() => router.push("/admin/add-book")}
+                className="modal-btn-save"
+                type="button"
+              >
+                + Boek(en) toevoegen
+              </button>
             </div>
 
-            {/* EILAND DETAILS */}
-            <div className="eiland-details">
-              {!selectedBook ? (
-                <div className="details-empty">
-                  <p>Klik op een boek in de lijst om de details te bekijken.</p>
-                </div>
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Zoek op titel, auteur of ISBN..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="search-input"
+              />
+            </div>
+
+            <div className="list-container">
+              {books.length === 0 ? (
+                <p className="empty-message">Geen boeken gevonden.</p>
               ) : (
-                <div>
-                  <div className="details-header">
-                    <div className="details-title-container">
-                      <h1 className="details-title">{selectedBook.title}</h1>
-                      <p className="details-author">
-                        door {selectedBook.authors?.join(", ") || "Onbekend"}
-                      </p>
-                    </div>
-
-                    <div className="details-actions">
-                      <button
-                        onClick={openModal}
-                        className="btn-secondary"
-                        type="button"
+                <ul className="book-list">
+                  {books.map((book) => {
+                    const isSelected = selectedBook?.id === book.id;
+                    const schoolInventory = book.inventories?.find(
+                      (inv) => inv.schoolId === me?.school?.id,
+                    );
+                    const displayAvailable =
+                      schoolInventory !== undefined
+                        ? schoolInventory.availableCopies
+                        : book.availableCopies;
+                    const displayTotal =
+                      schoolInventory !== undefined
+                        ? schoolInventory.totalCopies
+                        : book.totalCopies;
+                    return (
+                      <li
+                        key={book.id}
+                        onClick={() => setSelectedBook(book)}
+                        className={`book-list-item ${isSelected ? "selected" : ""}`}
                       >
-                        Bewerken
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="details-content">
-                    <div className="details-cover-container">
-                      {selectedBook.thumbnail ? (
-                        <img
-                          src={selectedBook.thumbnail}
-                          alt={`Cover van ${selectedBook.title}`}
-                          className="details-cover"
-                        />
-                      ) : (
-                        <div className="details-cover-placeholder">
-                          <span>Geen cover</span>
+                        <div className="book-list-thumb">
+                          {book.thumbnail && book.thumbnail.trim() !== "" ? (
+                            <img src={book.thumbnail} alt={book.title} />
+                          ) : (
+                            <span>Geen cover</span>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    <div className="details-info-container">
-                      <div className="details-table-wrapper">
-                        <table className="details-table">
-                          <tbody>
-                            <tr>
-                              <th>ISBN</th>
-                              <td className="bold">
-                                {selectedBook.isbn || "-"}
-                              </td>
-                            </tr>
-                            <tr>
-                              <th>Uitgeverij</th>
-                              <td>{selectedBook.publisher || "-"}</td>
-                            </tr>
-                            <tr>
-                              <th>Uitgavejaar</th>
-                              <td>{selectedBook.publishedYear || "-"}</td>
-                            </tr>
-                            <tr>
-                              <th>Pagina's</th>
-                              <td>{selectedBook.pageCount || "-"}</td>
-                            </tr>
-                            <tr>
-                              <th>Categorie</th>
-                              <td>
-                                {selectedBook.categories?.join(", ") || "-"}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="details-summary">
-                        <h3>Samenvatting</h3>
-                        <p>
-                          {selectedBook.description ||
-                            "Geen samenvatting beschikbaar voor dit boek."}
-                        </p>
-                      </div>
-                      <div className="details-summary">
-                        <h3>Inventaris</h3>
-
-                        {selectedBook.inventories &&
-                        selectedBook.inventories.length > 0 ? (
-                          <table className="details-table">
-                            <thead>
-                              <tr>
-                                <th>School</th>
-                                <th>Campus</th>
-                                <th>Totaal</th>
-                                <th>Beschikbaar</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {selectedBook.inventories.map(
-                                (inventory, index) => (
-                                  <tr
-                                    key={
-                                      inventory.id ??
-                                      `${inventory.schoolId}-${inventory.campus}-${index}`
-                                    }
-                                  >
-                                    <td>
-                                      {inventory.schoolName ||
-                                        inventory.schoolId ||
-                                        "-"}
-                                    </td>
-                                    <td>{inventory.campus || ""}</td>
-                                    <td>{inventory.totalCopies}</td>
-                                    <td>{inventory.availableCopies}</td>
-                                  </tr>
-                                ),
-                              )}
-                            </tbody>
-                          </table>
-                        ) : (
-                          <p>Geen inventarisgegevens beschikbaar.</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                        <div className="book-list-info">
+                          <h3 className="book-list-title">{book.title}</h3>
+                          <p className="book-list-authors">
+                            {book.authors
+                              ? book.authors.join(", ")
+                              : "Onbekend"}
+                          </p>
+                          <p className="book-list-isbn">
+                            ISBN: {book.isbn || "-"}
+                          </p>
+                          <div className="copies-container">
+                            <span
+                              className={`copies-pill ${displayAvailable === 0 ? "copies-pill--empty" : "copies-pill--available"}`}
+                            >
+                              {displayAvailable ?? "-"} beschikbaar
+                            </span>
+                            <span className="copies-pill copies-pill--total">
+                              {displayTotal ?? "-"} totaal
+                            </span>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
+            </div>
+
+            <div className="list-footer">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
 
-          {/* BEWERKEN MODAL */}
-          {modalOpen && selectedBook && (
-            <div className="modal-overlay">
-              <div className="modal-box">
-                <div className="modal-header">
-                  <h2>{selectedBook.title} bewerken</h2>
-                </div>
-
-                <div className="modal-body">
-                  {error && <p className="modal-error">⚠ {error}</p>}
-
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="title">
-                      Titel
-                    </label>
-                    <input
-                      id="title"
-                      name="title"
-                      className="modal-input"
-                      type="text"
-                      value={formData.title || ""}
-                      onChange={handleChange}
-                    />
+          {/* EILAND DETAILS */}
+          <div className="eiland-details">
+            {!selectedBook ? (
+              <div className="details-empty">
+                <p>Klik op een boek in de lijst om de details te bekijken.</p>
+              </div>
+            ) : (
+              <div>
+                <div className="details-header">
+                  <div className="details-title-container">
+                    <h1 className="details-title">{selectedBook.title}</h1>
+                    <p className="details-author">
+                      door {selectedBook.authors?.join(", ") || "Onbekend"}
+                    </p>
                   </div>
 
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="authors">
-                      Auteur(s) <span>(komma-gescheiden)</span>
-                    </label>
-                    <input
-                      id="authors"
-                      name="authors"
-                      className="modal-input"
-                      type="text"
-                      value={formData.authors?.join(",") || ""}
-                      onChange={(e) => handleArrayChange(e, "authors")}
-                    />
-                  </div>
-
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="isbn">
-                      ISBN
-                    </label>
-                    <input
-                      id="isbn"
-                      name="isbn"
-                      className="modal-input"
-                      type="text"
-                      value={formData.isbn || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="publisher">
-                      Uitgeverij
-                    </label>
-                    <input
-                      id="publisher"
-                      name="publisher"
-                      className="modal-input"
-                      type="text"
-                      value={formData.publisher || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="publishedYear">
-                      Uitgavejaar
-                    </label>
-                    <input
-                      id="publishedYear"
-                      name="publishedYear"
-                      className="modal-input"
-                      type="number"
-                      value={formData.publishedYear || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="pageCount">
-                      Pagina's
-                    </label>
-                    <input
-                      id="pageCount"
-                      name="pageCount"
-                      className="modal-input"
-                      type="number"
-                      value={formData.pageCount || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="modal-row">
-                    <label className="modal-label"> Categorie(ën)</label>
-                    <div className="filterDropdown">
-                      <button
-                        type="button"
-                        className="filterDropdownToggle"
-                        onClick={() =>
-                          setCategoryDropdownOpen(!categoryDropdownOpen)
-                        }
-                      >
-                        Categorie(ën){" "}
-                        {formData.categories?.length
-                          ? `(${formData.categories.length})`
-                          : ""}{" "}
-                        ▼
-                      </button>
-                      {categoryDropdownOpen && (
-                        <div className="filterDropdownPanel">
-                          {BOOK_CATEGORIES.map((cat) => (
-                            <label key={cat} className="filterCheckboxLabel">
-                              <input
-                                type="checkbox"
-                                checked={
-                                  formData.categories?.includes(cat) || false
-                                }
-                                onChange={() => {
-                                  const current = formData.categories || [];
-                                  const updated = current.includes(cat)
-                                    ? current.filter((c) => c !== cat)
-                                    : [...current, cat];
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    categories: updated,
-                                  }));
-                                }}
-                              />
-                              {cat}
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {formData.categories && formData.categories.length > 0 && (
-                      <div className="modal-selected-categories">
-                        {formData.categories.map((cat) => (
-                          <span key={cat} className="modal-category-pill">
-                            {cat}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  categories: prev.categories?.filter(
-                                    (c) => c !== cat,
-                                  ),
-                                }))
-                              }
-                            >
-                              ✕
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="modal-row">
-                    <label className="modal-label"> Leefwereldlabel(s)</label>
-                    <div className="filterDropdown">
-                      <button
-                        type="button"
-                        className="filterDropdownToggle"
-                        onClick={() => setLabelDropdownOpen(!labelDropdownOpen)}
-                      >
-                        Label(s){" "}
-                        {formData.labels?.length
-                          ? `(${formData.labels?.length})`
-                          : ""}{" "}
-                        ▼
-                      </button>
-                      {labelDropdownOpen && (
-                        <div className="filterDropdownPanel">
-                          {BOOK_LABELS.map((label) => (
-                            <label key={label} className="filterCheckboxLabel">
-                              <input
-                                type="checkbox"
-                                checked={
-                                  formData.labels?.includes(label) || false
-                                }
-                                onChange={() => {
-                                  const current = formData.labels || [];
-                                  const updated = current.includes(label)
-                                    ? current.filter((c) => c !== label)
-                                    : [...current, label];
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    labels: updated,
-                                  }));
-                                }}
-                              />
-                              {label}
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {/* Filter Pills */}
-                    {formData.labels && formData.labels.length > 0 && (
-                      <div className="modal-selected-categories">
-                        {formData.labels.map((label) => (
-                          <span key={label} className="modal-category-pill">
-                            {label}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  labels: prev.labels?.filter(
-                                    (c) => c !== label,
-                                  ),
-                                }))
-                              }
-                            >
-                              ✕
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="thumbnail">
-                      Voorpagina
-                    </label>
-                    <input
-                      id="thumbnail"
-                      name="thumbnail"
-                      className="modal-input"
-                      type="text"
-                      value={formData.thumbnail || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="description">
-                      Samenvatting
-                    </label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      className="modal-textarea"
-                      value={formData.description || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="languageSelect">
-                      Taal
-                    </label>
-
-                    <select
-                      id="languageSelect"
-                      className="modal-input"
-                      value={languageInputMode}
-                      onChange={(e) => handleLanguageSelectChange(e.target.value)}
-                    >
-                      <option value="">Kies een taal</option>
-                      {BOOK_LANGUAGE_PRESETS.map((languagePreset) => (
-                        <option key={languagePreset} value={languagePreset}>
-                          {languagePreset.toUpperCase()}
-                        </option>
-                      ))}
-                      <option value={CUSTOM_LANGUAGE_VALUE}>Andere taal...</option>
-                    </select>
-
-                    {languageInputMode === CUSTOM_LANGUAGE_VALUE && (
-                      <input
-                        id="language"
-                        name="language"
-                        className="modal-input"
-                        type="text"
-                        value={formData.language ?? ""}
-                        onChange={handleChange}
-                        placeholder="Geef een afkorting van een taal in"
-                      />
-                    )}
-                  </div>
-
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="description">
-                      Leesniveau
-                    </label>
-                    <select
-                      className="modal-input"
-                      name="readingLevel"
-                      value={formData.readingLevel ?? ""}
-                      onChange={handleChange}
-                    >
-                      <option value="">Leesniveau</option>
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="C">C</option>
-                      <option value="D">D</option>
-                    </select>
-                  </div>
-                  <div className="modal-row">
-                    <label className="modal-label" htmlFor="description">
-                      Didactisch boek
-                    </label>
-                    <select
-                      className="modal-input"
-                      name="didacticTag"
-                      value={
-                        formData.didacticTag === undefined
-                          ? "true"
-                          : String(formData.didacticTag)
-                      }
-                      onChange={handleChange}
-                    >
-                      <option value="true">Ja</option>
-                      <option value="false">Nee</option>
-                    </select>
-                  </div>
-                  <div className="modal-row">
-                    <label className="modal-label">
-                      Inventaris per school/campus
-                    </label>
-
-                    {campusLoadError && (
-                      <p className="modal-error">⚠ {campusLoadError}</p>
-                    )}
-
-                    {editableInventoryRows.length === 0 && (
-                      <p className="modal-error">
-                        Er is nog geen inventarisregel voor jouw school.
-                      </p>
-                    )}
-
-                    {editableInventoryRows.map(({ inventory, index }) => (
-                      <div
-                        key={inventory.id ?? index}
-                        className="inventory-editor-card"
-                      >
-                        <div className="inventory-editor-grid">
-                          <div>
-                            <label className="modal-label">School</label>
-                            <input
-                              className="modal-input"
-                              type="text"
-                              value={
-                                inventory.schoolName || me?.school?.name || ""
-                              }
-                              disabled
-                            />
-                          </div>
-
-                          <div>
-                            <label className="modal-label">Campus</label>
-                            <select
-                              className="modal-input"
-                              value={inventory.campus || ""}
-                              onChange={(e) =>
-                                handleInventoryChange(
-                                  index,
-                                  "campus",
-                                  e.target.value,
-                                )
-                              }
-                              disabled={loadingCampuses}
-                            >
-                              <option value="">
-                                {loadingCampuses
-                                  ? "Campussen laden..."
-                                  : "Geen campus"}
-                              </option>
-
-                              {getCampusSelectOptions(
-                                campuses,
-                                inventory.campus,
-                              ).map((campusOption) => (
-                                <option
-                                  key={`${campusOption.id}-${campusOption.name}`}
-                                  value={campusOption.name}
-                                >
-                                  {campusOption.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="modal-label">Totaal</label>
-                            <input
-                              className="modal-input"
-                              type="number"
-                              min="0"
-                              value={inventory.totalCopies}
-                              onChange={(e) =>
-                                handleInventoryChange(
-                                  index,
-                                  "totalCopies",
-                                  Number(e.target.value) || 0,
-                                )
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <label className="modal-label">Beschikbaar</label>
-                            <input
-                              className="modal-input"
-                              type="number"
-                              min="0"
-                              value={inventory.availableCopies}
-                              onChange={(e) =>
-                                handleInventoryChange(
-                                  index,
-                                  "availableCopies",
-                                  Number(e.target.value) || 0,
-                                )
-                              }
-                            />
-                          </div>
-                        </div>
-
-                        {editableInventoryRows.length > 1 && (
-                          <button
-                            type="button"
-                            className="modal-btn-cancel"
-                            onClick={() => removeInventoryRow(index)}
-                          >
-                            Regel verwijderen
-                          </button>
-                        )}
-                      </div>
-                    ))}
-
+                  <div className="details-actions">
                     <button
+                      onClick={openModal}
+                      className="modal-btn-cancel"
                       type="button"
-                      className="modal-btn-save"
-                      onClick={addInventoryRow}
                     >
-                      + Campus toevoegen
+                      Bewerken
                     </button>
                   </div>
                 </div>
-                <div className="modal-footer">
-                  <button
-                    className="modal-btn-cancel"
-                    type="button"
-                    onClick={closeModal}
+
+                <div className="details-content">
+                  <div className="details-cover-container">
+                    {selectedBook.thumbnail ? (
+                      <img
+                        src={selectedBook.thumbnail}
+                        alt={`Cover van ${selectedBook.title}`}
+                        className="details-cover"
+                      />
+                    ) : (
+                      <div className="details-cover-placeholder">
+                        <span>Geen cover</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="details-info-container">
+                    <div className="details-table-wrapper">
+                      <table className="details-table">
+                        <tbody>
+                          <tr>
+                            <th>ISBN</th>
+                            <td className="bold">{selectedBook.isbn || "-"}</td>
+                          </tr>
+                          <tr>
+                            <th>Uitgeverij</th>
+                            <td>{selectedBook.publisher || "-"}</td>
+                          </tr>
+                          <tr>
+                            <th>Uitgavejaar</th>
+                            <td>{selectedBook.publishedYear || "-"}</td>
+                          </tr>
+                          <tr>
+                            <th>Pagina's</th>
+                            <td>{selectedBook.pageCount || "-"}</td>
+                          </tr>
+                          <tr>
+                            <th>Categorie</th>
+                            <td>
+                              {selectedBook.categories?.join(", ") || "-"}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="details-summary">
+                      <h3>Samenvatting</h3>
+                      <p>
+                        {selectedBook.description ||
+                          "Geen samenvatting beschikbaar voor dit boek."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="details-inventory">
+                  <div className="details-inventory-header">
+                    <h3>Inventaris</h3>
+                    {barcodesEnabled &&
+                      (() => {
+                        const myInventory = selectedBook.inventories?.find(
+                          (inv) =>
+                            inv.schoolId === me?.school?.id && inv.id != null,
+                        );
+                        return myInventory ? (
+                          <button
+                            type="button"
+                            className="btn-labels"
+                            disabled={loadingLabels}
+                            onClick={() => handleOpenLabels(myInventory.id!)}
+                          >
+                            {loadingLabels ? "Bezig…" : "Labels afdrukken"}
+                          </button>
+                        ) : null;
+                      })()}
+                  </div>
+
+                  {selectedBook.inventories &&
+                  selectedBook.inventories.length > 0 ? (
+                    <div className="details-table-wrapper">
+                      <table className="details-table">
+                        <thead>
+                          <tr>
+                            <th>School</th>
+                            <th>Campus</th>
+                            <th>Tot.</th>
+                            <th>Beschikb.</th>
+                            <th>Beschad.</th>
+                            <th>Kapot</th>
+                            <th>Verloren</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedBook.inventories.map((inventory, index) => (
+                            <tr
+                              key={
+                                inventory.id ??
+                                `${inventory.schoolId}-${inventory.campus}-${index}`
+                              }
+                            >
+                              <td>
+                                {inventory.schoolName ||
+                                  inventory.schoolId ||
+                                  "-"}
+                              </td>
+                              <td>{inventory.campus || ""}</td>
+                              <td>{inventory.totalCopies}</td>
+                              <td>{inventory.availableCopies}</td>
+                              <td>{inventory.damagedCopies ?? 0}</td>
+                              <td>{inventory.brokenCopies ?? 0}</td>
+                              <td>{inventory.lostCopies ?? 0}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p>Geen inventarisgegevens beschikbaar.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* BEWERKEN MODAL */}
+        {modalOpen && selectedBook && (
+          <div className="modal-overlay">
+            <div className="modal-box">
+              <div className="modal-header">
+                <h2>{selectedBook.title} bewerken</h2>
+              </div>
+
+              <div className="modal-body">
+                {error && <p className="modal-error">⚠ {error}</p>}
+
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="title">
+                    Titel
+                  </label>
+                  <input
+                    id="title"
+                    name="title"
+                    className="modal-input"
+                    type="text"
+                    value={formData.title || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="authors">
+                    Auteur(s) <span>(komma-gescheiden)</span>
+                  </label>
+                  <input
+                    id="authors"
+                    name="authors"
+                    className="modal-input"
+                    type="text"
+                    value={formData.authors?.join(",") || ""}
+                    onChange={(e) => handleArrayChange(e, "authors")}
+                  />
+                </div>
+
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="isbn">
+                    ISBN
+                  </label>
+                  <input
+                    id="isbn"
+                    name="isbn"
+                    className="modal-input"
+                    type="text"
+                    value={formData.isbn || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="publisher">
+                    Uitgeverij
+                  </label>
+                  <input
+                    id="publisher"
+                    name="publisher"
+                    className="modal-input"
+                    type="text"
+                    value={formData.publisher || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="publishedYear">
+                    Uitgavejaar
+                  </label>
+                  <input
+                    id="publishedYear"
+                    name="publishedYear"
+                    className="modal-input"
+                    type="number"
+                    value={formData.publishedYear || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="pageCount">
+                    Pagina's
+                  </label>
+                  <input
+                    id="pageCount"
+                    name="pageCount"
+                    className="modal-input"
+                    type="number"
+                    value={formData.pageCount || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="modal-row">
+                  <label className="modal-label"> Categorie(ën)</label>
+                  <div className="filterDropdown">
+                    <button
+                      type="button"
+                      className="filterDropdownToggle"
+                      onClick={() =>
+                        setCategoryDropdownOpen(!categoryDropdownOpen)
+                      }
+                    >
+                      Categorie(ën){" "}
+                      {formData.categories?.length
+                        ? `(${formData.categories.length})`
+                        : ""}{" "}
+                      ▼
+                    </button>
+                    {categoryDropdownOpen && (
+                      <div className="filterDropdownPanel">
+                        {BOOK_CATEGORIES.map((cat) => (
+                          <label key={cat} className="filterCheckboxLabel">
+                            <input
+                              type="checkbox"
+                              checked={
+                                formData.categories?.includes(cat) || false
+                              }
+                              onChange={() => {
+                                const current = formData.categories || [];
+                                const updated = current.includes(cat)
+                                  ? current.filter((c) => c !== cat)
+                                  : [...current, cat];
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  categories: updated,
+                                }));
+                              }}
+                            />
+                            {cat}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {formData.categories && formData.categories.length > 0 && (
+                    <div className="modal-selected-categories">
+                      {formData.categories.map((cat) => (
+                        <span key={cat} className="modal-category-pill">
+                          {cat}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                categories: prev.categories?.filter(
+                                  (c) => c !== cat,
+                                ),
+                              }))
+                            }
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="modal-row">
+                  <label className="modal-label"> Leefwereldlabel(s)</label>
+                  <div className="filterDropdown">
+                    <button
+                      type="button"
+                      className="filterDropdownToggle"
+                      onClick={() => setLabelDropdownOpen(!labelDropdownOpen)}
+                    >
+                      Label(s){" "}
+                      {formData.labels?.length
+                        ? `(${formData.labels?.length})`
+                        : ""}{" "}
+                      ▼
+                    </button>
+                    {labelDropdownOpen && (
+                      <div className="filterDropdownPanel">
+                        {BOOK_LABELS.map((label) => (
+                          <label key={label} className="filterCheckboxLabel">
+                            <input
+                              type="checkbox"
+                              checked={
+                                formData.labels?.includes(label) || false
+                              }
+                              onChange={() => {
+                                const current = formData.labels || [];
+                                const updated = current.includes(label)
+                                  ? current.filter((c) => c !== label)
+                                  : [...current, label];
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  labels: updated,
+                                }));
+                              }}
+                            />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {/* Filter Pills */}
+                  {formData.labels && formData.labels.length > 0 && (
+                    <div className="modal-selected-categories">
+                      {formData.labels.map((label) => (
+                        <span key={label} className="modal-category-pill">
+                          {label}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                labels: prev.labels?.filter((c) => c !== label),
+                              }))
+                            }
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="thumbnail">
+                    Voorpagina
+                  </label>
+                  <input
+                    id="thumbnail"
+                    name="thumbnail"
+                    className="modal-input"
+                    type="text"
+                    value={formData.thumbnail || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="description">
+                    Samenvatting
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    className="modal-textarea"
+                    value={formData.description || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="languageSelect">
+                    Taal
+                  </label>
+
+                  <select
+                    id="languageSelect"
+                    className="modal-input"
+                    value={languageInputMode}
+                    onChange={(e) => handleLanguageSelectChange(e.target.value)}
                   >
-                    Annuleren
-                  </button>
+                    <option value="">Kies een taal</option>
+                    {BOOK_LANGUAGE_PRESETS.map((languagePreset) => (
+                      <option key={languagePreset} value={languagePreset}>
+                        {languagePreset.toUpperCase()}
+                      </option>
+                    ))}
+                    <option value={CUSTOM_LANGUAGE_VALUE}>
+                      Andere taal...
+                    </option>
+                  </select>
+
+                  {languageInputMode === CUSTOM_LANGUAGE_VALUE && (
+                    <input
+                      id="language"
+                      name="language"
+                      className="modal-input"
+                      type="text"
+                      value={formData.language ?? ""}
+                      onChange={handleChange}
+                      placeholder="Geef een afkorting van een taal in"
+                    />
+                  )}
+                </div>
+
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="description">
+                    Leesniveau
+                  </label>
+                  <select
+                    className="modal-input"
+                    name="readingLevel"
+                    value={formData.readingLevel ?? ""}
+                    onChange={handleChange}
+                  >
+                    <option value="">Leesniveau</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                  </select>
+                </div>
+                <div className="modal-row">
+                  <label className="modal-label" htmlFor="description">
+                    Didactisch boek
+                  </label>
+                  <select
+                    className="modal-input"
+                    name="didacticTag"
+                    value={
+                      formData.didacticTag === undefined
+                        ? "true"
+                        : String(formData.didacticTag)
+                    }
+                    onChange={handleChange}
+                  >
+                    <option value="true">Ja</option>
+                    <option value="false">Nee</option>
+                  </select>
+                </div>
+                <div className="modal-row">
+                  <label className="modal-label">
+                    Inventaris per school/campus
+                  </label>
+
+                  {campusLoadError && (
+                    <p className="modal-error">⚠ {campusLoadError}</p>
+                  )}
+
+                  {editableInventoryRows.length === 0 && (
+                    <p className="modal-error">
+                      Er is nog geen inventarisregel voor jouw school.
+                    </p>
+                  )}
+
+                  {editableInventoryRows.map(({ inventory, index }) => (
+                    <div
+                      key={inventory.id ?? index}
+                      className="inventory-editor-card"
+                    >
+                      <p className="inventory-editor-school">
+                        {formatSchoolLabel(inventory.schoolName || me?.school?.name || "")}
+                      </p>
+                      <div className="inventory-editor-grid">
+                        <div>
+                          <label className="modal-label">Campus</label>
+                          <select
+                            className="modal-input"
+                            value={inventory.campus || ""}
+                            onChange={(e) =>
+                              handleInventoryChange(
+                                index,
+                                "campus",
+                                e.target.value,
+                              )
+                            }
+                            disabled={loadingCampuses}
+                          >
+                            <option value="">
+                              {loadingCampuses
+                                ? "Campussen laden..."
+                                : "Geen campus"}
+                            </option>
+
+                            {getCampusSelectOptions(
+                              campuses,
+                              inventory.campus,
+                            ).map((campusOption) => (
+                              <option
+                                key={`${campusOption.id}-${campusOption.name}`}
+                                value={campusOption.name}
+                              >
+                                {campusOption.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="modal-label">Totaal</label>
+                          <input
+                            className="modal-input"
+                            type="number"
+                            min="0"
+                            value={inventory.totalCopies}
+                            onChange={(e) =>
+                              handleInventoryChange(
+                                index,
+                                "totalCopies",
+                                Number(e.target.value) || 0,
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <label className="modal-label">Beschikbaar</label>
+                          <input
+                            className="modal-input"
+                            type="number"
+                            min="0"
+                            value={inventory.availableCopies}
+                            onChange={(e) =>
+                              handleInventoryChange(
+                                index,
+                                "availableCopies",
+                                Number(e.target.value) || 0,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {editableInventoryRows.length > 1 && (
+                        <button
+                          type="button"
+                          className="modal-btn-cancel"
+                          onClick={() => removeInventoryRow(index)}
+                        >
+                          Regel verwijderen
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
                   <button
+                    type="button"
                     className="modal-btn-save"
-                    type="button"
-                    onClick={handleSave}
+                    style={{ width: "fit-content", marginTop: "0.25rem" }}
+                    onClick={addInventoryRow}
                   >
-                    Opslaan
+                    + Campus toevoegen
                   </button>
                 </div>
               </div>
+              <div className="modal-footer">
+                <button
+                  className="modal-btn-cancel"
+                  type="button"
+                  onClick={closeModal}
+                >
+                  Annuleren
+                </button>
+                <button
+                  className="modal-btn-save"
+                  type="button"
+                  onClick={handleSave}
+                >
+                  Opslaan
+                </button>
+              </div>
             </div>
-          )}
-        </main>
-      </div>
+          </div>
+        )}
+        {labelModalOpen && (
+          <div
+            className="modal-overlay"
+            onClick={() => setLabelModalOpen(false)}
+          >
+            <div
+              className="modal-box label-print-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header label-modal-header">
+                <div>
+                  <h2>Labels afdrukken</h2>
+                  <p className="label-modal-count">
+                    {printLabels.length === 0
+                      ? "Barcodes worden toegewezen bij het afdrukken"
+                      : `${printLabels.length} exempla${printLabels.length !== 1 ? "ren" : "ar"}`}
+                  </p>
+                </div>
+                <div className="label-modal-header-actions">
+                  {printLabels.length > 0 && (
+                    <button
+                      type="button"
+                      className="modal-btn-save"
+                      onClick={() => window.print()}
+                    >
+                      Afdrukken
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="modal-btn-cancel"
+                    onClick={() => setLabelModalOpen(false)}
+                  >
+                    Sluiten
+                  </button>
+                </div>
+              </div>
+              <div className="modal-body">
+                {printLabels.length === 0 ? (
+                  <div className="label-empty-state">
+                    <p>Nog geen barcodes toegewezen.</p>
+                    <p>Voeg exemplaren toe aan de inventaris en druk daarna opnieuw af — barcodes worden automatisch aangemaakt.</p>
+                  </div>
+                ) : (
+                  <div className="label-grid" id="label-print-area">
+                    {printLabels.map((label) => (
+                      <div key={label.copyId} className="label-card">
+                        <div className="label-card-top">
+                          <span className="label-title">{label.bookTitle}</span>
+                          {label.campus && (
+                            <span className="label-campus">{label.campus}</span>
+                          )}
+                        </div>
+                        <div className="label-card-middle">
+                          <span className="label-copy-number">{label.copyNumber}</span>
+                          <span className="label-copy-text">exemplaar</span>
+                        </div>
+                        <div className="label-card-bottom">
+                          <span className="label-barcode">{label.barcode}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
     </ProtectedRoute>
   );
 }

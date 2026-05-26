@@ -6,13 +6,13 @@ import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
 import edu.ap.gosmartlib.dto.importdto.BulkImportDuplicateWarningDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
-import edu.ap.gosmartlib.entities.BookEntity;
-import edu.ap.gosmartlib.entities.BookInventoryEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
-import edu.ap.gosmartlib.repositories.BookRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.apache.poi.ss.usermodel.Row;
@@ -2438,8 +2438,8 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
-                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0, 0),
+                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0, 0)));
 
                 BookDTO result = bookService.updateBook(10L, update);
 
@@ -2490,7 +2490,7 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 2, 3)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 2, 3, 0, 0, 0)));
 
                 IllegalArgumentException ex = assertThrows(
                                 IllegalArgumentException.class,
@@ -2738,8 +2738,8 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
-                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0, 0),
+                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0, 0)));
 
                 BookDTO result = bookService.updateBook(10L, update);
 

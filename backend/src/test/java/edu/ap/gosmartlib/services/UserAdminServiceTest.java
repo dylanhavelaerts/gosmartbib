@@ -1,8 +1,8 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.AdminUserDTO;
-import edu.ap.gosmartlib.entities.SchoolClassEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserAdminService;

@@ -245,7 +245,7 @@ export default function LendingPage() {
                 */}
                   <div className="userInfo">
                     <p className="userName">{selectedUser.name}</p>
-                    <p>
+                    <p style={{ wordBreak: "break-all" }}>
                       <strong>ID:</strong> {selectedUser.smartschoolUserId}
                     </p>
                     <p>
@@ -260,7 +260,7 @@ export default function LendingPage() {
                   </button>
                 </>
               ) : (
-                <p className="placeholderText">Nog geen lener geselecteerd</p>
+                <p className="placeholderText">Nog geen lener geselecteerd.</p>
               )}
             </div>
 

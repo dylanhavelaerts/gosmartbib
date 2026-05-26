@@ -1,18 +1,18 @@
 package edu.ap.gosmartlib.services.loans;
 
-import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
-import edu.ap.gosmartlib.entities.BookEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanHistoryEntity;
-import edu.ap.gosmartlib.entities.SchoolClassEntity;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesRequest;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.loan.LoanEntity;
+import edu.ap.gosmartlib.entities.loan.LoanHistoryEntity;
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.BookRepository;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanRepository;
-import edu.ap.gosmartlib.repositories.SchoolClassRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanHistoryRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +41,7 @@ public class AdminLoanService {
     private final SchoolClassRepository schoolClassRepository;
 
     @Transactional(readOnly = true)
-    public Page<AdminActiveLoanDTO> getActiveLoansForSchool(String actorUid, Long classId, int page, int size) {
+    public Page<LibrarianActiveLoanDTO> getActiveLoansForSchool(String actorUid, Long classId, int page, int size) {
         UserEntity actor = accessGuard.requireBibliotheekbeheerder(actorUid);
         Long schoolId = actor.getSchool().getId();
         PageRequest pageable = PageRequest.of(page, size);
@@ -59,13 +59,13 @@ public class AdminLoanService {
         Map<String, List<String>> classMap = buildClassMap(schoolId, uids);
         Map<String, BookEntity> bookMap = toBookMap(isbns);
 
-        List<AdminActiveLoanDTO> content = loans.stream()
+        List<LibrarianActiveLoanDTO> content = loans.stream()
                 .map(loan -> mapper.toActiveDTO(loan, displayNames, classMap, bookMap)).toList();
         return new PageImpl<>(content, pageable, result.getTotalElements());
     }
 
     @Transactional(readOnly = true)
-    public Page<AdminLoanHistoryDTO> getLoanHistoryForSchool(String actorUid, Long classId, int page, int size) {
+    public Page<LibrarianLoanHistoryDTO> getLoanHistoryForSchool(String actorUid, Long classId, int page, int size) {
         UserEntity actor = accessGuard.requireBibliotheekbeheerder(actorUid);
         Long schoolId = actor.getSchool().getId();
         PageRequest pageable = PageRequest.of(page, size);
@@ -83,7 +83,7 @@ public class AdminLoanService {
         Map<String, List<String>> classMap = buildClassMap(schoolId, uids);
         Map<String, BookEntity> bookMap = toBookMap(isbns);
 
-        List<AdminLoanHistoryDTO> content = history.stream()
+        List<LibrarianLoanHistoryDTO> content = history.stream()
                 .map(h -> mapper.toHistoryDTO(h, displayNames, classMap, bookMap)).toList();
         return new PageImpl<>(content, pageable, result.getTotalElements());
     }

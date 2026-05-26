@@ -1,17 +1,13 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.entities.BookEntity;
-import edu.ap.gosmartlib.repositories.ReadingListRepository;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.ReadingListService;
 import edu.ap.gosmartlib.services.messages.BookNotificationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 

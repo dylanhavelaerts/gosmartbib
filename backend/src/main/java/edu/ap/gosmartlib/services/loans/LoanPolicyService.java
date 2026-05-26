@@ -2,10 +2,10 @@ package edu.ap.gosmartlib.services.loans;
 
 import edu.ap.gosmartlib.dto.loan.LoanPolicyDTO;
 import edu.ap.gosmartlib.dto.loan.UpsertLoanPolicyRequest;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanPolicyEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanPolicyRepository;
-import edu.ap.gosmartlib.repositories.SchoolRepository;
+import edu.ap.gosmartlib.entities.loan.LoanPolicyEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+import edu.ap.gosmartlib.repositories.loan.LoanPolicyRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

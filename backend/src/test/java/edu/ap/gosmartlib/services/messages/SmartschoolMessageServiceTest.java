@@ -1,14 +1,14 @@
 package edu.ap.gosmartlib.services.messages;
 
 import edu.ap.gosmartlib.entities.HomepageSettingsEntity;
-import edu.ap.gosmartlib.entities.SchoolEntity;
-import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.HomepageSettingsRepository;
-import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolSoapClient;
+import edu.ap.gosmartlib.repositories.school.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolOneRosterAuthService;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolOneRosterClient;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolSoapClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

@@ -268,7 +268,6 @@ main.returnsPageLayout .resultsFrame::-webkit-scrollbar-thumb {
   color: #666;
 }
 
-/* --- NIEUW: Styling voor synchronisatie in Middelste Kolom --- */
 .addArea {
   display: flex;
   flex-direction: column;
@@ -455,6 +454,211 @@ main.returnsPageLayout .resultsFrame::-webkit-scrollbar-thumb {
   flex: 1;
   min-height: 0;
 }
+
+.cartItemBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #fff;
+  border: 1px solid #ece6f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cartItemBlock .listItem {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.cartItemBlock .listItem:hover {
+  box-shadow: none;
+}
+
+.conditionSection {
+  padding: 0.5rem 0.8rem 0.65rem;
+  border-top: 1px solid #f0ebf3;
+  background: #faf8fb;
+}
+
+/* Single-copy dropdown */
+.conditionSelect {
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #d8cdd1;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #3e0c1c;
+  background: #fff;
+  cursor: pointer;
+}
+
+.conditionSelect:focus {
+  outline: none;
+  border-color: #8e2446;
+}
+
+/* Multi-copy counters */
+.conditionCounters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.conditionCounter {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.conditionCounterLabel {
+  font-size: 0.65rem;
+  color: #7c5a6a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.conditionCounterControl {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: #fff;
+  border: 1px solid #d8cdd1;
+  border-radius: 2rem;
+  padding: 0.05rem 0.1rem;
+}
+
+.conditionCounterControl .qtyBtn {
+  width: 22px;
+  height: 22px;
+  font-size: 1rem;
+}
+
+.conditionCounterControl .qtyDisplay {
+  min-width: 12px;
+  font-size: 0.85rem;
+}
+
+/* Barcode scan input */
+.barcodeInputRow {
+  margin-bottom: 0.25rem;
+}
+
+.barcodeInput {
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #d8cdd1;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  color: #3e0c1c;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.barcodeInput:focus {
+  outline: none;
+  border-color: #8e2446;
+}
+
+.barcodeInput--loading {
+  background: #f8f4f6;
+  color: #9a7a8a;
+}
+
+.scanError {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: #c62828;
+}
+
+/* Scanned pills */
+.scannedPills {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+
+.scannedPill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 7px;
+  padding: 0.3rem 0.5rem 0.3rem 0.6rem;
+  border-left: 3px solid #d8cdd1;
+  background: #fff;
+  border-top: 1px solid #ece6f0;
+  border-right: 1px solid #ece6f0;
+  border-bottom: 1px solid #ece6f0;
+}
+
+.scannedPill[data-condition="GOOD"] {
+  border-left-color: #2e7d32;
+  background: #f7fdf7;
+}
+
+.scannedPill[data-condition="DAMAGED"] {
+  border-left-color: #e65100;
+  background: #fffaf5;
+}
+
+.scannedPill[data-condition="BROKEN"] {
+  border-left-color: #c62828;
+  background: #fff8f8;
+}
+
+.scannedPill[data-condition="LOST"] {
+  border-left-color: #555;
+  background: #f8f8f8;
+}
+
+.pillBarcode {
+  font-family: monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #3e0c1c;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pillConditionSelect {
+  font-size: 0.75rem;
+  border: 1px solid #d8cdd1;
+  border-radius: 4px;
+  padding: 0.2rem 0.3rem;
+  color: #3e0c1c;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pillConditionSelect:focus {
+  outline: none;
+  border-color: #8e2446;
+}
+
+.pillRemove {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0.1rem 0.2rem;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.pillRemove:hover {
+  color: #c62828;
+}
 .toastNotification {
   position: fixed;
   bottom: 1.5rem;
@@ -502,4 +706,3 @@ main.returnsPageLayout .resultsFrame::-webkit-scrollbar-thumb {
 .toastClose:hover {
   opacity: 1;
 }
-

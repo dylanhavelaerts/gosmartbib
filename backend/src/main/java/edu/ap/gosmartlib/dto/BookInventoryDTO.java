@@ -6,5 +6,8 @@ public record BookInventoryDTO(
         String schoolName,
         String campus,
         Integer totalCopies,
-        Integer availableCopies) {
+        Integer availableCopies,
+        Integer damagedCopies,
+        Integer brokenCopies,
+        Integer lostCopies) {
 }

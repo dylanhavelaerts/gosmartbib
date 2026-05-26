@@ -1,17 +1,17 @@
 package edu.ap.gosmartlib.services.users;
 
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesRequest;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.dto.loan.SmartschoolUserDTO;
-import edu.ap.gosmartlib.entities.SchoolClassEntity;
-import edu.ap.gosmartlib.entities.SchoolIntegrationEntity;
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.OneRosterUtils;
 import edu.ap.gosmartlib.util.UserRoles;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolOneRosterAuthService;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolOneRosterClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

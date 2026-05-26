@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.services.statistics;
 
 import edu.ap.gosmartlib.dto.statistics.AchievementDTO;
-import edu.ap.gosmartlib.repositories.LoanRepositories.LoanHistoryRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanHistoryRepository;
 import edu.ap.gosmartlib.repositories.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;

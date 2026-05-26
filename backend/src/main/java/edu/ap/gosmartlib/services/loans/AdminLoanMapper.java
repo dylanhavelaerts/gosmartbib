@@ -1,11 +1,12 @@
 package edu.ap.gosmartlib.services.loans;
 
-import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
-import edu.ap.gosmartlib.entities.BookEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanEntity;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanExtensionStatus;
-import edu.ap.gosmartlib.entities.LoanEntities.LoanHistoryEntity;
+import edu.ap.gosmartlib.dto.loan.LibrarianActiveLoanDTO;
+import edu.ap.gosmartlib.dto.loan.LibrarianLoanHistoryDTO;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.loan.LoanEntity;
+import edu.ap.gosmartlib.entities.loan.LoanExtensionStatus;
+import edu.ap.gosmartlib.entities.loan.LoanHistoryEntity;
+import edu.ap.gosmartlib.util.BookDisplayUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ import java.util.Map;
 @Component
 public class AdminLoanMapper {
 
-    public AdminActiveLoanDTO toActiveDTO(
+    public LibrarianActiveLoanDTO toActiveDTO(
             LoanEntity loan,
             Map<String, String> displayNames,
             Map<String, List<String>> classMap,
@@ -26,7 +27,7 @@ public class AdminLoanMapper {
         String extensionStatus = loan.getExtensionStatus() != null
                 ? loan.getExtensionStatus().name() : LoanExtensionStatus.NONE.name();
 
-        return new AdminActiveLoanDTO(
+        return new LibrarianActiveLoanDTO(
                 loan.getId(), uid,
                 displayNames.getOrDefault(uid, "Leerling"),
                 classMap.getOrDefault(uid, List.of()),
@@ -34,7 +35,7 @@ public class AdminLoanMapper {
                 extensionStatus, toBookDTO(book));
     }
 
-    public AdminLoanHistoryDTO toHistoryDTO(
+    public LibrarianLoanHistoryDTO toHistoryDTO(
             LoanHistoryEntity history,
             Map<String, String> displayNames,
             Map<String, List<String>> classMap,
@@ -43,28 +44,24 @@ public class AdminLoanMapper {
         String uid = history.getSmartschoolUserId();
         BookEntity book = bookMap.get(history.getIsbn());
 
-        String bookTitle;
-        String author;
-        if (book != null) {
-            bookTitle = book.getTitle();
-            author = String.join(", ", book.getAuthors());
-        } else {
-            bookTitle = "Onbekend Boek (ISBN: " + history.getIsbn() + ")";
-            author = "Onbekende Auteur";
-        }
+        String bookTitle = BookDisplayUtil.resolveTitle(book, history.getIsbn());
+        String author = BookDisplayUtil.resolveAuthor(book);
 
-        return new AdminLoanHistoryDTO(
+        return new LibrarianLoanHistoryDTO(
                 history.getId(), bookTitle, author,
                 history.getLoanDate(), history.getReturnDate(), history.getQuantity(),
                 displayNames.getOrDefault(uid, "Leerling"),
-                classMap.getOrDefault(uid, List.of()));
+                classMap.getOrDefault(uid, List.of()),
+                history.getDamagedCount(),
+                history.getBrokenCount(),
+                history.getLostCount());
     }
 
-    private AdminActiveLoanDTO.LoanBookDTO toBookDTO(BookEntity book) {
+    private LibrarianActiveLoanDTO.LoanBookDTO toBookDTO(BookEntity book) {
         if (book == null) return null;
         List<String> authors = book.getAuthors() != null
                 ? new ArrayList<>(book.getAuthors()) : new ArrayList<>();
-        return new AdminActiveLoanDTO.LoanBookDTO(
+        return new LibrarianActiveLoanDTO.LoanBookDTO(
                 book.getId(), book.getTitle(), book.getThumbnail(), book.getIsbn(), authors);
     }
 }
