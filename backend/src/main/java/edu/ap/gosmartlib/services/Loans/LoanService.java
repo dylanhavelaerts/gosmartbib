@@ -442,6 +442,20 @@ public class LoanService {
             int remainingToReturn = request.quantity();
             boolean damageCountsApplied = false;
 
+            // In barcode mode the frontend sends copyConditions and leaves the counts as 0.
+            // Derive the actual counts from the scanned copies so the history record is correct.
+            int historyDamagedCount = request.damagedCount();
+            int historyBrokenCount  = request.brokenCount();
+            int historyLostCount    = request.lostCount();
+            if (request.copyConditions() != null && !request.copyConditions().isEmpty()) {
+                historyDamagedCount = (int) request.copyConditions().stream()
+                        .filter(c -> c.condition() == BookCopyCondition.DAMAGED).count();
+                historyBrokenCount  = (int) request.copyConditions().stream()
+                        .filter(c -> c.condition() == BookCopyCondition.BROKEN).count();
+                historyLostCount    = (int) request.copyConditions().stream()
+                        .filter(c -> c.condition() == BookCopyCondition.LOST).count();
+            }
+
             for (LoanEntity loan : activeLoans) {
                 if (remainingToReturn <= 0) break;
 
@@ -449,7 +463,7 @@ public class LoanService {
 
                 if (!damageCountsApplied) {
                     returnBook(loan.getId(), returnForThisLoan,
-                            request.damagedCount(), request.brokenCount(), request.lostCount());
+                            historyDamagedCount, historyBrokenCount, historyLostCount);
                     damageCountsApplied = true;
                 } else {
                     returnBook(loan.getId(), returnForThisLoan, 0, 0, 0);

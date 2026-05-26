@@ -5,7 +5,6 @@ import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
 import edu.ap.gosmartlib.exceptions.SchoolNotApprovedException;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
@@ -30,9 +29,9 @@ import java.util.*;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final SchoolClassRepository schoolClassRepository;
     private final SchoolRepository schoolRepository;
     private final HttpServletRequest request;
+    private final SchoolClassHelper schoolClassHelper;
 
     /**
      * Wordt aangeroepen elke login
@@ -148,11 +147,7 @@ public class UserService {
             String groupId = (String) group.get("groupID");
             String name = (String) group.get("name");
 
-            SchoolClassEntity schoolClass = schoolClassRepository.findBySmartschoolGroupId(groupId)
-                    .orElseGet(() -> {
-                        log.info("New class created: {} ({})", name, groupId);
-                        return schoolClassRepository.save(new SchoolClassEntity(school, groupId, name, schoolYear, grade));
-                    });
+            SchoolClassEntity schoolClass = schoolClassHelper.findOrCreate(school, groupId, name, schoolYear, grade);
 
             schoolClass.setSchoolYear(schoolYear);
 

@@ -2,7 +2,9 @@ package edu.ap.gosmartlib.util;
 
 import edu.ap.gosmartlib.entities.bookEntities.BookCopyEntity;
 import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
+import edu.ap.gosmartlib.entities.bookEntities.BookInventoryEntity;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookCopyRepository;
+import edu.ap.gosmartlib.repositories.bookRepositories.BookInventoryRepository;
 import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,18 +20,23 @@ import java.util.List;
 @Component
 public class DataSeeding implements CommandLineRunner {
         private final BookRepository bookRepository;
+        private final BookInventoryRepository bookInventoryRepository;
         private final BookCopyRepository bookCopyRepository;
         private final SchoolRepository schoolRepository;
+        private final edu.ap.gosmartlib.services.BookService bookService;
         private static final Logger logger = LoggerFactory.getLogger(DataSeeding.class);
 
         private SchoolEntity seedSchoolPrimary;
         private SchoolEntity seedSchoolSecondary;
 
-        public DataSeeding(BookRepository bookRepository, BookCopyRepository bookCopyRepository,
-                        SchoolRepository schoolRepository) {
+        public DataSeeding(BookRepository bookRepository, BookInventoryRepository bookInventoryRepository,
+                        BookCopyRepository bookCopyRepository, SchoolRepository schoolRepository,
+                        edu.ap.gosmartlib.services.BookService bookService) {
                 this.bookRepository = bookRepository;
+                this.bookInventoryRepository = bookInventoryRepository;
                 this.bookCopyRepository = bookCopyRepository;
                 this.schoolRepository = schoolRepository;
+                this.bookService = bookService;
         }
 
         private String mapAgeRange(String readingLevel) {
@@ -982,5 +989,10 @@ public class DataSeeding implements CommandLineRunner {
                 } else {
                         logger.info("Database already contains data; seeding skipped.");
                 }
+
+                for (BookInventoryEntity inventory : bookInventoryRepository.findAll()) {
+                        bookService.reconcileCopiesForInventory(inventory);
+                }
+                logger.info("BookCopy reconcile complete.");
         }
 }

@@ -302,6 +302,12 @@ public class BookController {
         return ResponseEntity.ok(bookService.getCopyLabelsForInventory(bookId, inventoryId));
     }
 
+    @GetMapping("/{bookId}/copies/by-barcode")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    public ResponseEntity<BookCopyLabelDTO> getCopyByBarcode(@PathVariable Long bookId, @RequestParam String barcode) {
+        return ResponseEntity.ok(bookService.getCopyByBarcode(bookId, barcode));
+    }
+
     @PatchMapping("/copies/{copyId}/condition")
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     @ResponseStatus(HttpStatus.NO_CONTENT)

@@ -1,26 +1,42 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Book } from "../../../interfaces/Book";
 import { SmartschoolUser } from "../../../interfaces/SmartschoolUser";
 import "./returns.css";
 
-// Interface voor de boeken die de lener momenteel heeft (gebundeld per boek)
+type CopyCondition = "GOOD" | "DAMAGED" | "BROKEN" | "LOST";
+
 interface BorrowedItem {
   book: Book;
   quantityBorrowed: number;
 }
 
-// Interface voor het retourmandje
 interface ReturnCartItem {
   book: Book;
   quantityToReturn: number;
   maxQuantity: number;
 }
 
+interface ScannedCopy {
+  barcode: string;
+  condition: CopyCondition;
+}
+
+const conditionLabels: Record<CopyCondition, string> = {
+  GOOD: "Geen probleem",
+  DAMAGED: "Beschadigd",
+  BROKEN: "Kapot",
+  LOST: "Verloren",
+};
+
 export default function ReturnsPage() {
   const router = useRouter();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  // --- Auth/School ---
+  const [barcodesEnabled, setBarcodesEnabled] = useState(false);
 
   // --- Kolom 1: Lener States ---
   const [userQuery, setUserQuery] = useState("");
@@ -38,19 +54,64 @@ export default function ReturnsPage() {
   // --- Kolom 3: Retour Mandje States ---
   const [returnCart, setReturnCart] = useState<ReturnCartItem[]>([]);
 
+  // --- Condition states (no-barcode mode) ---
+  const [conditionSingle, setConditionSingle] = useState<
+    Record<number, CopyCondition>
+  >({});
+  const [damagedCounts, setDamagedCounts] = useState<Record<number, number>>(
+    {},
+  );
+  const [brokenCounts, setBrokenCounts] = useState<Record<number, number>>({});
+  const [lostCounts, setLostCounts] = useState<Record<number, number>>({});
+
+  // --- Barcode mode states ---
+  const [copyConditions, setCopyConditions] = useState<
+    Record<number, ScannedCopy[]>
+  >({});
+  const [barcodeInputs, setBarcodeInputs] = useState<Record<number, string>>(
+    {},
+  );
+  const [scanErrors, setScanErrors] = useState<Record<number, string>>({});
+  const [scanLoading, setScanLoading] = useState<Record<number, boolean>>({});
+  const barcodeRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  // --- Fetch barcodesEnabled on mount ---
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const meRes = await fetch(`${apiUrl}/auth/me`, {
+          credentials: "include",
+        });
+        if (!meRes.ok) return;
+        const me = await meRes.json();
+        const sid = me?.school?.id;
+        if (!sid) return;
+        const settingsRes = await fetch(
+          `${apiUrl}/admin/schools/${sid}/library-settings`,
+          { credentials: "include" },
+        );
+        if (!settingsRes.ok) return;
+        const settings = await settingsRes.json();
+        if (settings?.barcodesEnabled != null)
+          setBarcodesEnabled(settings.barcodesEnabled);
+      } catch {
+        // non-fatal
+      }
+    }
+    loadSettings();
+  }, []);
+
   // --- 1. Lener Zoeken & Selecteren ---
   const handleSearchSmartschoolUser = async () => {
     if (!userQuery.trim()) {
       setUserSearchResults([]);
       return;
     }
-
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/smartschool/users?query=${encodeURIComponent(userQuery.trim())}`,
+        `${apiUrl}/smartschool/users?query=${encodeURIComponent(userQuery.trim())}`,
         { credentials: "include" },
       );
-
       if (!response.ok) throw new Error("Failed to fetch Smartschool users");
       const data = await response.json();
       setUserSearchResults(data);
@@ -64,30 +125,38 @@ export default function ReturnsPage() {
     setSelectedUser(user);
     setUserSearchResults([]);
     setUserQuery("");
-    setReturnCart([]); // Leegmandje bij nieuwe gebruiker
-    fetchUserLoans(user.smartschoolUserId); // Haal direct de leningen op
+    setReturnCart([]);
+    clearConditionState();
+    fetchUserLoans(user.smartschoolUserId);
   };
 
   const handleRemoveUser = () => {
     setSelectedUser(null);
     setBorrowedBooks([]);
     setReturnCart([]);
+    clearConditionState();
   };
 
-  // --- 2. Ophalen van actieve leningen via Backend ---
+  const clearConditionState = () => {
+    setConditionSingle({});
+    setDamagedCounts({});
+    setBrokenCounts({});
+    setLostCounts({});
+    setCopyConditions({});
+    setBarcodeInputs({});
+  };
+
+  // --- 2. Ophalen van actieve leningen ---
   const fetchUserLoans = async (smartschoolUserId: string) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/loans/active?smartschoolUserId=${smartschoolUserId}`,
+        `${apiUrl}/loans/active?smartschoolUserId=${smartschoolUserId}`,
         { credentials: "include" },
       );
       if (!response.ok) throw new Error("Kan leningen niet ophalen");
-
       const data = await response.json();
 
-      // We groeperen de losse leningen per boek, zodat we het aantal (quantity) weten.
       const groupedBooks: Record<number, BorrowedItem> = {};
-
       data.forEach((loan: any) => {
         const bookId = loan.book.id;
         if (!groupedBooks[bookId]) {
@@ -95,7 +164,6 @@ export default function ReturnsPage() {
         }
         groupedBooks[bookId].quantityBorrowed += loan.quantity;
       });
-
       setBorrowedBooks(Object.values(groupedBooks));
     } catch (err) {
       console.error(err);
@@ -105,7 +173,6 @@ export default function ReturnsPage() {
     }
   };
 
-  // Lokale zoekfilter voor de uitgeleende boeken (want we hebben ze al opgehaald)
   const filteredBorrowedBooks = borrowedBooks.filter(
     (item) =>
       item.book.title.toLowerCase().includes(bookQuery.toLowerCase()) ||
@@ -119,13 +186,12 @@ export default function ReturnsPage() {
     setReturnCart((prev) => {
       const existing = prev.find((i) => i.book.id === borrowedItem.book.id);
       if (existing) return prev;
-
       return [
         ...prev,
         {
           book: borrowedItem.book,
-          quantityToReturn: 1, // Startwaarde
-          maxQuantity: borrowedItem.quantityBorrowed, // Max = wat ze in bezit hebben
+          quantityToReturn: 1,
+          maxQuantity: borrowedItem.quantityBorrowed,
         },
       ];
     });
@@ -134,23 +200,147 @@ export default function ReturnsPage() {
   const updateReturnQuantity = (bookId: number, delta: number) => {
     setReturnCart((prev) =>
       prev.map((item) => {
-        if (item.book.id === bookId) {
-          const newQty = item.quantityToReturn + delta;
-          // Zorg dat we niet minder dan 1 of meer dan het geleende aantal terugbrengen
-          if (newQty >= 1 && newQty <= item.maxQuantity) {
-            return { ...item, quantityToReturn: newQty };
-          }
+        if (item.book.id !== bookId) return item;
+        const newQty = item.quantityToReturn + delta;
+        if (newQty < 1 || newQty > item.maxQuantity) return item;
+        // Reset condition counters if their sum exceeds the new quantity
+        const total =
+          (damagedCounts[bookId] ?? 0) +
+          (brokenCounts[bookId] ?? 0) +
+          (lostCounts[bookId] ?? 0);
+        if (total > newQty) {
+          setDamagedCounts((d) => ({ ...d, [bookId]: 0 }));
+          setBrokenCounts((b) => ({ ...b, [bookId]: 0 }));
+          setLostCounts((l) => ({ ...l, [bookId]: 0 }));
         }
-        return item;
+        return { ...item, quantityToReturn: newQty };
       }),
     );
   };
 
   const handleRemoveFromReturnCart = (bookId: number) => {
     setReturnCart(returnCart.filter((item) => item.book.id !== bookId));
+    setConditionSingle((s) => {
+      const c = { ...s };
+      delete c[bookId];
+      return c;
+    });
+    setDamagedCounts((s) => {
+      const c = { ...s };
+      delete c[bookId];
+      return c;
+    });
+    setBrokenCounts((s) => {
+      const c = { ...s };
+      delete c[bookId];
+      return c;
+    });
+    setLostCounts((s) => {
+      const c = { ...s };
+      delete c[bookId];
+      return c;
+    });
+    setCopyConditions((s) => {
+      const c = { ...s };
+      delete c[bookId];
+      return c;
+    });
+    setBarcodeInputs((s) => {
+      const c = { ...s };
+      delete c[bookId];
+      return c;
+    });
   };
 
-  // --- 4. Acties: Inleveren of Annuleren ---
+  // --- Barcode scan helpers ---
+  const handleBarcodeKeyDown = async (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    bookId: number,
+  ) => {
+    if (e.key !== "Enter") return;
+    const val = barcodeInputs[bookId]?.trim();
+    if (!val) return;
+
+    // Duplicate check
+    if ((copyConditions[bookId] ?? []).find((c) => c.barcode === val)) {
+      setScanErrors((prev) => ({ ...prev, [bookId]: "Barcode al gescand." }));
+      return;
+    }
+
+    setScanLoading((prev) => ({ ...prev, [bookId]: true }));
+    setScanErrors((prev) => ({ ...prev, [bookId]: "" }));
+
+    try {
+      const res = await fetch(
+        `${apiUrl}/books/${bookId}/copies/by-barcode?barcode=${encodeURIComponent(val)}`,
+        { credentials: "include" },
+      );
+      if (!res.ok) {
+        setScanErrors((prev) => ({
+          ...prev,
+          [bookId]:
+            res.status === 404
+              ? "Barcode niet gevonden of hoort niet bij dit boek."
+              : "Fout bij validatie.",
+        }));
+        return;
+      }
+      setCopyConditions((prev) => ({
+        ...prev,
+        [bookId]: [
+          ...(prev[bookId] ?? []),
+          { barcode: val, condition: "GOOD" },
+        ],
+      }));
+      setBarcodeInputs((prev) => ({ ...prev, [bookId]: "" }));
+    } catch {
+      setScanErrors((prev) => ({
+        ...prev,
+        [bookId]: "Kan barcode niet valideren.",
+      }));
+    } finally {
+      setScanLoading((prev) => ({ ...prev, [bookId]: false }));
+    }
+  };
+
+  const updateScannedCondition = (
+    bookId: number,
+    barcode: string,
+    condition: CopyCondition,
+  ) => {
+    setCopyConditions((prev) => ({
+      ...prev,
+      [bookId]: (prev[bookId] ?? []).map((c) =>
+        c.barcode === barcode ? { ...c, condition } : c,
+      ),
+    }));
+  };
+
+  const removeScannedBarcode = (bookId: number, barcode: string) => {
+    setCopyConditions((prev) => ({
+      ...prev,
+      [bookId]: (prev[bookId] ?? []).filter((c) => c.barcode !== barcode),
+    }));
+  };
+
+  // --- Counter helpers for multi-copy mode ---
+  const updateCount = (
+    setter: React.Dispatch<React.SetStateAction<Record<number, number>>>,
+    bookId: number,
+    delta: number,
+    max: number,
+    others: number[],
+  ) => {
+    setter((prev) => {
+      const current = prev[bookId] ?? 0;
+      const newVal = current + delta;
+      const otherSum = others.reduce((a, b) => a + b, 0);
+      if (newVal < 0 || otherSum + newVal > max) return prev;
+      return { ...prev, [bookId]: newVal };
+    });
+  };
+
+  // --- 4. Inleveren ---
   const handleCancel = () => {
     setReturnCart([]);
     setSelectedUser(null);
@@ -158,38 +348,69 @@ export default function ReturnsPage() {
     setUserSearchResults([]);
     setBookQuery("");
     setUserQuery("");
+    clearConditionState();
   };
 
   const handleRegisterReturn = async () => {
     if (returnCart.length === 0 || !selectedUser) return;
 
-    // We sturen dit naar de backend. De backend regelt de datums en de uitleengeschiedenis-tabel!
-    const payload = returnCart.map((item) => ({
-      bookId: item.book.id,
-      quantity: item.quantityToReturn,
-      smartschoolUserId: selectedUser.smartschoolUserId,
-    }));
+    const payload = returnCart.map((item) => {
+      const bookId = item.book.id;
+      if (barcodesEnabled) {
+        const scanned = copyConditions[bookId] ?? [];
+        return {
+          bookId,
+          quantity: item.quantityToReturn,
+          smartschoolUserId: selectedUser.smartschoolUserId,
+          copyConditions: scanned.map((c) => ({
+            copyId: null,
+            barcode: c.barcode,
+            condition: c.condition,
+            notes: null,
+          })),
+          damagedCount: 0,
+          brokenCount: 0,
+          lostCount: 0,
+        };
+      } else if (item.quantityToReturn === 1) {
+        const cond = conditionSingle[bookId] ?? "GOOD";
+        return {
+          bookId,
+          quantity: item.quantityToReturn,
+          smartschoolUserId: selectedUser.smartschoolUserId,
+          copyConditions: [],
+          damagedCount: cond === "DAMAGED" ? 1 : 0,
+          brokenCount: cond === "BROKEN" ? 1 : 0,
+          lostCount: cond === "LOST" ? 1 : 0,
+        };
+      } else {
+        return {
+          bookId,
+          quantity: item.quantityToReturn,
+          smartschoolUserId: selectedUser.smartschoolUserId,
+          copyConditions: [],
+          damagedCount: damagedCounts[bookId] ?? 0,
+          brokenCount: brokenCounts[bookId] ?? 0,
+          lostCount: lostCounts[bookId] ?? 0,
+        };
+      }
+    });
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/loans/return`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(payload),
-        },
-      );
-
+      const response = await fetch(`${apiUrl}/loans/return`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
       if (!response.ok)
         throw new Error("Fout bij het registreren van de retour.");
 
       alert(
         `Succes! De boeken van ${selectedUser.name} zijn succesvol ingeleverd.`,
       );
-
-      // Mandje leegmaken en de lijst met uitgeleende boeken opnieuw inladen
       setReturnCart([]);
+      clearConditionState();
       fetchUserLoans(selectedUser.smartschoolUserId);
       setBookQuery("");
     } catch (err) {
@@ -219,12 +440,6 @@ export default function ReturnsPage() {
           <div className="userProfileCard">
             {selectedUser ? (
               <>
-                {/* {selectedUser.photoUrl ? (
-                  <img src={selectedUser.photoUrl} alt="Profile" className="userPhotoPlaceholder cover" />
-                ) : (
-                  <div className="userPhotoPlaceholder">👤</div>
-                )}
-                */}
                 <div className="userInfo">
                   <p className="userName">{selectedUser.name}</p>
                   <p>
@@ -272,13 +487,6 @@ export default function ReturnsPage() {
             ) : (
               userSearchResults.map((user, idx) => (
                 <div key={idx} className="listItem">
-                  {/*
-                  {user.photoUrl ? (
-                    <img src={user.photoUrl} alt="Profile" className="userPhotoSmall cover" />
-                  ) : (
-                    <div className="userPhotoSmall">👤</div>
-                  )}
-                  */}
                   <div className="itemDetails">
                     <strong>{user.name}</strong>
                     <span>{user.classGroup}</span>
@@ -309,7 +517,7 @@ export default function ReturnsPage() {
               placeholder="Filter uitgeleende boeken..."
               value={bookQuery}
               onChange={(e) => setBookQuery(e.target.value)}
-              disabled={!selectedUser} // Alleen zoeken als er een user is
+              disabled={!selectedUser}
             />
           </div>
 
@@ -331,7 +539,6 @@ export default function ReturnsPage() {
                 const isSelectedForReturn = returnCart.find(
                   (c) => c.book.id === item.book.id,
                 );
-
                 return (
                   <div key={item.book.id} className="listItem">
                     <img
@@ -406,49 +613,229 @@ export default function ReturnsPage() {
               </h2>
             </div>
 
-            {/* Hier is de class 'extraMargin' aan toegevoegd voor uitlijning */}
             <div className="resultsFrame extraMargin">
               {returnCart.length === 0 ? (
                 <p className="placeholderText centered">
                   Geen boeken geselecteerd voor inlevering
                 </p>
               ) : (
-                returnCart.map((item) => (
-                  <div key={item.book.id} className="listItem selectedItem">
-                    <img
-                      src={item.book.thumbnail || "/book-closed.png"}
-                      alt="cover"
-                      className="itemThumbnail"
-                    />
-                    <div className="itemDetails">
-                      <strong>{item.book.title}</strong>
-                      <div className="quantityControl">
+                returnCart.map((item) => {
+                  const bookId = item.book.id;
+                  const qty = item.quantityToReturn;
+                  const damaged = damagedCounts[bookId] ?? 0;
+                  const broken = brokenCounts[bookId] ?? 0;
+                  const lost = lostCounts[bookId] ?? 0;
+                  const scanned = copyConditions[bookId] ?? [];
+
+                  return (
+                    <div key={bookId} className="cartItemBlock">
+                      {/* Book row */}
+                      <div className="listItem selectedItem">
+                        <img
+                          src={item.book.thumbnail || "/book-closed.png"}
+                          alt="cover"
+                          className="itemThumbnail"
+                        />
+                        <div className="itemDetails">
+                          <strong>{item.book.title}</strong>
+                          <div className="quantityControl">
+                            <button
+                              className="qtyBtn"
+                              onClick={() => updateReturnQuantity(bookId, -1)}
+                            >
+                              -
+                            </button>
+                            <span className="qtyDisplay">{qty}</span>
+                            <button
+                              className="qtyBtn"
+                              onClick={() => updateReturnQuantity(bookId, 1)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
                         <button
-                          className="qtyBtn"
-                          onClick={() => updateReturnQuantity(item.book.id, -1)}
+                          className="actionBtn removeBtn"
+                          onClick={() => handleRemoveFromReturnCart(bookId)}
+                          title="Verwijder uit selectie"
                         >
-                          -
-                        </button>
-                        <span className="qtyDisplay">
-                          {item.quantityToReturn}
-                        </span>
-                        <button
-                          className="qtyBtn"
-                          onClick={() => updateReturnQuantity(item.book.id, 1)}
-                        >
-                          +
+                          ✕
                         </button>
                       </div>
+
+                      {/* Condition controls */}
+                      {barcodesEnabled ? (
+                        <div className="conditionSection">
+                          <div className="barcodeInputRow">
+                            <input
+                              type="text"
+                              className={`barcodeInput${scanLoading[bookId] ? " barcodeInput--loading" : ""}`}
+                              placeholder={
+                                scanLoading[bookId]
+                                  ? "Valideren…"
+                                  : "Scan barcode..."
+                              }
+                              value={barcodeInputs[bookId] ?? ""}
+                              disabled={!!scanLoading[bookId]}
+                              ref={(el) => {
+                                barcodeRefs.current[bookId] = el;
+                              }}
+                              onChange={(e) => {
+                                setBarcodeInputs((prev) => ({
+                                  ...prev,
+                                  [bookId]: e.target.value,
+                                }));
+                                setScanErrors((prev) => ({
+                                  ...prev,
+                                  [bookId]: "",
+                                }));
+                              }}
+                              onKeyDown={(e) => handleBarcodeKeyDown(e, bookId)}
+                            />
+                            {scanErrors[bookId] && (
+                              <p className="scanError">{scanErrors[bookId]}</p>
+                            )}
+                          </div>
+                          {scanned.length > 0 && (
+                            <div className="scannedPills">
+                              {scanned.map((sc) => (
+                                <div
+                                  key={sc.barcode}
+                                  className="scannedPill"
+                                  data-condition={sc.condition}
+                                >
+                                  <span className="pillBarcode">
+                                    {sc.barcode}
+                                  </span>
+                                  <select
+                                    className="pillConditionSelect"
+                                    value={sc.condition}
+                                    onChange={(e) =>
+                                      updateScannedCondition(
+                                        bookId,
+                                        sc.barcode,
+                                        e.target.value as CopyCondition,
+                                      )
+                                    }
+                                  >
+                                    {(
+                                      Object.keys(
+                                        conditionLabels,
+                                      ) as CopyCondition[]
+                                    ).map((k) => (
+                                      <option key={k} value={k}>
+                                        {conditionLabels[k]}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    className="pillRemove"
+                                    onClick={() =>
+                                      removeScannedBarcode(bookId, sc.barcode)
+                                    }
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : qty === 1 ? (
+                        <div className="conditionSection">
+                          <select
+                            className="conditionSelect"
+                            value={conditionSingle[bookId] ?? "GOOD"}
+                            onChange={(e) =>
+                              setConditionSingle((prev) => ({
+                                ...prev,
+                                [bookId]: e.target.value as CopyCondition,
+                              }))
+                            }
+                          >
+                            {(
+                              Object.keys(conditionLabels) as CopyCondition[]
+                            ).map((k) => (
+                              <option key={k} value={k}>
+                                {conditionLabels[k]}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="conditionSection conditionCounters">
+                          {(
+                            [
+                              {
+                                label: "Beschadigd",
+                                count: damaged,
+                                setter: setDamagedCounts,
+                                others: [broken, lost],
+                              },
+                              {
+                                label: "Kapot",
+                                count: broken,
+                                setter: setBrokenCounts,
+                                others: [damaged, lost],
+                              },
+                              {
+                                label: "Verloren",
+                                count: lost,
+                                setter: setLostCounts,
+                                others: [damaged, broken],
+                              },
+                            ] as const
+                          ).map(({ label, count, setter, others }) => (
+                            <div key={label} className="conditionCounter">
+                              <span className="conditionCounterLabel">
+                                {label}
+                              </span>
+                              <div className="conditionCounterControl">
+                                <button
+                                  className="qtyBtn"
+                                  onClick={() =>
+                                    updateCount(
+                                      setter as React.Dispatch<
+                                        React.SetStateAction<
+                                          Record<number, number>
+                                        >
+                                      >,
+                                      bookId,
+                                      -1,
+                                      qty,
+                                      [...others],
+                                    )
+                                  }
+                                >
+                                  −
+                                </button>
+                                <span className="qtyDisplay">{count}</span>
+                                <button
+                                  className="qtyBtn"
+                                  onClick={() =>
+                                    updateCount(
+                                      setter as React.Dispatch<
+                                        React.SetStateAction<
+                                          Record<number, number>
+                                        >
+                                      >,
+                                      bookId,
+                                      1,
+                                      qty,
+                                      [...others],
+                                    )
+                                  }
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <button
-                      className="actionBtn removeBtn"
-                      onClick={() => handleRemoveFromReturnCart(item.book.id)}
-                      title="Verwijder uit selectie"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

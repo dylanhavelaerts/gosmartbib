@@ -39,6 +39,9 @@ interface AdminLoanHistory {
   quantity: number;
   borrowerDisplayName: string;
   borrowerClassNames: string[];
+  damagedCount: number;
+  brokenCount: number;
+  lostCount: number;
 }
 
 export default function LoansOverviewPage() {
@@ -367,6 +370,7 @@ export default function LoansOverviewPage() {
                   <th>Geleend op</th>
                   <th>Ingeleverd op</th>
                   <th style={{ textAlign: "center" }}>Aantal</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -400,6 +404,28 @@ export default function LoansOverviewPage() {
                     </td>
                     <td style={{ textAlign: "center" }}>
                       <span className="qtyBadge">{h.quantity}</span>
+                    </td>
+                    <td>
+                      <div className="conditionBadges">
+                        {h.damagedCount > 0 && (
+                          <span className="conditionBadge conditionBadge--damaged">
+                            {h.damagedCount}× beschadigd
+                          </span>
+                        )}
+                        {h.brokenCount > 0 && (
+                          <span className="conditionBadge conditionBadge--broken">
+                            {h.brokenCount}× kapot
+                          </span>
+                        )}
+                        {h.lostCount > 0 && (
+                          <span className="conditionBadge conditionBadge--lost">
+                            {h.lostCount}× verloren
+                          </span>
+                        )}
+                        {!h.damagedCount && !h.brokenCount && !h.lostCount && (
+                          <span className="conditionBadge conditionBadge--ok">OK</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

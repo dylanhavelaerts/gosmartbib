@@ -242,7 +242,6 @@ export default function LibrarySettings() {
     }
   };
 
-
   return (
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
       <main className="page">
@@ -409,8 +408,13 @@ export default function LibrarySettings() {
                         disabled={saving}
                       />
                       <div>
-                        <p className="toggleLabel">Streepjescodes inschakelen voor exemplaren</p>
-                        <p className="toggleSubLabel">Laat toe om individuele exemplaren te scannen bij terugbrengen en labels af te drukken.</p>
+                        <p className="toggleLabel">
+                          Barcodes inschakelen voor exemplaren
+                        </p>
+                        <p className="toggleSubLabel">
+                          Laat toe om individuele exemplaren te scannen bij
+                          terugbrengen en labels af te drukken.
+                        </p>
                       </div>
                     </label>
                   </div>
@@ -491,7 +495,7 @@ export default function LibrarySettings() {
                 <div className="infoPanel">
                   <p className="infoPanelTitle">Bibliotheekfuncties</p>
                   <div className="infoRow">
-                    <span className="infoLabel">Streepjescodes</span>
+                    <span className="infoLabel">Barcodes</span>
                     <strong className="infoValue">
                       {savedBarcodesEnabled ? "Ingeschakeld" : "Uitgeschakeld"}
                     </strong>

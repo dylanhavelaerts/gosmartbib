@@ -22,7 +22,7 @@ public class SchoolLibrarySettingsService {
     public SchoolLibrarySettingsDTO getSettings(Long schoolId) {
         return librarySettingsRepository.findBySchool_Id(schoolId)
                 .map(this::toDTO)
-                .orElseGet(() -> new SchoolLibrarySettingsDTO(schoolId, false));
+                .orElseGet(() -> new SchoolLibrarySettingsDTO(schoolId, true));
     }
 
     public SchoolLibrarySettingsDTO saveSettings(Long schoolId, SchoolLibrarySettingsDTO request) {

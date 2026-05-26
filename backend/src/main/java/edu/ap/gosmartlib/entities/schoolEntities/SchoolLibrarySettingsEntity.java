@@ -21,7 +21,7 @@ public class SchoolLibrarySettingsEntity {
     private SchoolEntity school;
 
     @Column(name = "barcodes_enabled")
-    private boolean barcodesEnabled = false;
+    private boolean barcodesEnabled = true;
 
     public SchoolLibrarySettingsEntity(SchoolEntity school) {
         this.school = school;

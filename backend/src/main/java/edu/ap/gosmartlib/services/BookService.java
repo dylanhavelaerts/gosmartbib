@@ -120,6 +120,7 @@ public class BookService {
         applySingleInventoryForCurrentUser(newBook, smartschoolUid, campus, totalCopies, totalCopies);
         recomputeBookCopyTotals(newBook);
         BookEntity savedBook = bookRepository.save(newBook);
+        savedBook.getInventories().forEach(this::reconcileCopiesForInventory);
         return toDTO(savedBook);
     }
 
@@ -760,7 +761,9 @@ public class BookService {
 
         recomputeBookCopyTotals(book);
 
-        return toDTO(bookRepository.save(book));
+        BookEntity savedBook = bookRepository.save(book);
+        savedBook.getInventories().forEach(this::reconcileCopiesForInventory);
+        return toDTO(savedBook);
     }
 
     public BookDTO addManualBook(CreateBookRequestDTO request, String smartschoolUid) {
@@ -797,6 +800,7 @@ public class BookService {
         recomputeBookCopyTotals(book);
 
         BookEntity saved = bookRepository.saveAndFlush(book);
+        saved.getInventories().forEach(this::reconcileCopiesForInventory);
 
         BookEntity reloaded = bookRepository.findDetailedById(saved.getId())
                 .orElseThrow(() -> new IllegalStateException(
@@ -846,6 +850,23 @@ public class BookService {
             }
         }
         return sections;
+    }
+
+    public BookCopyLabelDTO getCopyByBarcode(Long bookId, String barcode) {
+        BookCopyEntity copy = bookCopyRepository.findByBarcode(barcode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode niet gevonden"));
+
+        if (!Objects.equals(copy.getInventory().getBook().getId(), bookId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode hoort niet bij dit boek");
+        }
+
+        return new BookCopyLabelDTO(
+                copy.getId(),
+                copy.getBarcode(),
+                copy.getCopyNumber(),
+                copy.getInventory().getBook().getTitle(),
+                copy.getInventory().getBook().getIsbn(),
+                normalizeCampus(copy.getInventory().getCampus()));
     }
 
     public List<BookCopyLabelDTO> getCopyLabelsForInventory(Long bookId, Long inventoryId) {
@@ -957,6 +978,50 @@ public class BookService {
                 book.getAgeRange(),
                 book.getPreviewLink(),
                 inventories);
+    }
+
+    /**
+     * Zorgt dat het aantal exemplaren in de database overeenkomt met het aantal dat in de inventaris staat. 
+     * Als er te weinig exemplaren zijn, worden er nieuwe exemplaren aangemaakt. 
+     * Als er te veel exemplaren zijn, worden er exemplaren verwijderd, waarbij eerst exemplaren in slechte staat worden verwijderd.
+     * @param inventory
+     */
+    public void reconcileCopiesForInventory(BookInventoryEntity inventory) {
+        List<BookCopyEntity> allCopies = bookCopyRepository.findByInventory(inventory);
+        List<BookCopyEntity> nonLostCopies = allCopies.stream()
+                .filter(c -> c.getCopyCondition() != BookCopyCondition.LOST)
+                .toList();
+
+        int target = inventory.getTotalCopies() == null ? 0 : inventory.getTotalCopies();
+        int current = nonLostCopies.size();
+
+        if (current < target) {
+            int maxCopyNumber = allCopies.stream()
+                    .mapToInt(BookCopyEntity::getCopyNumber)
+                    .max().orElse(0);
+            List<BookCopyEntity> toCreate = new ArrayList<>();
+            for (int i = 1; i <= (target - current); i++) {
+                BookCopyEntity copy = new BookCopyEntity();
+                copy.setInventory(inventory);
+                copy.setCopyCondition(BookCopyCondition.GOOD);
+                copy.setCopyNumber(maxCopyNumber + i);
+                toCreate.add(copy);
+            }
+            bookCopyRepository.saveAll(toCreate);
+        } else if (current > target) {
+            List<BookCopyEntity> candidates = new ArrayList<>();
+            nonLostCopies.stream()
+                    .filter(c -> c.getCopyCondition() == BookCopyCondition.BROKEN)
+                    .forEach(candidates::add);
+            nonLostCopies.stream()
+                    .filter(c -> c.getCopyCondition() == BookCopyCondition.DAMAGED)
+                    .forEach(candidates::add);
+            nonLostCopies.stream()
+                    .filter(c -> c.getCopyCondition() == BookCopyCondition.GOOD)
+                    .forEach(candidates::add);
+            int toRemove = current - target;
+            bookCopyRepository.deleteAll(candidates.subList(0, Math.min(toRemove, candidates.size())));
+        }
     }
 
     private BookInventoryDTO toInventoryDTO(BookInventoryEntity inventory) {
