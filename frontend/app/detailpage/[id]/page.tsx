@@ -11,6 +11,7 @@ import {
 import { Book, BookCopy, SnowballSection } from "../../interfaces/Book";
 import { MeResponse } from "../../interfaces/user";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import "./detailpage.css";
 import ReviewSection from "@/app/components/reviewsection/reviewsection";
 import NotificationBell from "@/app/components/Notifications/Notification";
@@ -58,6 +59,7 @@ export default function DetailPage({
   const [expandedInventories, setExpandedInventories] = useState<Set<number>>(new Set());
   const [copiesCache, setCopiesCache] = useState<Record<number, BookCopy[]>>({});
   const [copiesLoading, setCopiesLoading] = useState<Set<number>>(new Set());
+  const router = useRouter();
 
   const isStaff =
     currentUser?.role === "TEACHER" ||
@@ -254,9 +256,9 @@ export default function DetailPage({
 
   return (
     <main className="detailPage">
-      <Link href="/catalog" className="backLink">
+      <button onClick={() => router.back()} className="backLink">
         ← Terug naar catalogus
-      </Link>
+      </button>
 
       <div className="detailContainer">
         {/* LEFT PANEL */}

@@ -355,6 +355,7 @@ main.lendingPageLayout .resultsFrame::-webkit-scrollbar-thumb {
   border: none;
   font-size: 1.2rem;
   font-weight: bold;
+  line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;

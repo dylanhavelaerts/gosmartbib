@@ -96,7 +96,13 @@ export default function Home() {
   // Bij het fetchen wordt ook rekening gehouden met de huidige pagina en aantal items per pagina (pageSize).
   // Bij een zoekopdracht is er een kleine debounce (300ms) om onnodige fetches te voorkomen tijdens het typen.
 
+  const pagesInvalid = minPages !== "" && maxPages !== "" && Number(minPages) > Number(maxPages);
+  const yearInvalid = minYear !== "" && maxYear !== "" && Number(minYear) > Number(maxYear);
+  const ratingInvalid = minRating !== null && maxRating !== null && minRating > maxRating;
+
   useEffect(() => {
+    if (pagesInvalid || yearInvalid || ratingInvalid) return;
+
     const params = new URLSearchParams();
     params.append("page", String(currentPage - 1)); // backend is 0-based
     params.append("size", String(pageSize));
@@ -437,7 +443,7 @@ export default function Home() {
                     setMinPages(e.target.value);
                     resetPage();
                   }}
-                  className="filterInput"
+                  className={`filterInput${pagesInvalid ? " filterInputError" : ""}`}
                 />
                 <input
                   type="number"
@@ -447,9 +453,10 @@ export default function Home() {
                     setMaxPages(e.target.value);
                     resetPage();
                   }}
-                  className="filterInput"
+                  className={`filterInput${pagesInvalid ? " filterInputError" : ""}`}
                 />
               </div>
+              {pagesInvalid && <span className="filterRangeError">Min mag niet groter zijn dan max</span>}
             </div>
 
             <div className="filterGroup">
@@ -463,7 +470,7 @@ export default function Home() {
                     setMinYear(e.target.value);
                     resetPage();
                   }}
-                  className="filterInput"
+                  className={`filterInput${yearInvalid ? " filterInputError" : ""}`}
                 />
                 <input
                   type="number"
@@ -473,9 +480,10 @@ export default function Home() {
                     setMaxYear(e.target.value);
                     resetPage();
                   }}
-                  className="filterInput"
+                  className={`filterInput${yearInvalid ? " filterInputError" : ""}`}
                 />
               </div>
+              {yearInvalid && <span className="filterRangeError">Min mag niet groter zijn dan max</span>}
             </div>
 
             <div className="filterGroup">
@@ -522,24 +530,26 @@ export default function Home() {
                   </button>
                 </div>
               </div>
-              <div className="filterGroup">
-                <label className="filterGroupLabel" htmlFor="catalog-sort">
-                  Sorteren
-                </label>
-                <select
-                  id="catalog-sort"
-                  className="filterSelect"
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value as SortOption);
-                    resetPage();
-                  }}
-                >
-                  <option value="default">Standaard</option>
-                  <option value="title_asc">Alfabetisch (A–Z)</option>
-                  <option value="newest">Nieuwste eerst</option>
-                </select>
-              </div>
+              {ratingInvalid && <span className="filterRangeError">Min mag niet groter zijn dan max</span>}
+            </div>
+
+            <div className="filterGroup">
+              <label className="filterGroupLabel" htmlFor="catalog-sort">
+                Sorteren
+              </label>
+              <select
+                id="catalog-sort"
+                className="filterSelect"
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value as SortOption);
+                  resetPage();
+                }}
+              >
+                <option value="default">Standaard</option>
+                <option value="title_asc">Alfabetisch (A–Z)</option>
+                <option value="newest">Nieuwste eerst</option>
+              </select>
             </div>
             {(user?.role === "TEACHER" ||
               user?.role === "BIBLIOTHEEKBEHEERDER" ||
