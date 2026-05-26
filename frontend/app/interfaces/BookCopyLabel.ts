@@ -1,4 +1,4 @@
-interface BookCopyLabel {
+export interface BookCopyLabel {
   copyId: number;
   barcode: string;
   copyNumber: number;

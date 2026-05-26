@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import LabelPrintModal from "./LabelPrintModal";
+import type { BookCopyLabel } from "../../interfaces/BookCopyLabel";
 import {
   BOOK_CATEGORIES,
   BOOK_LABELS,
@@ -381,12 +383,29 @@ export default function ManageCatalogPage() {
     }));
   }
 
-  async function handleOpenLabels(inventoryId: number) {
+  async function handlePrintAllLabels() {
+    setLoadingLabels(true);
+    try {
+      const res = await fetch(`${apiUrl}/books/copies/labels/school`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error();
+      const data: BookCopyLabel[] = await res.json();
+      setPrintLabels(data);
+      setLabelModalOpen(true);
+    } catch {
+      setError("Kon labels niet ophalen.");
+    } finally {
+      setLoadingLabels(false);
+    }
+  }
+
+  async function handleOpenLabels() {
     if (!selectedBook) return;
     setLoadingLabels(true);
     try {
       const res = await fetch(
-        `${apiUrl}/books/${selectedBook.id}/copies/labels?inventoryId=${inventoryId}`,
+        `${apiUrl}/books/${selectedBook.id}/copies/labels/school`,
         { credentials: "include" },
       );
       if (!res.ok) throw new Error();
@@ -408,12 +427,26 @@ export default function ManageCatalogPage() {
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
       <main className="manage-main-layout">
         <div className="manage-page-header">
-          <h1>Catalogusbeheer</h1>
-          <p>Beheer boeken, inventaris en exemplaren voor jouw bibliotheek.</p>
+          <div>
+            <h1>Catalogusbeheer</h1>
+            <p>
+              Beheer boeken, inventaris en exemplaren voor jouw bibliotheek.
+            </p>
+          </div>
+          {barcodesEnabled && (
+            <button
+              className="btn-labels"
+              disabled={loadingLabels}
+              onClick={handlePrintAllLabels}
+              type="button"
+            >
+              {loadingLabels ? "Bezig…" : "Alle labels afdrukken"}
+            </button>
+          )}
         </div>
         <div className="manage-wrapper">
-          {/* EILAND LIJST */}
-          <div className="eiland-lijst">
+          {/* BOOK LIST */}
+          <div className="book-list-panel">
             <div className="headerdiv">
               <button
                 onClick={() => router.push("/admin/add-book")}
@@ -503,8 +536,8 @@ export default function ManageCatalogPage() {
             </div>
           </div>
 
-          {/* EILAND DETAILS */}
-          <div className="eiland-details">
+          {/* BOOK DETAILS */}
+          <div className="book-details-panel">
             {!selectedBook ? (
               <div className="details-empty">
                 <p>Klik op een boek in de lijst om de details te bekijken.</p>
@@ -599,7 +632,7 @@ export default function ManageCatalogPage() {
                             type="button"
                             className="btn-labels"
                             disabled={loadingLabels}
-                            onClick={() => handleOpenLabels(myInventory.id!)}
+                            onClick={() => handleOpenLabels()}
                           >
                             {loadingLabels ? "Bezig…" : "Labels afdrukken"}
                           </button>
@@ -995,7 +1028,9 @@ export default function ManageCatalogPage() {
                       className="inventory-editor-card"
                     >
                       <p className="inventory-editor-school">
-                        {formatSchoolLabel(inventory.schoolName || me?.school?.name || "")}
+                        {formatSchoolLabel(
+                          inventory.schoolName || me?.school?.name || "",
+                        )}
                       </p>
                       <div className="inventory-editor-grid">
                         <div>
@@ -1109,72 +1144,10 @@ export default function ManageCatalogPage() {
           </div>
         )}
         {labelModalOpen && (
-          <div
-            className="modal-overlay"
-            onClick={() => setLabelModalOpen(false)}
-          >
-            <div
-              className="modal-box label-print-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-header label-modal-header">
-                <div>
-                  <h2>Labels afdrukken</h2>
-                  <p className="label-modal-count">
-                    {printLabels.length === 0
-                      ? "Barcodes worden toegewezen bij het afdrukken"
-                      : `${printLabels.length} exempla${printLabels.length !== 1 ? "ren" : "ar"}`}
-                  </p>
-                </div>
-                <div className="label-modal-header-actions">
-                  {printLabels.length > 0 && (
-                    <button
-                      type="button"
-                      className="modal-btn-save"
-                      onClick={() => window.print()}
-                    >
-                      Afdrukken
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="modal-btn-cancel"
-                    onClick={() => setLabelModalOpen(false)}
-                  >
-                    Sluiten
-                  </button>
-                </div>
-              </div>
-              <div className="modal-body">
-                {printLabels.length === 0 ? (
-                  <div className="label-empty-state">
-                    <p>Nog geen barcodes toegewezen.</p>
-                    <p>Voeg exemplaren toe aan de inventaris en druk daarna opnieuw af — barcodes worden automatisch aangemaakt.</p>
-                  </div>
-                ) : (
-                  <div className="label-grid" id="label-print-area">
-                    {printLabels.map((label) => (
-                      <div key={label.copyId} className="label-card">
-                        <div className="label-card-top">
-                          <span className="label-title">{label.bookTitle}</span>
-                          {label.campus && (
-                            <span className="label-campus">{label.campus}</span>
-                          )}
-                        </div>
-                        <div className="label-card-middle">
-                          <span className="label-copy-number">{label.copyNumber}</span>
-                          <span className="label-copy-text">exemplaar</span>
-                        </div>
-                        <div className="label-card-bottom">
-                          <span className="label-barcode">{label.barcode}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <LabelPrintModal
+            labels={printLabels}
+            onClose={() => setLabelModalOpen(false)}
+          />
         )}
       </main>
     </ProtectedRoute>

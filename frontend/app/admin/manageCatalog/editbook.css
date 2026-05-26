@@ -29,7 +29,6 @@
   background: #fdfdfd;
 }
 
-/* Compact pagination inside the narrow eiland-lijst panel */
 .list-footer .pagination {
   gap: 0.2rem;
   padding: 0.4rem 0;
@@ -300,14 +299,25 @@
 }
 
 .manage-main-layout {
-  margin-top: 4.5rem;
   padding: 1.5rem 2rem;
+  padding-top: 1.5rem;
   display: flex;
   flex-direction: column;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  margin-top: 4.5rem;
+  box-sizing: border-box;
+  height: calc(100vh - 4.5rem);
+  overflow: hidden;
 }
 
 .manage-page-header {
   margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .manage-page-header h1 {
@@ -330,10 +340,12 @@
   width: 100%;
   max-width: 1400px;
   flex: 1;
+  min-height: 0;
   margin: 0 auto;
+  overflow: hidden;
 }
 
-.eiland-lijst {
+.book-list-panel {
   width: 100%;
   box-sizing: border-box;
   background: #fff;
@@ -345,7 +357,7 @@
   overflow: hidden;
 }
 
-.eiland-details {
+.book-details-panel {
   width: 100%;
   box-sizing: border-box;
   background: #fff;
@@ -364,25 +376,31 @@
 
   .manage-wrapper {
     flex-direction: row;
-    align-items: flex-start;
+    align-items: stretch;
   }
 
-  .eiland-lijst {
+  .book-list-panel {
     width: 340px;
     flex-shrink: 0;
-    position: sticky;
-    top: 5.5rem;
-    max-height: calc(100vh - 7rem);
+    height: 100%;
+    overflow: hidden;
   }
 
-  .eiland-details {
+  .book-details-panel {
     flex: 1;
     min-width: 0;
+    height: 100%;
+    overflow-y: auto;
   }
 
   .list-container {
+    flex: 1;
     overflow-y: auto;
-    max-height: calc(100vh - 16rem);
+    min-height: 0;
+  }
+
+  .list-footer {
+    flex-shrink: 0;
   }
 }
 
@@ -915,33 +933,33 @@
 .label-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .label-card {
-  aspect-ratio: 3 / 2;
   border: 1.5px solid #c0a0b0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #fff;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .label-card-top {
-  padding: 0.4rem 0.5rem 0.3rem;
+  padding: 0.45rem 0.6rem 0.35rem;
   border-bottom: 1px solid #e8dde2;
-  background: #fdf9fb;
+  background: #fdf6f9;
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
 }
 
 .label-title {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: #3d2030;
-  line-height: 1.2;
+  line-height: 1.3;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -954,13 +972,12 @@
 }
 
 .label-card-middle {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.05rem;
-  padding: 0.25rem;
+  padding: 0.5rem 0.25rem 0.3rem;
 }
 
 .label-copy-number {
@@ -971,42 +988,24 @@
 }
 
 .label-copy-text {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   color: #9a7a8a;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
 .label-card-bottom {
-  padding: 0.3rem 0.5rem;
+  padding: 0.3rem 0.5rem 0.4rem;
   border-top: 1px solid #e8dde2;
-  background: #fdf9fb;
-  text-align: center;
+  background: #fdf6f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.label-barcode {
-  font-family: monospace;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #3d2030;
-  letter-spacing: 0.12em;
-}
-
-@media print {
-  body > * {
-    display: none !important;
-  }
-  #label-print-area {
-    display: grid !important;
-  }
-  .label-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    padding: 1cm;
-  }
-  .label-card {
-    border: 1px solid #000;
-    break-inside: avoid;
-  }
+.label-card-bottom svg {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  display: block;
 }

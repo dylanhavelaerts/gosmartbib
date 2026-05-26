@@ -12,6 +12,7 @@ import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.exceptions.NegativeValueException;
 import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
+import edu.ap.gosmartlib.repositories.book.BookInventoryRepository;
 import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
@@ -65,6 +66,7 @@ public class BookService {
     private final BookFilterValidator bookFilterValidator;
     private final SchoolRepository schoolRepository;
     private final BookCopyRepository bookCopyRepository;
+    private final BookInventoryRepository bookInventoryRepository;
 
     private final InventoryAdjustmentService inventoryAdjustmentService;
 
@@ -1004,7 +1006,46 @@ public class BookService {
                 copy.getCopyNumber(),
                 copy.getInventory().getBook().getTitle(),
                 copy.getInventory().getBook().getIsbn(),
-                normalizeCampus(copy.getInventory().getCampus()));
+                normalizeCampus(copy.getInventory().getCampus()),
+                copy.getCopyCondition() != null ? copy.getCopyCondition().name() : "GOOD");
+    }
+
+    public List<BookCopyLabelDTO> getCopyLabelsForBook(Long bookId, String currentUserUid) {
+        Long schoolId = requireRequesterSchoolId(currentUserUid);
+        BookEntity book = bookRepository.findDetailedById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(bookId));
+
+        List<BookInventoryEntity> inventories = book.getInventories().stream()
+                .filter(inv -> Objects.equals(inv.getSchool().getId(), schoolId))
+                .toList();
+
+        List<BookCopyEntity> allCopies = inventories.stream()
+                .flatMap(inv -> bookCopyRepository.findByInventory(inv).stream())
+                .toList();
+
+        List<BookCopyEntity> needsBarcode = allCopies.stream()
+                .filter(c -> c.getBarcode() == null)
+                .toList();
+
+        if (!needsBarcode.isEmpty()) {
+            needsBarcode.forEach(c -> c.setBarcode(generateEan13(c.getId())));
+            bookCopyRepository.saveAll(needsBarcode);
+        }
+
+        return inventories.stream()
+                .flatMap(inv -> {
+                    String campus = normalizeCampus(inv.getCampus());
+                    return bookCopyRepository.findByInventory(inv).stream()
+                            .map(c -> new BookCopyLabelDTO(
+                                    c.getId(),
+                                    c.getBarcode(),
+                                    c.getCopyNumber(),
+                                    book.getTitle(),
+                                    book.getIsbn(),
+                                    campus,
+                                    c.getCopyCondition() != null ? c.getCopyCondition().name() : "GOOD"));
+                })
+                .toList();
     }
 
     public List<BookCopyLabelDTO> getCopyLabelsForInventory(Long bookId, Long inventoryId) {
@@ -1036,7 +1077,40 @@ public class BookService {
                         c.getCopyNumber(),
                         book.getTitle(),
                         book.getIsbn(),
-                        campus))
+                        campus,
+                        c.getCopyCondition() != null ? c.getCopyCondition().name() : "GOOD"))
+                .toList();
+    }
+
+    public List<BookCopyLabelDTO> getCopyLabelsForSchool(String currentUserUid) {
+        Long schoolId = requireRequesterSchoolId(currentUserUid);
+        List<BookInventoryEntity> inventories = bookInventoryRepository.findBySchool_Id(schoolId);
+
+        List<BookCopyEntity> needsBarcode = inventories.stream()
+                .flatMap(inv -> bookCopyRepository.findByInventory(inv).stream())
+                .filter(c -> c.getBarcode() == null)
+                .toList();
+
+        if (!needsBarcode.isEmpty()) {
+            needsBarcode.forEach(c -> c.setBarcode(generateEan13(c.getId())));
+            bookCopyRepository.saveAll(needsBarcode);
+        }
+
+        return inventories.stream()
+                .flatMap(inv -> {
+                    String campus = normalizeCampus(inv.getCampus());
+                    String bookTitle = inv.getBook().getTitle();
+                    String isbn = inv.getBook().getIsbn();
+                    return bookCopyRepository.findByInventory(inv).stream()
+                            .map(c -> new BookCopyLabelDTO(
+                                    c.getId(),
+                                    c.getBarcode(),
+                                    c.getCopyNumber(),
+                                    bookTitle,
+                                    isbn,
+                                    campus,
+                                    c.getCopyCondition() != null ? c.getCopyCondition().name() : "GOOD"));
+                })
                 .toList();
     }
 

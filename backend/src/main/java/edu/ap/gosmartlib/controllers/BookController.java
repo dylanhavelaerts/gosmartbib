@@ -269,6 +269,20 @@ public class BookController {
         return ResponseEntity.ok(bookService.getCopyLabelsForInventory(bookId, inventoryId));
     }
 
+    @GetMapping("/{bookId}/copies/labels/school")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    public ResponseEntity<List<BookCopyLabelDTO>> getCopyLabelsForBook(
+            @PathVariable Long bookId,
+            @AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.ok(bookService.getCopyLabelsForBook(bookId, authHelper.extractUid(principal)));
+    }
+
+    @GetMapping("/copies/labels/school")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    public ResponseEntity<List<BookCopyLabelDTO>> getAllCopyLabelsForSchool(@AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.ok(bookService.getCopyLabelsForSchool(authHelper.extractUid(principal)));
+    }
+
     @GetMapping("/by-barcode")
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<BookDTO> getBookByBarcode(

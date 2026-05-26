@@ -6,5 +6,6 @@ public record BookCopyLabelDTO(
         int copyNumber,
         String bookTitle,
         String isbn,
-        String campus
+        String campus,
+        String condition
 ) {}
