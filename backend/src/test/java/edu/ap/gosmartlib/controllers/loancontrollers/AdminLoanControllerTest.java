@@ -1,106 +1,121 @@
 package edu.ap.gosmartlib.controllers.loancontrollers;
 
-import edu.ap.gosmartlib.dto.loan.AdminActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.AdminLoanHistoryDTO;
-import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
+import edu.ap.gosmartlib.config.TestSecurityConfig;
+import edu.ap.gosmartlib.security.RoleGuard;
 import edu.ap.gosmartlib.services.loans.AdminLoanService;
+import edu.ap.gosmartlib.services.users.UserService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 class AdminLoanControllerTest {
 
-    @Mock private AdminLoanService adminLoanService;
-    @Mock private OAuth2User principal;
-    @InjectMocks private AdminLoanController adminLoanController;
+    @Autowired
+    private MockMvc mockMvc;
 
-    // --- getActiveLoansForSchool ---
+    @MockitoBean private AdminLoanService adminLoanService;
+    @MockitoBean private UserService userService;
+    @MockitoBean private RoleGuard roleGuard;
+
+    // ─── GET /loans/school/active ─────────────────────────────────────────────
 
     @Test
-    void givenNullPrincipal_whenGetActiveLoans_thenReturnsUnauthorized() {
-        ResponseEntity<Page<AdminActiveLoanDTO>> response =
-                adminLoanController.getActiveLoansForSchool(null, null, 0, 10);
+    void givenNullPrincipal_whenGetActiveLoans_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/loans/school/active"))
+                .andExpect(status().isForbidden());
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(adminLoanService);
     }
 
     @Test
-    void givenPrincipalWithoutUserID_whenGetActiveLoans_thenReturnsUnauthorized() {
-        when(principal.getAttribute("userID")).thenReturn(null);
-
-        ResponseEntity<Page<AdminActiveLoanDTO>> response =
-                adminLoanController.getActiveLoansForSchool(principal, null, 0, 10);
-
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    void givenPrincipalWithoutUserID_whenGetActiveLoans_thenReturnsForbidden() throws Exception {
+        mockMvc.perform(get("/loans/school/active")
+                        .with(oauth2Login()))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void givenValidPrincipal_whenGetActiveLoans_thenCallsServiceWithCorrectParams() {
-        when(principal.getAttribute("userID")).thenReturn("uid-1");
+    void givenNoLibrarianRole_whenGetActiveLoans_thenReturnsForbidden() throws Exception {
+        // roleGuard.isBibbeheerder() default = false → 403
+        mockMvc.perform(get("/loans/school/active")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(adminLoanService);
+    }
+
+    @Test
+    void givenValidPrincipal_whenGetActiveLoans_thenCallsServiceWithCorrectParams() throws Exception {
+        when(roleGuard.isBibbeheerder(any())).thenReturn(true);
         when(adminLoanService.getActiveLoansForSchool("uid-1", null, 0, 10)).thenReturn(Page.empty());
 
-        ResponseEntity<Page<AdminActiveLoanDTO>> response =
-                adminLoanController.getActiveLoansForSchool(principal, null, 0, 10);
+        mockMvc.perform(get("/loans/school/active")
+                        .param("page", "0").param("size", "10")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk());
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(adminLoanService).getActiveLoansForSchool("uid-1", null, 0, 10);
     }
 
-    // --- getLoanHistoryForSchool ---
+    // ─── GET /loans/school/history ────────────────────────────────────────────
 
     @Test
-    void givenNullPrincipal_whenGetLoanHistory_thenReturnsUnauthorized() {
-        ResponseEntity<Page<AdminLoanHistoryDTO>> response =
-                adminLoanController.getLoanHistoryForSchool(null, null, 0, 10);
+    void givenNullPrincipal_whenGetLoanHistory_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/loans/school/history"))
+                .andExpect(status().isForbidden());
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(adminLoanService);
     }
 
     @Test
-    void givenValidPrincipal_whenGetLoanHistory_thenCallsServiceWithCorrectParams() {
-        when(principal.getAttribute("userID")).thenReturn("uid-1");
+    void givenValidPrincipal_whenGetLoanHistory_thenCallsServiceWithCorrectParams() throws Exception {
+        when(roleGuard.isBibbeheerder(any())).thenReturn(true);
         when(adminLoanService.getLoanHistoryForSchool("uid-1", 5L, 1, 10)).thenReturn(Page.empty());
 
-        ResponseEntity<Page<AdminLoanHistoryDTO>> response =
-                adminLoanController.getLoanHistoryForSchool(principal, 5L, 1, 10);
+        mockMvc.perform(get("/loans/school/history")
+                        .param("classId", "5")
+                        .param("page", "1").param("size", "10")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk());
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(adminLoanService).getLoanHistoryForSchool("uid-1", 5L, 1, 10);
     }
 
-    // --- getSchoolClasses ---
+    // ─── GET /loans/school/classes ────────────────────────────────────────────
 
     @Test
-    void givenNullPrincipal_whenGetSchoolClasses_thenReturnsUnauthorized() {
-        ResponseEntity<List<ReadingListAssignmentTargetsDTO.ClassTarget>> response =
-                adminLoanController.getSchoolClasses(null);
-
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    void givenNullPrincipal_whenGetSchoolClasses_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/loans/school/classes"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void givenValidPrincipal_whenGetSchoolClasses_thenReturnsClasses() {
-        when(principal.getAttribute("userID")).thenReturn("uid-1");
+    void givenValidPrincipal_whenGetSchoolClasses_thenReturnsClasses() throws Exception {
+        when(roleGuard.isBibbeheerder(any())).thenReturn(true);
         when(adminLoanService.getSchoolClasses("uid-1")).thenReturn(List.of());
 
-        ResponseEntity<List<ReadingListAssignmentTargetsDTO.ClassTarget>> response =
-                adminLoanController.getSchoolClasses(principal);
+        mockMvc.perform(get("/loans/school/classes")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk());
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(adminLoanService).getSchoolClasses("uid-1");
     }
 }

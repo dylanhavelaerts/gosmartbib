@@ -1,192 +1,162 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.entities.BookEntity;
-import edu.ap.gosmartlib.entities.ReadingListEntity;
-import edu.ap.gosmartlib.repositories.ReadingListRepository;
-import edu.ap.gosmartlib.security.AuthHelper;
+import edu.ap.gosmartlib.config.TestSecurityConfig;
+import edu.ap.gosmartlib.services.ReadingListService;
 import edu.ap.gosmartlib.services.messages.BookNotificationService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 class ReadingListNotificationControllerTest {
 
-    @Mock
-    private BookNotificationService bookNotificationService;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @Mock
-    private ReadingListRepository readingListRepository;
+    @MockitoBean private BookNotificationService bookNotificationService;
+    @MockitoBean private ReadingListService readingListService;
 
-    @Mock
-    private OAuth2User oAuth2User;
-
-    // @Spy gebruikt de echte implementatie van AuthHelper zodat extractUid/extractUidOrNull
-    // correct werken zonder elke test afzonderlijk te stubben.
-    @Spy
-    private AuthHelper authHelper = new AuthHelper();
-
-    @InjectMocks
-    private ReadingListNotificationController readingListNotificationController;
-
-    // --- status ---
+    // ─── GET /reading-lists/{id}/notification ─────────────────────────────────
 
     @Test
-    void givenAllNotificationsEnabled_whenStatus_thenReturnsTrue() {
-        when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
-        ReadingListEntity list = readingListWithBooks(1L, List.of(10L, 11L));
-        when(readingListRepository.findByIdWithBooks(1L)).thenReturn(Optional.of(list));
+    void givenAllNotificationsEnabled_whenStatus_thenReturnsTrue() throws Exception {
+        when(readingListService.getBookIds(1L)).thenReturn(List.of(10L, 11L));
         when(bookNotificationService.isAllEnabled("uid-1", List.of(10L, 11L))).thenReturn(true);
 
-        ResponseEntity<Boolean> response = readingListNotificationController.status(1L, oAuth2User);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(Boolean.TRUE, response.getBody());
+        mockMvc.perform(get("/reading-lists/1/notification")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
     }
 
     @Test
-    void givenNotAllNotificationsEnabled_whenStatus_thenReturnsFalse() {
-        when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
-        ReadingListEntity list = readingListWithBooks(1L, List.of(10L, 11L));
-        when(readingListRepository.findByIdWithBooks(1L)).thenReturn(Optional.of(list));
+    void givenNotAllNotificationsEnabled_whenStatus_thenReturnsFalse() throws Exception {
+        when(readingListService.getBookIds(1L)).thenReturn(List.of(10L, 11L));
         when(bookNotificationService.isAllEnabled("uid-1", List.of(10L, 11L))).thenReturn(false);
 
-        ResponseEntity<Boolean> response = readingListNotificationController.status(1L, oAuth2User);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(Boolean.FALSE, response.getBody());
+        mockMvc.perform(get("/reading-lists/1/notification")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk())
+                .andExpect(content().string("false"));
     }
 
     @Test
-    void givenReadingListNotFound_whenStatus_thenThrowsNotFound() {
-        when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
-        when(readingListRepository.findByIdWithBooks(99L)).thenReturn(Optional.empty());
+    void givenReadingListNotFound_whenStatus_thenReturnsNotFound() throws Exception {
+        when(readingListService.getBookIds(99L))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> readingListNotificationController.status(99L, oAuth2User));
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        mockMvc.perform(get("/reading-lists/99/notification")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void givenNullPrincipal_whenStatus_thenThrowsUnauthorized() {
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> readingListNotificationController.status(1L, null));
-        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-        verifyNoInteractions(bookNotificationService, readingListRepository);
+    void givenNullPrincipal_whenStatus_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/reading-lists/1/notification"))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(bookNotificationService, readingListService);
     }
 
     @Test
-    void givenPrincipalWithoutUserId_whenStatus_thenThrowsUnauthorized() {
-        when(oAuth2User.getAttribute("userID")).thenReturn("  ");
+    void givenPrincipalWithoutUserId_whenStatus_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/reading-lists/1/notification")
+                        .with(oauth2Login()))
+                .andExpect(status().isUnauthorized());
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> readingListNotificationController.status(1L, oAuth2User));
-        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-        verifyNoInteractions(bookNotificationService, readingListRepository);
+        verifyNoInteractions(bookNotificationService, readingListService);
     }
 
-    // --- enable ---
+    // ─── POST /reading-lists/{id}/notification ────────────────────────────────
 
     @Test
-    void givenValidPrincipalAndList_whenEnable_thenCallsEnableBulkAndReturnsOk() {
-        when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
-        ReadingListEntity list = readingListWithBooks(2L, List.of(20L, 21L));
-        when(readingListRepository.findByIdWithBooks(2L)).thenReturn(Optional.of(list));
+    void givenValidPrincipalAndList_whenEnable_thenReturnsOk() throws Exception {
+        when(readingListService.getBookIds(2L)).thenReturn(List.of(20L, 21L));
 
-        ResponseEntity<Void> response = readingListNotificationController.enable(2L, oAuth2User);
+        mockMvc.perform(post("/reading-lists/2/notification")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk());
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(bookNotificationService, times(1)).enableBulk("uid-1", List.of(20L, 21L));
+        verify(bookNotificationService).enableBulk("uid-1", List.of(20L, 21L));
     }
 
     @Test
-    void givenReadingListNotFound_whenEnable_thenThrowsNotFound() {
-        when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
-        when(readingListRepository.findByIdWithBooks(99L)).thenReturn(Optional.empty());
+    void givenReadingListNotFound_whenEnable_thenReturnsNotFound() throws Exception {
+        when(readingListService.getBookIds(99L))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> readingListNotificationController.enable(99L, oAuth2User));
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        mockMvc.perform(post("/reading-lists/99/notification")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isNotFound());
+
         verify(bookNotificationService, never()).enableBulk(any(), any());
     }
 
     @Test
-    void givenNullPrincipal_whenEnable_thenThrowsUnauthorized() {
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> readingListNotificationController.enable(2L, null));
-        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-        verifyNoInteractions(bookNotificationService, readingListRepository);
+    void givenNullPrincipal_whenEnable_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(post("/reading-lists/2/notification"))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(bookNotificationService, readingListService);
     }
 
     @Test
-    void givenPrincipalWithoutUserId_whenEnable_thenThrowsUnauthorized() {
-        when(oAuth2User.getAttribute("userID")).thenReturn(null);
+    void givenPrincipalWithoutUserId_whenEnable_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(post("/reading-lists/2/notification")
+                        .with(oauth2Login()))
+                .andExpect(status().isUnauthorized());
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> readingListNotificationController.enable(2L, oAuth2User));
-        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-        verifyNoInteractions(bookNotificationService, readingListRepository);
+        verifyNoInteractions(bookNotificationService, readingListService);
     }
 
-    // --- disable ---
+    // ─── DELETE /reading-lists/{id}/notification ──────────────────────────────
 
     @Test
-    void givenValidPrincipalAndList_whenDisable_thenCallsDisableBulkAndReturnsNoContent() {
-        when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
-        ReadingListEntity list = readingListWithBooks(3L, List.of(30L));
-        when(readingListRepository.findByIdWithBooks(3L)).thenReturn(Optional.of(list));
+    void givenValidPrincipalAndList_whenDisable_thenReturnsNoContent() throws Exception {
+        when(readingListService.getBookIds(3L)).thenReturn(List.of(30L));
 
-        ResponseEntity<Void> response = readingListNotificationController.disable(3L, oAuth2User);
+        mockMvc.perform(delete("/reading-lists/3/notification")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isNoContent());
 
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(bookNotificationService, times(1)).disableBulk("uid-1", List.of(30L));
+        verify(bookNotificationService).disableBulk("uid-1", List.of(30L));
     }
 
     @Test
-    void givenReadingListNotFound_whenDisable_thenThrowsNotFound() {
-        when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
-        when(readingListRepository.findByIdWithBooks(99L)).thenReturn(Optional.empty());
+    void givenReadingListNotFound_whenDisable_thenReturnsNotFound() throws Exception {
+        when(readingListService.getBookIds(99L))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> readingListNotificationController.disable(99L, oAuth2User));
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        mockMvc.perform(delete("/reading-lists/99/notification")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isNotFound());
+
         verify(bookNotificationService, never()).disableBulk(any(), any());
     }
 
     @Test
-    void givenNullPrincipal_whenDisable_thenThrowsUnauthorized() {
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> readingListNotificationController.disable(3L, null));
-        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-        verifyNoInteractions(bookNotificationService, readingListRepository);
-    }
+    void givenNullPrincipal_whenDisable_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(delete("/reading-lists/3/notification"))
+                .andExpect(status().isUnauthorized());
 
-    // --- helpers ---
-
-    private ReadingListEntity readingListWithBooks(Long listId, List<Long> bookIds) {
-        ReadingListEntity list = new ReadingListEntity();
-        list.setId(listId);
-        LinkedHashSet<BookEntity> books = new LinkedHashSet<>();
-        for (Long bookId : bookIds) {
-            BookEntity book = new BookEntity();
-            book.setId(bookId);
-            books.add(book);
-        }
-        list.setBooks(books);
-        return list;
+        verifyNoInteractions(bookNotificationService, readingListService);
     }
 }
