@@ -312,6 +312,24 @@
 .badge--soon    { background-color: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
 .badge--overdue { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
 
+.readingTestBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: #fdf6f8;
+  border: 1px solid #e4d9dc;
+  border-radius: 0.6rem;
+  padding: 0.7rem 1.1rem;
+  margin-top: 0.75rem;
+  text-decoration: none;
+  color: #3e0c1c;
+  font-size: 0.92rem;
+  transition: background-color 0.2s;
+}
+
+.readingTestBanner:hover {
+  background-color: #f5e8ec;
+}
 
 
 @media (min-width: 768px) {

@@ -1,4 +1,5 @@
 package edu.ap.gosmartlib.services.loans;
+package edu.ap.gosmartlib.services.loans;
 
 import edu.ap.gosmartlib.dto.loan.*;
 import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
@@ -26,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -71,7 +74,10 @@ public class LoanService {
             UserEntity borrower = userRepository.findBySmartschoolUid(request.user().smartschoolUserId())
                     .orElseThrow(() -> new IllegalArgumentException("FOUT 1: Lener ("
                             + request.user().smartschoolUserId() + ") is niet gevonden in de lokale databank."));
-
+            if (book.isDidacticTag() && borrower.getRole() == UserRoles.STUDENT) {
+                throw new IllegalArgumentException(
+                        "Didactische boeken kunnen niet worden uitgeleend aan leerlingen.");
+            }
             // Check of de lener wel een school heeft (Voorkomt een NullPointerException)
             if (borrower.getSchool() == null) {
                 throw new IllegalArgumentException("FOUT 2: De lener met ID " + request.user().smartschoolUserId()
@@ -511,6 +517,7 @@ public class LoanService {
             );
         }).collect(Collectors.toList());
     }
+
 
     private Map<String, String> resolveDisplayNamesMap(String actorUid, List<String> uids) {
         if (uids == null || uids.isEmpty()) {

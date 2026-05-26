@@ -16,6 +16,9 @@ public interface LoanHistoryRepository extends JpaRepository<LoanHistoryEntity, 
     // Haalt de uitleengeschiedenis op voor een specifieke gebruiker
     List<LoanHistoryEntity> findBySmartschoolUserIdOrderByReturnDateDesc(String smartschoolUserId);
 
+    Page<LoanHistoryEntity> findBySmartschoolUserIdOrderByReturnDateDesc(
+            String smartschoolUserId, Pageable pageable);
+
     @Query("""
     SELECT b, COUNT(lh)
     FROM LoanHistoryEntity lh

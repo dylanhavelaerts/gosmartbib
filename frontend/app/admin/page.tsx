@@ -7,14 +7,6 @@ import "./admin.css";
 
 const teacherWidgets = [
   {
-    iconSrc: "/smartschool/Module iconen/enquete_512x512.png",
-    iconAlt: "Reviewmoderatie",
-    title: "Reviewmoderatie",
-    description:
-      "Modereer gebruikersreviews en beheer de zichtbaarheid van inhoud.",
-    href: "/admin/reviews",
-  },
-  {
     iconSrc: "/admin/buy.png",
     iconAlt: "Aankoopsuggesties",
     title: "Aankoopsuggesties",
@@ -33,7 +25,15 @@ const teacherWidgets = [
 ];
 
 const beheerderWidgets = [
-    {
+  {
+    iconSrc: "/smartschool/Module iconen/enquete_512x512.png",
+    iconAlt: "Reviewmoderatie",
+    title: "Reviewmoderatie",
+    description:
+      "Modereer gebruikersreviews en beheer de zichtbaarheid van inhoud.",
+    href: "/admin/reviews",
+  },
+  {
     iconSrc: "/admin/settings.png",
     iconAlt: "Gebruikersbeheer",
     title: "Gebruikersbeheer",
@@ -93,7 +93,8 @@ const adminWidgets = [
     iconSrc: "/admin/settings.png",
     iconAlt: "Schoolintegratie",
     title: "Schoolintegratie",
-    description: "Voeg scholen toe, keur wachtende scholen goed en beheer schoolintegraties",
+    description:
+      "Voeg scholen toe, keur wachtende scholen goed en beheer schoolintegraties",
     href: "/admin/schools",
   },
 ];

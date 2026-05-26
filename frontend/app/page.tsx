@@ -148,7 +148,7 @@ export default function Home() {
   // --- Homepage Settings Ophalen ---
   useEffect(() => {
     if (authLoading) return;
-    
+
     if (!user) {
       setSettingsLoading(false);
       return;
@@ -176,7 +176,8 @@ export default function Home() {
   useEffect(() => {
     if (settingsLoading) return;
 
-    const canShowUrgent = homepageSettings.showUrgentLoans && urgentLoans.length > 0;
+    const canShowUrgent =
+      homepageSettings.showUrgentLoans && urgentLoans.length > 0;
     const canShowSpotlight = homepageSettings.showSpotlight;
     const canShowNew = homepageSettings.showNewInLibrary;
 
@@ -201,12 +202,12 @@ export default function Home() {
   // --- Boeken Ophalen ---
   useEffect(() => {
     if (authLoading || !user || settingsLoading) return;
-    
+
     if (selected === "urgent" || selected === "none") {
       setBooksLoading(false);
       return;
     }
-    
+
     let cancelled = false;
 
     const fetchBooks = async () => {
@@ -279,7 +280,14 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [selected, activeReadingLevel, apiUrl, authLoading, user, settingsLoading]);
+  }, [
+    selected,
+    activeReadingLevel,
+    apiUrl,
+    authLoading,
+    user,
+    settingsLoading,
+  ]);
 
   // --- Persoonlijke leeslijsten ophalen ---
   const fetchPersonalLists = useCallback(() => {
@@ -318,7 +326,13 @@ export default function Home() {
     } else {
       setListsLoading(false);
     }
-  }, [authLoading, settingsLoading, user, homepageSettings.showReadingLists, fetchPersonalLists]);
+  }, [
+    authLoading,
+    settingsLoading,
+    user,
+    homepageSettings.showReadingLists,
+    fetchPersonalLists,
+  ]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -360,15 +374,21 @@ export default function Home() {
           }))
           .filter((l) => l.daysLeft <= reminderDays)
           .sort((a, b) => a.daysLeft - b.daysLeft);
-          
+
         setUrgentLoans(urgent);
-        
+
         if (urgent.length > 0 && homepageSettings.showUrgentLoans) {
-          setSelected((prev) => prev !== "none" ? "urgent" : "urgent");
+          setSelected((prev) => (prev !== "none" ? "urgent" : "urgent"));
         }
       },
     );
-  }, [authLoading, user, apiUrl, settingsLoading, homepageSettings.showUrgentLoans]);
+  }, [
+    authLoading,
+    user,
+    apiUrl,
+    settingsLoading,
+    homepageSettings.showUrgentLoans,
+  ]);
 
   return (
     <div className="page-container">
@@ -399,27 +419,49 @@ export default function Home() {
             </form>
           </div>
         </div>
+        <a
+          href="https://www.jeugdbibliotheek.nl/12-18-jaar/lezen-voor-de-lijst/niveautest.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="readingTestBanner"
+        >
+          <span className="readingTestText">
+            Weet je nog niet op welk leesniveau je zit?
+            <strong> Doe hier de gratis niveautest →</strong>
+          </span>
+        </a>
 
         {/* Als "selected === none", halen we de grid formatting weg zodat de leeslijst full width wordt! */}
-        <div className="main-content-grid" style={selected === "none" ? { display: "block" } : undefined}>
+        <div
+          className="main-content-grid"
+          style={selected === "none" ? { display: "block" } : undefined}
+        >
           {settingsLoading ? (
-             <div id="dashboard" style={{ gridColumn: "1 / -1", padding: "3rem", textAlign: "center" }}>
-               <p className="dashboardBookMessage">Dashboard laden...</p>
-             </div>
+            <div
+              id="dashboard"
+              style={{
+                gridColumn: "1 / -1",
+                padding: "3rem",
+                textAlign: "center",
+              }}
+            >
+              <p className="dashboardBookMessage">Dashboard laden...</p>
+            </div>
           ) : (
             <>
               {/* Als er tabbladen in te laden zijn, tonen we het standaard dashboard. */}
               {selected !== "none" ? (
                 <div id="dashboard">
                   <nav className="tabs-nav">
-                    {homepageSettings.showUrgentLoans && urgentLoans.length > 0 && (
-                      <button
-                        className={cls("urgent")}
-                        onClick={() => setSelected("urgent")}
-                      >
-                        Terug te brengen
-                      </button>
-                    )}
+                    {homepageSettings.showUrgentLoans &&
+                      urgentLoans.length > 0 && (
+                        <button
+                          className={cls("urgent")}
+                          onClick={() => setSelected("urgent")}
+                        >
+                          Terug te brengen
+                        </button>
+                      )}
                     {homepageSettings.showSpotlight && (
                       <button
                         className={cls("spotlight")}
@@ -429,36 +471,40 @@ export default function Home() {
                       </button>
                     )}
                     {homepageSettings.showNewInLibrary && (
-                      <button 
-                        className={cls("new")} 
+                      <button
+                        className={cls("new")}
                         onClick={() => setSelected("new")}
                       >
                         Nieuw in bibliotheek
                       </button>
                     )}
-                    
-                    {selected !== "urgent" && (homepageSettings.showSpotlight || homepageSettings.showNewInLibrary) && (
-                      <label className="spotlightLevelFilter">
-                        <span>Leesniveau</span>
-                        <select
-                          value={activeReadingLevel}
-                          onChange={(e) =>
-                            setSelectedReadingLevel(e.target.value as ReadingLevel)
-                          }
-                          aria-label={
-                            selected === "spotlight"
-                              ? "Kies leesniveau voor In de kijker"
-                              : "Kies leesniveau voor Nieuw in bibliotheek"
-                          }
-                        >
-                          {READING_LEVELS.map((level) => (
-                            <option key={level} value={level}>
-                              Leesniveau {level}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
+
+                    {selected !== "urgent" &&
+                      (homepageSettings.showSpotlight ||
+                        homepageSettings.showNewInLibrary) && (
+                        <label className="spotlightLevelFilter">
+                          <span>Leesniveau</span>
+                          <select
+                            value={activeReadingLevel}
+                            onChange={(e) =>
+                              setSelectedReadingLevel(
+                                e.target.value as ReadingLevel,
+                              )
+                            }
+                            aria-label={
+                              selected === "spotlight"
+                                ? "Kies leesniveau voor In de kijker"
+                                : "Kies leesniveau voor Nieuw in bibliotheek"
+                            }
+                          >
+                            {READING_LEVELS.map((level) => (
+                              <option key={level} value={level}>
+                                Leesniveau {level}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
                   </nav>
 
                   {selected === "urgent" ? (
@@ -500,7 +546,9 @@ export default function Home() {
                   ) : (
                     <div id="bookListDashboard">
                       {booksLoading ? (
-                        <p className="dashboardBookMessage">Laden van boeken...</p>
+                        <p className="dashboardBookMessage">
+                          Laden van boeken...
+                        </p>
                       ) : books.length > 0 ? (
                         books.map((book) => (
                           <BookCard
@@ -521,14 +569,14 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-
-              // Als ER GEEN tabbladen zijn EN ook GEEN leeslijsten, toon de algemene melding
-              ) : !homepageSettings.showReadingLists ? (
+              ) : // Als ER GEEN tabbladen zijn EN ook GEEN leeslijsten, toon de algemene melding
+              !homepageSettings.showReadingLists ? (
                 <div id="dashboard" style={{ width: "100%" }}>
                   <div id="bookListDashboard">
                     <p className="dashboardBookMessage">
-                      Er is momenteel geen weergave geconfigureerd voor de hoofdpagina. 
-                      Gebruik de zoekbalk of het menu om boeken te ontdekken.
+                      Er is momenteel geen weergave geconfigureerd voor de
+                      hoofdpagina. Gebruik de zoekbalk of het menu om boeken te
+                      ontdekken.
                     </p>
                   </div>
                 </div>
@@ -536,13 +584,22 @@ export default function Home() {
 
               {/* Leeslijsten Zijbalk */}
               {homepageSettings.showReadingLists && (
-                <aside className="home-sidebar" style={selected === "none" ? { maxWidth: "100%", width: "100%" } : undefined}>
+                <aside
+                  className="home-sidebar"
+                  style={
+                    selected === "none"
+                      ? { maxWidth: "100%", width: "100%" }
+                      : undefined
+                  }
+                >
                   <HomeReadingLists
                     lists={personalLists}
                     loading={listsLoading}
                     error={listsError}
                     onOpenList={(id) => router.push(`/reading-lists/${id}`)}
-                    onOpenPersonal={() => router.push("/reading-lists/personal")}
+                    onOpenPersonal={() =>
+                      router.push("/reading-lists/personal")
+                    }
                     onOpenAll={() => router.push("/reading-lists")}
                     onRetry={fetchPersonalLists}
                   />

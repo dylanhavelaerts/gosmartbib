@@ -1,8 +1,10 @@
 package edu.ap.gosmartlib.services.messages;
 
+import edu.ap.gosmartlib.entities.HomepageSettingsEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.repositories.HomepageSettingsRepository;
 import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
@@ -18,20 +20,17 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SmartschoolMessageServiceTest {
 
-    @Mock
-    private SmartschoolOneRosterAuthService authService;
-    @Mock
-    private SmartschoolOneRosterClient oneRosterClient;
-    @Mock
-    private SchoolIntegrationRepository schoolIntegrationRepository;
-    @Mock
-    private SmartschoolSoapClient soapClient;
+    @Mock private SmartschoolOneRosterAuthService authService;
+    @Mock private SmartschoolOneRosterClient oneRosterClient;
+    @Mock private SchoolIntegrationRepository schoolIntegrationRepository;
+    @Mock private HomepageSettingsRepository homepageSettingsRepository;
+    @Mock private SmartschoolSoapClient soapClient;
 
     @InjectMocks
     private SmartschoolMessageService smartschoolMessageService;
@@ -39,25 +38,21 @@ class SmartschoolMessageServiceTest {
     @Test
     void givenNullOnerosterSourcedId_whenSendMessage_thenSkipsOneRosterAndSoapCall() {
         UserEntity user = buildUser(null, buildSchool(1L));
-        SchoolIntegrationEntity integration = buildIntegration();
-        when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
+        when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(buildIntegration()));
 
         assertDoesNotThrow(() -> smartschoolMessageService.sendMessage(user, "Titel", "Bericht"));
 
-        verify(oneRosterClient, never()).getUserBySourcedId(any(), any(), any());
-        verify(soapClient, never()).sendMessage(any(), any(), any(), any());
+        verify(soapClient, never()).sendMessage(any(), any(), any(), any(), any());
     }
 
     @Test
     void givenBlankOnerosterSourcedId_whenSendMessage_thenSkipsOneRosterAndSoapCall() {
         UserEntity user = buildUser("  ", buildSchool(1L));
-        SchoolIntegrationEntity integration = buildIntegration();
-        when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
+        when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(buildIntegration()));
 
         assertDoesNotThrow(() -> smartschoolMessageService.sendMessage(user, "Titel", "Bericht"));
 
-        verify(oneRosterClient, never()).getUserBySourcedId(any(), any(), any());
-        verify(soapClient, never()).sendMessage(any(), any(), any(), any());
+        verify(soapClient, never()).sendMessage(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -77,29 +72,46 @@ class SmartschoolMessageServiceTest {
         SchoolIntegrationEntity integration = buildIntegration();
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
         when(authService.getAccessToken(integration)).thenReturn("access-token");
+        when(oneRosterClient.getUsers(integration, "access-token")).thenReturn(List.of());
 
         assertDoesNotThrow(() -> smartschoolMessageService.sendMessage(user, "Titel", "Bericht"));
 
-        verify(soapClient, never()).sendMessage(any(), any(), any(), any());
+        verify(soapClient, never()).sendMessage(any(), any(), any(), any(), any());
     }
 
     @Test
-    void givenValidUser_whenSendMessage_thenDelegatesToSoapClient() {
+    void givenValidUserWithoutSenderConfigured_whenSendMessage_thenUsesEmptySender() {
         UserEntity user = buildUser("sourced-id-1", buildSchool(1L));
         SchoolIntegrationEntity integration = buildIntegration();
 
         when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
         when(authService.getAccessToken(integration)).thenReturn("access-token");
         when(oneRosterClient.getUsers(integration, "access-token"))
-                .thenReturn(List.of(
-                        Map.of(
-                                "sourcedId", "sourced-id-1",
-                                "username", "jan.janssen")));
+                .thenReturn(List.of(Map.of("sourcedId", "sourced-id-1", "username", "jan.janssen")));
+        when(homepageSettingsRepository.findBySchool_Id(1L)).thenReturn(Optional.empty());
 
         smartschoolMessageService.sendMessage(user, "Boek beschikbaar", "Inhoud");
 
         verify(soapClient, times(1))
-                .sendMessage(integration, "jan.janssen", "Boek beschikbaar", "Inhoud");
+                .sendMessage(eq(integration), eq(""), eq("jan.janssen"), eq("Boek beschikbaar"), eq("Inhoud"));
+    }
+
+    @Test
+    void givenValidUserWithSenderConfigured_whenSendMessage_thenUsesSenderFromHomepageSettings() {
+        UserEntity user = buildUser("sourced-id-1", buildSchool(1L));
+        SchoolIntegrationEntity integration = buildIntegration();
+        HomepageSettingsEntity settings = buildHomepageSettings("lib.beheerder");
+
+        when(schoolIntegrationRepository.findBySchool_Id(1L)).thenReturn(Optional.of(integration));
+        when(authService.getAccessToken(integration)).thenReturn("access-token");
+        when(oneRosterClient.getUsers(integration, "access-token"))
+                .thenReturn(List.of(Map.of("sourcedId", "sourced-id-1", "username", "jan.janssen")));
+        when(homepageSettingsRepository.findBySchool_Id(1L)).thenReturn(Optional.of(settings));
+
+        smartschoolMessageService.sendMessage(user, "Boek beschikbaar", "Inhoud");
+
+        verify(soapClient, times(1))
+                .sendMessage(eq(integration), eq("lib.beheerder"), eq("jan.janssen"), eq("Boek beschikbaar"), eq("Inhoud"));
     }
 
     // --- helpers ---
@@ -121,5 +133,11 @@ class SmartschoolMessageServiceTest {
 
     private SchoolIntegrationEntity buildIntegration() {
         return new SchoolIntegrationEntity();
+    }
+
+    private HomepageSettingsEntity buildHomepageSettings(String senderIdentifier) {
+        HomepageSettingsEntity settings = new HomepageSettingsEntity();
+        settings.setSmartschoolSenderIdentifier(senderIdentifier);
+        return settings;
     }
 }

@@ -22,8 +22,7 @@ public class HomepageSettingsService {
     public HomepageSettingsDTO getSettings(Long schoolId) {
         return homepageSettingsRepository.findBySchool_Id(schoolId)
                 .map(this::toDTO)
-                // Als er nog geen instellingen zijn, geef de default (alles true) terug
-                .orElseGet(() -> new HomepageSettingsDTO(schoolId, true, true, true, true)); 
+                .orElseGet(() -> new HomepageSettingsDTO(schoolId, true, true, true, true, null));
     }
 
     public HomepageSettingsDTO saveSettings(Long schoolId, HomepageSettingsDTO request) {
@@ -38,6 +37,8 @@ public class HomepageSettingsService {
         settings.setShowNewInLibrary(request.showNewInLibrary());
         settings.setShowReadingLists(request.showReadingLists());
         settings.setShowUrgentLoans(request.showUrgentLoans());
+        settings.setSmartschoolSenderIdentifier(
+                request.smartschoolSenderIdentifier() != null ? request.smartschoolSenderIdentifier().trim() : null);
 
         return toDTO(homepageSettingsRepository.save(settings));
     }
@@ -48,7 +49,8 @@ public class HomepageSettingsService {
                 entity.isShowSpotlight(),
                 entity.isShowNewInLibrary(),
                 entity.isShowReadingLists(),
-                entity.isShowUrgentLoans()
+                entity.isShowUrgentLoans(),
+                entity.getSmartschoolSenderIdentifier()
         );
     }
 }

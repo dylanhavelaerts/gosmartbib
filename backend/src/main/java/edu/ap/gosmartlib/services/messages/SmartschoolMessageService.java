@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.services.messages;
 
 import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.repositories.HomepageSettingsRepository;
 import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
 import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
@@ -21,6 +22,8 @@ public class SmartschoolMessageService implements MessageSender {
     private final SmartschoolOneRosterClient oneRosterClient;
     private final SchoolIntegrationRepository schoolIntegrationRepository;
     private final SmartschoolSoapClient soapClient;
+    private final HomepageSettingsRepository homepageSettingsRepository;
+
 
     public void sendMessage(UserEntity user, String title, String body) {
         if (user.getSchool() == null) {
@@ -50,8 +53,12 @@ public class SmartschoolMessageService implements MessageSender {
             log.warn("Geen username gevonden voor gebruiker {}", user.getId());
             return;
         }
+        String senderIdentifier = homepageSettingsRepository.findBySchool_Id(user.getSchool().getId())
+                .map(s -> s.getSmartschoolSenderIdentifier())
+                .orElse("");
 
-        soapClient.sendMessage(integration, username, title, body);
+        soapClient.sendMessage(integration, senderIdentifier, username, title, body);
+
     }
 
 

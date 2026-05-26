@@ -28,7 +28,6 @@ export default function LibrarySettings() {
   const [savedReminderDays, setSavedReminderDays] = useState<number>(
     DEFAULT_REMINDER_DAYS,
   );
-
   // --- Homepage Weergave States ---
   const [showSpotlight, setShowSpotlight] = useState<boolean>(true);
   const [showNewInLibrary, setShowNewInLibrary] = useState<boolean>(true);
@@ -57,6 +56,10 @@ export default function LibrarySettings() {
   const schoolId = me?.school?.id ?? null;
   const schoolName = me?.school?.name ?? null;
   const schoolDomain = me?.school?.domain ?? null;
+
+  // --- berichten ---
+  const [senderIdentifier, setSenderIdentifier] = useState("");
+  const [savedSenderIdentifier, setSavedSenderIdentifier] = useState("");
 
   useEffect(() => {
     const loadSchoolData = async () => {
@@ -137,6 +140,10 @@ export default function LibrarySettings() {
           setSavedShowNewInLibrary(settingsData.showNewInLibrary ?? true);
           setSavedShowReadingLists(settingsData.showReadingLists ?? true);
           setSavedShowUrgentLoans(settingsData.showUrgentLoans ?? true);
+          setSenderIdentifier(settingsData.smartschoolSenderIdentifier ?? "");
+          setSavedSenderIdentifier(
+            settingsData.smartschoolSenderIdentifier ?? "",
+          );
         }
 
         // Verwerk Bibliotheekfuncties
@@ -167,8 +174,10 @@ export default function LibrarySettings() {
       setError("");
       setSuccess("");
 
-      const [policyRes, settingsRes, librarySettingsRes] = await Promise.all([
-        fetch(`${API_URL}/admin/schools/${schoolId}/loan-policy`, {
+      // Start beide opslag-acties tegelijkertijd
+      const policyPromise = fetch(
+        `${API_URL}/admin/schools/${schoolId}/loan-policy`,
+        {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -177,8 +186,12 @@ export default function LibrarySettings() {
             defaultExtensionPeriodDays: extensionPeriod,
             dueDateReminderDays: reminderDays,
           }),
-        }),
-        fetch(`${API_URL}/admin/schools/${schoolId}/homepage-settings`, {
+        },
+      );
+
+      const settingsPromise = fetch(
+        `${API_URL}/admin/schools/${schoolId}/homepage-settings`,
+        {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -187,14 +200,25 @@ export default function LibrarySettings() {
             showNewInLibrary,
             showReadingLists,
             showUrgentLoans,
+            smartschoolSenderIdentifier: senderIdentifier,
           }),
-        }),
-        fetch(`${API_URL}/admin/schools/${schoolId}/library-settings`, {
+        },
+      );
+
+      const librarySettingsPromise = fetch(
+        `${API_URL}/admin/schools/${schoolId}/library-settings`,
+        {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ barcodesEnabled }),
-        }),
+        },
+      );
+
+      const [policyRes, settingsRes, librarySettingsRes] = await Promise.all([
+        policyPromise,
+        settingsPromise,
+        librarySettingsPromise,
       ]);
 
       if (!policyRes.ok) {
@@ -231,6 +255,8 @@ export default function LibrarySettings() {
       const savedLibSettings = await librarySettingsRes.json();
       setBarcodesEnabled(savedLibSettings.barcodesEnabled);
       setSavedBarcodesEnabled(savedLibSettings.barcodesEnabled);
+      setSenderIdentifier(savedSettings.smartschoolSenderIdentifier ?? "");
+      setSavedSenderIdentifier(savedSettings.smartschoolSenderIdentifier ?? "");
 
       setSuccess("Instellingen succesvol opgeslagen");
     } catch (err) {
@@ -240,6 +266,19 @@ export default function LibrarySettings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Een hulpmiddel voor de styling van de mooie checkbox rijen
+  const checkboxRowStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    cursor: "pointer",
+    padding: "0.85rem 1rem",
+    backgroundColor: "#f9fafb",
+    border: "1px solid #e5e7eb",
+    borderRadius: "0.5rem",
+    transition: "background-color 0.2s ease",
   };
 
   return (
@@ -265,254 +304,369 @@ export default function LibrarySettings() {
         {loading ? (
           <p className="loadingText">Gegevens laden...</p>
         ) : (
-          <>
-            <div className="pageColumns">
-              <div
-                className="leftColumnSettings"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "1.5rem",
-                  flex: 1,
-                }}
-              >
-                {/* --- LEENBELEID CARD --- */}
-                <section className="card">
-                  <h2>Leenbeleid</h2>
-                  <p className="help">
-                    Stel de standaard termijnen in voor uitleningen en
-                    verlengingen. Deze waarden worden gebruikt voor alle nieuwe
-                    uitleningen tenzij anders opgegeven.
-                  </p>
-                  <div className="form">
-                    <label className="field">
-                      <span>Uitleenperiode</span>
-                      <div className="inputWithUnit">
-                        <input
-                          type="number"
-                          min={1}
-                          max={365}
-                          value={loanPeriod}
-                          onChange={(e) =>
-                            setLoanPeriod(Number(e.target.value))
-                          }
-                          disabled={saving}
-                        />
-                        <span className="unitLabel">dagen</span>
-                      </div>
-                    </label>
-                    <label className="field">
-                      <span>Verlengingsperiode</span>
-                      <div className="inputWithUnit">
-                        <input
-                          type="number"
-                          min={1}
-                          max={365}
-                          value={extensionPeriod}
-                          onChange={(e) =>
-                            setExtensionPeriod(Number(e.target.value))
-                          }
-                          disabled={saving}
-                        />
-                        <span className="unitLabel">dagen</span>
-                      </div>
-                    </label>
-                    <label className="field">
-                      <span>Herinneringsperiode</span>
-                      <div className="inputWithUnit">
-                        <input
-                          type="number"
-                          value={reminderDays}
-                          onChange={(e) =>
-                            setReminderDays(Number(e.target.value))
-                          }
-                          disabled={saving}
-                        />
-                        <span className="unitLabel">dagen</span>
-                      </div>
-                    </label>
-                  </div>
-                </section>
+          <div className="pageColumns">
+            <div
+              className="leftColumnSettings"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "1.5rem",
+                flex: 1,
+              }}
+            >
+              {/* --- LEENBELEID CARD --- */}
+              <section className="card">
+                <h2>Leenbeleid</h2>
+                <p className="help">
+                  Stel de standaard termijnen in voor uitleningen en
+                  verlengingen. Deze waarden worden gebruikt voor alle nieuwe
+                  uitleningen tenzij anders opgegeven.
+                </p>
 
-                {/* --- HOMEPAGE WEERGAVE CARD --- */}
-                <section className="card">
-                  <h2>Weergave Homepage</h2>
-                  <p className="help">
-                    Kies welke elementen standaard zichtbaar zijn voor
-                    leerlingen op de homepage van jouw school.
-                  </p>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.75rem",
-                      marginTop: "1rem",
-                    }}
-                  >
-                    {[
-                      {
-                        label: '"In de kijker" tabblad tonen',
-                        value: showSpotlight,
-                        onChange: setShowSpotlight,
-                      },
-                      {
-                        label: '"Nieuw in bibliotheek" tabblad tonen',
-                        value: showNewInLibrary,
-                        onChange: setShowNewInLibrary,
-                      },
-                      {
-                        label: 'Zijbalk met "Jouw leeslijsten" tonen',
-                        value: showReadingLists,
-                        onChange: setShowReadingLists,
-                      },
-                      {
-                        label:
-                          '"Terug te brengen" tabblad tonen (indien items te laat zijn)',
-                        value: showUrgentLoans,
-                        onChange: setShowUrgentLoans,
-                      },
-                    ].map(({ label, value, onChange }) => (
-                      <label key={label} className="toggleRow">
-                        <input
-                          type="checkbox"
-                          checked={value}
-                          onChange={(e) => onChange(e.target.checked)}
-                          disabled={saving}
-                        />
-                        <span className="toggleLabel">{label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </section>
-
-                {/* --- BIBLIOTHEEKFUNCTIES CARD --- */}
-                <section className="card">
-                  <h2>Bibliotheekfuncties</h2>
-                  <p className="help">
-                    Schakel geavanceerde functies in of uit voor jouw
-                    bibliotheek.
-                  </p>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.75rem",
-                      marginTop: "1rem",
-                    }}
-                  >
-                    <label className="toggleRow">
+                <div className="form">
+                  <label className="field">
+                    <span>Uitleenperiode</span>
+                    <div className="inputWithUnit">
                       <input
-                        type="checkbox"
-                        checked={barcodesEnabled}
-                        onChange={(e) => setBarcodesEnabled(e.target.checked)}
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={loanPeriod}
+                        onChange={(e) => setLoanPeriod(Number(e.target.value))}
                         disabled={saving}
                       />
-                      <div>
-                        <p className="toggleLabel">
-                          Barcodes inschakelen voor exemplaren
-                        </p>
-                        <p className="toggleSubLabel">
-                          Laat toe om individuele exemplaren te scannen bij
-                          terugbrengen en labels af te drukken.
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                </section>
-              </div>
+                      <span className="unitLabel">dagen</span>
+                    </div>
+                  </label>
 
-              <section
-                className="card"
-                style={{ alignSelf: "flex-start", flex: "0 0 350px" }}
-              >
-                <h2>Schooloverzicht</h2>
-                <p className="help">Huidige opgeslagen instellingen</p>
+                  <label className="field">
+                    <span>Verlengingsperiode</span>
+                    <div className="inputWithUnit">
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={extensionPeriod}
+                        onChange={(e) =>
+                          setExtensionPeriod(Number(e.target.value))
+                        }
+                        disabled={saving}
+                      />
+                      <span className="unitLabel">dagen</span>
+                    </div>
+                  </label>
 
-                <div className="infoPanel" style={{ marginBottom: "0.75rem" }}>
-                  <p className="infoPanelTitle">School</p>
-                  <div className="infoRow">
-                    <span className="infoLabel">Naam</span>
-                    <strong className="infoValue">
-                      {schoolName ? formatSchoolLabel(schoolName) : "—"}
-                    </strong>
-                  </div>
-                  <div className="infoRow">
-                    <span className="infoLabel">Domein</span>
-                    <strong className="infoValue">{schoolDomain ?? "—"}</strong>
-                  </div>
-                </div>
-
-                <div className="infoPanel" style={{ marginBottom: "0.75rem" }}>
-                  <p className="infoPanelTitle">Leenbeleid</p>
-                  <div className="infoRow">
-                    <span className="infoLabel">Uitleenperiode</span>
-                    <strong className="infoValue">
-                      {savedLoanPeriod} dagen
-                    </strong>
-                  </div>
-                  <div className="infoRow">
-                    <span className="infoLabel">Verlengingsperiode</span>
-                    <strong className="infoValue">
-                      {savedExtensionPeriod} dagen
-                    </strong>
-                  </div>
-                  <div className="infoRow">
-                    <span className="infoLabel">Herinneringsperiode</span>
-                    <strong className="infoValue">
-                      {savedReminderDays} dagen
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="infoPanel" style={{ marginBottom: "0.75rem" }}>
-                  <p className="infoPanelTitle">Weergave Homepage</p>
-                  <div className="infoRow">
-                    <span className="infoLabel">In de kijker</span>
-                    <strong className="infoValue">
-                      {savedShowSpotlight ? "Zichtbaar" : "Verborgen"}
-                    </strong>
-                  </div>
-                  <div className="infoRow">
-                    <span className="infoLabel">Nieuw in bibliotheek</span>
-                    <strong className="infoValue">
-                      {savedShowNewInLibrary ? "Zichtbaar" : "Verborgen"}
-                    </strong>
-                  </div>
-                  <div className="infoRow">
-                    <span className="infoLabel">Leeslijsten</span>
-                    <strong className="infoValue">
-                      {savedShowReadingLists ? "Zichtbaar" : "Verborgen"}
-                    </strong>
-                  </div>
-                  <div className="infoRow">
-                    <span className="infoLabel">Terug te brengen</span>
-                    <strong className="infoValue">
-                      {savedShowUrgentLoans ? "Zichtbaar" : "Verborgen"}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="infoPanel">
-                  <p className="infoPanelTitle">Bibliotheekfuncties</p>
-                  <div className="infoRow">
-                    <span className="infoLabel">Barcodes</span>
-                    <strong className="infoValue">
-                      {savedBarcodesEnabled ? "Ingeschakeld" : "Uitgeschakeld"}
-                    </strong>
-                  </div>
+                  <label className="field">
+                    <span>Herinneringsperiode</span>
+                    <div className="inputWithUnit">
+                      <input
+                        type="number"
+                        value={reminderDays}
+                        onChange={(e) =>
+                          setReminderDays(Number(e.target.value))
+                        }
+                        disabled={saving}
+                      />
+                      <span className="unitLabel">dagen</span>
+                    </div>
+                  </label>
                 </div>
               </section>
+
+              {/* --- HOMEPAGE WEERGAVE CARD --- */}
+              <section className="card">
+                <h2>Weergave Homepage</h2>
+                <p className="help">
+                  Kies welke elementen standaard zichtbaar zijn voor leerlingen
+                  op de homepage van jouw school.
+                </p>
+
+                {/* Let op: geen className="form" of className="field" hier, anders verstoort de CSS de styling */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.75rem",
+                    marginTop: "1rem",
+                  }}
+                >
+                  <label
+                    style={checkboxRowStyle}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f3f4f6")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f9fafb")
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      style={{
+                        width: "1.25rem",
+                        height: "1.25rem",
+                        margin: 0,
+                        cursor: "pointer",
+                        accentColor: "var(--accent-color, #2563eb)",
+                      }}
+                      checked={showSpotlight}
+                      onChange={(e) => setShowSpotlight(e.target.checked)}
+                      disabled={saving}
+                    />
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        color: "#374151",
+                        userSelect: "none",
+                      }}
+                    >
+                      "In de kijker" tabblad tonen
+                    </span>
+                  </label>
+
+                  <label
+                    style={checkboxRowStyle}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f3f4f6")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f9fafb")
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      style={{
+                        width: "1.25rem",
+                        height: "1.25rem",
+                        margin: 0,
+                        cursor: "pointer",
+                        accentColor: "var(--accent-color, #2563eb)",
+                      }}
+                      checked={showNewInLibrary}
+                      onChange={(e) => setShowNewInLibrary(e.target.checked)}
+                      disabled={saving}
+                    />
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        color: "#374151",
+                        userSelect: "none",
+                      }}
+                    >
+                      "Nieuw in bibliotheek" tabblad tonen
+                    </span>
+                  </label>
+
+                  <label
+                    style={checkboxRowStyle}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f3f4f6")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f9fafb")
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      style={{
+                        width: "1.25rem",
+                        height: "1.25rem",
+                        margin: 0,
+                        cursor: "pointer",
+                        accentColor: "var(--accent-color, #2563eb)",
+                      }}
+                      checked={showReadingLists}
+                      onChange={(e) => setShowReadingLists(e.target.checked)}
+                      disabled={saving}
+                    />
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        color: "#374151",
+                        userSelect: "none",
+                      }}
+                    >
+                      Zijbalk met "Jouw leeslijsten" tonen
+                    </span>
+                  </label>
+
+                  <label
+                    style={checkboxRowStyle}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f3f4f6")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f9fafb")
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      style={{
+                        width: "1.25rem",
+                        height: "1.25rem",
+                        margin: 0,
+                        cursor: "pointer",
+                        accentColor: "var(--accent-color, #2563eb)",
+                      }}
+                      checked={showUrgentLoans}
+                      onChange={(e) => setShowUrgentLoans(e.target.checked)}
+                      disabled={saving}
+                    />
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        color: "#374151",
+                        userSelect: "none",
+                      }}
+                    >
+                      "Terug te brengen" tabblad tonen (indien items te laat
+                      zijn)
+                    </span>
+                  </label>
+                </div>
+              </section>
+
+              {/* --- BIBLIOTHEEKFUNCTIES CARD --- */}
+              <section className="card">
+                <h2>Bibliotheekfuncties</h2>
+                <p className="help">
+                  Schakel extra functionaliteiten in of uit voor jouw
+                  bibliotheek.
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.75rem",
+                    marginTop: "1rem",
+                  }}
+                >
+                  <label
+                    style={checkboxRowStyle}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f3f4f6")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f9fafb")
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      style={{
+                        width: "1.25rem",
+                        height: "1.25rem",
+                        margin: 0,
+                        cursor: "pointer",
+                        accentColor: "var(--accent-color, #2563eb)",
+                      }}
+                      checked={barcodesEnabled}
+                      onChange={(e) => setBarcodesEnabled(e.target.checked)}
+                      disabled={saving}
+                    />
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        color: "#374151",
+                        userSelect: "none",
+                      }}
+                    >
+                      Streepjescodes inschakelen voor exemplaren
+                    </span>
+                  </label>
+                </div>
+              </section>
+
+              {/* --- OPSLAAN KNOP --- */}
+              <div className="actions" style={{ marginTop: "0.5rem" }}>
+                <button
+                  className="button primaryButton"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? "Opslaan..." : "Opslaan"}
+                </button>
+              </div>
             </div>
-            <div className="actions" style={{ marginTop: "0.5rem" }}>
-              <button
-                className="button primaryButton"
-                onClick={handleSave}
-                disabled={saving}
-              >
-                {saving ? "Opslaan..." : "Opslaan"}
-              </button>
-            </div>
-          </>
+
+            <section
+              className="card"
+              style={{ alignSelf: "flex-start", flex: "0 0 350px" }}
+            >
+              <h2>Schooloverzicht</h2>
+              <p className="help">Huidige opgeslagen instellingen</p>
+
+              <div className="infoPanel" style={{ marginBottom: "0.75rem" }}>
+                <p className="infoPanelTitle">School</p>
+                <div className="infoRow">
+                  <span className="infoLabel">Naam</span>
+                  <strong className="infoValue">
+                    {schoolName ? formatSchoolLabel(schoolName) : "—"}
+                  </strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Domein</span>
+                  <strong className="infoValue">{schoolDomain ?? "—"}</strong>
+                </div>
+              </div>
+
+              <div className="infoPanel" style={{ marginBottom: "0.75rem" }}>
+                <p className="infoPanelTitle">Leenbeleid</p>
+                <div className="infoRow">
+                  <span className="infoLabel">Uitleenperiode</span>
+                  <strong className="infoValue">{savedLoanPeriod} dagen</strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Verlengingsperiode</span>
+                  <strong className="infoValue">
+                    {savedExtensionPeriod} dagen
+                  </strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Herinneringsperiode</span>
+                  <strong className="infoValue">
+                    {savedReminderDays} dagen
+                  </strong>
+                </div>
+              </div>
+
+              <div className="infoPanel" style={{ marginBottom: "0.75rem" }}>
+                <p className="infoPanelTitle">Bibliotheekfuncties</p>
+                <div className="infoRow">
+                  <span className="infoLabel">Streepjescodes</span>
+                  <strong className="infoValue">
+                    {savedBarcodesEnabled ? "Ingeschakeld" : "Uitgeschakeld"}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="infoPanel">
+                <p className="infoPanelTitle">Weergave Homepage</p>
+                <div className="infoRow">
+                  <span className="infoLabel">In de kijker</span>
+                  <strong className="infoValue">
+                    {savedShowSpotlight ? "Zichtbaar" : "Verborgen"}
+                  </strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Nieuw in bibliotheek</span>
+                  <strong className="infoValue">
+                    {savedShowNewInLibrary ? "Zichtbaar" : "Verborgen"}
+                  </strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Leeslijsten</span>
+                  <strong className="infoValue">
+                    {savedShowReadingLists ? "Zichtbaar" : "Verborgen"}
+                  </strong>
+                </div>
+                <div className="infoRow">
+                  <span className="infoLabel">Terug te brengen</span>
+                  <strong className="infoValue">
+                    {savedShowUrgentLoans ? "Zichtbaar" : "Verborgen"}
+                  </strong>
+                </div>
+              </div>
+            </section>
+          </div>
         )}
       </main>
     </ProtectedRoute>

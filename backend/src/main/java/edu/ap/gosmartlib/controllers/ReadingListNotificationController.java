@@ -3,6 +3,7 @@ package edu.ap.gosmartlib.controllers;
 import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
 import edu.ap.gosmartlib.repositories.ReadingListRepository;
 import edu.ap.gosmartlib.security.AuthHelper;
+import edu.ap.gosmartlib.services.ReadingListService;
 import edu.ap.gosmartlib.services.messages.BookNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,7 @@ import java.util.List;
 public class ReadingListNotificationController {
 
     private final BookNotificationService bookNotificationService;
-    private final ReadingListRepository readingListRepository;
+    private final ReadingListService readingListService;
     private final AuthHelper authHelper;
 
     @GetMapping
@@ -48,10 +49,7 @@ public class ReadingListNotificationController {
     }
 
     private List<Long> getBookIds(Long readingListId) {
-        return readingListRepository.findByIdWithBooks(readingListId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Leeslijst niet gevonden"))
-                .getBooks().stream()
-                .map(BookEntity::getId)
-                .toList();
+        return readingListService.getBookIds(readingListId);
     }
+
 }

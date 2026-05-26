@@ -24,7 +24,6 @@ export default function ReadingListsPage() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [copiedListId, setCopiedListId] = useState<number | null>(null);
 
-
   const fetchLists = () => {
     setLoading(true);
     setError(null);
@@ -81,7 +80,10 @@ export default function ReadingListsPage() {
     }
   };
 
-  const handleCopySharedLink = async (listId: number, publicUid?: string | null) => {
+  const handleCopySharedLink = async (
+    listId: number,
+    publicUid?: string | null,
+  ) => {
     if (!publicUid || typeof window === "undefined") {
       return;
     }
@@ -203,10 +205,11 @@ export default function ReadingListsPage() {
             const isClass = list.listType === "CLASS";
             const canEditClass = isStaff && isClass && list.ownList;
             const canDeleteClass = canEditClass;
-            const canEditPersonal = list.listType === "PERSONAL" && list.ownList;
+            const canEditPersonal =
+              list.listType === "PERSONAL" && list.ownList;
             const canCopySharedLink =
               canEditPersonal && list.publicVisible && !!list.publicUid;
-            
+
             return (
               <div
                 key={list.id}
@@ -228,7 +231,7 @@ export default function ReadingListsPage() {
                     <span
                       className={`badge ${isClass ? "badge--class" : "badge--personal"}`}
                     >
-                      {isClass ? "Klas lijst" : "Eigen lijst"}
+                      {isClass ? "Klaslijst" : "Eigen lijst"}
                     </span>
 
                     {list.listType === "PERSONAL" && list.publicVisible && (
@@ -294,9 +297,13 @@ export default function ReadingListsPage() {
                   {canCopySharedLink && (
                     <button
                       className="rl-btn-outline"
-                      onClick={() => handleCopySharedLink(list.id, list.publicUid)}
+                      onClick={() =>
+                        handleCopySharedLink(list.id, list.publicUid)
+                      }
                     >
-                      {copiedListId === list.id ? "Link gekopieerd" : "Kopieer deellink"}
+                      {copiedListId === list.id
+                        ? "Link gekopieerd"
+                        : "Kopieer deellink"}
                     </button>
                   )}
 

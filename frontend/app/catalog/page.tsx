@@ -2,12 +2,18 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Book, BOOK_CATEGORIES, BOOK_LABELS, BOOK_READING_LEVELS } from "../interfaces/Book";
+import {
+  Book,
+  BOOK_CATEGORIES,
+  BOOK_LABELS,
+  BOOK_READING_LEVELS,
+} from "../interfaces/Book";
 import BookCard from "./bookCard";
 import Pagination from "./pagination";
 import "./bookList.css";
 import { useAuth } from "../context/AuthContext";
 import StarRating from "../components/reviewsection/StarRating";
+type SortOption = "default" | "title_asc" | "newest";
 
 export default function Home() {
   // -- States ------------------------------------------------------------------------------------------------------------------------------
@@ -34,6 +40,8 @@ export default function Home() {
   const [maxYear, setMaxYear] = useState("");
   const [minRating, setMinRating] = useState<number | null>(null);
   const [maxRating, setMaxRating] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>("default");
+
   // leerlingen zien didactische boeken sowieso niet maar UX-wise maakt het clean dat ze niet zien dat er een filter is voor iets wat ze toch niet kunnen zien.
   const [didacticOnly, setDidacticOnly] = useState(false);
   // In de kijker beheer voor bibliotheekbeheerders
@@ -94,6 +102,7 @@ export default function Home() {
     params.append("size", String(pageSize));
 
     const isSearching = query && query.trim() !== "";
+    const hasSort = sortBy !== "default";
     const hasFilters =
       language ||
       readingLevel ||
@@ -109,7 +118,7 @@ export default function Home() {
 
     let url: string;
 
-    if (isSearching || hasFilters) {
+    if (isSearching || hasFilters || hasSort) {
       if (isSearching) params.append("query", query.trim());
       if (language) params.append("language", language);
       if (readingLevel) params.append("readingLevel", readingLevel);
@@ -122,6 +131,9 @@ export default function Home() {
       if (minRating !== null) params.append("minRating", minRating.toString());
       if (maxRating !== null) params.append("maxRating", maxRating.toString());
       if (didacticOnly) params.append("didacticOnly", "true");
+
+      if (hasSort) params.append("sortBy", sortBy);
+
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/filter?${params}`;
     } else {
       url = `${process.env.NEXT_PUBLIC_API_URL}/books/all?${params}`;
@@ -157,6 +169,7 @@ export default function Home() {
     minRating,
     maxRating,
     didacticOnly,
+    sortBy,
   ]);
 
   // -- Helper methods --------------------------------------------------------------------------------------------------------------
@@ -256,7 +269,7 @@ export default function Home() {
     } finally {
       setAddingToSpotlight(false);
     }
-  }; 
+  };
 
   // -- Visueel aspect ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -509,6 +522,24 @@ export default function Home() {
                   </button>
                 </div>
               </div>
+              <div className="filterGroup">
+                <label className="filterGroupLabel" htmlFor="catalog-sort">
+                  Sorteren
+                </label>
+                <select
+                  id="catalog-sort"
+                  className="filterSelect"
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value as SortOption);
+                    resetPage();
+                  }}
+                >
+                  <option value="default">Standaard</option>
+                  <option value="title_asc">Alfabetisch (A–Z)</option>
+                  <option value="newest">Nieuwste eerst</option>
+                </select>
+              </div>
             </div>
             {(user?.role === "TEACHER" ||
               user?.role === "BIBLIOTHEEKBEHEERDER" ||
@@ -575,7 +606,9 @@ export default function Home() {
           </div>
 
           {canManageSpotlight && spotlightSuccess && (
-            <p className="catalogSpotlightFeedback success">{spotlightSuccess}</p>
+            <p className="catalogSpotlightFeedback success">
+              {spotlightSuccess}
+            </p>
           )}
 
           {canManageSpotlight && spotlightError && (

@@ -2,13 +2,11 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.dto.*;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
-import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.exceptions.BookNotFoundException;
-import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.BookService;
+import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
-import org.springframework.dao.DataAccessException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,16 +22,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/books")
+@RequiredArgsConstructor
 public class BookController {
     private final BookService bookService;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final AuthHelper authHelper;
 
-    public BookController(BookService bookService, UserRepository userRepository, AuthHelper authHelper) {
-        this.bookService = bookService;
-        this.userRepository = userRepository;
-        this.authHelper = authHelper;
-    }
+
 
     /**
      * Geeft alle boeken terug met server-side paginatie.
@@ -85,15 +80,9 @@ public class BookController {
     public ResponseEntity<?> filterBooks(
             @ModelAttribute BookFilterRequest filter,
             @AuthenticationPrincipal OAuth2User principal) {
-        try {
-            Page<BookDTO> filteredBooks = bookService.filterBooks(filter, callerRole(principal),
-                    authHelper.extractUidOrNull(principal));
-            return ResponseEntity.ok(filteredBooks);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (DataAccessException e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        Page<BookDTO> filteredBooks = bookService.filterBooks(filter, callerRole(principal),
+                authHelper.extractUidOrNull(principal));
+        return ResponseEntity.ok(filteredBooks);
     }
 
     @GetMapping("/languages")
@@ -106,12 +95,7 @@ public class BookController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookById(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
-        try {
-            return ResponseEntity
-                    .ok(bookService.getBookById(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
-        } catch (BookNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+        return ResponseEntity.ok(bookService.getBookById(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
     }
 
     @GetMapping("/spotlight")
@@ -178,36 +162,20 @@ public class BookController {
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     @PostMapping("/add/{isbn}")
     public ResponseEntity<?> addBookByIsbn(@PathVariable String isbn,
-            @RequestParam(required = false) String campus,
-            @RequestParam(required = false) Integer amount, @AuthenticationPrincipal OAuth2User principal) {
-        try {
-            BookDTO addedBook = bookService.addBookByIsbn(isbn, authHelper.extractUidOrNull(principal), campus, amount);
-            return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("Geen boek voor ISBN")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-            }
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.internalServerError().body("An error occurred while fetching the book.");
-        }
+                                           @RequestParam(required = false) String campus,
+                                           @RequestParam(required = false) Integer amount,
+                                           @AuthenticationPrincipal OAuth2User principal) {
+        BookDTO addedBook = bookService.addBookByIsbn(isbn, authHelper.extractUidOrNull(principal), campus, amount);
+        return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
     }
+
 
     /**
      * Zoekt een boek op via ISBN zonder het op te slaan (preview).
      */
     @GetMapping("/search/{isbn}")
     public ResponseEntity<?> searchBookByIsbn(@PathVariable String isbn) {
-        try {
-            return new ResponseEntity<>(bookService.searchBookByIsbn(isbn), HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("Geen boek voor ISBN")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-            }
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.internalServerError().body("An error occurred while fetching the book.");
-        }
+        return ResponseEntity.ok(bookService.searchBookByIsbn(isbn));
     }
 
     /**
@@ -270,16 +238,10 @@ public class BookController {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER')")
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
-        try {
-            return ResponseEntity.ok(bookService.updateBook(id, bookDTO));
-        } catch (BookNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(bookService.updateBook(id, bookDTO));
     }
 
     /**
@@ -288,15 +250,9 @@ public class BookController {
     @PostMapping("/add")
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request,
-            @AuthenticationPrincipal OAuth2User principal) {
-        try {
-            BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
-            return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.internalServerError().body("An error occurred while saving the book.");
-        }
+                                           @AuthenticationPrincipal OAuth2User principal) {
+        BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
+        return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}/snowball")
@@ -332,8 +288,7 @@ public class BookController {
         String uid = principal.getAttribute("userID");
         if (uid == null)
             return UserRoles.STUDENT;
-        return userRepository.findBySmartschoolUid(uid)
-                .map(UserEntity::getRole)
-                .orElse(UserRoles.STUDENT);
+        return userService.getRoleBySmartschoolUid(uid);
     }
+
 }

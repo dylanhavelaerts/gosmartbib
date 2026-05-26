@@ -20,6 +20,7 @@ import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.util.ReadingListTargetType;
 import edu.ap.gosmartlib.util.ReadingListType;
 import edu.ap.gosmartlib.util.UserRoles;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -219,19 +220,32 @@ public class ReadingListService {
         requireStaff(currentUser);
 
         String normalizedQuery = query == null ? "" : query.trim();
+        Long schoolId = requireSchoolId(currentUser);
+
+        if (normalizedQuery.isEmpty()) {
+            return schoolClassRepository
+                    .findAllBySchool_IdOrderByNameAsc(schoolId)
+                    .stream()
+                    .map(schoolClass -> {
+                        Integer year = resolveYearFromClassName(schoolClass.getName());
+                        return new ReadingListAssignmentTargetsDTO.ClassTarget(
+                                schoolClass.getId(),
+                                schoolClass.getName(),
+                                year,
+                                resolveGradeFromYear(year));
+                    })
+                    .toList();
+        }
 
         if (normalizedQuery.length() < 2) {
             return List.of();
         }
-
-        Long schoolId = requireSchoolId(currentUser);
 
         return schoolClassRepository
                 .findTop20BySchool_IdAndNameContainingIgnoreCaseOrderByNameAsc(schoolId, normalizedQuery)
                 .stream()
                 .map(schoolClass -> {
                     Integer year = resolveYearFromClassName(schoolClass.getName());
-
                     return new ReadingListAssignmentTargetsDTO.ClassTarget(
                             schoolClass.getId(),
                             schoolClass.getName(),
@@ -239,6 +253,7 @@ public class ReadingListService {
                             resolveGradeFromYear(year));
                 })
                 .toList();
+
     }
 
     @Transactional
@@ -279,6 +294,16 @@ public class ReadingListService {
 
         return readingListRepository.save(list);
     }
+
+    @Transactional(readOnly = true)
+    public List<Long> getBookIds(Long readingListId) {
+        return readingListRepository.findByIdWithBooks(readingListId)
+                .orElseThrow(() -> new EntityNotFoundException("Leeslijst niet gevonden"))
+                .getBooks().stream()
+                .map(BookEntity::getId)
+                .toList();
+    }
+
 
     @Transactional
     public ReadingListEntity updatePersonalList(Long id, CreateReadingListDTO dto, String smartschoolUid) {

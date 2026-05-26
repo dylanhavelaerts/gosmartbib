@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { Book } from "../../interfaces/Book";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import "./myReadingList.css";
+import BookPicker from "../components/BookPicker";
 
 type FormBook = {
   id: number;
@@ -50,8 +51,6 @@ export default function MyReadingListPage() {
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formBooks, setFormBooks] = useState<FormBook[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [formLoading, setFormLoading] = useState(false);
   const [formMsg, setFormMsg] = useState<{
     type: "success" | "error";
@@ -77,18 +76,13 @@ export default function MyReadingListPage() {
   }, [user, apiUrl]);
 
   useEffect(() => {
-    fetch(`${apiUrl}/books/all/unpaged`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data: Book[]) => setAllBooks(Array.isArray(data) ? data : []))
-      .catch(console.error);
-  }, [apiUrl]);
-
-  useEffect(() => {
     fetchMyLists();
   }, [fetchMyLists]);
 
   useEffect(() => {
-    const editId = Number(new URLSearchParams(window.location.search).get("edit"));
+    const editId = Number(
+      new URLSearchParams(window.location.search).get("edit"),
+    );
     if (!editId || myLists.length === 0) return;
 
     const list = myLists.find((l) => l.id === editId);
@@ -122,7 +116,7 @@ export default function MyReadingListPage() {
       setFormTitle(detail.title || "");
       setFormDescription(detail.taskDescription || "");
       setFormBooks(books);
-      setSearchQuery("");
+      // setSearchQuery("");
       setActiveList({
         ...list,
         title: detail.title,
@@ -148,20 +142,11 @@ export default function MyReadingListPage() {
     setFormTitle("");
     setFormDescription("");
     setFormBooks([]);
-    setSearchQuery("");
+    // setSearchQuery("");
     setActiveList(null);
     setView("create");
     setFormMsg(null);
   };
-
-  const filteredBooks = allBooks.filter((book) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      book.title?.toLowerCase().includes(q) ||
-      book.authors?.some((a) => a.toLowerCase().includes(q)) ||
-      book.isbn?.toLowerCase().includes(q)
-    );
-  });
 
   const addBook = (book: Book) => {
     if (formBooks.some((b) => b.id === book.id)) return;
@@ -383,54 +368,12 @@ export default function MyReadingListPage() {
 
             <form onSubmit={handleSave} className="mrl-create-form">
               <div className="mrl-panel mrl-panel--picker">
-                <label className="mrl-panel-label">
-                  Boeken zoeken en toevoegen
-                </label>
-                <input
-                  type="text"
-                  className="mrl-search-input"
-                  placeholder="Zoek op titel, auteur of ISBN..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                <BookPicker
+                  selectedBooks={formBooks as Book[]}
+                  onAdd={addBook}
+                  onRemove={removeBook}
+                  label="Boeken zoeken en toevoegen"
                 />
-                <div className="mrl-book-list">
-                  {allBooks.length === 0 && (
-                    <p className="mrl-hint">Catalogus laden...</p>
-                  )}
-                  {allBooks.length > 0 && filteredBooks.length === 0 && (
-                    <p className="mrl-hint">Geen boeken gevonden</p>
-                  )}
-
-                  {filteredBooks.map((book) => {
-                    const isAdded = formBooks.some((b) => b.id === book.id);
-                    return (
-                      <div
-                        key={book.id}
-                        className={`mrl-book-row ${isAdded ? "mrl-book-row--added" : ""}`}
-                      >
-                        <div className="mrl-thumb">
-                          {book.thumbnail ? (
-                            <img src={book.thumbnail} alt={book.title} />
-                          ) : (
-                            <span>Geen cover</span>
-                          )}
-                        </div>
-                        <div className="mrl-book-info">
-                          <strong>{book.title}</strong>
-                          <span>{book.authors?.join(", ") || "Onbekend"}</span>
-                        </div>
-                        <button
-                          type="button"
-                          className="mrl-add-btn"
-                          onClick={() => addBook(book)}
-                          disabled={isAdded}
-                        >
-                          {isAdded ? "✓" : "+"}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
 
               <div className="mrl-panel mrl-panel--details">

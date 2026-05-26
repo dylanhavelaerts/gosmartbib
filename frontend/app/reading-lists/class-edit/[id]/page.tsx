@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import { Book } from "../../../interfaces/Book";
@@ -22,6 +22,7 @@ import {
 import "../../create/createReadingList.css";
 import "./editReadList.css";
 import ClassTargetSearch from "../../components/ClassTargetSearch";
+import BookPicker from "../../components/BookPicker";
 
 interface ReadingListDetailResponse {
   id: number;
@@ -79,8 +80,6 @@ export default function EditClassReadingListPage() {
 
   const [selectedBooks, setSelectedBooks] = useState<Book[]>([]);
   const [selectedBookIds, setSelectedBookIds] = useState<number[]>([]);
-  const [allBooks, setAllBooks] = useState<Book[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -93,13 +92,6 @@ export default function EditClassReadingListPage() {
     if (!value) return "";
     return value.slice(0, 16);
   };
-
-  useEffect(() => {
-    fetch(`${apiUrl}/books/all/unpaged`, { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: Book[]) => setAllBooks(Array.isArray(data) ? data : []))
-      .catch((err) => console.error("Fout bij ophalen boeken:", err));
-  }, [apiUrl]);
 
   useEffect(() => {
     fetch(`${apiUrl}/reading-lists/assignment-targets`, {
@@ -128,7 +120,7 @@ export default function EditClassReadingListPage() {
         }
         return res.json();
       })
-      .then((data: ReadingListDetailResponse) => {
+      .then(async (data: ReadingListDetailResponse) => {
         if (data.listType !== "CLASS") {
           throw new Error("Alleen klaslijsten kunnen hier bewerkt worden");
         }
@@ -143,6 +135,14 @@ export default function EditClassReadingListPage() {
         setTaskDescription(data.taskDescription || "");
         setDeadline(toDatetimeLocal(data.deadline));
         setSelectedBookIds((data.books || []).map((b) => b.id));
+        const bookDetails = await Promise.all(
+          (data.books || []).map((b) =>
+            fetch(`${apiUrl}/books/${b.id}`, { credentials: "include" }).then(
+              (r) => (r.ok ? r.json() : null),
+            ),
+          ),
+        );
+        setSelectedBooks(bookDetails.filter(Boolean));
         setTargetType(data.targetType ?? "CLASSES");
         const initialStudents = data.targetStudents?.length
           ? data.targetStudents
@@ -187,28 +187,6 @@ export default function EditClassReadingListPage() {
       })
       .finally(() => setInitialLoading(false));
   }, [apiUrl, id, user]);
-
-  useEffect(() => {
-    if (allBooks.length === 0) return;
-    if (selectedBookIds.length === 0) {
-      setSelectedBooks([]);
-      return;
-    }
-
-    const preselected = allBooks.filter((b) => selectedBookIds.includes(b.id));
-    setSelectedBooks(preselected);
-  }, [allBooks, selectedBookIds]);
-
-  const filteredBooks = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    return allBooks.filter((book) => {
-      return (
-        book.title?.toLowerCase().includes(q) ||
-        book.authors?.some((a) => a.toLowerCase().includes(q)) ||
-        book.isbn?.toLowerCase().includes(q)
-      );
-    });
-  }, [allBooks, searchQuery]);
 
   const addBookToList = (book: Book) => {
     if (selectedBooks.some((b) => b.id === book.id)) return;
@@ -663,65 +641,12 @@ export default function EditClassReadingListPage() {
 
             <div className="manage-wrapper">
               <div className="eiland-common book-selector-island">
-                <div className="search-container">
-                  <label className="search-step-label">5. Zoek boeken</label>
-                  <input
-                    type="text"
-                    className="search-input"
-                    placeholder="Titel, auteur of ISBN..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-
-                <div className="list-container">
-                  {allBooks.length === 0 ? (
-                    <p className="loading-text">Catalogus laden...</p>
-                  ) : filteredBooks.length === 0 ? (
-                    <p className="loading-text">Geen boeken gevonden</p>
-                  ) : (
-                    <ul className="book-list">
-                      {filteredBooks.map((book) => {
-                        const isAdded = selectedBooks.some(
-                          (b) => b.id === book.id,
-                        );
-                        return (
-                          <li
-                            key={book.id}
-                            className={`book-list-item ${isAdded ? "added" : ""}`}
-                          >
-                            <div className="book-list-thumb">
-                              {book.thumbnail &&
-                              book.thumbnail.trim() !== "" ? (
-                                <img src={book.thumbnail} alt={book.title} />
-                              ) : (
-                                <span>Geen cover</span>
-                              )}
-                            </div>
-
-                            <div className="book-list-info">
-                              <h3 className="book-list-title">{book.title}</h3>
-                              <p className="book-list-authors">
-                                {book.authors
-                                  ? book.authors.join(", ")
-                                  : "Onbekend"}
-                              </p>
-                            </div>
-
-                            <button
-                              type="button"
-                              className="add-btn"
-                              onClick={() => addBookToList(book)}
-                              disabled={isAdded}
-                            >
-                              {isAdded ? "Toegevoegd" : "Voeg toe"}
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
+                <BookPicker
+                  selectedBooks={selectedBooks}
+                  onAdd={addBookToList}
+                  onRemove={removeBookFromList}
+                  label="Zoek boeken"
+                />
               </div>
 
               <div className="eiland-common form-details-island">

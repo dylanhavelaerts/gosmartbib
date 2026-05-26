@@ -5,5 +5,6 @@ public record HomepageSettingsDTO(
     boolean showSpotlight,
     boolean showNewInLibrary,
     boolean showReadingLists,
-    boolean showUrgentLoans
+    boolean showUrgentLoans,
+    String smartschoolSenderIdentifier
 ) {}
