@@ -108,8 +108,10 @@ public class LessonTipService {
     }
 
     private LessonTipDTO toDTO(LessonTipEntity tip, String actorUid, Map<String, String> displayNames) {
+        String resolvedName = displayNames.get(tip.getUser().getSmartschoolUid());
         String authorName = tip.isAnonymous() ? "Anoniem"
-                : displayNames.getOrDefault(tip.getUser().getSmartschoolUid(), null);
+                : (resolvedName != null ? resolvedName : "Leerkracht (andere school)");
+
         boolean ownTip = actorUid.equals(tip.getUser().getSmartschoolUid());
         return new LessonTipDTO(
                 tip.getId(), tip.getText(), tip.isAnonymous(),
