@@ -28,16 +28,33 @@ export default function SchoolsAdminPage() {
   const [deleteSchool, setDeleteSchool] = useState<School | null>(null);
   const [deleteConfirming, setDeleteConfirming] = useState(false);
 
+  const [renameSchool, setRenameSchool] = useState<School | null>(null);
+  const [renameName, setRenameName] = useState("");
+  const [renameSaving, setRenameSaving] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       try {
-        const meRes = await fetch(`${API_URL}/auth/me`, { credentials: "include" });
-        if (!meRes.ok) { router.replace("/"); return; }
+        const meRes = await fetch(`${API_URL}/auth/me`, {
+          credentials: "include",
+        });
+        if (!meRes.ok) {
+          router.replace("/");
+          return;
+        }
         const me = await meRes.json();
-        if (me.role !== "ADMIN") { router.replace("/"); return; }
+        if (me.role !== "ADMIN") {
+          router.replace("/");
+          return;
+        }
 
-        const res = await fetch(`${API_URL}/admin/schools`, { credentials: "include" });
-        if (!res.ok) { setError("Kon scholen niet ophalen"); return; }
+        const res = await fetch(`${API_URL}/admin/schools`, {
+          credentials: "include",
+        });
+        if (!res.ok) {
+          setError("Kon scholen niet ophalen");
+          return;
+        }
         setSchools(await res.json());
       } catch {
         setError("Er ging iets mis met het laden");
@@ -107,6 +124,37 @@ export default function SchoolsAdminPage() {
     }
   };
 
+  const handleRename = async () => {
+    if (!renameSchool) return;
+    setRenameSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch(`${API_URL}/admin/schools/${renameSchool.id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: renameName.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message ?? "Hernoemen mislukt");
+        return;
+      }
+      const updated: School = await res.json();
+      setSchools((prev) =>
+        prev.map((s) => (s.id === updated.id ? updated : s)).sort(schoolSort),
+      );
+      setSuccess(`School hernoemd naar "${updated.name}"`);
+      setRenameSchool(null);
+      setRenameName("");
+    } catch {
+      setError("Er ging iets mis");
+    } finally {
+      setRenameSaving(false);
+    }
+  };
+
   const schoolSort = (a: School, b: School) => {
     if (a.adminApproved !== b.adminApproved) return a.adminApproved ? 1 : -1;
     return a.name.localeCompare(b.name);
@@ -158,7 +206,9 @@ export default function SchoolsAdminPage() {
             {schools.map((school) => (
               <tr key={school.id}>
                 <td className="adminCell nameCell">
-                  <Link href={`/admin/school-integration?schoolId=${school.id}`}>
+                  <Link
+                    href={`/admin/school-integration?schoolId=${school.id}`}
+                  >
                     {school.name}
                   </Link>
                 </td>
@@ -172,7 +222,14 @@ export default function SchoolsAdminPage() {
                     <span className="statusBadge statusPending">Wachtend</span>
                   )}
                 </td>
-                <td className="adminCell" style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                <td
+                  className="adminCell"
+                  style={{
+                    display: "flex",
+                    gap: "0.5rem",
+                    justifyContent: "flex-end",
+                  }}
+                >
                   {!school.adminApproved && (
                     <button
                       className="adminTableButton"
@@ -190,6 +247,15 @@ export default function SchoolsAdminPage() {
                   >
                     Verwijderen
                   </button>
+                  <button
+                    className="adminTableButton"
+                    onClick={() => {
+                      setRenameSchool(school);
+                      setRenameName(school.name);
+                    }}
+                  >
+                    Bewerken
+                  </button>
                 </td>
               </tr>
             ))}
@@ -202,7 +268,8 @@ export default function SchoolsAdminPage() {
           <div className="schoolModalBox">
             <h2>School verwijderen</h2>
             <p style={{ marginBottom: "1rem" }}>
-              Weet je zeker dat je <strong>{deleteSchool.name}</strong> wil verwijderen? Dit kan niet ongedaan worden gemaakt.
+              Weet je zeker dat je <strong>{deleteSchool.name}</strong> wil
+              verwijderen? Dit kan niet ongedaan worden gemaakt.
             </p>
             <div className="schoolModalFooter">
               <button
@@ -218,6 +285,44 @@ export default function SchoolsAdminPage() {
                 disabled={deleteConfirming}
               >
                 {deleteConfirming ? "Bezig..." : "Verwijderen"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {renameSchool && (
+        <div className="schoolModalOverlay">
+          <div className="schoolModalBox">
+            <h2>School hernoemen</h2>
+            <div className="schoolModalField">
+              <label>Smartschool domein</label>
+              <input type="text" value={renameSchool.domain} disabled />
+            </div>
+            <div className="schoolModalField">
+              <label htmlFor="renameName">Schoolnaam</label>
+              <input
+                id="renameName"
+                type="text"
+                placeholder="bv. GO! Atheneum Antwerpen"
+                value={renameName}
+                onChange={(e) => setRenameName(e.target.value)}
+              />
+            </div>
+            <div className="schoolModalFooter">
+              <button
+                className="schoolModalCancel"
+                onClick={() => setRenameSchool(null)}
+                disabled={renameSaving}
+              >
+                Annuleren
+              </button>
+              <button
+                className="adminPrimaryButton"
+                onClick={handleRename}
+                disabled={renameSaving || !renameName.trim()}
+              >
+                {renameSaving ? "Bezig..." : "Opslaan"}
               </button>
             </div>
           </div>

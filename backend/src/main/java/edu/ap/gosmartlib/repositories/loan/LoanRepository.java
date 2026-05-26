@@ -20,6 +20,8 @@ public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
 
     List<LoanEntity> findByDueDate(LocalDate dueDate);
 
+    
+
     @Query("""
             select loan
             from LoanEntity loan
