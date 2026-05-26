@@ -518,7 +518,6 @@ public class LoanService {
         }).collect(Collectors.toList());
     }
 
-
     private Map<String, String> resolveDisplayNamesMap(String actorUid, List<String> uids) {
         if (uids == null || uids.isEmpty()) {
             return Map.of();
