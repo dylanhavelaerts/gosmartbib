@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 
 public record SchoolIntegrationDTO(
         Long schoolId,
+        String schoolName,
+        String schoolDomain,
         String schoolBaseUrl,
         String onerosterClientId,
         boolean onerosterEnabled,
@@ -17,6 +19,8 @@ public record SchoolIntegrationDTO(
     public static SchoolIntegrationDTO from(SchoolIntegrationEntity entity) {
         return new SchoolIntegrationDTO(
                 entity.getSchool().getId(),
+                entity.getSchool().getName(),
+                entity.getSchool().getDomain(),
                 entity.getSchoolBaseUrl(),
                 entity.getOnerosterClientId(),
                 entity.isOnerosterEnabled(),

@@ -1,5 +1,7 @@
 export interface SchoolIntegrationDTO {
   schoolId: number;
+  schoolName: string;
+  schoolDomain: string;
   schoolBaseUrl: string;
   onerosterClientId: string;
   onerosterEnabled: boolean;

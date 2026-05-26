@@ -67,8 +67,8 @@ export default function SchoolIntegrationPage() {
   const [showAllUsers, setShowAllUsers] = useState(false);
   const [showAllClasses, setShowAllClasses] = useState(false);
 
-  const schoolName = me?.school?.name ?? "";
-  const schoolDomain = me?.school?.domain ?? "";
+  const schoolName = integration?.schoolName ?? "";
+  const schoolDomain = integration?.schoolDomain ?? "";
 
   const [smartschoolAccesscode, setSmartschoolAccesscode] = useState("");
 
