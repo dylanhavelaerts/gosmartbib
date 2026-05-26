@@ -63,6 +63,12 @@ export default function LoansOverviewPage() {
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
 
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [sendingWarning, setSendingWarning] = useState<Set<number>>(new Set());
+
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
     fetch(`${apiUrl}/loans/school/classes`, {
@@ -160,6 +166,36 @@ export default function LoansOverviewPage() {
       return { text: `Nog ${diffDays} dagen`, cls: "status-soon" };
     return { text: `Nog ${diffDays} dagen`, cls: "status-ok" };
   };
+
+  function showToast(type: "success" | "error", message: string) {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  }
+
+  async function sendOverdueWarning(loanId: number) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    setSendingWarning((prev) => {
+      const next = new Set(prev);
+      next.add(loanId);
+      return next;
+    });
+    try {
+      const res = await fetch(`${apiUrl}/loans/${loanId}/overdue-warning`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Kon de waarschuwing niet versturen.");
+      showToast("success", "SmartSchool-waarschuwing succesvol verstuurd.");
+    } catch (err: any) {
+      showToast("error", err.message || "Er is een fout opgetreden.");
+    } finally {
+      setSendingWarning((prev) => {
+        const next = new Set(prev);
+        next.delete(loanId);
+        return next;
+      });
+    }
+  }
 
   return (
     <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
@@ -271,7 +307,7 @@ export default function LoansOverviewPage() {
                     <th>Klas</th>
                     <th>Geleend op</th>
                     <th>Inleveren voor</th>
-                    <th></th>
+                    <th>Acties</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -313,12 +349,23 @@ export default function LoansOverviewPage() {
                           <div className="dueDateSub">{status.text}</div>
                         </td>
                         <td>
-                          <Link
-                            href="/admin/loan-return/return"
-                            className="returnButtonSmall"
-                          >
-                            Retourneer
-                          </Link>
+                          <div className="actionCell">
+                            <Link
+                              href="/admin/loan-return/return"
+                              className="returnButtonSmall"
+                            >
+                              Retourneer
+                            </Link>
+                            <button
+                              className="warnButtonSmall"
+                              onClick={() => sendOverdueWarning(loan.loanId)}
+                              disabled={sendingWarning.has(loan.loanId)}
+                            >
+                              {sendingWarning.has(loan.loanId)
+                                ? "Bezig..."
+                                : "Stuur waarschuwing"}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -423,7 +470,9 @@ export default function LoansOverviewPage() {
                           </span>
                         )}
                         {!h.damagedCount && !h.brokenCount && !h.lostCount && (
-                          <span className="conditionBadge conditionBadge--ok">OK</span>
+                          <span className="conditionBadge conditionBadge--ok">
+                            OK
+                          </span>
                         )}
                       </div>
                     </td>
@@ -436,6 +485,22 @@ export default function LoansOverviewPage() {
               totalPages={historyTotalPages}
               onPageChange={setHistoryPage}
             />
+          </div>
+        )}
+        {toast && (
+          <div
+            className={`toastNotification ${
+              toast.type === "success" ? "toastSuccess" : "toastError"
+            }`}
+          >
+            <span className="toastMessage">{toast.message}</span>
+            <button
+              className="toastClose"
+              onClick={() => setToast(null)}
+              aria-label="Sluiten"
+            >
+              ✕
+            </button>
           </div>
         )}
       </main>

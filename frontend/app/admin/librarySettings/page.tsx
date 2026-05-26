@@ -377,7 +377,7 @@ export default function LibrarySettings() {
                 <h2>Berichten</h2>
                 <p className="help">
                   De naam die getoond wordt als afzender bij automatische
-                  Smartschool-berichten. Laat leeg om de standaard afzender te
+                  Smartschool-berichten. Laat leeg om als je dit niet wilt
                   gebruiken.
                 </p>
                 <div className="form">
@@ -387,7 +387,7 @@ export default function LibrarySettings() {
                       type="text"
                       value={senderIdentifier}
                       onChange={(e) => setSenderIdentifier(e.target.value)}
-                      placeholder="bv. Schoolbibliotheek"
+                      placeholder="bv. jan.janssens"
                       disabled={saving}
                     />
                   </label>
@@ -401,7 +401,6 @@ export default function LibrarySettings() {
                   op de homepage van jouw school.
                 </p>
 
-                {/* Let op: geen className="form" of className="field" hier, anders verstoort de CSS de styling */}
                 <div
                   style={{
                     display: "flex",
