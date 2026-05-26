@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.dto.schoolintegration.SchoolIntegrationTestResponse;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.repositories.school.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.services.oneroster.OneRosterSyncService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -40,6 +41,9 @@ class SchoolIntegrationAdminServiceTest {
 
     @Mock
     private SchoolIntegrationRepository schoolIntegrationRepository;
+
+    @Mock
+    private OneRosterSyncService oneRosterSyncService;
 
     @InjectMocks
     private SchoolIntegrationAdminService schoolIntegrationAdminService;

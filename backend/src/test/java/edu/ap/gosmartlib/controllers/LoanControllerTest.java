@@ -1,11 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.controllers.loan.LoanController;
-import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
-import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
-import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
-import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
+
 import edu.ap.gosmartlib.config.TestSecurityConfig;
 import edu.ap.gosmartlib.services.loans.LoanDueDateNotificationService;
 import edu.ap.gosmartlib.services.loans.LoanPolicyService;
@@ -111,7 +106,7 @@ class LoanControllerTest {
     void givenValidRequests_whenReturnBooksBulk_thenReturnsOk() throws Exception {
         mockMvc.perform(post("/loans/return")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("[{\"bookId\":1,\"quantity\":1,\"smartschoolUserId\":\"uid-1\"}]")
+                        .content("[{\"bookId\":1,\"quantity\":1,\"smartschoolUserId\":\"uid-1\",\"copyConditions\":null,\"damagedCount\":0,\"brokenCount\":0,\"lostCount\":0}]")
                         .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
                 .andExpect(status().isOk());
 
@@ -127,8 +122,7 @@ class LoanControllerTest {
                         .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
                 .andExpect(status().isOk());
 
-        verify(loanService).returnBook(1L, 1);
-    }
+        verify(loanService).returnBook(1L, 1, 0, 0, 0);    }
 
     // ─── GET /loans/history ───────────────────────────────────────────────────
 
