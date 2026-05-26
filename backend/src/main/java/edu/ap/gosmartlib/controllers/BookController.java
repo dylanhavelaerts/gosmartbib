@@ -269,6 +269,14 @@ public class BookController {
         return ResponseEntity.ok(bookService.getCopyLabelsForInventory(bookId, inventoryId));
     }
 
+    @GetMapping("/by-barcode")
+    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    public ResponseEntity<BookDTO> getBookByBarcode(
+            @RequestParam String barcode,
+            @AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.ok(bookService.getBookByBarcode(barcode, callerRole(principal), authHelper.extractUidOrNull(principal)));
+    }
+
     @GetMapping("/{bookId}/copies/by-barcode")
     @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<BookCopyLabelDTO> getCopyByBarcode(@PathVariable Long bookId, @RequestParam String barcode) {

@@ -976,6 +976,20 @@ public class BookService {
         return sections;
     }
 
+    public BookDTO getBookByBarcode(String barcode, UserRoles callerRole, String currentUserUid) {
+        BookCopyEntity copy = bookCopyRepository.findByBarcode(barcode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode niet gevonden"));
+
+        BookEntity book = bookRepository.findDetailedById(copy.getInventory().getBook().getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden"));
+
+        BookDTO dto = toVisibleBookDTO(book, callerRole, currentUserUid);
+        if (dto == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden");
+        }
+        return dto;
+    }
+
     public BookCopyLabelDTO getCopyByBarcode(Long bookId, String barcode) {
         BookCopyEntity copy = bookCopyRepository.findByBarcode(barcode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode niet gevonden"));

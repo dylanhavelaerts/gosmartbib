@@ -94,16 +94,41 @@ export default function LendingPage() {
 
   // --- Search Books ---
   useEffect(() => {
-    if (!bookQuery || bookQuery.trim() === "") {
+    const trimmed = bookQuery.trim();
+    if (!trimmed) {
       setSearchResults([]);
       return;
+    }
+
+    // EAN-13: exactly 13 digits
+    if (/^\d{13}$/.test(trimmed)) {
+      const timer = setTimeout(async () => {
+        try {
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/books/by-barcode?barcode=${encodeURIComponent(trimmed)}`,
+            { credentials: "include" },
+          );
+          if (!res.ok) {
+            showToast("error", "Barcode niet gevonden.");
+            setSearchResults([]);
+            return;
+          }
+          const book: Book = await res.json();
+          setSearchResults([]);
+          setBookQuery("");
+          handleAddToCart(book);
+        } catch {
+          showToast("error", "Fout bij het opzoeken van de barcode.");
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
 
     const timer = setTimeout(() => {
       const params = new URLSearchParams();
       params.append("page", "0");
       params.append("size", "10");
-      params.append("query", bookQuery.trim());
+      params.append("query", trimmed);
 
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/search?${params}`, {
         credentials: "include",
@@ -330,7 +355,7 @@ export default function LendingPage() {
             <div className="searchbar">
               <input
                 type="text"
-                placeholder="Titel, auteur, ISBN..."
+                placeholder="Titel, auteur, ISBN of barcode..."
                 value={bookQuery}
                 onChange={(e) => setBookQuery(e.target.value)}
               />

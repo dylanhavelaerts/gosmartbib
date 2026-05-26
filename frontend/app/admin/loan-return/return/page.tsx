@@ -197,6 +197,33 @@ export default function ReturnsPage() {
       ),
   );
 
+  const handleBorrowedBooksBarcodeInput = async (value: string) => {
+    setBookQuery(value);
+    if (!/^\d{13}$/.test(value.trim())) return;
+    if (!selectedUser) return;
+
+    try {
+      const res = await fetch(
+        `${apiUrl}/books/by-barcode?barcode=${encodeURIComponent(value.trim())}`,
+        { credentials: "include" },
+      );
+      if (!res.ok) {
+        showToast("error", "Barcode niet gevonden.");
+        return;
+      }
+      const book: Book = await res.json();
+      const borrowed = borrowedBooks.find((b) => b.book.id === book.id);
+      if (!borrowed) {
+        showToast("error", "Dit boek heeft de lener niet in bezit.");
+        return;
+      }
+      handleAddToReturnCart(borrowed);
+      setBookQuery("");
+    } catch {
+      showToast("error", "Fout bij het opzoeken van de barcode.");
+    }
+  };
+
   // --- 3. Return Cart Handlers ---
   const handleAddToReturnCart = (borrowedItem: BorrowedItem) => {
     setReturnCart((prev) => {
@@ -547,9 +574,9 @@ export default function ReturnsPage() {
             <div className="searchbar">
               <input
                 type="text"
-                placeholder="Filter uitgeleende boeken..."
+                placeholder="Filter of scan barcode..."
                 value={bookQuery}
-                onChange={(e) => setBookQuery(e.target.value)}
+                onChange={(e) => handleBorrowedBooksBarcodeInput(e.target.value)}
                 disabled={!selectedUser}
               />
             </div>
