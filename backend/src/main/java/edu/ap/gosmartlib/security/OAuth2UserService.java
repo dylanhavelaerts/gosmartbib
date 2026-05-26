@@ -37,10 +37,6 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         // en returnt een OAuth2User met alle benodigde info
         OAuth2User fulluserinfo = super.loadUser(userReq);
 
-        log.info("=== FULLUSERINFO ===");
-        fulluserinfo.getAttributes().forEach((k, v) -> log.info("  {} = {}", k, v));
-        log.info("====================");
-
         // Stap 2. we halen de accessToken en het platform zodat we groupinfo kunnen
         // ophalen
         String accessToken = userReq.getAccessToken().getTokenValue();
@@ -48,7 +44,6 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
 
         Map<String, Object> groupInfoResponse = fetchGroupInfo(platform, accessToken);
 
-        log.info("=== GROUPINFO ===");
 
         List<Map<String, Object>> groups = extractGroupList(groupInfoResponse.get("groups"));
         List<Map<String, Object>> parentGroups = extractGroupList(groupInfoResponse.get("parentGroups"));
