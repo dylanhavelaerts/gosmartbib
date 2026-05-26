@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.entities;
 
+import edu.ap.gosmartlib.entities.book.BookEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,10 +1,10 @@
 package edu.ap.gosmartlib.controllers.school;
 
-import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.CreateSchoolCampusRequest;
-import edu.ap.gosmartlib.dto.schoolIntegration.schoolCampus.SchoolCampusDTO;
+import edu.ap.gosmartlib.dto.schoolintegration.schoolCampus.CreateSchoolCampusRequest;
+import edu.ap.gosmartlib.dto.schoolintegration.schoolCampus.SchoolCampusDTO;
 import edu.ap.gosmartlib.security.AdminPrincipal;
 import edu.ap.gosmartlib.security.AuthHelper;
-import edu.ap.gosmartlib.services.schoolIntegration.schoolCampus.SchoolCampusService;
+import edu.ap.gosmartlib.services.schoolintegration.schoolCampus.SchoolCampusService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

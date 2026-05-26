@@ -1,13 +1,13 @@
 package edu.ap.gosmartlib.services.loans;
 
-import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
-import edu.ap.gosmartlib.entities.loanEntities.LoanEntity;
-import edu.ap.gosmartlib.entities.loanEntities.LoanPolicyEntity;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.loan.LoanEntity;
+import edu.ap.gosmartlib.entities.loan.LoanPolicyEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
-import edu.ap.gosmartlib.repositories.loanRepositories.LoanPolicyRepository;
-import edu.ap.gosmartlib.repositories.loanRepositories.LoanRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanPolicyRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.messages.MessageSender;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.entities;
 
-import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
+import edu.ap.gosmartlib.entities.book.BookEntity;
 import edu.ap.gosmartlib.util.ReviewStatus;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;

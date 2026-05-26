@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;

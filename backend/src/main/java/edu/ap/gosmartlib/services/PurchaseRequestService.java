@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.services;
 
-import edu.ap.gosmartlib.dto.purchaseRequest.CreatePurchaseRequestDTO;
-import edu.ap.gosmartlib.dto.purchaseRequest.PurchaseRequestDTO;
+import edu.ap.gosmartlib.dto.purchaserequest.CreatePurchaseRequestDTO;
+import edu.ap.gosmartlib.dto.purchaserequest.PurchaseRequestDTO;
 import edu.ap.gosmartlib.entities.PurchaseRequestEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.PurchaseRequestRepository;

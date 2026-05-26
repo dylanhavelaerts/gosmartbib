@@ -1,15 +1,15 @@
 package edu.ap.gosmartlib.controllers.school;
 
-import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationDTO;
-import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveClassesResponse;
-import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveSchoolsResponse;
-import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationLiveUsersResponse;
-import edu.ap.gosmartlib.dto.schoolIntegration.SchoolIntegrationTestResponse;
-import edu.ap.gosmartlib.dto.schoolIntegration.UpsertSchoolIntegrationRequest;
+import edu.ap.gosmartlib.dto.schoolintegration.SchoolIntegrationDTO;
+import edu.ap.gosmartlib.dto.schoolintegration.SchoolIntegrationLiveClassesResponse;
+import edu.ap.gosmartlib.dto.schoolintegration.SchoolIntegrationLiveSchoolsResponse;
+import edu.ap.gosmartlib.dto.schoolintegration.SchoolIntegrationLiveUsersResponse;
+import edu.ap.gosmartlib.dto.schoolintegration.SchoolIntegrationTestResponse;
+import edu.ap.gosmartlib.dto.schoolintegration.UpsertSchoolIntegrationRequest;
 import edu.ap.gosmartlib.security.AdminPrincipal;
 import edu.ap.gosmartlib.security.AuthHelper;
-import edu.ap.gosmartlib.services.schoolIntegration.SchoolIntegrationAdminService;
-import edu.ap.gosmartlib.services.schoolIntegration.SchoolIntegrationService;
+import edu.ap.gosmartlib.services.schoolintegration.SchoolIntegrationAdminService;
+import edu.ap.gosmartlib.services.schoolintegration.SchoolIntegrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;

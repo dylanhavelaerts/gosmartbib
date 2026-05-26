@@ -1,14 +1,14 @@
 package edu.ap.gosmartlib.services;
 
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolIntegrationEntity;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesRequest;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesResponse;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterAuthService;
-import edu.ap.gosmartlib.services.schoolIntegration.SmartschoolOneRosterClient;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolOneRosterAuthService;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolOneRosterClient;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.Test;

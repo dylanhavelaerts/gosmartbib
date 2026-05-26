@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.services;
 
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolClassRepository;
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolClassRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import jakarta.servlet.http.Cookie;

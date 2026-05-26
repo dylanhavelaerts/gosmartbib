@@ -1,11 +1,10 @@
 package edu.ap.gosmartlib.services.loans;
-package edu.ap.gosmartlib.services.loans;
 
-import edu.ap.gosmartlib.entities.loanEntities.LoanEntity;
+import edu.ap.gosmartlib.entities.loan.LoanEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
-import edu.ap.gosmartlib.repositories.loanRepositories.LoanPolicyRepository;
-import edu.ap.gosmartlib.repositories.loanRepositories.LoanRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanPolicyRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.messages.MessageSender;
 import edu.ap.gosmartlib.util.UserRoles;

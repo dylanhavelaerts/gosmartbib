@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.entities;
 
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.util.UserRoles;
 import jakarta.persistence.*;
 import lombok.*;

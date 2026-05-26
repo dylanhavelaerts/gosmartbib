@@ -1,8 +1,8 @@
 package edu.ap.gosmartlib.services;
 
-import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
-import edu.ap.gosmartlib.entities.bookEntities.BookInventoryEntity;
-import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.util.BookCopyCondition;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

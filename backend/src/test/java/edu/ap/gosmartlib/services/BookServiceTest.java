@@ -6,13 +6,13 @@ import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
 import edu.ap.gosmartlib.dto.importdto.BulkImportDuplicateWarningDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
-import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
-import edu.ap.gosmartlib.entities.bookEntities.BookInventoryEntity;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
-import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.apache.poi.ss.usermodel.Row;
@@ -844,6 +844,7 @@ class BookServiceTest {
                                 3.0,
                                 5.0,
                                 null,
+                                null,
                                 0,
                                 20);
 
@@ -904,6 +905,7 @@ class BookServiceTest {
                                 null,
                                 null,
                                 null,
+                                null,
                                 0,
                                 20);
 
@@ -941,6 +943,7 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of("Toekomst & technologie"),
+                                null,
                                 null,
                                 null,
                                 null,
@@ -994,6 +997,7 @@ class BookServiceTest {
                                 null,
                                 null,
                                 null,
+                                null,
                                 0,
                                 20);
 
@@ -1026,6 +1030,7 @@ class BookServiceTest {
         @Test
         void givenTeacherRole_whenFilterBooks_thenPassesTrueToRepo() {
                 BookFilterRequest request = new BookFilterRequest(
+                                null,
                                 null,
                                 null,
                                 null,
@@ -1095,6 +1100,7 @@ class BookServiceTest {
                                 null,
                                 null,
                                 null,
+                                null,
                                 0,
                                 20);
 
@@ -1133,6 +1139,7 @@ class BookServiceTest {
                                 null,
                                 2023,
                                 2000,
+                                null,
                                 null,
                                 null,
                                 null,
@@ -1177,6 +1184,7 @@ class BookServiceTest {
                                 5.0,
                                 3.0,
                                 null,
+                                null,
                                 0,
                                 20);
 
@@ -1218,6 +1226,7 @@ class BookServiceTest {
                                 0.5,
                                 null,
                                 null,
+                                null,
                                 0,
                                 20);
 
@@ -1247,6 +1256,7 @@ class BookServiceTest {
         @Test
         void givenRepositoryFails_whenFilterBooks_thenThrowsException() {
                 BookFilterRequest request = new BookFilterRequest(
+                                null,
                                 null,
                                 null,
                                 null,
@@ -1300,6 +1310,7 @@ class BookServiceTest {
                                 null,
                                 null,
                                 true,
+                                null,
                                 0,
                                 20);
 
@@ -1342,6 +1353,7 @@ class BookServiceTest {
         @Test
         void givenDidacticOnlyNull_whenFilterBooks_thenPassesFalseToRepo() {
                 BookFilterRequest request = new BookFilterRequest(
+                                null,
                                 null,
                                 null,
                                 null,
@@ -2603,6 +2615,7 @@ class BookServiceTest {
                                 3.0,
                                 5.0,
                                 false,
+                                null,
                                 0,
                                 20);
 

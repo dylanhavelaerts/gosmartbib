@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.scheduler;
 
-import edu.ap.gosmartlib.services.oneRoster.OneRosterSyncService;
+import edu.ap.gosmartlib.services.oneroster.OneRosterSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

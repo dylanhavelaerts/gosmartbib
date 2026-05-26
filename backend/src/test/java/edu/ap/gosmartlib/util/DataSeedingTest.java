@@ -1,10 +1,10 @@
 package edu.ap.gosmartlib.util;
 
-import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
-import edu.ap.gosmartlib.repositories.bookRepositories.BookCopyRepository;
-import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.util;
 
-import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
+import edu.ap.gosmartlib.entities.book.BookEntity;
 
 import java.util.List;
 

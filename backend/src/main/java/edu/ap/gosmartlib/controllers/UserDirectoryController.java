@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesResponse;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesRequest;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesResponse;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.services.users.UserService;

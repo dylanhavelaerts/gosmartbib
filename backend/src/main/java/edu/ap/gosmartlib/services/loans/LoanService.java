@@ -1,19 +1,13 @@
 package edu.ap.gosmartlib.services.loans;
-package edu.ap.gosmartlib.services.loans;
 
 import edu.ap.gosmartlib.dto.loan.*;
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
-import edu.ap.gosmartlib.entities.bookEntities.BookCopyEntity;
-import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
-import edu.ap.gosmartlib.entities.loanEntities.LoanEntity;
-import edu.ap.gosmartlib.entities.loanEntities.LoanExtensionStatus;
-import edu.ap.gosmartlib.entities.loanEntities.LoanHistoryEntity;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
-import edu.ap.gosmartlib.repositories.bookRepositories.BookCopyRepository;
-import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
-import edu.ap.gosmartlib.repositories.loanRepositories.LoanHistoryRepository;
-import edu.ap.gosmartlib.repositories.loanRepositories.LoanPolicyRepository;
-import edu.ap.gosmartlib.repositories.loanRepositories.LoanRepository;
+import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanHistoryRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanPolicyRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.InventoryAdjustmentService;
 import edu.ap.gosmartlib.services.messages.BookNotificationService;
@@ -32,7 +26,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.entities.bookEntities.BookInventoryEntity;
+import edu.ap.gosmartlib.entities.book.BookCopyEntity;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
+import edu.ap.gosmartlib.entities.loan.LoanEntity;
+import edu.ap.gosmartlib.entities.loan.LoanExtensionStatus;
+import edu.ap.gosmartlib.entities.loan.LoanHistoryEntity;
+
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
@@ -41,7 +41,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.Comparator;
 
 @Service
@@ -494,11 +493,11 @@ public class LoanService {
         }
     }
 
-    public List<LoanHistoryDTO> getLoanHistoryByUser(String smartschoolUid) {
-        List<LoanHistoryEntity> historyList = loanHistoryRepository
-                .findBySmartschoolUserIdOrderByReturnDateDesc(smartschoolUid);
+    public Page<LoanHistoryDTO> getLoanHistoryByUser(String smartschoolUid, Pageable pageable) {
+        Page<LoanHistoryEntity> historyPage = loanHistoryRepository
+                .findBySmartschoolUserIdOrderByReturnDateDesc(smartschoolUid, pageable);
 
-        return historyList.stream().map(history -> {
+        return historyPage.map(history -> {
             BookEntity book = bookRepository.findByIsbn(history.getIsbn()).orElse(null);
 
             String bookTitle = BookDisplayUtil.resolveTitle(book, history.getIsbn());
@@ -515,7 +514,7 @@ public class LoanService {
                     history.getBrokenCount(),
                     history.getLostCount()
             );
-        }).collect(Collectors.toList());
+        });
     }
 
     private Map<String, String> resolveDisplayNamesMap(String actorUid, List<String> uids) {

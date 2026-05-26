@@ -262,7 +262,7 @@ class BookControllerTest {
     void givenValidFilters_whenFilterBooks_thenReturnsOk() {
         BookFilterRequest filter = new BookFilterRequest(
                 null, "en", List.of("Programming"), List.of("Toekomst & technologie"), "A",
-                100, 500, 2000, 2023, 3.0, 5.0, null, 0, 20);
+            100, 500, 2000, 2023, 3.0, 5.0, null, null, 0, 20);
         Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
         when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenReturn(expected);
@@ -278,7 +278,7 @@ class BookControllerTest {
     void givenOnlyLabels_whenFilterBooks_thenReturnsOk() {
         BookFilterRequest filter = new BookFilterRequest(
                 null, null, null, List.of("Toekomst & technologie"), null,
-                null, null, null, null, null, null, null, 0, 20);
+            null, null, null, null, null, null, null, null, 0, 20);
         Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
         when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenReturn(expected);
@@ -294,7 +294,7 @@ class BookControllerTest {
     void givenNullFilters_whenFilterBooks_thenReturnsOk() {
         BookFilterRequest filter = new BookFilterRequest(
                 null, null, null, null, null,
-                null, null, null, null, null, null, null, 0, 20);
+            null, null, null, null, null, null, null, null, 0, 20);
         when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenReturn(toPage(List.of(buildDTO(1L, "Clean Code"))));
 
@@ -307,7 +307,7 @@ class BookControllerTest {
     void givenMinGreaterThanMax_whenFilterBooks_thenReturnsBadRequest() {
         BookFilterRequest filter = new BookFilterRequest(
                 null, null, null, null, null,
-                500, 100, null, null, null, null, null, 0, 20);
+            500, 100, null, null, null, null, null, null, 0, 20);
         when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenThrow(new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount"));
 
@@ -321,7 +321,7 @@ class BookControllerTest {
     void givenMinRatingGreaterThanMaxRating_whenFilterBooks_thenReturnsBadRequest() {
         BookFilterRequest filter = new BookFilterRequest(
                 null, null, null, null, null,
-                null, null, null, null, 5.0, 3.0, null, 0, 20);
+            null, null, null, null, 5.0, 3.0, null, null, 0, 20);
         when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
                 .thenThrow(new IllegalArgumentException("minRating mag niet groter zijn dan maxRating"));
 
@@ -339,7 +339,7 @@ class BookControllerTest {
 
         ResponseEntity<?> result = bookController.filterBooks(new BookFilterRequest(
                 null, null, null, null, null,
-                null, null, null, null, null, null, null, 0, 20), null);
+            null, null, null, null, null, null, null, null, 0, 20), null);
 
         assertEquals(500, result.getStatusCode().value());
     }
@@ -351,7 +351,7 @@ class BookControllerTest {
 
         ResponseEntity<?> result = bookController.filterBooks(new BookFilterRequest(
                 null, null, null, null, null,
-                null, null, null, null, null, null, null, 0, 20), null);
+            null, null, null, null, null, null, null, null, 0, 20), null);
 
         assertEquals(200, result.getStatusCode().value());
         Page<?> body = (Page<?>) result.getBody();

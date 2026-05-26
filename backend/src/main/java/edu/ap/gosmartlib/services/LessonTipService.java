@@ -2,12 +2,12 @@ package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.lessontip.CreateLessonTipDTO;
 import edu.ap.gosmartlib.dto.lessontip.LessonTipDTO;
-import edu.ap.gosmartlib.dto.userDirectory.ResolveDisplayNamesRequest;
-import edu.ap.gosmartlib.entities.BookEntity;
+import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesRequest;
+import edu.ap.gosmartlib.entities.book.BookEntity;
 import edu.ap.gosmartlib.entities.LessonTipEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
-import edu.ap.gosmartlib.repositories.BookRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.LessonTipRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;

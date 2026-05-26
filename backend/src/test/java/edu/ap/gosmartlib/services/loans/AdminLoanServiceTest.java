@@ -3,13 +3,13 @@ package edu.ap.gosmartlib.services.loans;
 import edu.ap.gosmartlib.dto.loan.LibrarianActiveLoanDTO;
 import edu.ap.gosmartlib.dto.loan.LibrarianLoanHistoryDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
-import edu.ap.gosmartlib.repositories.bookRepositories.BookRepository;
-import edu.ap.gosmartlib.repositories.loanRepositories.LoanHistoryRepository;
-import edu.ap.gosmartlib.repositories.loanRepositories.LoanRepository;
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolClassRepository;
+import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanHistoryRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import org.junit.jupiter.api.Test;
@@ -68,11 +68,11 @@ class AdminLoanServiceTest {
         UserEntity actor = mockActor(1L);
         when(accessGuard.requireBibliotheekbeheerder("uid")).thenReturn(actor);
 
-        var loan = mock(edu.ap.gosmartlib.entities.loanEntities.LoanEntity.class);
+        var loan = mock(edu.ap.gosmartlib.entities.loan.LoanEntity.class);
         when(loan.getSmartschoolUserId()).thenReturn("student1");
         when(loan.getIsbn()).thenReturn("isbn1");
 
-        Page<edu.ap.gosmartlib.entities.loanEntities.LoanEntity> loanPage =
+        Page<edu.ap.gosmartlib.entities.loan.LoanEntity> loanPage =
                 new PageImpl<>(List.of(loan), PageRequest.of(0, 10), 1);
         when(loanRepository.findAllActiveBySchoolId(eq(1L), any(Pageable.class))).thenReturn(loanPage);
         when(bookRepository.findByIsbnIn(any())).thenReturn(List.of());

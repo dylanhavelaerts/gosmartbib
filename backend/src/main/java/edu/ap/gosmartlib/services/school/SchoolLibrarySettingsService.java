@@ -1,10 +1,10 @@
 package edu.ap.gosmartlib.services.school;
 
 import edu.ap.gosmartlib.dto.school.SchoolLibrarySettingsDTO;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolLibrarySettingsEntity;
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolLibrarySettingsRepository;
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolLibrarySettingsEntity;
+import edu.ap.gosmartlib.repositories.school.SchoolLibrarySettingsRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

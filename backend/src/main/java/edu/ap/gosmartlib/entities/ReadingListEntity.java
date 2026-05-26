@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.entities;
 
-import edu.ap.gosmartlib.entities.bookEntities.BookEntity;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
 import edu.ap.gosmartlib.util.ReadingListTargetType;
 import edu.ap.gosmartlib.util.ReadingListType;
 import jakarta.persistence.*;

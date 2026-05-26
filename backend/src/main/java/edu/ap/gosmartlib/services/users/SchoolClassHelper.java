@@ -1,8 +1,8 @@
 package edu.ap.gosmartlib.services.users;
 
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolClassEntity;
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolClassRepository;
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+import edu.ap.gosmartlib.repositories.school.SchoolClassRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;

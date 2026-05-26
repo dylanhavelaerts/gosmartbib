@@ -1,7 +1,7 @@
 package edu.ap.gosmartlib.security.mocksecurity;
 
-import edu.ap.gosmartlib.entities.schoolEntities.SchoolEntity;
-import edu.ap.gosmartlib.repositories.schoolRepositories.SchoolRepository;
+import edu.ap.gosmartlib.entities.school.SchoolEntity;
+import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
 import jakarta.servlet.FilterChain;
