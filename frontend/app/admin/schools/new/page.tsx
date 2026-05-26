@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "../../school-integration/schoolIntegration.css";
+import { SchoolCampusDTO } from "@/app/interfaces/schoolIntegration";
+import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -34,6 +36,13 @@ export default function NewSchoolPage() {
   const [success, setSuccess] = useState("");
 
   const [savedSchoolId, setSavedSchoolId] = useState<number | null>(null);
+
+  const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
+  const [newCampusName, setNewCampusName] = useState("");
+  const [loadingCampuses, setLoadingCampuses] = useState(false);
+  const [savingCampus, setSavingCampus] = useState(false);
+  const [deletingCampusId, setDeletingCampusId] = useState<number | null>(null);
+
   const [previewing, setPreviewing] = useState(false);
   const [previewStudents, setPreviewStudents] = useState<PreviewUser[] | null>(
     null,
@@ -133,10 +142,73 @@ export default function NewSchoolPage() {
       setSuccess(
         `School "${schoolName}" succesvol ${wasUpdated ? "bijgewerkt" : "aangemaakt"}.`,
       );
+      loadCampuses(schoolId);
     } catch {
       setError("Er ging iets mis bij het opslaan.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const loadCampuses = async (schoolId: number) => {
+    setLoadingCampuses(true);
+    try {
+      const data = await fetchSchoolCampuses(API_URL!, schoolId);
+      setCampuses(data);
+    } catch {
+      setError("Kon de campussen niet ophalen");
+    } finally {
+      setLoadingCampuses(false);
+    }
+  };
+
+  const handleCreateCampus = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!savedSchoolId) return;
+    const trimmedName = newCampusName.trim();
+    if (!trimmedName) return;
+    setSavingCampus(true);
+    try {
+      const response = await fetch(
+        `${API_URL}/admin/schools/${savedSchoolId}/campuses`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmedName }),
+        },
+      );
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(body || "Campus toevoegen mislukt");
+      }
+      const created: SchoolCampusDTO = await response.json();
+      setCampuses((prev) => [...prev, created]);
+      setNewCampusName("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Campus toevoegen mislukt");
+    } finally {
+      setSavingCampus(false);
+    }
+  };
+
+  const handleDeleteCampus = async (campusId: number) => {
+    if (!savedSchoolId) return;
+    setDeletingCampusId(campusId);
+    try {
+      const response = await fetch(
+        `${API_URL}/admin/schools/${savedSchoolId}/campuses/${campusId}`,
+        { method: "DELETE", credentials: "include" },
+      );
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(body || "Campus verwijderen mislukt");
+      }
+      setCampuses((prev) => prev.filter((c) => c.id !== campusId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Campus verwijderen mislukt");
+    } finally {
+      setDeletingCampusId(null);
     }
   };
 
@@ -340,6 +412,59 @@ export default function NewSchoolPage() {
           </>
         )}
       </div>
+
+      {/* ── Campussen ── */}
+      {savedSchoolId && (
+        <div className="card">
+          <h2>Campussen</h2>
+          <p className="help">
+            Voeg hier de campussen toe die later in boekinventaris als keuze
+            verschijnen.
+          </p>
+
+          <form className="campusForm" onSubmit={handleCreateCampus}>
+            <label className="field campusNameField">
+              <span>Nieuwe campus</span>
+              <input
+                type="text"
+                value={newCampusName}
+                onChange={(e) => setNewCampusName(e.target.value)}
+                placeholder="Bijv. Campus Zuid"
+                disabled={savingCampus}
+              />
+            </label>
+            <button
+              type="submit"
+              className="button primaryButton"
+              disabled={savingCampus || !newCampusName.trim()}
+            >
+              {savingCampus ? "Toevoegen..." : "Campus toevoegen"}
+            </button>
+          </form>
+
+          {loadingCampuses ? (
+            <p className="help">Campussen laden...</p>
+          ) : campuses.length === 0 ? (
+            <p className="emptyState">Nog geen campussen toegevoegd.</p>
+          ) : (
+            <ul className="campusList">
+              {campuses.map((campus) => (
+                <li key={campus.id} className="campusListItem">
+                  <span>{campus.name}</span>
+                  <button
+                    type="button"
+                    className="button dangerButton"
+                    onClick={() => handleDeleteCampus(campus.id)}
+                    disabled={deletingCampusId === campus.id}
+                  >
+                    {deletingCampusId === campus.id ? "Verwijderen..." : "Verwijderen"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* ── Preview error ── */}
       {previewError && <p className="message error">{previewError}</p>}
