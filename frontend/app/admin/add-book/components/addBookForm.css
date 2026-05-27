@@ -254,3 +254,34 @@
   color: #8a3457;
   font-size: 0.9rem;
 }
+
+.customOptionRow {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-top: 1px solid #eadde3;
+}
+
+.customOptionInput {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #d4c4ca;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.customOptionButton {
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.7rem;
+  background-color: #8e2446;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.customOptionButton:disabled {
+  background-color: #c9bfc5;
+  cursor: not-allowed;
+}

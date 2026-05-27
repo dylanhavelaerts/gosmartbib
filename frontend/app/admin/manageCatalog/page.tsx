@@ -33,6 +33,12 @@ export default function ManageCatalogPage() {
 
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [labelDropdownOpen, setLabelDropdownOpen] = useState(false);
+  const [availableCategories, setAvailableCategories] =
+  useState<string[]>(BOOK_CATEGORIES);
+  const [availableLabels, setAvailableLabels] =
+    useState<string[]>(BOOK_LABELS);
+  const [newCategory, setNewCategory] = useState("");
+  const [newLabel, setNewLabel] = useState("");
   const [query, setQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(25);
@@ -146,6 +152,31 @@ export default function ManageCatalogPage() {
     loadMeAndCampuses();
   }, [apiUrl]);
 
+  useEffect(() => {
+  const fetchOptions = async (endpoint: string) => {
+    const response = await fetch(`${apiUrl}/books/${endpoint}`, {
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  };
+
+  Promise.all([fetchOptions("categories"), fetchOptions("labels")])
+    .then(([categories, labels]) => {
+      setAvailableCategories(mergeOptions(BOOK_CATEGORIES, categories));
+      setAvailableLabels(mergeOptions(BOOK_LABELS, labels));
+    })
+    .catch(() => {
+      setAvailableCategories(BOOK_CATEGORIES);
+      setAvailableLabels(BOOK_LABELS);
+    });
+}, [apiUrl]);
+
   function openModal() {
     if (!selectedBook) return;
     setFormData({
@@ -158,6 +189,28 @@ export default function ManageCatalogPage() {
     setModalOpen(true);
     setError(null);
   }
+
+  function mergeOptions(baseOptions: string[], databaseOptions: string[]) {
+  const mergedOptions: string[] = [];
+  const seenOptions = new Set<string>();
+
+  [...baseOptions, ...databaseOptions].forEach((option) => {
+    const trimmedOption = option.trim();
+
+    if (!trimmedOption) {
+      return;
+    }
+
+    const normalizedOption = trimmedOption.toLowerCase();
+
+    if (!seenOptions.has(normalizedOption)) {
+      seenOptions.add(normalizedOption);
+      mergedOptions.push(trimmedOption);
+    }
+  });
+
+  return mergedOptions.sort((a, b) => a.localeCompare(b));
+}
 
   function closeModal() {
     setModalOpen(false);
@@ -768,7 +821,7 @@ export default function ManageCatalogPage() {
                     </button>
                     {categoryDropdownOpen && (
                       <div className="filterDropdownPanel">
-                        {BOOK_CATEGORIES.map((cat) => (
+                        {availableCategories.map((cat) => (
                           <label key={cat} className="filterCheckboxLabel">
                             <input
                               type="checkbox"
@@ -789,6 +842,72 @@ export default function ManageCatalogPage() {
                             {cat}
                           </label>
                         ))}
+                         <div className="customOptionRow">
+                          <input
+                            type="text"
+                            className="customOptionInput"
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+
+                                const trimmed = newCategory.trim();
+                                if (!trimmed) return;
+
+                                setAvailableCategories((prev) =>
+                                  prev.some(
+                                    (cat) => cat.toLowerCase() === trimmed.toLowerCase(),
+                                  )
+                                    ? prev
+                                    : [...prev, trimmed].sort((a, b) => a.localeCompare(b)),
+                                );
+
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  categories: prev.categories?.some(
+                                    (cat) => cat.toLowerCase() === trimmed.toLowerCase(),
+                                  )
+                                    ? prev.categories
+                                    : [...(prev.categories ?? []), trimmed],
+                                }));
+
+                                setNewCategory("");
+                              }
+                            }}
+                            placeholder="Nieuwe categorie"
+                          />
+
+                          <button
+                            type="button"
+                            className="customOptionButton"
+                            onClick={() => {
+                              const trimmed = newCategory.trim();
+                              if (!trimmed) return;
+
+                              setAvailableCategories((prev) =>
+                                prev.some(
+                                  (cat) => cat.toLowerCase() === trimmed.toLowerCase(),
+                                )
+                                  ? prev
+                                  : [...prev, trimmed].sort((a, b) => a.localeCompare(b)),
+                              );
+
+                              setFormData((prev) => ({
+                                ...prev,
+                                categories: prev.categories?.some(
+                                  (cat) => cat.toLowerCase() === trimmed.toLowerCase(),
+                                )
+                                  ? prev.categories
+                                  : [...(prev.categories ?? []), trimmed],
+                              }));
+
+                              setNewCategory("");
+                            }}
+                          >
+                            Toevoegen
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -831,7 +950,7 @@ export default function ManageCatalogPage() {
                     </button>
                     {labelDropdownOpen && (
                       <div className="filterDropdownPanel">
-                        {BOOK_LABELS.map((label) => (
+                        {availableLabels.map((label) => (
                           <label key={label} className="filterCheckboxLabel">
                             <input
                               type="checkbox"
@@ -852,6 +971,72 @@ export default function ManageCatalogPage() {
                             {label}
                           </label>
                         ))}
+                          <div className="customOptionRow">
+                            <input
+                              type="text"
+                              className="customOptionInput"
+                              value={newLabel}
+                              onChange={(e) => setNewLabel(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+
+                                  const trimmed = newLabel.trim();
+                                  if (!trimmed) return;
+
+                                  setAvailableLabels((prev) =>
+                                    prev.some(
+                                      (label) => label.toLowerCase() === trimmed.toLowerCase(),
+                                    )
+                                      ? prev
+                                      : [...prev, trimmed].sort((a, b) => a.localeCompare(b)),
+                                  );
+
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    labels: prev.labels?.some(
+                                      (label) => label.toLowerCase() === trimmed.toLowerCase(),
+                                    )
+                                      ? prev.labels
+                                      : [...(prev.labels ?? []), trimmed],
+                                  }));
+
+                                  setNewLabel("");
+                                }
+                              }}
+                              placeholder="Nieuw leefwereldlabel"
+                            />
+
+                            <button
+                              type="button"
+                              className="customOptionButton"
+                              onClick={() => {
+                                const trimmed = newLabel.trim();
+                                if (!trimmed) return;
+
+                                setAvailableLabels((prev) =>
+                                  prev.some(
+                                    (label) => label.toLowerCase() === trimmed.toLowerCase(),
+                                  )
+                                    ? prev
+                                    : [...prev, trimmed].sort((a, b) => a.localeCompare(b)),
+                                );
+
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  labels: prev.labels?.some(
+                                    (label) => label.toLowerCase() === trimmed.toLowerCase(),
+                                  )
+                                    ? prev.labels
+                                    : [...(prev.labels ?? []), trimmed],
+                                }));
+
+                                setNewLabel("");
+                              }}
+                            >
+                              Toevoegen
+                            </button>
+                          </div>
                       </div>
                     )}
                   </div>
