@@ -477,7 +477,7 @@ export default function ManageCatalogPage() {
     .filter(({ inventory }) => inventory.schoolId === me?.school?.id);
 
   return (
-    <ProtectedRoute allowedRoles={["LIBRARIAN", "ADMIN"]}>
+    <ProtectedRoute allowedRoles="LIBRARIAN">
       <main className="manage-main-layout">
         <div className="manage-page-header">
           <div>

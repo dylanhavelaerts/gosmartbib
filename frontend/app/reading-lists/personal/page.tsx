@@ -229,242 +229,234 @@ export default function MyReadingListPage() {
   };
 
   return (
-    <ProtectedRoute
-      allowedRoles={["STUDENT", "TEACHER", "ADMIN", "LIBRARIAN"]}
-    >
-      <div className="mrl-page">
-        {view === "overview" && (
-          <>
-            <div className="mrl-header">
-              <div>
-                <h1>Mijn leeslijsten</h1>
-                <p>Maak persoonlijke lijsten met boeken die jij wilt lezen</p>
-              </div>
-              <div className="mrl-header-actions">
-                <button
-                  className="mrl-btn-outline"
-                  onClick={() => router.push("/reading-lists")}
-                >
-                  Terug naar alle leeslijsten
-                </button>
-                <button className="mrl-btn-primary" onClick={openCreate}>
-                  Nieuwe lijst
-                </button>
-              </div>
+    <div className="mrl-page">
+      {view === "overview" && (
+        <>
+          <div className="mrl-header">
+            <div>
+              <h1>Mijn leeslijsten</h1>
+              <p>Maak persoonlijke lijsten met boeken die jij wilt lezen</p>
             </div>
+            <div className="mrl-header-actions">
+              <button
+                className="mrl-btn-outline"
+                onClick={() => router.push("/reading-lists")}
+              >
+                Terug naar alle leeslijsten
+              </button>
+              <button className="mrl-btn-primary" onClick={openCreate}>
+                Nieuwe lijst
+              </button>
+            </div>
+          </div>
 
-            {listsLoading && (
-              <div className="mrl-state">
-                <div className="mrl-spinner" />
-                <p>Laden...</p>
-              </div>
-            )}
+          {listsLoading && (
+            <div className="mrl-state">
+              <div className="mrl-spinner" />
+              <p>Laden...</p>
+            </div>
+          )}
 
-            {!listsLoading && myLists.length === 0 && (
-              <div className="mrl-state mrl-state--empty">
-                <h2>Je hebt nog geen leeslijsten</h2>
-                <p>Begin met jouw eerste persoonlijke leeslijst</p>
-                <button className="mrl-btn-primary" onClick={openCreate}>
-                  Maak mijn eerste lijst
-                </button>
-              </div>
-            )}
+          {!listsLoading && myLists.length === 0 && (
+            <div className="mrl-state mrl-state--empty">
+              <h2>Je hebt nog geen leeslijsten</h2>
+              <p>Begin met jouw eerste persoonlijke leeslijst</p>
+              <button className="mrl-btn-primary" onClick={openCreate}>
+                Maak mijn eerste lijst
+              </button>
+            </div>
+          )}
 
-            {!listsLoading && myLists.length > 0 && (
-              <div className="mrl-list-grid">
-                {myLists.map((list) => {
-                  const count = list.bookCount ?? list.bookIds?.length ?? 0;
-                  return (
-                    <div key={list.id} className="mrl-list-card">
-                      <div
-                        className="mrl-list-card-body"
+          {!listsLoading && myLists.length > 0 && (
+            <div className="mrl-list-grid">
+              {myLists.map((list) => {
+                const count = list.bookCount ?? list.bookIds?.length ?? 0;
+                return (
+                  <div key={list.id} className="mrl-list-card">
+                    <div
+                      className="mrl-list-card-body"
+                      onClick={() => router.push(`/reading-lists/${list.id}`)}
+                    >
+                      <div>
+                        <h3>{list.title}</h3>
+                        {list.taskDescription && <p>{list.taskDescription}</p>}
+                        <span className="mrl-book-count">
+                          {count} {count === 1 ? "boek" : "boeken"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mrl-list-card-actions">
+                      <button
+                        className="mrl-btn-outline"
                         onClick={() => router.push(`/reading-lists/${list.id}`)}
                       >
-                        <div>
-                          <h3>{list.title}</h3>
-                          {list.taskDescription && (
-                            <p>{list.taskDescription}</p>
-                          )}
-                          <span className="mrl-book-count">
-                            {count} {count === 1 ? "boek" : "boeken"}
-                          </span>
-                        </div>
-                      </div>
+                        Bekijken
+                      </button>
+                      <button
+                        className="mrl-btn-outline"
+                        onClick={async () => {
+                          await openEdit(list);
+                        }}
+                      >
+                        Bewerken
+                      </button>
 
-                      <div className="mrl-list-card-actions">
-                        <button
-                          className="mrl-btn-outline"
-                          onClick={() =>
-                            router.push(`/reading-lists/${list.id}`)
-                          }
-                        >
-                          Bekijken
-                        </button>
-                        <button
-                          className="mrl-btn-outline"
-                          onClick={async () => {
-                            await openEdit(list);
-                          }}
-                        >
-                          Bewerken
-                        </button>
-
-                        {deleteConfirm === list.id ? (
-                          <span className="mrl-delete-row">
-                            Verwijderen?
-                            <button
-                              className="mrl-btn-sm-danger"
-                              onClick={() => handleDelete(list.id)}
-                            >
-                              Ja
-                            </button>
-                            <button
-                              className="mrl-btn-sm-ghost"
-                              onClick={() => setDeleteConfirm(null)}
-                            >
-                              Nee
-                            </button>
-                          </span>
-                        ) : (
+                      {deleteConfirm === list.id ? (
+                        <span className="mrl-delete-row">
+                          Verwijderen?
                           <button
-                            className="mrl-btn-trash"
-                            onClick={() => setDeleteConfirm(list.id)}
-                            title="Verwijderen"
-                            aria-label="Verwijderen"
-                          ></button>
-                        )}
-                      </div>
+                            className="mrl-btn-sm-danger"
+                            onClick={() => handleDelete(list.id)}
+                          >
+                            Ja
+                          </button>
+                          <button
+                            className="mrl-btn-sm-ghost"
+                            onClick={() => setDeleteConfirm(null)}
+                          >
+                            Nee
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          className="mrl-btn-trash"
+                          onClick={() => setDeleteConfirm(list.id)}
+                          title="Verwijderen"
+                          aria-label="Verwijderen"
+                        ></button>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
 
-        {view === "create" && (
-          <>
-            <div className="mrl-subheader">
-              <button
-                className="mrl-back-btn"
-                onClick={() => setView("overview")}
-              >
-                Terug naar overzicht
-              </button>
-              <h1>{activeList ? "Leeslijst bewerken" : "Nieuwe leeslijst"}</h1>
+      {view === "create" && (
+        <>
+          <div className="mrl-subheader">
+            <button
+              className="mrl-back-btn"
+              onClick={() => setView("overview")}
+            >
+              Terug naar overzicht
+            </button>
+            <h1>{activeList ? "Leeslijst bewerken" : "Nieuwe leeslijst"}</h1>
+          </div>
+
+          {formMsg && (
+            <div
+              className={
+                formMsg.type === "success"
+                  ? "mrl-msg mrl-msg--success"
+                  : "mrl-msg mrl-msg--error"
+              }
+            >
+              {formMsg.text}
+            </div>
+          )}
+
+          <form onSubmit={handleSave} className="mrl-create-form">
+            <div className="mrl-panel mrl-panel--picker">
+              <BookPicker
+                selectedBooks={formBooks as Book[]}
+                onAdd={addBook}
+                onRemove={removeBook}
+                label="Boeken zoeken en toevoegen"
+              />
             </div>
 
-            {formMsg && (
-              <div
-                className={
-                  formMsg.type === "success"
-                    ? "mrl-msg mrl-msg--success"
-                    : "mrl-msg mrl-msg--error"
-                }
-              >
-                {formMsg.text}
-              </div>
-            )}
-
-            <form onSubmit={handleSave} className="mrl-create-form">
-              <div className="mrl-panel mrl-panel--picker">
-                <BookPicker
-                  selectedBooks={formBooks as Book[]}
-                  onAdd={addBook}
-                  onRemove={removeBook}
-                  label="Boeken zoeken en toevoegen"
-                />
-              </div>
-
-              <div className="mrl-panel mrl-panel--details">
-                <div className="mrl-form-fields">
-                  <div className="mrl-field">
-                    <label htmlFor="mrl-title">Naam van de lijst *</label>
-                    <input
-                      id="mrl-title"
-                      type="text"
-                      className="mrl-input"
-                      placeholder="Bijv. Zomervakantie lezen"
-                      value={formTitle}
-                      onChange={(e) => setFormTitle(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="mrl-field">
-                    <label htmlFor="mrl-desc">Beschrijving (optioneel)</label>
-                    <textarea
-                      id="mrl-desc"
-                      className="mrl-textarea"
-                      placeholder="Waarom maak je deze lijst?"
-                      value={formDescription}
-                      onChange={(e) => setFormDescription(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
+            <div className="mrl-panel mrl-panel--details">
+              <div className="mrl-form-fields">
+                <div className="mrl-field">
+                  <label htmlFor="mrl-title">Naam van de lijst *</label>
+                  <input
+                    id="mrl-title"
+                    type="text"
+                    className="mrl-input"
+                    placeholder="Bijv. Zomervakantie lezen"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    required
+                  />
                 </div>
-
-                <div className="mrl-selected-header">
-                  <label>Geselecteerde boeken ({formBooks.length})</label>
+                <div className="mrl-field">
+                  <label htmlFor="mrl-desc">Beschrijving (optioneel)</label>
+                  <textarea
+                    id="mrl-desc"
+                    className="mrl-textarea"
+                    placeholder="Waarom maak je deze lijst?"
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    rows={3}
+                  />
                 </div>
+              </div>
 
-                <div className="mrl-selected-list">
-                  {formBooks.length === 0 ? (
-                    <div className="mrl-selected-empty">
-                      <p>Gebruik de zoekbalk links om boeken toe te voegen</p>
-                    </div>
-                  ) : (
-                    formBooks.map((book) => (
-                      <div key={book.id} className="mrl-selected-row">
-                        <div className="mrl-thumb mrl-thumb--sm">
-                          {book.thumbnail ? (
-                            <img src={book.thumbnail} alt={book.title} />
-                          ) : (
-                            <span>Geen cover</span>
-                          )}
-                        </div>
-                        <div className="mrl-book-info">
-                          <strong>{book.title}</strong>
-                          <span>{book.authors?.join(", ") || "Onbekend"}</span>
-                        </div>
-                        <button
-                          type="button"
-                          className="mrl-remove-btn"
-                          onClick={() => removeBook(book.id)}
-                          title="Verwijderen uit lijst"
-                        >
-                          Verwijder
-                        </button>
+              <div className="mrl-selected-header">
+                <label>Geselecteerde boeken ({formBooks.length})</label>
+              </div>
+
+              <div className="mrl-selected-list">
+                {formBooks.length === 0 ? (
+                  <div className="mrl-selected-empty">
+                    <p>Gebruik de zoekbalk links om boeken toe te voegen</p>
+                  </div>
+                ) : (
+                  formBooks.map((book) => (
+                    <div key={book.id} className="mrl-selected-row">
+                      <div className="mrl-thumb mrl-thumb--sm">
+                        {book.thumbnail ? (
+                          <img src={book.thumbnail} alt={book.title} />
+                        ) : (
+                          <span>Geen cover</span>
+                        )}
                       </div>
-                    ))
-                  )}
-                </div>
-
-                <div className="mrl-form-actions">
-                  <button
-                    type="button"
-                    className="mrl-btn-cancel"
-                    onClick={() => setView("overview")}
-                    disabled={formLoading}
-                  >
-                    Annuleer
-                  </button>
-                  <button
-                    type="submit"
-                    className="mrl-btn-primary mrl-submit-btn"
-                    disabled={formLoading}
-                  >
-                    {formLoading
-                      ? "Opslaan..."
-                      : activeList
-                        ? "Wijzigingen opslaan"
-                        : "Lijst aanmaken"}
-                  </button>
-                </div>
+                      <div className="mrl-book-info">
+                        <strong>{book.title}</strong>
+                        <span>{book.authors?.join(", ") || "Onbekend"}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="mrl-remove-btn"
+                        onClick={() => removeBook(book.id)}
+                        title="Verwijderen uit lijst"
+                      >
+                        Verwijder
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
-            </form>
-          </>
-        )}
-      </div>
-    </ProtectedRoute>
+
+              <div className="mrl-form-actions">
+                <button
+                  type="button"
+                  className="mrl-btn-cancel"
+                  onClick={() => setView("overview")}
+                  disabled={formLoading}
+                >
+                  Annuleer
+                </button>
+                <button
+                  type="submit"
+                  className="mrl-btn-primary mrl-submit-btn"
+                  disabled={formLoading}
+                >
+                  {formLoading
+                    ? "Opslaan..."
+                    : activeList
+                      ? "Wijzigingen opslaan"
+                      : "Lijst aanmaken"}
+                </button>
+              </div>
+            </div>
+          </form>
+        </>
+      )}
+    </div>
   );
 }

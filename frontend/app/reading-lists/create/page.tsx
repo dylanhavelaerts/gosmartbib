@@ -304,7 +304,7 @@ export default function CreateReadingListPage() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={["TEACHER", "ADMIN", "LIBRARIAN"]}>
+    <ProtectedRoute allowedRoles={["TEACHER", "LIBRARIAN"]}>
       <div className="readingListContainer">
         <div className="crl-subheader">
           <button

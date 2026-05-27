@@ -12,22 +12,23 @@ type UserRole =
   | "OTHER";
 
 interface Props {
-  allowedRoles: UserRole[];
+  allowedRoles: UserRole | UserRole[];
   children: React.ReactNode;
 }
 
 export default function ProtectedRoute({ allowedRoles, children }: Props) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
 
   useEffect(() => {
-    if (!loading && (!user || !allowedRoles.includes(user.role))) {
+    if (!loading && (!user || !roles.includes(user.role))) {
       router.replace("/catalog");
     }
   }, [user, loading]);
 
   if (loading) return null;
-  if (!user || !allowedRoles.includes(user.role)) return null;
+  if (!user || !roles.includes(user.role)) return null;
 
   return <>{children}</>;
 }
