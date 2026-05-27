@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.controllers.book.ReviewController;
 import edu.ap.gosmartlib.dto.reviews.*;
+import edu.ap.gosmartlib.security.RoleGuard;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.ReviewService;
 import edu.ap.gosmartlib.util.ReviewFlagReason;
@@ -16,18 +17,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.util.Collection;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -39,6 +37,9 @@ class ReviewControllerTest {
 
     @Mock
     private ReviewService reviewService;
+
+    @Mock
+    private RoleGuard roleGuard;
 
     // @Spy gebruikt de echte implementatie van AuthHelper zodat extractUid/extractUidOrNull
     // correct werken zonder elke test afzonderlijk te stubben.
@@ -190,7 +191,6 @@ class ReviewControllerTest {
     @Test
     void givenValidPrincipal_whenUserDeleteReview_thenReturnsNoContent() {
         when(principal.getAttribute("userID")).thenReturn("smart-uid-3");
-        doReturn(List.<SimpleGrantedAuthority>of()).when(authentication).getAuthorities();
 
         ResponseEntity<Void> response = reviewController.userDeleteReview(10L, principal, authentication);
 
@@ -201,8 +201,6 @@ class ReviewControllerTest {
     @Test
     void givenTeacherPrincipal_whenUserDeleteReview_thenDelegatesWithoutModeratorDeleteAccess() {
         when(principal.getAttribute("userID")).thenReturn("teacher-uid");
-        Collection<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_TEACHER"));
-        doReturn(authorities).when(authentication).getAuthorities();
 
         ResponseEntity<Void> response = reviewController.userDeleteReview(11L, principal, authentication);
 
@@ -274,8 +272,7 @@ class ReviewControllerTest {
     @Test
     void givenLibrarianPrincipal_whenUserDeleteReview_thenDelegatesWithModeratorDeleteAccess() {
         when(principal.getAttribute("userID")).thenReturn("bib-uid");
-        Collection<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_LIBRARIAN"));
-        doReturn(authorities).when(authentication).getAuthorities();
+        when(roleGuard.isLibrarian(authentication)).thenReturn(true);
 
         ResponseEntity<Void> response = reviewController.userDeleteReview(12L, principal, authentication);
 
@@ -315,7 +312,6 @@ class ReviewControllerTest {
     @Test
     void givenAuthenticationWithoutAuthorities_whenUserDeleteReview_thenCallsServiceWithFalseModeratorAccess() {
         when(principal.getAttribute("userID")).thenReturn("user-uid");
-        when(authentication.getAuthorities()).thenReturn(null);
 
         ResponseEntity<Void> response = reviewController.userDeleteReview(14L, principal, authentication);
 

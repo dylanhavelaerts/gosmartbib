@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.controllers;
 
 
 import edu.ap.gosmartlib.config.TestSecurityConfig;
+import edu.ap.gosmartlib.security.RoleGuard;
 import edu.ap.gosmartlib.services.loans.LoanDueDateNotificationService;
 import edu.ap.gosmartlib.services.loans.LoanPolicyService;
 import edu.ap.gosmartlib.services.loans.LoanService;
@@ -39,11 +40,13 @@ class LoanControllerTest {
     @MockitoBean private LoanPolicyService loanPolicyService;
     @MockitoBean private LoanDueDateNotificationService loanDueDateNotificationService;
     @MockitoBean private UserService userService;
+    @MockitoBean private RoleGuard roleGuard;
 
     // ─── POST /loans ──────────────────────────────────────────────────────────
 
     @Test
     void givenValidRequests_whenCreateLoans_thenReturnsOk() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         mockMvc.perform(post("/loans")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("[{\"bookId\":1,\"quantity\":1,\"user\":null}]")
@@ -104,6 +107,7 @@ class LoanControllerTest {
 
     @Test
     void givenValidRequests_whenReturnBooksBulk_thenReturnsOk() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         mockMvc.perform(post("/loans/return")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("[{\"bookId\":1,\"quantity\":1,\"smartschoolUserId\":\"uid-1\",\"copyConditions\":null,\"damagedCount\":0,\"brokenCount\":0,\"lostCount\":0}]")
@@ -117,6 +121,7 @@ class LoanControllerTest {
 
     @Test
     void givenValidRequest_whenReturnBook_thenReturnsOk() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         mockMvc.perform(post("/loans/1/return")
                         .param("quantity", "1")
                         .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
@@ -170,6 +175,7 @@ class LoanControllerTest {
 
     @Test
     void givenValidPrincipal_whenGetPendingExtensionRequests_thenReturnsOkWithRequests() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         when(loanService.getPendingExtensionRequestsForSchool("beheerder-123")).thenReturn(List.of());
 
         mockMvc.perform(get("/loans/extension-requests/pending")
@@ -182,7 +188,7 @@ class LoanControllerTest {
     @Test
     void givenNullPrincipal_whenGetPendingExtensionRequests_thenReturnsUnauthorized() throws Exception {
         mockMvc.perform(get("/loans/extension-requests/pending"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
 
         verifyNoInteractions(loanService);
     }
@@ -191,6 +197,7 @@ class LoanControllerTest {
 
     @Test
     void givenValidPrincipal_whenApproveLoanExtension_thenReturnsOk() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         mockMvc.perform(post("/loans/1/extension-request/approve")
                         .with(oauth2Login().attributes(a -> a.put("userID", "beheerder-123"))))
                 .andExpect(status().isOk());
@@ -201,7 +208,7 @@ class LoanControllerTest {
     @Test
     void givenNullPrincipal_whenApproveLoanExtension_thenReturnsUnauthorized() throws Exception {
         mockMvc.perform(post("/loans/1/extension-request/approve"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
 
         verifyNoInteractions(loanService);
     }
@@ -210,6 +217,7 @@ class LoanControllerTest {
 
     @Test
     void givenValidPrincipal_whenDenyLoanExtension_thenReturnsOk() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         mockMvc.perform(post("/loans/1/extension-request/deny")
                         .with(oauth2Login().attributes(a -> a.put("userID", "beheerder-123"))))
                 .andExpect(status().isOk());
@@ -220,7 +228,7 @@ class LoanControllerTest {
     @Test
     void givenNullPrincipal_whenDenyLoanExtension_thenReturnsUnauthorized() throws Exception {
         mockMvc.perform(post("/loans/1/extension-request/deny"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
 
         verifyNoInteractions(loanService);
     }

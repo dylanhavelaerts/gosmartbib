@@ -1,7 +1,8 @@
-﻿package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.config.TestSecurityConfig;
 import edu.ap.gosmartlib.dto.*;
+import edu.ap.gosmartlib.security.RoleGuard;
 import edu.ap.gosmartlib.dto.book.BookDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
@@ -47,6 +48,9 @@ class BookControllerTest {
     @MockitoBean
     private UserService userService;
 
+    @MockitoBean
+    private RoleGuard roleGuard;
+
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
@@ -60,6 +64,7 @@ class BookControllerTest {
 
     private void stubAsLibrarian(String uid) {
         when(userService.getRoleBySmartschoolUid(uid)).thenReturn(UserRoles.LIBRARIAN);
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
     }
 
     @Test
@@ -279,6 +284,7 @@ class BookControllerTest {
 
     @Test
     void updateSpotlight_asLibrarian_returns204() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         doNothing().when(bookService).updateSpotlight(1L, true);
 
         mockMvc.perform(patch("/books/1/spotlight")
@@ -292,6 +298,7 @@ class BookControllerTest {
 
     @Test
     void updateSpotlight_bookNotFound_returns404() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         doThrow(new BookNotFoundException(99L)).when(bookService).updateSpotlight(99L, false);
 
         mockMvc.perform(patch("/books/99/spotlight")
@@ -386,6 +393,7 @@ class BookControllerTest {
 
     @Test
     void updateBook_asLibrarian_returnsOk() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         BookDTO dto = buildDTO(1L, "Updated Title");
         when(bookService.updateBook(eq(1L), any())).thenReturn(dto);
 
@@ -400,6 +408,7 @@ class BookControllerTest {
 
     @Test
     void updateBook_bookNotFound_returns404() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         when(bookService.updateBook(eq(99L), any())).thenThrow(new BookNotFoundException(99L));
 
         mockMvc.perform(patch("/books/99")
@@ -413,6 +422,7 @@ class BookControllerTest {
 
     @Test
     void updateBook_illegalArgument_returns400() throws Exception {
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         when(bookService.updateBook(eq(1L), any()))
                 .thenThrow(new IllegalArgumentException("Titel mag niet leeg zijn"));
 

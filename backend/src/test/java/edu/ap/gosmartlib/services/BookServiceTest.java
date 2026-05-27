@@ -1785,6 +1785,8 @@ class BookServiceTest {
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
+                when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
 
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
@@ -1831,6 +1833,8 @@ class BookServiceTest {
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
+                when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
 
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
@@ -1880,6 +1884,8 @@ class BookServiceTest {
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
+                when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
 
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
@@ -1917,6 +1923,8 @@ class BookServiceTest {
                 });
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+                when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
 
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,

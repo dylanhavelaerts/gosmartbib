@@ -113,4 +113,122 @@ class StatisticsControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(statisticsService).getMostWantedBooks(UID);
     }
+
+    // --- popularGenres ---
+
+    @Test
+    void givenNoFilter_whenPopularGenres_thenCallsServiceWithNullParams() {
+        when(authHelper.extractUid(principal)).thenReturn(UID);
+        when(statisticsService.getMostReadGenres(UID, null, null)).thenReturn(List.of());
+
+        ResponseEntity<List<GenreStatsDTO>> response = statisticsController.popularGenres(principal, null, null);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(statisticsService).getMostReadGenres(UID, null, null);
+    }
+
+    @Test
+    void givenGradeFilter_whenPopularGenres_thenPassesGradeToService() {
+        when(authHelper.extractUid(principal)).thenReturn(UID);
+        when(statisticsService.getMostReadGenres(UID, null, "3de jaar")).thenReturn(List.of());
+
+        statisticsController.popularGenres(principal, null, "3de jaar");
+
+        verify(statisticsService).getMostReadGenres(UID, null, "3de jaar");
+    }
+
+    // --- returnPunctuality ---
+
+    @Test
+    void givenNoFilter_whenReturnPunctuality_thenCallsServiceWithNullParams() {
+        when(authHelper.extractUid(principal)).thenReturn(UID);
+        when(statisticsService.getReturnPunctuality(UID, null, null)).thenReturn(mock(ReturnPunctualityDTO.class));
+
+        ResponseEntity<ReturnPunctualityDTO> response = statisticsController.returnPunctuality(principal, null, null);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(statisticsService).getReturnPunctuality(UID, null, null);
+    }
+
+    @Test
+    void givenClassNameFilter_whenReturnPunctuality_thenPassesClassNameToService() {
+        when(authHelper.extractUid(principal)).thenReturn(UID);
+        when(statisticsService.getReturnPunctuality(UID, "3A", null)).thenReturn(mock(ReturnPunctualityDTO.class));
+
+        statisticsController.returnPunctuality(principal, "3A", null);
+
+        verify(statisticsService).getReturnPunctuality(UID, "3A", null);
+    }
+
+    // --- loanDurationDistribution ---
+
+    @Test
+    void givenNoFilter_whenLoanDurationDistribution_thenCallsServiceWithNullParams() {
+        when(authHelper.extractUid(principal)).thenReturn(UID);
+        when(statisticsService.getLoanDurationDistribution(UID, null, null)).thenReturn(List.of());
+
+        ResponseEntity<List<LoanDurationStatsDTO>> response = statisticsController.loanDurationDistribution(principal, null, null);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(statisticsService).getLoanDurationDistribution(UID, null, null);
+    }
+
+    @Test
+    void givenGradeFilter_whenLoanDurationDistribution_thenPassesGradeToService() {
+        when(authHelper.extractUid(principal)).thenReturn(UID);
+        when(statisticsService.getLoanDurationDistribution(UID, null, "2de jaar")).thenReturn(List.of());
+
+        statisticsController.loanDurationDistribution(principal, null, "2de jaar");
+
+        verify(statisticsService).getLoanDurationDistribution(UID, null, "2de jaar");
+    }
+
+    // --- loansPerMonth ---
+
+    @Test
+    void givenNoFilter_whenLoansPerMonth_thenCallsServiceWithNullParams() {
+        when(authHelper.extractUid(principal)).thenReturn(UID);
+        when(statisticsService.getLoansPerMonth(UID, null, null)).thenReturn(List.of());
+
+        ResponseEntity<List<LoansPerMonthDTO>> response = statisticsController.loansPerMonth(principal, null, null);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(statisticsService).getLoansPerMonth(UID, null, null);
+    }
+
+    @Test
+    void givenClassAndGradeFilter_whenLoansPerMonth_thenPassesBothToService() {
+        when(authHelper.extractUid(principal)).thenReturn(UID);
+        when(statisticsService.getLoansPerMonth(UID, "4B", "4de jaar")).thenReturn(List.of());
+
+        statisticsController.loansPerMonth(principal, "4B", "4de jaar");
+
+        verify(statisticsService).getLoansPerMonth(UID, "4B", "4de jaar");
+    }
+
+    // --- leastPopularBooks ---
+
+    @Test
+    void whenLeastPopularBooks_thenCallsServiceAndReturnsOk() {
+        when(authHelper.extractUid(principal)).thenReturn(UID);
+        when(statisticsService.getLeastPopularBooks(UID)).thenReturn(List.of());
+
+        ResponseEntity<List<BookPopularityDTO>> response = statisticsController.leastPopularBooks(principal);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(statisticsService).getLeastPopularBooks(UID);
+    }
+
+    // --- topReaders (extra combos) ---
+
+    @Test
+    void givenNoFilter_whenTopReaders_thenCallsServiceWithNullParams() {
+        when(authHelper.extractUid(principal)).thenReturn(UID);
+        when(statisticsService.getTopReaders(UID, null, null)).thenReturn(List.of());
+
+        ResponseEntity<List<TopReaderStudentDTO>> response = statisticsController.topReaders(principal, null, null);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(statisticsService).getTopReaders(UID, null, null);
+    }
 }
