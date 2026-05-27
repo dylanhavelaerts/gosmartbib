@@ -31,7 +31,7 @@ public class StatisticsController {
     private final StatisticsService statisticsService;
     private final AuthHelper authHelper;
 
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     @GetMapping("/overview")
     public ResponseEntity<OverviewStatsDTO> overview(
             @AuthenticationPrincipal OAuth2User principal,
@@ -41,7 +41,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getOverviewStats(uid, className, grade));
     }
 
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     @GetMapping("/popular-books")
     public ResponseEntity<List<BookPopularityDTO>> popularBooks(
             @AuthenticationPrincipal OAuth2User principal,
@@ -51,7 +51,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getMostPopularBooks(uid, className, grade));
     }
 
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     @GetMapping("/popular-genres")
     public ResponseEntity<List<GenreStatsDTO>> popularGenres(
             @AuthenticationPrincipal OAuth2User principal,
@@ -61,7 +61,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getMostReadGenres(uid, className, grade));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER','LIBRARIAN','ADMIN')")
     @GetMapping("/highest-count-class")
     public ResponseEntity<List<ClassReadingStatsDTO>> highestCountClass(
             @AuthenticationPrincipal OAuth2User principal) {
@@ -69,7 +69,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getMostReadingClasses(uid));
     }
 
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     @GetMapping("/return-punctuality")
     public ResponseEntity<ReturnPunctualityDTO> returnPunctuality(
             @AuthenticationPrincipal OAuth2User principal,
@@ -79,7 +79,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getReturnPunctuality(uid, className, grade));
     }
 
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     @GetMapping("/loan-duration-distribution")
     public ResponseEntity<List<LoanDurationStatsDTO>> loanDurationDistribution(
             @AuthenticationPrincipal OAuth2User principal,
@@ -89,7 +89,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getLoanDurationDistribution(uid, className, grade));
     }
 
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     @GetMapping("/most-wanted-books")
     public ResponseEntity<List<MostWantedBookDTO>> mostWantedBooks(
             @AuthenticationPrincipal OAuth2User principal) {
@@ -97,7 +97,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getMostWantedBooks(uid));
     }
 
-    @PreAuthorize("hasAnyRole('STUDENT','TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT','TEACHER','LIBRARIAN','ADMIN')")
     @GetMapping("/top-readers")
     public ResponseEntity<List<TopReaderStudentDTO>> topReaders(
             @AuthenticationPrincipal OAuth2User principal,
@@ -107,7 +107,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getTopReaders(uid, className, grade));
     }
 
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     @GetMapping("/loans-per-month")
     public ResponseEntity<List<LoansPerMonthDTO>> loansPerMonth(
             @AuthenticationPrincipal OAuth2User principal,
@@ -117,7 +117,7 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getLoansPerMonth(uid, className, grade));
     }
 
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     @GetMapping("/least-popular-books")
     public ResponseEntity<List<BookPopularityDTO>> leastPopularBooks(
             @AuthenticationPrincipal OAuth2User principal) {

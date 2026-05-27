@@ -37,14 +37,14 @@ public class ReadingListController {
     }
 
     @GetMapping("/assignment-targets")
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     public ResponseEntity<ReadingListAssignmentTargetsDTO> getAssignmentTargets(@AuthenticationPrincipal OAuth2User principal) {
         ReadingListAssignmentTargetsDTO targets = readingListService.getAssignmentTargets(authHelper.extractUid(principal));
         return ResponseEntity.ok(targets);
     }
 
     @GetMapping("/assignment-targets/students")
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     public ResponseEntity<?> searchAssignmentStudents(
             @RequestParam(defaultValue = "") String query,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -52,7 +52,7 @@ public class ReadingListController {
     }
 
     @GetMapping("/assignment-targets/classes")
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     public ResponseEntity<?> searchAssignmentClasses(
             @RequestParam(defaultValue = "") String query,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -72,7 +72,7 @@ public class ReadingListController {
     }
 
     @PostMapping("/class")
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     public ResponseEntity<Long> createClassList(@RequestBody CreateReadingListDTO dto, @AuthenticationPrincipal OAuth2User principal) {
         ReadingListEntity created = readingListService.createClassList(dto, authHelper.extractUid(principal));
         return ResponseEntity.ok(created.getId());
@@ -112,14 +112,14 @@ public class ReadingListController {
     }
 
     @DeleteMapping("/class/{id}")
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     public ResponseEntity<Void> deleteClassList(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
         readingListService.deleteClassList(id, authHelper.extractUid(principal));
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/class/{id}")
-    @PreAuthorize("hasAnyRole('TEACHER','BIBLIOTHEEKBEHEERDER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
     public ResponseEntity<Long> updateClassList(@PathVariable Long id, @RequestBody CreateReadingListDTO dto, @AuthenticationPrincipal OAuth2User principal) {
         ReadingListEntity updated = readingListService.updateClassList(id, dto, authHelper.extractUid(principal));
         return ResponseEntity.ok(updated.getId());

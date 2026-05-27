@@ -14,12 +14,12 @@ public class LoanAccessGuard {
 
     private final UserRepository userRepository;
 
-    public UserEntity requireBibliotheekbeheerder(String actorUid) {
+    public UserEntity requireLibrarian(String actorUid) {
         UserEntity actor = userRepository.findBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new EntityNotFoundException("Gebruiker niet gevonden."));
         if (actor.getSchool() == null)
             throw new IllegalArgumentException("De gebruiker heeft geen school gekoppeld.");
-        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER)
+        if (actor.getRole() != UserRoles.LIBRARIAN)
             throw new UnauthorizedRoleException("Alleen bibliotheekbeheerders hebben toegang tot dit overzicht.");
         return actor;
     }

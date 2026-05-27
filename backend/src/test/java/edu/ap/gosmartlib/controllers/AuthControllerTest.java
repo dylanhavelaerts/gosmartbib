@@ -63,7 +63,7 @@ class AuthControllerTest {
         when(authentication.getPrincipal()).thenReturn(oauth2User);
         when(oauth2User.getAttribute("userID")).thenReturn(uid);
         UserDTO expected = new UserDTO(
-                1L, uid, UserRoles.BIBLIOTHEEKBEHEERDER,
+                1L, uid, UserRoles.LIBRARIAN,
                 new SchoolDTO(10L, "AP Hogeschool", "aphogeschool.smartschool.be"),
                 Set.of());
         when(userService.getCurrentUser(uid)).thenReturn(expected);
@@ -72,7 +72,7 @@ class AuthControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1L, response.getBody().id());
-        assertEquals(UserRoles.BIBLIOTHEEKBEHEERDER, response.getBody().role());
+        assertEquals(UserRoles.LIBRARIAN, response.getBody().role());
         verify(userService, times(1)).getCurrentUser(uid);
     }
 

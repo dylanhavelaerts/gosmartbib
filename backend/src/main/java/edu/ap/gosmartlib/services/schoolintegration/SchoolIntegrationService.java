@@ -27,7 +27,7 @@ public class SchoolIntegrationService {
 
     @Transactional(readOnly = true)
     public SchoolIntegrationDTO getIntegration(String actorUid, Long schoolId) {
-        getCurrentBibbeheerder(actorUid);
+        getCurrentLibrarian(actorUid);
 
         SchoolIntegrationEntity integration = schoolIntegrationRepository.findBySchool_Id(schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Integratie niet gevonden"));
@@ -42,7 +42,7 @@ public class SchoolIntegrationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body ontbreekt");
         }
 
-        getCurrentBibbeheerder(actorUid);
+        getCurrentLibrarian(actorUid);
 
         validateRequest(request);
 
@@ -79,17 +79,17 @@ public class SchoolIntegrationService {
         return SchoolIntegrationDTO.from(integration);
     }
 
-    protected UserEntity getCurrentBibbeheerder(String actorUid) {
+    protected UserEntity getCurrentLibrarian(String actorUid) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
-        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER)
+        if (actor.getRole() != UserRoles.LIBRARIAN)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
         return actor;
     }
 
     @Transactional(readOnly = true)
-    public SchoolIntegrationEntity getIntegrationEntityForBibbeheerder(String actorUid, Long schoolId) {
-        getCurrentBibbeheerder(actorUid);
+    public SchoolIntegrationEntity getIntegrationEntityForLibrarian(String actorUid, Long schoolId) {
+        getCurrentLibrarian(actorUid);
 
         return schoolIntegrationRepository.findBySchool_Id(schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Integratie niet gevonden"));

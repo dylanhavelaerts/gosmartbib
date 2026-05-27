@@ -1696,7 +1696,7 @@ public class BookService {
 
     private boolean canSeeDidactic(UserRoles role) {
         return role == UserRoles.TEACHER
-                || role == UserRoles.BIBLIOTHEEKBEHEERDER
+                || role == UserRoles.LIBRARIAN
                 || role == UserRoles.ADMIN;
     }
 

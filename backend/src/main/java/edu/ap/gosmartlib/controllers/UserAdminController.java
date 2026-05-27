@@ -23,32 +23,32 @@ public class UserAdminController {
     private final AuthHelper authHelper;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isLibrarian(authentication)")
     public Page<AdminUserDTO> listUsers(Authentication authentication,
                                         @RequestParam(required = false) Long schoolId,
                                         @RequestParam(required = false) String name,
                                         Pageable pageable) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return userAdminService.listUsersForPlatformAdmin(schoolId, name, pageable);
-        return userAdminService.listUsersForBibbeheerder(
+        return userAdminService.listUsersForLibrarian(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, name, pageable);
     }
 
     @PatchMapping("/{id}/role")
-    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isLibrarian(authentication)")
     public AdminUserDTO updateRole(@PathVariable long id,
                                    @RequestParam(required = false) Long schoolId,
                                    @RequestBody UpdateUserRoleRequest request,
                                    Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return userAdminService.updateUserRoleForPlatformAdmin(schoolId, id, request.role());
-        return userAdminService.updateUserRoleForBibbeheerder(
+        return userAdminService.updateUserRoleForLibrarian(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, id, request.role());
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isLibrarian(authentication)")
     public void deleteUser(@PathVariable long id,
                            @RequestParam(required = false) Long schoolId,
                            Authentication authentication) {
@@ -56,7 +56,7 @@ public class UserAdminController {
             userAdminService.deleteUserForPlatformAdmin(schoolId, id);
             return;
         }
-        userAdminService.deleteUserForBibbeheerder(
+        userAdminService.deleteUserForLibrarian(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), id);
     }
 

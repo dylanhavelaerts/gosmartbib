@@ -24,32 +24,32 @@ public class PurchaseRequestController {
     private final AuthHelper authHelper;
 
     @PostMapping
-    @PreAuthorize("@roleGuard.isTeacherOrBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isTeacherOrLibrarian(authentication)")
     public ResponseEntity<PurchaseRequestDTO> createRequest(@RequestBody CreatePurchaseRequestDTO dto, @AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(purchaseRequestService.createRequest(dto, authHelper.extractUid(principal)));
     }
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isTeacherOrBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isTeacherOrLibrarian(authentication)")
     public ResponseEntity<List<PurchaseRequestDTO>> getAllForSchool(@AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(purchaseRequestService.findAllForSchool(authHelper.extractUid(principal)));
     }
 
     @PatchMapping("/{id}/approve")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<PurchaseRequestDTO> approveRequest(@PathVariable Long id, @RequestBody PurchaseRequestNoteDTO note) {
         return ResponseEntity.ok(purchaseRequestService.approveRequest(id, note.note()));
     }
 
     @PatchMapping("/{id}/reject")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<PurchaseRequestDTO> rejectRequest(@PathVariable Long id, @RequestBody PurchaseRequestNoteDTO note) {
         return ResponseEntity.ok(purchaseRequestService.rejectRequest(id, note.note()));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> deleteRequest(@PathVariable Long id) {
         purchaseRequestService.deleteRequest(id);
         return ResponseEntity.noContent().build();

@@ -36,27 +36,27 @@ public class ReviewController {
     }
 
     @GetMapping("/user/{smartschoolUid}")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<List<ReviewDetailDTO>> getReviewsByUser(@PathVariable String smartschoolUid,
             @AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(reviewService.findAllDetailReviewsByUserId(smartschoolUid, authHelper.extractUid(principal)));
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<List<ReviewDetailDTO>> getReviewsByStatus(@PathVariable ReviewStatus status,
             @AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(reviewService.findAllReviewsByStatus(status, authHelper.extractUid(principal)));
     }
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<List<ReviewDetailDTO>> getAllReviews(@AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(reviewService.findAllReviews(authHelper.extractUid(principal)));
     }
 
     @GetMapping("/moderation")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<List<ReviewDetailDTO>> getModerationReviews(@AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(reviewService.findAllSchoolReviewsForModerator(authHelper.extractUid(principal)));
     }
@@ -75,21 +75,21 @@ public class ReviewController {
     }
 
     @PatchMapping("/{reviewId}/approve")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> approveReview(@PathVariable Long reviewId) {
         reviewService.approveReview(reviewId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{reviewId}/reject")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> rejectReview(@PathVariable Long reviewId) {
         reviewService.rejectReview(reviewId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{reviewId}/admin-delete")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> adminDeleteReview(@PathVariable Long reviewId,
                                                   @RequestBody AdminDeleteReviewRequestDTO request) {
         reviewService.adminDeleteReview(reviewId, request.reason());
@@ -107,12 +107,12 @@ public class ReviewController {
     public ResponseEntity<Void> userDeleteReview(@PathVariable Long reviewId,
             @AuthenticationPrincipal OAuth2User principal,
             Authentication authentication) {
-        reviewService.userDeleteReview(reviewId, authHelper.extractUid(principal), roleGuard.isBibbeheerder(authentication));
+        reviewService.userDeleteReview(reviewId, authHelper.extractUid(principal), roleGuard.isLibrarian(authentication));
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{reviewId}/librarian")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> librarianDeleteReview(@PathVariable Long reviewId) {
         reviewService.librarianDeleteReview(reviewId);
         return ResponseEntity.noContent().build();

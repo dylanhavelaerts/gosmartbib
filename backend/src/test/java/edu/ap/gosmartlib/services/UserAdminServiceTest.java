@@ -38,7 +38,7 @@ class UserAdminServiceTest {
     @Test
     void givenBibbeheerderExists_whenListUsersForAdmin_thenReturnsActiveMappedUsersFromSameSchool() {
 
-        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
+        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School", true);
         UserEntity student = buildUser(4L, "student-uid", UserRoles.STUDENT, 100L, "GO! School", true);
         UserEntity teacher = buildUser(5L, "teacher-uid", UserRoles.TEACHER, 100L, "GO! School", true);
 
@@ -49,7 +49,7 @@ class UserAdminServiceTest {
         // Aangepast naar findBySchoolIdAndName zoals gedefinieerd in de Service
         when(userRepository.findBySchoolIdAndName(100L, null, pageable)).thenReturn(userPage);
 
-        Page<AdminUserDTO> result = userAdminService.listUsersForBibbeheerder("bibbeheerder-uid", null, null, pageable);
+        Page<AdminUserDTO> result = userAdminService.listUsersForLibrarian("bibbeheerder-uid", null, null, pageable);
 
         assertEquals(2, result.getContent().size());
         assertEquals("student-uid", result.getContent().get(0).smartschoolUid());
@@ -71,7 +71,7 @@ class UserAdminServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.listUsersForBibbeheerder("missing-admin", null, null, pageable));
+                () -> userAdminService.listUsersForLibrarian("missing-admin", null, null, pageable));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Ingelogde gebruiker niet gevonden", exception.getReason());
@@ -86,7 +86,7 @@ class UserAdminServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.listUsersForBibbeheerder("teacher-uid", null, null, pageable));
+                () -> userAdminService.listUsersForLibrarian("teacher-uid", null, null, pageable));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Geen toegang", exception.getReason());
@@ -97,7 +97,7 @@ class UserAdminServiceTest {
     @Test
     void givenNullRole_whenUpdateUserRole_ForBibbeheerder_thenThrowsBadRequestWithoutRepositoryCalls() {
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.updateUserRoleForBibbeheerder("bibbeheerder-uid", null, 2L, null));
+                () -> userAdminService.updateUserRoleForLibrarian("bibbeheerder-uid", null, 2L, null));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("Nieuwe rol ontbreekt", exception.getReason());
@@ -106,12 +106,12 @@ class UserAdminServiceTest {
 
     @Test
     void givenTargetUserDoesNotExistInAdminsSchool_whenUpdateUserRole_ForBibbeheerder_thenThrowsNotFound() {
-        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
+        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School", true);
         when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(actor));
         when(userRepository.findByIdAndSchool_Id(99L, 100L)).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.updateUserRoleForBibbeheerder("bibbeheerder-uid", null, 99L, UserRoles.TEACHER));
+                () -> userAdminService.updateUserRoleForLibrarian("bibbeheerder-uid", null, 99L, UserRoles.TEACHER));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Gebruiker niet gevonden", exception.getReason());
@@ -123,12 +123,12 @@ class UserAdminServiceTest {
 
     @Test
     void givenActorTriesToUpdateOwnRole_whenUpdateUserRole_ForBibbeheerder_thenThrowsBadRequest() {
-        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
+        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School", true);
         when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(actor));
         when(userRepository.findByIdAndSchool_Id(1L, 100L)).thenReturn(Optional.of(actor));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> userAdminService.updateUserRoleForBibbeheerder("bibbeheerder-uid", null, 1L, UserRoles.TEACHER));
+                () -> userAdminService.updateUserRoleForLibrarian("bibbeheerder-uid", null, 1L, UserRoles.TEACHER));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("Je kan je eigen rol niet aanpassen", exception.getReason());
@@ -140,14 +140,14 @@ class UserAdminServiceTest {
 
     @Test
     void givenValidAdminAndTarget_whenUpdateUserRole_thenUpdatesRoleForBibbeheerderAndReturnsMappedDto() {
-        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School", true);
+        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School", true);
         UserEntity target = buildUser(2L, "student-uid", UserRoles.STUDENT, 100L, "GO! School", true);
 
         when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(actor));
         when(userRepository.findByIdAndSchool_Id(2L, 100L)).thenReturn(Optional.of(target));
         when(userRepository.save(target)).thenReturn(target);
 
-        AdminUserDTO result = userAdminService.updateUserRoleForBibbeheerder("bibbeheerder-uid", null, 2L, UserRoles.TEACHER);
+        AdminUserDTO result = userAdminService.updateUserRoleForLibrarian("bibbeheerder-uid", null, 2L, UserRoles.TEACHER);
 
         assertNotNull(result);
         assertEquals(2L, result.id());

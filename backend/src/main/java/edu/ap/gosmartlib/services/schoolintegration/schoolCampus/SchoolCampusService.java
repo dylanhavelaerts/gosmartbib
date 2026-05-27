@@ -26,8 +26,8 @@ public class SchoolCampusService {
     private final SchoolRepository schoolRepository;
 
     @Transactional(readOnly = true)
-    public List<SchoolCampusDTO> getCampusesForBibbeheerder(String actorUid, Long schoolId) {
-        UserEntity actor = getCurrentBibbeheerder(actorUid);
+    public List<SchoolCampusDTO> getCampusesForLibrarian(String actorUid, Long schoolId) {
+        UserEntity actor = getCurrentLibrarian(actorUid);
         assertAdminBelongsToSchool(actor, schoolId);
 
         return schoolCampusRepository.findBySchool_IdOrderByNameAsc(schoolId)
@@ -37,11 +37,11 @@ public class SchoolCampusService {
     }
 
     @Transactional
-    public SchoolCampusDTO createCampusForBibbeheerder(
+    public SchoolCampusDTO createCampusForLibrarian(
             String actorUid,
             Long schoolId,
             CreateSchoolCampusRequest request) {
-        UserEntity actor = getCurrentBibbeheerder(actorUid);
+        UserEntity actor = getCurrentLibrarian(actorUid);
         assertAdminBelongsToSchool(actor, schoolId);
 
         if (request == null) {
@@ -68,8 +68,8 @@ public class SchoolCampusService {
     }
 
     @Transactional
-    public void deleteCampusForBibbeheerder(String actorUid, Long schoolId, Long campusId) {
-        UserEntity actor = getCurrentBibbeheerder(actorUid);
+    public void deleteCampusForLibrarian(String actorUid, Long schoolId, Long campusId) {
+        UserEntity actor = getCurrentLibrarian(actorUid);
         assertAdminBelongsToSchool(actor, schoolId);
 
         SchoolCampusEntity campus = schoolCampusRepository.findByIdAndSchool_Id(campusId, schoolId)
@@ -112,10 +112,10 @@ public class SchoolCampusService {
     }
 
 
-    private UserEntity getCurrentBibbeheerder(String actorUid) {
+    private UserEntity getCurrentLibrarian(String actorUid) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
-        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER)
+        if (actor.getRole() != UserRoles.LIBRARIAN)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
         return actor;
     }

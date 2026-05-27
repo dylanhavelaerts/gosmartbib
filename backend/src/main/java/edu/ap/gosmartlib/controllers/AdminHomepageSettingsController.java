@@ -15,13 +15,13 @@ public class AdminHomepageSettingsController {
     private final HomepageSettingsService homepageSettingsService;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<HomepageSettingsDTO> getSettings(@PathVariable Long schoolId) {
         return ResponseEntity.ok(homepageSettingsService.getSettings(schoolId));
     }
 
     @PutMapping
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<HomepageSettingsDTO> saveSettings(@PathVariable Long schoolId, @RequestBody HomepageSettingsDTO request) {
         return ResponseEntity.ok(homepageSettingsService.saveSettings(schoolId, request));
     }

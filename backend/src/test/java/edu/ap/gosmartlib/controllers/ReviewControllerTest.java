@@ -273,7 +273,7 @@ class ReviewControllerTest {
     @Test
     void givenLibrarianPrincipal_whenUserDeleteReview_thenDelegatesWithModeratorDeleteAccess() {
         when(principal.getAttribute("userID")).thenReturn("bib-uid");
-        Collection<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"));
+        Collection<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_LIBRARIAN"));
         doReturn(authorities).when(authentication).getAuthorities();
 
         ResponseEntity<Void> response = reviewController.userDeleteReview(12L, principal, authentication);

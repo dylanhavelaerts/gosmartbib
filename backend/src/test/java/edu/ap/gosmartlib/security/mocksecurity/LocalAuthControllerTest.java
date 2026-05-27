@@ -64,13 +64,13 @@ class LocalAuthControllerTest {
         session.setAttribute("existing", "session");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        ResponseEntity<String> result = controller.switchRole("bibliotheekbeheerder", request, response);
+        ResponseEntity<String> result = controller.switchRole("librarian", request, response);
 
         assertEquals(200, result.getStatusCode().value());
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         verify(userService, times(2)).syncUser(any());
         verify(userRepository, times(1)).findBySmartschoolUid("mock-librarian-local");
-        verify(userRepository, times(1)).save(argThat(saved -> saved.getRole() == UserRoles.BIBLIOTHEEKBEHEERDER));
+        verify(userRepository, times(1)).save(argThat(saved -> saved.getRole() == UserRoles.LIBRARIAN));
     }
 
     @Test

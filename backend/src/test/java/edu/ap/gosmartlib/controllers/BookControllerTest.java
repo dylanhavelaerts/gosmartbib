@@ -60,7 +60,7 @@ class BookControllerTest {
     }
 
     private void stubAsLibrarian(String uid) {
-        when(userService.getRoleBySmartschoolUid(uid)).thenReturn(UserRoles.BIBLIOTHEEKBEHEERDER);
+        when(userService.getRoleBySmartschoolUid(uid)).thenReturn(UserRoles.LIBRARIAN);
     }
 
     // ─── GET /books/all ───────────────────────────────────────────────────────
@@ -246,13 +246,13 @@ class BookControllerTest {
     @Test
     void getAllSpotlight_asLibrarian_returnsOk() throws Exception {
         stubAsLibrarian("uid-lib");
-        when(bookService.getAllBooksInSpotlight(UserRoles.BIBLIOTHEEKBEHEERDER, "uid-lib"))
+        when(bookService.getAllBooksInSpotlight(UserRoles.LIBRARIAN, "uid-lib"))
                 .thenReturn(List.of(buildDTO(1L, "Spotlight")));
 
         mockMvc.perform(get("/books/spotlight/all")
                         .with(oauth2Login()
                                 .attributes(a -> a.put("userID", "uid-lib"))
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
     }
@@ -303,7 +303,7 @@ class BookControllerTest {
         mockMvc.perform(patch("/books/1/spotlight")
                         .param("value", "true")
                         .with(oauth2Login()
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isNoContent());
 
         verify(bookService).updateSpotlight(1L, true);
@@ -316,7 +316,7 @@ class BookControllerTest {
         mockMvc.perform(patch("/books/99/spotlight")
                         .param("value", "false")
                         .with(oauth2Login()
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").exists());
     }
@@ -342,7 +342,7 @@ class BookControllerTest {
                         .param("campus", "Campus Zuid")
                         .with(oauth2Login()
                                 .attributes(a -> a.put("userID", "uid-lib"))
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.title").value("Clean Code"));
     }
@@ -356,7 +356,7 @@ class BookControllerTest {
         mockMvc.perform(post("/books/add/0000000000000")
                         .with(oauth2Login()
                                 .attributes(a -> a.put("userID", "uid-lib"))
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Geen boek voor ISBN: 0000000000000"));
     }
@@ -370,7 +370,7 @@ class BookControllerTest {
         mockMvc.perform(post("/books/add/9780132350884")
                         .with(oauth2Login()
                                 .attributes(a -> a.put("userID", "uid-lib"))
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message").value("Er is een onverwachte fout opgetreden"));
     }
@@ -418,7 +418,7 @@ class BookControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(buildDTOJson(1L, "Updated Title"))
                         .with(oauth2Login()
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Updated Title"));
     }
@@ -431,7 +431,7 @@ class BookControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(buildDTOJson(99L, "Some Title"))
                         .with(oauth2Login()
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").exists());
     }
@@ -445,7 +445,7 @@ class BookControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(buildDTOJson(1L, ""))
                         .with(oauth2Login()
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Titel mag niet leeg zijn"));
     }
@@ -473,7 +473,7 @@ class BookControllerTest {
                         .content(buildCreateRequestJson("New Book"))
                         .with(oauth2Login()
                                 .attributes(a -> a.put("userID", "uid-lib"))
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.title").value("New Book"));
     }
@@ -489,7 +489,7 @@ class BookControllerTest {
                         .content(buildCreateRequestJson(""))
                         .with(oauth2Login()
                                 .attributes(a -> a.put("userID", "uid-lib"))
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Titel is verplicht"));
     }
@@ -523,7 +523,7 @@ class BookControllerTest {
                         .param("confirmedDuplicateRows", "2")
                         .with(oauth2Login()
                                 .attributes(a -> a.put("userID", "uid-lib"))
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isOk());
     }
 
@@ -537,7 +537,7 @@ class BookControllerTest {
                         .file(dummyExcelFile())
                         .with(oauth2Login()
                                 .attributes(a -> a.put("userID", "uid-lib"))
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Upload een excel file die niet leeg is"));
     }
@@ -552,7 +552,7 @@ class BookControllerTest {
                         .file(dummyExcelFile())
                         .with(oauth2Login()
                                 .attributes(a -> a.put("userID", "uid-lib"))
-                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                                .authorities(new SimpleGrantedAuthority("ROLE_LIBRARIAN"))))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message")
                         .value("Er is een fout opgetreden bij het importeren van het Excelbestand."));

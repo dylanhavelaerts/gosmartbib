@@ -3,7 +3,7 @@ package edu.ap.gosmartlib.util;
 public enum UserRoles {
     STUDENT, // "Leerling"
     TEACHER, // "Leerkracht"
-    BIBLIOTHEEKBEHEERDER, // Custom Role
+    LIBRARIAN, // Custom Role
     ADMIN, // "Overkoepelende platform-administrator"
     OTHER; // alle andere rollen
 
@@ -19,8 +19,8 @@ public enum UserRoles {
         return switch (basisrol.toLowerCase()) {
             case "leerling" -> STUDENT;
             case "leerkracht" -> TEACHER;
-            case "directie" -> BIBLIOTHEEKBEHEERDER; // moet mss weg als er geen directie word meegegeven
-            case "bibliotheekbeheerder" -> BIBLIOTHEEKBEHEERDER;
+            case "directie" -> LIBRARIAN; // moet mss weg als er geen directie word meegegeven
+            case "librarian" -> LIBRARIAN;
             default -> OTHER;
         };
     }

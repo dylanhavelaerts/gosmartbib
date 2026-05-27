@@ -28,7 +28,7 @@ class LoanAccessGuardTest {
         when(userRepository.findBySmartschoolUid("unknown")).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class,
-                () -> accessGuard.requireBibliotheekbeheerder("unknown"));
+                () -> accessGuard.requireLibrarian("unknown"));
     }
 
     @Test
@@ -38,7 +38,7 @@ class LoanAccessGuardTest {
         when(userRepository.findBySmartschoolUid("uid")).thenReturn(Optional.of(user));
 
         assertThrows(IllegalArgumentException.class,
-                () -> accessGuard.requireBibliotheekbeheerder("uid"));
+                () -> accessGuard.requireLibrarian("uid"));
     }
 
     @Test
@@ -49,17 +49,17 @@ class LoanAccessGuardTest {
         when(userRepository.findBySmartschoolUid("uid")).thenReturn(Optional.of(user));
 
         assertThrows(UnauthorizedRoleException.class,
-                () -> accessGuard.requireBibliotheekbeheerder("uid"));
+                () -> accessGuard.requireLibrarian("uid"));
     }
 
     @Test
     void givenValidBibliotheekbeheerder_whenRequireBibliotheekbeheerder_thenReturnsUser() {
         UserEntity user = mock(UserEntity.class);
         when(user.getSchool()).thenReturn(mock(SchoolEntity.class));
-        when(user.getRole()).thenReturn(UserRoles.BIBLIOTHEEKBEHEERDER);
+        when(user.getRole()).thenReturn(UserRoles.LIBRARIAN);
         when(userRepository.findBySmartschoolUid("uid")).thenReturn(Optional.of(user));
 
-        UserEntity result = accessGuard.requireBibliotheekbeheerder("uid");
+        UserEntity result = accessGuard.requireLibrarian("uid");
 
         assertSame(user, result);
     }

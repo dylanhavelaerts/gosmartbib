@@ -45,17 +45,17 @@ class RoleGuardTest {
         assertFalse(roleGuard.isAdmin(null));
     }
 
-    // ─── isBibbeheerder ───────────────────────────────────────────────────────
+    // ─── isLibrarian ───────────────────────────────────────────────────────
 
     @Test
     void givenBibbeheerder_whenIsBibbeheerder_thenReturnsTrue() {
         UserEntity user = new UserEntity();
-        user.setRole(UserRoles.BIBLIOTHEEKBEHEERDER);
+        user.setRole(UserRoles.LIBRARIAN);
         when(authentication.getPrincipal()).thenReturn(oAuth2User);
         when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
 
-        assertTrue(roleGuard.isBibbeheerder(authentication));
+        assertTrue(roleGuard.isLibrarian(authentication));
     }
 
     @Test
@@ -66,12 +66,12 @@ class RoleGuardTest {
         when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
 
-        assertFalse(roleGuard.isBibbeheerder(authentication));
+        assertFalse(roleGuard.isLibrarian(authentication));
     }
 
     @Test
     void givenNullAuthentication_whenIsBibbeheerder_thenReturnsFalse() {
-        assertFalse(roleGuard.isBibbeheerder(null));
+        assertFalse(roleGuard.isLibrarian(null));
     }
 
     @Test
@@ -79,7 +79,7 @@ class RoleGuardTest {
         when(authentication.getPrincipal()).thenReturn(oAuth2User);
         when(oAuth2User.getAttribute("userID")).thenReturn(null);
 
-        assertFalse(roleGuard.isBibbeheerder(authentication));
+        assertFalse(roleGuard.isLibrarian(authentication));
         verifyNoInteractions(userRepository);
     }
 
@@ -89,10 +89,10 @@ class RoleGuardTest {
         when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.empty());
 
-        assertFalse(roleGuard.isBibbeheerder(authentication));
+        assertFalse(roleGuard.isLibrarian(authentication));
     }
 
-    // ─── isTeacherOrBibbeheerder ──────────────────────────────────────────────
+    // ─── isTeacherOrLibrarian ──────────────────────────────────────────────
 
     @Test
     void givenTeacher_whenIsTeacherOrBibbeheerder_thenReturnsTrue() {
@@ -102,7 +102,7 @@ class RoleGuardTest {
         when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
 
-        assertTrue(roleGuard.isTeacherOrBibbeheerder(authentication));
+        assertTrue(roleGuard.isTeacherOrLibrarian(authentication));
     }
 
     @Test
@@ -113,6 +113,6 @@ class RoleGuardTest {
         when(oAuth2User.getAttribute("userID")).thenReturn("uid-1");
         when(userRepository.findBySmartschoolUid("uid-1")).thenReturn(Optional.of(user));
 
-        assertFalse(roleGuard.isTeacherOrBibbeheerder(authentication));
+        assertFalse(roleGuard.isTeacherOrLibrarian(authentication));
     }
 }

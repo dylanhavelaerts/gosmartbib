@@ -117,7 +117,7 @@ class OAuth2LoginSuccessHandlerTest {
                 "smartschool");
 
         UserEntity syncedUser = new UserEntity();
-        syncedUser.setRole(UserRoles.BIBLIOTHEEKBEHEERDER);
+        syncedUser.setRole(UserRoles.LIBRARIAN);
         when(userService.syncUser(oauth2User)).thenReturn(syncedUser);
 
         MockHttpServletResponse response = new MockHttpServletResponse();

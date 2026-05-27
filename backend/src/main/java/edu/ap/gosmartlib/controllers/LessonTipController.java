@@ -21,7 +21,7 @@ public class LessonTipController {
     private final AuthHelper authHelper;
 
     @GetMapping("/books/{bookId}/lesson-tips")
-    @PreAuthorize("@roleGuard.isTeacherOrBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isTeacherOrLibrarian(authentication)")
     public ResponseEntity<List<LessonTipDTO>> getByBook(
             @PathVariable Long bookId,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -29,7 +29,7 @@ public class LessonTipController {
     }
 
     @PostMapping("/books/{bookId}/lesson-tips")
-    @PreAuthorize("@roleGuard.isTeacherOrBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isTeacherOrLibrarian(authentication)")
     public ResponseEntity<LessonTipDTO> create(
             @PathVariable Long bookId,
             @RequestBody CreateLessonTipDTO dto,
@@ -39,7 +39,7 @@ public class LessonTipController {
     }
 
     @PutMapping("/lesson-tips/{id}")
-    @PreAuthorize("@roleGuard.isTeacherOrBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isTeacherOrLibrarian(authentication)")
     public ResponseEntity<LessonTipDTO> update(
             @PathVariable Long id,
             @RequestBody CreateLessonTipDTO dto,
@@ -48,7 +48,7 @@ public class LessonTipController {
     }
 
     @DeleteMapping("/lesson-tips/{id}")
-    @PreAuthorize("@roleGuard.isTeacherOrBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isTeacherOrLibrarian(authentication)")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
             @AuthenticationPrincipal OAuth2User principal) {

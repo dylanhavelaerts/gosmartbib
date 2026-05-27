@@ -42,7 +42,7 @@ public class AdminLoanService {
 
     @Transactional(readOnly = true)
     public Page<LibrarianActiveLoanDTO> getActiveLoansForSchool(String actorUid, Long classId, int page, int size) {
-        UserEntity actor = accessGuard.requireBibliotheekbeheerder(actorUid);
+        UserEntity actor = accessGuard.requireLibrarian(actorUid);
         Long schoolId = actor.getSchool().getId();
         PageRequest pageable = PageRequest.of(page, size);
 
@@ -66,7 +66,7 @@ public class AdminLoanService {
 
     @Transactional(readOnly = true)
     public Page<LibrarianLoanHistoryDTO> getLoanHistoryForSchool(String actorUid, Long classId, int page, int size) {
-        UserEntity actor = accessGuard.requireBibliotheekbeheerder(actorUid);
+        UserEntity actor = accessGuard.requireLibrarian(actorUid);
         Long schoolId = actor.getSchool().getId();
         PageRequest pageable = PageRequest.of(page, size);
 
@@ -89,7 +89,7 @@ public class AdminLoanService {
     }
     @Transactional(readOnly = true)
     public List<ReadingListAssignmentTargetsDTO.ClassTarget> getSchoolClasses(String actorUid) {
-        UserEntity actor = accessGuard.requireBibliotheekbeheerder(actorUid);
+        UserEntity actor = accessGuard.requireLibrarian(actorUid);
         return schoolClassRepository.findAllBySchool_IdOrderByNameAsc(actor.getSchool().getId())
                 .stream()
                 .collect(Collectors.toMap(
