@@ -36,6 +36,12 @@ import java.util.stream.Collectors;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 
+/**
+ * Beheert het volledige lifecycle van reviews: indienen, bewerken, modereren en verwijderen.
+ * Werkt samen met ReviewAutoModerationService voor automatische contentscanning
+ * en herberekent de gemiddelde boekenrating na elke wijziging.
+ */
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -74,7 +80,16 @@ public class ReviewService {
                 .toList();
     }
 
-    // Voor bij de boekDetail pagina, toont alle reviews van een boek
+    /**
+     * Haalt reviews op voor een boekdetailpagina.
+     * Toont enkel goedgekeurde reviews én de eigen review van de ingelogde gebruiker,
+     * ook als die nog in moderatie staat. Verwijderde reviews worden altijd gefilterd.
+     *
+     * @param isbn het ISBN van het boek
+     * @param actorUid de Smartschool-UID van de ingelogde gebruiker, of null als niet ingelogd
+     * @return lijst van zichtbare reviews in summary-formaat
+     */
+
     public List<ReviewSummaryDTO> findAllSummaryReviewsByBook(String isbn, String actorUid) {
         List<ReviewEntity> reviews = reviewRepository.findByBook_Isbn(isbn);
         Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, reviews);
@@ -126,6 +141,17 @@ public class ReviewService {
     // endregion
 
     // region Post methods
+    /**
+     * Dient een nieuwe review in en past automatische moderatie toe.
+     * De review start als APPROVED maar wordt omgezet naar AWAITING_MODERATION
+     * als de auto-moderatie ongepaste inhoud detecteert.
+     *
+     * @param request de reviewgegevens (isbn, tekst, rating, spoiler, anoniem)
+     * @param smartschoolUid de UID van de gebruiker die de review indient
+     * @return de aangemaakte review inclusief eventuele moderationNotice
+     * @throws AlreadyReviewedException als de gebruiker al een review heeft voor dit boek
+     * @throws OutOfBoundsException als de tekst langer is dan 255 tekens of de rating buiten 0-5 valt
+     */
     @CacheEvict(value = "achievements", key = "#smartschoolUid")
     public ReviewSummaryDTO submitReview(ReviewRequestDTO request, String smartschoolUid) {
         try {
@@ -189,6 +215,17 @@ public class ReviewService {
     // endregion
 
     // region Patch methods
+
+    /**
+     * Bewerkt een bestaande review. Reset de moderatiestatus naar APPROVED en
+     * past automatische moderatie opnieuw toe op de nieuwe tekst.
+     *
+     * @param reviewId het ID van de te bewerken review
+     * @param request de nieuwe reviewgegevens
+     * @param smartschoolUid de UID van de gebruiker die de bewerking uitvoert
+     * @return de bijgewerkte review
+     * @throws SecurityException als de gebruiker niet de eigenaar is van de review
+     */
     @CacheEvict(value = "achievements", key = "#smartschoolUid")
     public ReviewSummaryDTO editReview(Long reviewId, ReviewRequestDTO request, String smartschoolUid) { // <--FIX: smartschoolUid toegevoegd voor ownership check
         try {
