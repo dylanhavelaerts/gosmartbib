@@ -1,6 +1,7 @@
-package edu.ap.gosmartlib.services;
+package edu.ap.gosmartlib.services.book;
 
 import edu.ap.gosmartlib.dto.*;
+import edu.ap.gosmartlib.dto.book.*;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
 import edu.ap.gosmartlib.entities.book.BookCopyEntity;
@@ -16,6 +17,7 @@ import edu.ap.gosmartlib.repositories.book.BookInventoryRepository;
 import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
+import edu.ap.gosmartlib.services.InventoryAdjustmentService;
 import edu.ap.gosmartlib.util.BookCopyCondition;
 import org.springframework.data.domain.*;
 import edu.ap.gosmartlib.util.UserRoles;

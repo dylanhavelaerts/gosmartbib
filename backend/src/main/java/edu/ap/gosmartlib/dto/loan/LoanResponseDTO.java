@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.dto;
+package edu.ap.gosmartlib.dto.loan;
 
 import java.time.LocalDate;
 

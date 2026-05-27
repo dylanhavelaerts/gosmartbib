@@ -1,9 +1,13 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.book;
 
 import edu.ap.gosmartlib.dto.*;
+import edu.ap.gosmartlib.dto.book.BookCopyLabelDTO;
+import edu.ap.gosmartlib.dto.book.BookDTO;
+import edu.ap.gosmartlib.dto.book.BookFilterRequest;
+import edu.ap.gosmartlib.dto.book.CreateBookRequestDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.security.AuthHelper;
-import edu.ap.gosmartlib.services.BookService;
+import edu.ap.gosmartlib.services.book.BookService;
 import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
@@ -300,7 +304,7 @@ public class BookController {
     @PatchMapping("/copies/{copyId}/condition")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateCopyCondition(@PathVariable Long copyId, @RequestBody UpdateCopyConditionRequest request) {
+    public void updateCopyCondition(@PathVariable Long copyId, @RequestBody UpdateCopyConditionRequestDTO request) {
         bookService.updateCopyCondition(copyId, request.condition(), request.notes());
     }
 

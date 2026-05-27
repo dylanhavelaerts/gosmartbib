@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.readinglist;
 
 import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
 import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
@@ -37,14 +37,14 @@ public class ReadingListController {
     }
 
     @GetMapping("/assignment-targets")
-    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN')")
     public ResponseEntity<ReadingListAssignmentTargetsDTO> getAssignmentTargets(@AuthenticationPrincipal OAuth2User principal) {
         ReadingListAssignmentTargetsDTO targets = readingListService.getAssignmentTargets(authHelper.extractUid(principal));
         return ResponseEntity.ok(targets);
     }
 
     @GetMapping("/assignment-targets/students")
-    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN')")
     public ResponseEntity<?> searchAssignmentStudents(
             @RequestParam(defaultValue = "") String query,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -52,7 +52,7 @@ public class ReadingListController {
     }
 
     @GetMapping("/assignment-targets/classes")
-    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN')")
     public ResponseEntity<?> searchAssignmentClasses(
             @RequestParam(defaultValue = "") String query,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -72,7 +72,7 @@ public class ReadingListController {
     }
 
     @PostMapping("/class")
-    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','LIBRARIAN')")
     public ResponseEntity<Long> createClassList(@RequestBody CreateReadingListDTO dto, @AuthenticationPrincipal OAuth2User principal) {
         ReadingListEntity created = readingListService.createClassList(dto, authHelper.extractUid(principal));
         return ResponseEntity.ok(created.getId());

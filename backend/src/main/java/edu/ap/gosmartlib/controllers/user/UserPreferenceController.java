@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.user;
 
 import edu.ap.gosmartlib.dto.user.UserPreferenceDTO;
 import edu.ap.gosmartlib.security.AuthHelper;

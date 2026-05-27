@@ -1,6 +1,6 @@
-package edu.ap.gosmartlib.services;
+package edu.ap.gosmartlib.services.book;
 
-import edu.ap.gosmartlib.dto.BookFilterRequest;
+import edu.ap.gosmartlib.dto.book.BookFilterRequest;
 import edu.ap.gosmartlib.exceptions.NegativeValueException;
 import org.springframework.stereotype.Component;
 

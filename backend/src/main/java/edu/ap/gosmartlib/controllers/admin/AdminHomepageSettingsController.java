@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.admin;
 
 import edu.ap.gosmartlib.dto.school.HomepageSettingsDTO;
 import edu.ap.gosmartlib.services.school.HomepageSettingsService;

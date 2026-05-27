@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.book;
 
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.messages.BookNotificationService;

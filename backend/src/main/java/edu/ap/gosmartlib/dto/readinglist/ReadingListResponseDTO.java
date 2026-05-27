@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.dto.readinglist;
 
-import edu.ap.gosmartlib.dto.BookDTO;
+import edu.ap.gosmartlib.dto.book.BookDTO;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;

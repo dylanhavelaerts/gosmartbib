@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.admin;
 
 import edu.ap.gosmartlib.dto.sync.SyncSummaryDTO;
 import edu.ap.gosmartlib.services.oneroster.OneRosterSyncService;

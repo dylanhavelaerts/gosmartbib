@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.dto;
+package edu.ap.gosmartlib.dto.school;
 
 import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
 

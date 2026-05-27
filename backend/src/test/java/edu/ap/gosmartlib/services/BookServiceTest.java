@@ -1,6 +1,7 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.*;
+import edu.ap.gosmartlib.dto.book.*;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBookItem;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
@@ -15,6 +16,8 @@ import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
 import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.services.book.BookFilterValidator;
+import edu.ap.gosmartlib.services.book.BookService;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;

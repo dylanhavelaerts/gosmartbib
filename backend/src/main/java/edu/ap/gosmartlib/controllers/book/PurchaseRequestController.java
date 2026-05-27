@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.book;
 
 import edu.ap.gosmartlib.dto.purchaserequest.CreatePurchaseRequestDTO;
 import edu.ap.gosmartlib.dto.purchaserequest.PurchaseRequestDTO;

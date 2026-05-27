@@ -1,5 +1,7 @@
-package edu.ap.gosmartlib.dto;
+package edu.ap.gosmartlib.dto.user;
 
+import edu.ap.gosmartlib.dto.SchoolDTO;
+import edu.ap.gosmartlib.dto.school.SchoolClassDTO;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.util.UserRoles;
 

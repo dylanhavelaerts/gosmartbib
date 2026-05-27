@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.book;
 
 import edu.ap.gosmartlib.dto.lessontip.CreateLessonTipDTO;
 import edu.ap.gosmartlib.dto.lessontip.LessonTipDTO;

@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
+import edu.ap.gosmartlib.controllers.book.ReviewController;
 import edu.ap.gosmartlib.dto.reviews.*;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.ReviewService;

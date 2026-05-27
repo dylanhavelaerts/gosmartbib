@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
 import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
 import edu.ap.gosmartlib.repositories.book.BookInventoryRepository;
 import edu.ap.gosmartlib.repositories.book.BookRepository;
+import edu.ap.gosmartlib.services.book.BookService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -22,7 +23,7 @@ public class DataSeeding implements CommandLineRunner {
         private final BookInventoryRepository bookInventoryRepository;
         private final BookCopyRepository bookCopyRepository;
         private final SchoolRepository schoolRepository;
-        private final edu.ap.gosmartlib.services.BookService bookService;
+        private final BookService bookService;
         private static final Logger logger = LoggerFactory.getLogger(DataSeeding.class);
 
         private SchoolEntity seedSchoolPrimary;
@@ -30,7 +31,7 @@ public class DataSeeding implements CommandLineRunner {
 
         public DataSeeding(BookRepository bookRepository, BookInventoryRepository bookInventoryRepository,
                         BookCopyRepository bookCopyRepository, SchoolRepository schoolRepository,
-                        edu.ap.gosmartlib.services.BookService bookService) {
+                        BookService bookService) {
                 this.bookRepository = bookRepository;
                 this.bookInventoryRepository = bookInventoryRepository;
                 this.bookCopyRepository = bookCopyRepository;

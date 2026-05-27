@@ -1,7 +1,7 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.user;
 
 import edu.ap.gosmartlib.dto.school.HomepageSettingsDTO;
-import edu.ap.gosmartlib.dto.UserDTO;
+import edu.ap.gosmartlib.dto.user.UserDTO;
 import edu.ap.gosmartlib.services.school.HomepageSettingsService;
 import edu.ap.gosmartlib.services.users.UserService;
 import lombok.RequiredArgsConstructor;

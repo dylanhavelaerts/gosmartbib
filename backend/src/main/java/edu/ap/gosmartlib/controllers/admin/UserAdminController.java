@@ -1,7 +1,7 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.admin;
 
 import edu.ap.gosmartlib.dto.AdminUserDTO;
-import edu.ap.gosmartlib.dto.UpdateUserRoleRequest;
+import edu.ap.gosmartlib.dto.UpdateUserRoleRequestDTO;
 import edu.ap.gosmartlib.security.AdminPrincipal;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.users.UserAdminService;
@@ -38,7 +38,7 @@ public class UserAdminController {
     @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isLibrarian(authentication)")
     public AdminUserDTO updateRole(@PathVariable long id,
                                    @RequestParam(required = false) Long schoolId,
-                                   @RequestBody UpdateUserRoleRequest request,
+                                   @RequestBody UpdateUserRoleRequestDTO request,
                                    Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return userAdminService.updateUserRoleForPlatformAdmin(schoolId, id, request.role());

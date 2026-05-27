@@ -2,10 +2,11 @@ package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.config.TestSecurityConfig;
 import edu.ap.gosmartlib.dto.*;
+import edu.ap.gosmartlib.dto.book.BookDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
-import edu.ap.gosmartlib.services.BookService;
+import edu.ap.gosmartlib.services.book.BookService;
 import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.Test;

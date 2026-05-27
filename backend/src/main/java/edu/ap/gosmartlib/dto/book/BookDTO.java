@@ -1,8 +1,9 @@
-package edu.ap.gosmartlib.dto;
+package edu.ap.gosmartlib.dto.book;
 
 import java.util.List;
 
-public record CreateBookRequestDTO(
+public record BookDTO(
+                Long id,
                 String title,
                 List<String> authors,
                 String publisher,
@@ -12,13 +13,14 @@ public record CreateBookRequestDTO(
                 String thumbnail,
                 String language,
                 Double rating,
+                String isbn,
                 Integer publishedYear,
-                Boolean spotlight,
-                boolean didacticTag,
+                Boolean didacticTag,
                 List<String> labels,
                 String readingLevel,
                 Integer totalCopies,
                 Integer availableCopies,
                 String ageRange,
-                List<CreateBookInventoryRequestDTO> inventories) {
+                String previewLink,
+                List<BookInventoryDTO> inventories) {
 }

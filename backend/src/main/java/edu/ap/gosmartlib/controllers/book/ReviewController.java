@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.book;
 
 import edu.ap.gosmartlib.dto.reviews.ReviewDetailDTO;
 import edu.ap.gosmartlib.dto.reviews.AdminDeleteReviewRequestDTO;

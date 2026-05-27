@@ -1,9 +1,10 @@
 package edu.ap.gosmartlib.controllers;
 
+import edu.ap.gosmartlib.controllers.admin.UserAdminController;
 import edu.ap.gosmartlib.dto.AdminUserDTO;
-import edu.ap.gosmartlib.dto.SchoolClassDTO;
+import edu.ap.gosmartlib.dto.school.SchoolClassDTO;
 import edu.ap.gosmartlib.dto.SchoolDTO;
-import edu.ap.gosmartlib.dto.UpdateUserRoleRequest;
+import edu.ap.gosmartlib.dto.UpdateUserRoleRequestDTO;
 import edu.ap.gosmartlib.entities.AdminEntity;
 import edu.ap.gosmartlib.security.AdminPrincipal;
 import edu.ap.gosmartlib.security.AuthHelper;
@@ -107,7 +108,7 @@ class UserAdminControllerTest {
 
     @Test
     void givenValidOAuthUserAndRequest_whenUpdateRole_thenDelegatesToService() {
-        UpdateUserRoleRequest request = new UpdateUserRoleRequest(UserRoles.TEACHER);
+        UpdateUserRoleRequestDTO request = new UpdateUserRoleRequestDTO(UserRoles.TEACHER);
         AdminUserDTO expected = buildAdminUserDTO(2L, "student-uid", UserRoles.TEACHER);
 
         when(authentication.getPrincipal()).thenReturn(oAuth2User);
@@ -125,7 +126,7 @@ class UserAdminControllerTest {
 
     @Test
     void givenNullPrincipal_whenUpdateRole_thenThrowsUnauthorized() {
-        UpdateUserRoleRequest request = new UpdateUserRoleRequest(UserRoles.TEACHER);
+        UpdateUserRoleRequestDTO request = new UpdateUserRoleRequestDTO(UserRoles.TEACHER);
         when(authentication.getPrincipal()).thenReturn(null);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
@@ -138,7 +139,7 @@ class UserAdminControllerTest {
 
     @Test
     void givenBlankUid_whenUpdateRole_thenThrowsUnauthorized() {
-        UpdateUserRoleRequest request = new UpdateUserRoleRequest(UserRoles.TEACHER);
+        UpdateUserRoleRequestDTO request = new UpdateUserRoleRequestDTO(UserRoles.TEACHER);
         when(authentication.getPrincipal()).thenReturn(oAuth2User);
         when(oAuth2User.getAttribute("userID")).thenReturn(" ");
 
@@ -177,7 +178,7 @@ class UserAdminControllerTest {
         adminEntity.setId(1L);
         AdminPrincipal adminPrincipal = new AdminPrincipal(adminEntity);
 
-        UpdateUserRoleRequest request = new UpdateUserRoleRequest(UserRoles.TEACHER);
+        UpdateUserRoleRequestDTO request = new UpdateUserRoleRequestDTO(UserRoles.TEACHER);
         AdminUserDTO expected = buildAdminUserDTO(2L, "student-uid", UserRoles.TEACHER);
 
         when(authentication.getPrincipal()).thenReturn(adminPrincipal);

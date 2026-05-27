@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+package edu.ap.gosmartlib.controllers.user;
 
 import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesRequest;
 import edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesResponse;
