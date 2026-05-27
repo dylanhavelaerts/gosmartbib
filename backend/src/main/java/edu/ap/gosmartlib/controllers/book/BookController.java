@@ -32,8 +32,6 @@ public class BookController {
     private final UserService userService;
     private final AuthHelper authHelper;
 
-
-
     /**
      * Geeft alle boeken terug met server-side paginatie.
      *
@@ -94,12 +92,23 @@ public class BookController {
         return bookService.getAvailableLanguages(authHelper.extractUidOrNull(principal));
     }
 
+    @GetMapping("/categories")
+    public List<String> getAvailableCategories(@AuthenticationPrincipal OAuth2User principal) {
+        return bookService.getAvailableCategories(authHelper.extractUidOrNull(principal));
+    }
+
+    @GetMapping("/labels")
+    public List<String> getAvailableLabels(@AuthenticationPrincipal OAuth2User principal) {
+        return bookService.getAvailableLabels(authHelper.extractUidOrNull(principal));
+    }
+
     /**
      * Geeft het boek terug met het opgegeven id.
      */
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookById(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(bookService.getBookById(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
+        return ResponseEntity
+                .ok(bookService.getBookById(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
     }
 
     @GetMapping("/spotlight")
@@ -166,13 +175,12 @@ public class BookController {
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     @PostMapping("/add/{isbn}")
     public ResponseEntity<?> addBookByIsbn(@PathVariable String isbn,
-                                           @RequestParam(required = false) String campus,
-                                           @RequestParam(required = false) Integer amount,
-                                           @AuthenticationPrincipal OAuth2User principal) {
+            @RequestParam(required = false) String campus,
+            @RequestParam(required = false) Integer amount,
+            @AuthenticationPrincipal OAuth2User principal) {
         BookDTO addedBook = bookService.addBookByIsbn(isbn, authHelper.extractUidOrNull(principal), campus, amount);
         return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
     }
-
 
     /**
      * Zoekt een boek op via ISBN zonder het op te slaan (preview).
@@ -254,7 +262,7 @@ public class BookController {
     @PostMapping("/add")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request,
-                                           @AuthenticationPrincipal OAuth2User principal) {
+            @AuthenticationPrincipal OAuth2User principal) {
         BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
         return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
     }

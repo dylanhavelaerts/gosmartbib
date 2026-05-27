@@ -2351,6 +2351,96 @@ class BookServiceTest {
         }
 
         @Test
+        void givenNoUser_whenGetAvailableLanguages_thenReturnsGlobalLanguages() {
+                when(bookRepository.findDistinctLanguages())
+                                .thenReturn(List.of("nl", " en ", "EN", "", "swe"));
+
+                List<String> result = bookService.getAvailableLanguages(null);
+
+                assertEquals(List.of("en", "nl", "swe"), result);
+
+                verify(bookRepository).findDistinctLanguages();
+                verify(bookRepository, never()).findDistinctLanguagesForSchool(anyLong());
+                verify(userRepository, never()).findDetailedBySmartschoolUid(anyString());
+        }
+
+        @Test
+        void givenStudentUser_whenGetAvailableCategories_thenReturnsCategoriesForOwnSchoolOnly() {
+                stubStudentSchoolLookup();
+
+                List<String> categories = new ArrayList<>();
+                categories.add("Fantasy");
+                categories.add(" avontuur ");
+                categories.add("FANTASY");
+                categories.add("Historisch");
+                categories.add("");
+                categories.add(null);
+
+                when(bookRepository.findDistinctCategoriesForSchool(1L))
+                                .thenReturn(categories);
+
+                List<String> result = bookService.getAvailableCategories(STUDENT_UID);
+
+                assertEquals(List.of("avontuur", "Fantasy", "Historisch"), result);
+
+                verify(userRepository).findDetailedBySmartschoolUid(STUDENT_UID);
+                verify(bookRepository).findDistinctCategoriesForSchool(1L);
+                verify(bookRepository, never()).findDistinctCategories();
+        }
+
+        @Test
+        void givenNoUser_whenGetAvailableCategories_thenReturnsGlobalCategories() {
+                when(bookRepository.findDistinctCategories())
+                                .thenReturn(List.of("Poëzie", " fantasy ", "FANTASY", "", "Sciencefiction"));
+
+                List<String> result = bookService.getAvailableCategories(null);
+
+                assertEquals(List.of("fantasy", "Poëzie", "Sciencefiction"), result);
+
+                verify(bookRepository).findDistinctCategories();
+                verify(bookRepository, never()).findDistinctCategoriesForSchool(anyLong());
+                verify(userRepository, never()).findDetailedBySmartschoolUid(anyString());
+        }
+
+        @Test
+        void givenStudentUser_whenGetAvailableLabels_thenReturnsLabelsForOwnSchoolOnly() {
+                stubStudentSchoolLookup();
+
+                List<String> labels = new ArrayList<>();
+                labels.add("Humor");
+                labels.add(" identiteit ");
+                labels.add("HUMOR");
+                labels.add("Vriendschap");
+                labels.add("");
+                labels.add(null);
+
+                when(bookRepository.findDistinctLabelsForSchool(1L))
+                                .thenReturn(labels);
+
+                List<String> result = bookService.getAvailableLabels(STUDENT_UID);
+
+                assertEquals(List.of("Humor", "identiteit", "Vriendschap"), result);
+
+                verify(userRepository).findDetailedBySmartschoolUid(STUDENT_UID);
+                verify(bookRepository).findDistinctLabelsForSchool(1L);
+                verify(bookRepository, never()).findDistinctLabels();
+        }
+
+        @Test
+        void givenBlankUser_whenGetAvailableLabels_thenReturnsGlobalLabels() {
+                when(bookRepository.findDistinctLabels())
+                                .thenReturn(List.of("Avontuur", " coming-of-age ", "AVONTUUR", "", "Familie"));
+
+                List<String> result = bookService.getAvailableLabels("   ");
+
+                assertEquals(List.of("Avontuur", "coming-of-age", "Familie"), result);
+
+                verify(bookRepository).findDistinctLabels();
+                verify(bookRepository, never()).findDistinctLabelsForSchool(anyLong());
+                verify(userRepository, never()).findDetailedBySmartschoolUid(anyString());
+        }
+
+        @Test
         void givenNoExplicitInventories_whenAddManualBook_thenCreatesInventoryForCurrentUsersSchool() {
                 CreateBookRequestDTO request = new CreateBookRequestDTO(
                                 "Manual Book",
@@ -2448,8 +2538,10 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0, 0),
-                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0, 0)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0,
+                                                                0),
+                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0,
+                                                                0)));
 
                 BookDTO result = bookService.updateBook(10L, update);
 
@@ -2500,7 +2592,8 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 2, 3, 0, 0, 0)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 2, 3, 0, 0,
+                                                                0)));
 
                 IllegalArgumentException ex = assertThrows(
                                 IllegalArgumentException.class,
@@ -2748,8 +2841,10 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0, 0),
-                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0, 0)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0,
+                                                                0),
+                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0,
+                                                                0)));
 
                 BookDTO result = bookService.updateBook(10L, update);
 

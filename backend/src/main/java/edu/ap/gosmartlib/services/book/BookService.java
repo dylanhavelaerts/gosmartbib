@@ -360,7 +360,8 @@ public class BookService {
                 request.categories(),
                 request.labels(),
                 request.readingLevel(),
-                Boolean.TRUE.equals(request.didacticOnly()),// null-safe unbox moet erbij anders leerkrachtenpad geeft errors
+                Boolean.TRUE.equals(request.didacticOnly()), // null-safe unbox moet erbij anders leerkrachtenpad geeft
+                                                             // errors
                 request.minPageCount(),
                 request.maxPageCount(),
                 request.minPubYear(),
@@ -384,22 +385,33 @@ public class BookService {
                 ? bookRepository.findDistinctLanguages()
                 : bookRepository.findDistinctLanguagesForSchool(schoolId);
 
-        List<String> cleanedLanguages = rawLanguages.stream()
-                .map(this::safeTrim)
-                .filter(language -> language != null && !language.isBlank())
-                .sorted(String.CASE_INSENSITIVE_ORDER)
-                .toList();
+        return cleanDistinctOptions(rawLanguages);
+    }
 
-        List<String> availableLanguages = new ArrayList<>();
-        Set<String> seenLanguages = new HashSet<>();
+    @Transactional(readOnly = true)
+    public List<String> getAvailableCategories(String currentUserUid) {
+        Long schoolId = currentUserUid == null || currentUserUid.isBlank()
+                ? null
+                : getRequesterSchoolId(currentUserUid);
 
-        for (String language : cleanedLanguages) {
-            if (seenLanguages.add(language.toLowerCase(Locale.ROOT))) {
-                availableLanguages.add(language);
-            }
-        }
+        List<String> rawCategories = schoolId == null
+                ? bookRepository.findDistinctCategories()
+                : bookRepository.findDistinctCategoriesForSchool(schoolId);
 
-        return availableLanguages;
+        return cleanDistinctOptions(rawCategories);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getAvailableLabels(String currentUserUid) {
+        Long schoolId = currentUserUid == null || currentUserUid.isBlank()
+                ? null
+                : getRequesterSchoolId(currentUserUid);
+
+        List<String> rawLabels = schoolId == null
+                ? bookRepository.findDistinctLabels()
+                : bookRepository.findDistinctLabelsForSchool(schoolId);
+
+        return cleanDistinctOptions(rawLabels);
     }
 
     public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid, String campus) {
@@ -1133,7 +1145,8 @@ public class BookService {
 
         BookCopyCondition previousCondition = copy.getCopyCondition();
         copy.setCopyCondition(newCondition);
-        if (notes != null) copy.setNotes(notes);
+        if (notes != null)
+            copy.setNotes(notes);
         bookCopyRepository.save(copy);
 
         if (previousCondition != newCondition) {
@@ -1143,7 +1156,8 @@ public class BookService {
 
     // region Helper functies
     private static String generateEan13(long copyId) {
-        // prefix 200-299 is gereserveerd voor intern gebruik (we moeten niet aan registratie aanmaken bij GS1 als we hiertussen blijven)
+        // prefix 200-299 is gereserveerd voor intern gebruik (we moeten niet aan
+        // registratie aanmaken bij GS1 als we hiertussen blijven)
         String raw = String.format("200%09d", copyId);
 
         int sum = 0;
@@ -1206,9 +1220,12 @@ public class BookService {
     }
 
     /**
-     * Zorgt dat het aantal exemplaren in de database overeenkomt met het aantal dat in de inventaris staat. 
-     * Als er te weinig exemplaren zijn, worden er nieuwe exemplaren aangemaakt. 
-     * Als er te veel exemplaren zijn, worden er exemplaren verwijderd, waarbij eerst exemplaren in slechte staat worden verwijderd.
+     * Zorgt dat het aantal exemplaren in de database overeenkomt met het aantal dat
+     * in de inventaris staat.
+     * Als er te weinig exemplaren zijn, worden er nieuwe exemplaren aangemaakt.
+     * Als er te veel exemplaren zijn, worden er exemplaren verwijderd, waarbij
+     * eerst exemplaren in slechte staat worden verwijderd.
+     * 
      * @param inventory
      */
     public void reconcileCopiesForInventory(BookInventoryEntity inventory) {
@@ -1503,7 +1520,8 @@ public class BookService {
             // De eerste API Call (met fout-afvanging)
             response = restTemplate.getForObject(url, GoogleBooksResponse.class);
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            // Dit vangt fouten zoals 429 (Too Many Requests) of 403 (Quota Exceeded) netjes af
+            // Dit vangt fouten zoals 429 (Too Many Requests) of 403 (Quota Exceeded) netjes
+            // af
             log.error("Google API weigerde het verzoek! Status: {}, Reden: {}", e.getStatusCode(),
                     e.getResponseBodyAsString());
             throw new RuntimeException("De Google API weigert het verzoek tijdelijk (Status " + e.getStatusCode()
@@ -1644,6 +1662,29 @@ public class BookService {
                         .filter(value -> value != null && !value.isBlank())
                         .map(String::trim)
                         .toList());
+    }
+
+    private List<String> cleanDistinctOptions(List<String> values) {
+        if (values == null) {
+            return new ArrayList<>();
+        }
+
+        List<String> cleanedValues = values.stream()
+                .map(this::safeTrim)
+                .filter(value -> value != null && !value.isBlank())
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+
+        List<String> distinctValues = new ArrayList<>();
+        Set<String> seenValues = new HashSet<>();
+
+        for (String value : cleanedValues) {
+            if (seenValues.add(value.toLowerCase(Locale.ROOT))) {
+                distinctValues.add(value);
+            }
+        }
+
+        return distinctValues;
     }
 
     private String safeTrim(String value) {
@@ -1798,9 +1839,12 @@ public class BookService {
         }
         return schoolId;
     }
+
     private Sort resolveSort(String sortBy) {
-        if ("title_asc".equals(sortBy)) return Sort.by("title").ascending();
-        if ("newest".equals(sortBy)) return Sort.by("id").descending();
+        if ("title_asc".equals(sortBy))
+            return Sort.by("title").ascending();
+        if ("newest".equals(sortBy))
+            return Sort.by("id").descending();
         return Sort.unsorted();
     }
 

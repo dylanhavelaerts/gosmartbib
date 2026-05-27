@@ -1073,3 +1073,57 @@
   height: auto;
   display: block;
 }
+
+.label-barcode {
+  font-family: monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #3d2030;
+  letter-spacing: 0.12em;
+}
+
+.customOptionRow {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  margin-top: 0.4rem;
+  border-top: 1px solid #eadde3;
+}
+
+.customOptionInput {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #d4c4ca;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.customOptionButton {
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.7rem;
+  background-color: #8e2446;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media print {
+  body > * {
+    display: none !important;
+  }
+  #label-print-area {
+    display: grid !important;
+  }
+  .label-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    padding: 1cm;
+  }
+  .label-card {
+    border: 1px solid #000;
+    break-inside: avoid;
+  }
+}

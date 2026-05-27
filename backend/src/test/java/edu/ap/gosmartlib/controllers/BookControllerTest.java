@@ -1,4 +1,4 @@
-package edu.ap.gosmartlib.controllers;
+﻿package edu.ap.gosmartlib.controllers;
 
 import edu.ap.gosmartlib.config.TestSecurityConfig;
 import edu.ap.gosmartlib.dto.*;
@@ -47,7 +47,7 @@ class BookControllerTest {
     @MockitoBean
     private UserService userService;
 
-    // ─── helpers ──────────────────────────────────────────────────────────────
+    // â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
@@ -64,7 +64,7 @@ class BookControllerTest {
         when(userService.getRoleBySmartschoolUid(uid)).thenReturn(UserRoles.LIBRARIAN);
     }
 
-    // ─── GET /books/all ───────────────────────────────────────────────────────
+    // â”€â”€â”€ GET /books/all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void getBooks_asStudent_returnsPagedBooks() throws Exception {
@@ -101,7 +101,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("Er is een onverwachte fout opgetreden"));
     }
 
-    // ─── GET /books/all/unpaged ───────────────────────────────────────────────
+    // â”€â”€â”€ GET /books/all/unpaged â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void getAllBooksUnpaged_returnsFullList() throws Exception {
@@ -115,7 +115,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.length()").value(2));
     }
 
-    // ─── GET /books/search ────────────────────────────────────────────────────
+    // â”€â”€â”€ GET /books/search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void search_returnsMatchingBooks() throws Exception {
@@ -130,7 +130,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.content[0].title").value("Clean Code"));
     }
 
-    // ─── GET /books/filter ────────────────────────────────────────────────────
+    // â”€â”€â”€ GET /books/filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void filterBooks_validRequest_returnsOk() throws Exception {
@@ -167,7 +167,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("Er is een databasefout opgetreden"));
     }
 
-    // ─── GET /books/{id} ──────────────────────────────────────────────────────
+    // â”€â”€â”€ GET /books/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void getBookById_found_returnsOk() throws Exception {
@@ -193,7 +193,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").exists());
     }
 
-    // ─── GET /books/spotlight ─────────────────────────────────────────────────
+    // â”€â”€â”€ GET /books/spotlight â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void getSpotlight_withoutReadingLevel_callsDefaultMethod() throws Exception {
@@ -233,7 +233,7 @@ class BookControllerTest {
         verify(bookService).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
     }
 
-    // ─── GET /books/spotlight/all — @PreAuthorize ─────────────────────────────
+    // â”€â”€â”€ GET /books/spotlight/all â€” @PreAuthorize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void getAllSpotlight_withoutLibrarianRole_returns403() throws Exception {
@@ -258,7 +258,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.length()").value(1));
     }
 
-    // ─── GET /books/latest ────────────────────────────────────────────────────
+    // â”€â”€â”€ GET /books/latest â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void getLatestBooks_withoutReadingLevel_callsDefaultMethod() throws Exception {
@@ -285,7 +285,7 @@ class BookControllerTest {
         verify(bookService, never()).getLatestBooks(UserRoles.STUDENT, null);
     }
 
-    // ─── PATCH /books/{id}/spotlight — @PreAuthorize ──────────────────────────
+    // â”€â”€â”€ PATCH /books/{id}/spotlight â€” @PreAuthorize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void updateSpotlight_withoutLibrarianRole_returns403() throws Exception {
@@ -322,7 +322,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").exists());
     }
 
-    // ─── POST /books/add/{isbn} — @PreAuthorize ───────────────────────────────
+    // â”€â”€â”€ POST /books/add/{isbn} â€” @PreAuthorize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void addBookByIsbn_withoutLibrarianRole_returns403() throws Exception {
@@ -376,7 +376,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("Er is een onverwachte fout opgetreden"));
     }
 
-    // ─── GET /books/search/{isbn} ─────────────────────────────────────────────
+    // â”€â”€â”€ GET /books/search/{isbn} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void searchBookByIsbn_found_returnsOk() throws Exception {
@@ -397,7 +397,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("Geen boek voor ISBN: 0000000000000"));
     }
 
-    // ─── PATCH /books/{id} — @PreAuthorize ───────────────────────────────────
+    // â”€â”€â”€ PATCH /books/{id} â€” @PreAuthorize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void updateBook_withoutLibrarianRole_returns403() throws Exception {
@@ -451,7 +451,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("Titel mag niet leeg zijn"));
     }
 
-    // ─── POST /books/add — @PreAuthorize ─────────────────────────────────────
+    // â”€â”€â”€ POST /books/add â€” @PreAuthorize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void addManualBook_withoutLibrarianRole_returns403() throws Exception {
@@ -495,7 +495,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("Titel is verplicht"));
     }
 
-    // ─── POST /books/import — controller heeft eigen try-catch ────────────────
+    // â”€â”€â”€ POST /books/import â€” controller heeft eigen try-catch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void importBooks_withoutLibrarianRole_returns403() throws Exception {
@@ -559,7 +559,7 @@ class BookControllerTest {
                         .value("Er is een fout opgetreden bij het importeren van het Excelbestand."));
     }
 
-    // ─── GET /books/{id}/snowball ─────────────────────────────────────────────
+    // â”€â”€â”€ GET /books/{id}/snowball â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void getSnowball_returnsRelatedBooks() throws Exception {
@@ -583,7 +583,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").exists());
     }
 
-    // ─── private helpers ──────────────────────────────────────────────────────
+    // â”€â”€â”€ private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private MockMultipartFile dummyExcelFile() {
         return new MockMultipartFile("file", "books.xlsx",

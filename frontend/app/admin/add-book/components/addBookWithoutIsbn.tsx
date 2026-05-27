@@ -24,6 +24,9 @@ export default function AddBookWithoutIsbn() {
   const [description, setDescription] = useState("");
   const [pageCount, setPageCount] = useState(0);
   const [categories, setCategories] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] =
+  useState<string[]>(BOOK_CATEGORIES);
+  const [newCategory, setNewCategory] = useState("");
   const [thumbnail, setThumbnail] = useState("");
   const [language, setLanguage] = useState("");
   const [languageInputMode, setLanguageInputMode] = useState("");
@@ -33,6 +36,9 @@ export default function AddBookWithoutIsbn() {
   const [openLabelDropdown, setOpenLabelDropdown] = useState(false);
   const [didacticTag, setDidacticTag] = useState(false);
   const [labels, setLabels] = useState<string[]>([]);
+  const [availableLabels, setAvailableLabels] =
+  useState<string[]>(BOOK_LABELS);
+  const [newLabel, setNewLabel] = useState("");
   const [readingLevel, setReadingLevel] = useState("");
   const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
   const [ageRange, setAgeRange] = useState("");
@@ -143,6 +149,70 @@ export default function AddBookWithoutIsbn() {
     setLanguage(value);
 };
 
+function mergeOptions(baseOptions: string[], databaseOptions: string[]) {
+  const mergedOptions: string[] = [];
+  const seenOptions = new Set<string>();
+
+  [...baseOptions, ...databaseOptions].forEach((option) => {
+    const trimmedOption = option.trim();
+
+    if (!trimmedOption) {
+      return;
+    }
+
+    const normalizedOption = trimmedOption.toLowerCase();
+
+    if (!seenOptions.has(normalizedOption)) {
+      seenOptions.add(normalizedOption);
+      mergedOptions.push(trimmedOption);
+    }
+  });
+
+  return mergedOptions.sort((a, b) => a.localeCompare(b));
+}
+
+function isOptionSelected(values: string[], option: string) {
+  return values.some(
+    (value) => value.toLowerCase() === option.toLowerCase(),
+  );
+}
+
+function toggleOption(
+  setSelectedValues: React.Dispatch<React.SetStateAction<string[]>>,
+  option: string,
+) {
+  setSelectedValues((prev) =>
+    isOptionSelected(prev, option)
+      ? prev.filter((value) => value.toLowerCase() !== option.toLowerCase())
+      : [...prev, option],
+  );
+}
+
+function addCustomOption(
+  value: string,
+  setValue: React.Dispatch<React.SetStateAction<string>>,
+  setSelectedValues: React.Dispatch<React.SetStateAction<string[]>>,
+  setAvailableOptions: React.Dispatch<React.SetStateAction<string[]>>,
+) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return;
+  }
+
+  setAvailableOptions((prev) =>
+    prev.some((option) => option.toLowerCase() === trimmedValue.toLowerCase())
+      ? prev
+      : [...prev, trimmedValue].sort((a, b) => a.localeCompare(b)),
+  );
+
+  setSelectedValues((prev) =>
+    isOptionSelected(prev, trimmedValue) ? prev : [...prev, trimmedValue],
+  );
+
+  setValue("");
+}
+
   const handleConfirmAdd = async () => {
     if (!previewBook) return;
 
@@ -220,6 +290,7 @@ for (const inventory of inventories) {
       setDescription("");
       setPageCount(0);
       setCategories([]);
+      setNewCategory("");
       setThumbnail("");
       setLanguage("");
       setLanguageInputMode("");
@@ -229,6 +300,7 @@ for (const inventory of inventories) {
       setOpenLabelDropdown(false);
       setDidacticTag(false);
       setLabels([]);
+      setNewLabel("");
       setReadingLevel("");
       setAgeRange("");
       setInventories(me?.school ? [createEmptyInventory(me.school)] : []);
@@ -336,6 +408,37 @@ useEffect(() => {
     }
 
   loadMeAndCampuses();
+}, [API_URL]);
+
+useEffect(() => {
+  if (!API_URL) return;
+
+  const fetchOptions = async (endpoint: string) => {
+    const response = await fetch(`${API_URL}/books/${endpoint}`, {
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  };
+
+  Promise.all([fetchOptions("categories"), fetchOptions("labels")])
+    .then(([databaseCategories, databaseLabels]) => {
+      setAvailableCategories(
+        mergeOptions(BOOK_CATEGORIES, databaseCategories),
+      );
+      setAvailableLabels(
+        mergeOptions(BOOK_LABELS, databaseLabels),
+      );
+    })
+    .catch(() => {
+      setAvailableCategories(BOOK_CATEGORIES);
+      setAvailableLabels(BOOK_LABELS);
+    });
 }, [API_URL]);
 
 
@@ -447,23 +550,54 @@ useEffect(() => {
 
             {openDropdown && (
               <div className="dropdownPanel">
-                {BOOK_CATEGORIES.map((category) => (
+                {availableCategories.map((category) => (
                   <label key={category} className="checkboxLabel">
                     <input
                       type="checkbox"
-                      checked={categories.includes(category)}
-                      onChange={() => {
-                        setCategories((prev) =>
-                          prev.includes(category)
-                            ? prev.filter((c) => c !== category)
-                            : [...prev, category],
-                        );
-                      }}
+                      checked={isOptionSelected(categories, category)}
+                      onChange={() => toggleOption(setCategories, category)}
                       disabled={previewBook !== null}
                     />
                     <span>{category}</span>
                   </label>
                 ))}
+                <div className="customOptionRow">
+                  <input
+                    type="text"
+                    className="customOptionInput"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addCustomOption(
+                          newCategory,
+                          setNewCategory,
+                          setCategories,
+                          setAvailableCategories,
+                        );
+                      }
+                    }}
+                    placeholder="Nieuwe categorie"
+                    disabled={previewBook !== null}
+                  />
+
+                  <button
+                    type="button"
+                    className="customOptionButton"
+                    onClick={() =>
+                      addCustomOption(
+                        newCategory,
+                        setNewCategory,
+                        setCategories,
+                        setAvailableCategories,
+                      )
+                    }
+                    disabled={previewBook !== null}
+                  >
+                    Toevoegen
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -483,23 +617,55 @@ useEffect(() => {
 
             {openLabelDropdown && (
               <div className="dropdownPanel">
-                {BOOK_LABELS.map((label) => (
+                {availableLabels.map((label) => (
                   <label key={label} className="checkboxLabel">
                     <input
                       type="checkbox"
-                      checked={labels.includes(label)}
-                      onChange={() => {
-                        setLabels((prev) =>
-                          prev.includes(label)
-                            ? prev.filter((c) => c !== label)
-                            : [...prev, label],
-                        );
-                      }}
+                      checked={isOptionSelected(labels, label)}
+                      onChange={() => toggleOption(setLabels, label)}
                       disabled={previewBook !== null}
                     />
                     <span>{label}</span>
                   </label>
                 ))}
+
+                <div className="customOptionRow">
+                  <input
+                    type="text"
+                    className="customOptionInput"
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addCustomOption(
+                          newLabel,
+                          setNewLabel,
+                          setLabels,
+                          setAvailableLabels,
+                        );
+                      }
+                    }}
+                    placeholder="Nieuw leefwereldlabel"
+                    disabled={previewBook !== null}
+                  />
+
+                  <button
+                    type="button"
+                    className="customOptionButton"
+                    onClick={() =>
+                      addCustomOption(
+                        newLabel,
+                        setNewLabel,
+                        setLabels,
+                        setAvailableLabels,
+                      )
+                    }
+                    disabled={previewBook !== null}
+                  >
+                    Toevoegen
+                  </button>
+                </div>
               </div>
             )}
           </div>
