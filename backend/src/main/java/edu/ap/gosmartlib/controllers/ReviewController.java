@@ -20,6 +20,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST-controller voor reviewbeheer.
+ * Biedt endpoints voor het indienen, bewerken, modereren en verwijderen van reviews.
+ * Openbare endpoints zijn toegankelijk voor alle gebruikers;
+ * moderatie-endpoints vereisen de rol BIBLIOTHEEKBEHEERDER.
+ */
 @RestController
 @RequestMapping("/reviews")
 @RequiredArgsConstructor
@@ -60,6 +66,10 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.findAllSchoolReviewsForModerator(authHelper.extractUid(principal)));
     }
 
+    /**
+     * Dient een nieuwe review in. De review wordt automatisch gescand door
+     * ReviewAutoModerationService en krijgt status APPROVED of AWAITING_MODERATION.
+     */
     @PostMapping
     public ResponseEntity<ReviewSummaryDTO> submitReview(@RequestBody ReviewRequestDTO request,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -87,6 +97,10 @@ public class ReviewController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Soft-delete: verbergt de review voor gebruikers zonder het record te verwijderen.
+     * Gebruik librarianDeleteReview voor permanente verwijdering.
+     */
     @PatchMapping("/{reviewId}/admin-delete")
     @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<Void> adminDeleteReview(@PathVariable Long reviewId,
@@ -102,6 +116,10 @@ public class ReviewController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Verwijdert een review als eigenaar of als bibliotheekbeheerder.
+     * Gewone gebruikers mogen alleen hun eigen review verwijderen.
+     */
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> userDeleteReview(@PathVariable Long reviewId,
             @AuthenticationPrincipal OAuth2User principal,
@@ -110,6 +128,10 @@ public class ReviewController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Hard-delete: verwijdert de review permanent uit de database.
+     * Gebruik adminDeleteReview voor een niet-destructieve soft-delete.
+     */
     @DeleteMapping("/{reviewId}/librarian")
     @PreAuthorize("hasAnyRole( 'BIBLIOTHEEKBEHEERDER')")
     public ResponseEntity<Void> librarianDeleteReview(@PathVariable Long reviewId) {
@@ -117,6 +139,11 @@ public class ReviewController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Controleert de BIBLIOTHEEKBEHEERDER-rol via het Authentication-object.
+     * @PreAuthorize volstaat hier niet omdat het endpoint ook toegankelijk moet zijn
+     * voor gewone gebruikers die hun eigen review verwijderen.
+     */
     private boolean hasModeratorDeleteAccess(Authentication authentication) {
         if (authentication == null || authentication.getAuthorities() == null) {
             return false;

@@ -41,7 +41,6 @@ import static org.springframework.http.HttpStatus.CONFLICT;
  * Werkt samen met ReviewAutoModerationService voor automatische contentscanning
  * en herberekent de gemiddelde boekenrating na elke wijziging.
  */
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -89,7 +88,6 @@ public class ReviewService {
      * @param actorUid de Smartschool-UID van de ingelogde gebruiker, of null als niet ingelogd
      * @return lijst van zichtbare reviews in summary-formaat
      */
-
     public List<ReviewSummaryDTO> findAllSummaryReviewsByBook(String isbn, String actorUid) {
         List<ReviewEntity> reviews = reviewRepository.findByBook_Isbn(isbn);
         Map<String, String> displayNames = resolveDisplayNamesMap(actorUid, reviews);
@@ -273,6 +271,16 @@ public class ReviewService {
     // endregion
 
     // region Delete methods
+    /**
+     * Verwijdert een review permanent.
+     * Een gewone gebruiker kan enkel zijn eigen review verwijderen.
+     * Een bibliotheekbeheerder kan elke review verwijderen via canModerateDelete.
+     *
+     * @param reviewId het ID van de te verwijderen review
+     * @param smartschoolUid de UID van de gebruiker die de verwijdering uitvoert
+     * @param canModerateDelete true als de gebruiker een bibliotheekbeheerder is
+     * @throws SecurityException als de gebruiker niet de eigenaar is en geen moderatorrechten heeft
+     */
     public void userDeleteReview(Long reviewId, String smartschoolUid, boolean canModerateDelete) {
         try {
             ReviewEntity review = reviewRepository.findById(reviewId)
@@ -318,7 +326,16 @@ public class ReviewService {
             throw new RuntimeException("Er is iets fout gegaan tijdens het verhogen van de flag count", e);
         }
     }
-
+    /**
+     * Meldt een review met een opgegeven reden. Voegt de melder toe aan flaggedByUids
+     * en slaat de details op in flagDetails.
+     * Vanaf 3 meldingen wordt de status automatisch AWAITING_MODERATION.
+     *
+     * @param reviewId het ID van de te melden review
+     * @param smartschoolUid de UID van de gebruiker die de melding doet
+     * @param reason de reden van de melding
+     * @throws ResponseStatusException met CONFLICT als de gebruiker de review al gemeld heeft
+     */
     public void flagReview(Long reviewId, String smartschoolUid, ReviewFlagReason reason) {
         try {
             if (reason == null) {
@@ -405,6 +422,15 @@ public class ReviewService {
             throw new RuntimeException("Er is iets fout gegaan tijdens het afkeuren van de review", e);
         }
     }
+
+    /**
+     * Verbergt een review voor gebruikers zonder het record te verwijderen (soft-delete).
+     * Zet isAdminDeleted op true en slaat een optionele reden op in adminDeleteNote.
+     * Gebruik librarianDeleteReview voor permanente verwijdering.
+     *
+     * @param reviewId het ID van de te verbergen review
+     * @param reason optionele reden voor de verwijdering, mag null zijn
+     */
     public void adminDeleteReview(Long reviewId, String reason) {
         try {
             ReviewEntity review = reviewRepository.findById(reviewId)
@@ -424,6 +450,13 @@ public class ReviewService {
             throw new RuntimeException("Er is iets fout gegaan tijdens admin delete", e);
         }
     }
+
+    /**
+     * Herberekent de gemiddelde rating van een boek op basis van alle
+     * goedgekeurde en niet-verwijderde reviews.
+     *
+     * @param book het boek waarvan de rating herberekend moet worden
+     */
     private void refreshBookRating(BookEntity book) {
         if (book == null || book.getId() == null) {
             return;
@@ -578,6 +611,13 @@ public class ReviewService {
                 .collect(Collectors.joining(FLAG_ENTRY_SEPARATOR));
     }
 
+    /**
+     * Past automatische moderatie toe en flagged de review indien nodig.
+     * Voegt AUTO_MODERATOR toe aan de flaglijst zodat beheerders weten dat
+     * het systeem en niet een gebruiker de melding deed.
+     *
+     * @param review de te modereren review, wordt direct aangepast
+     */
     private void applyAutomaticModeration(ReviewEntity review) {
         AutomaticModerationDecision decision = reviewAutoModerationService.moderate(review.getText());
         if (!decision.flagged()) {
@@ -618,6 +658,14 @@ public class ReviewService {
         return uids;
     }
 
+    /**
+     * Checkt of een review admin-verwijderd is.
+     * Bevat backwards-compatibiliteitslogica voor records aangemaakt vóór de
+     * is_admin_deleted kolom bestond: herkend aan status REJECTED + aanwezige adminDeleteNote.
+     *
+     * @param review de te controleren review
+     * @return true als de review verborgen is voor gebruikers
+     */
     private boolean isAdminDeleted(ReviewEntity review) {
         if (review.isAdminDeleted()) {
             return true;
