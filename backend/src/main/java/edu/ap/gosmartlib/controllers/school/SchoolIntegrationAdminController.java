@@ -41,14 +41,11 @@ public class SchoolIntegrationAdminController {
     }
 
     @PutMapping
-    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isAdmin(authentication)")
     public SchoolIntegrationDTO upsertIntegration(@PathVariable Long schoolId,
                                                   @RequestBody UpsertSchoolIntegrationRequest request,
                                                   Authentication authentication) {
-        if (authentication.getPrincipal() instanceof AdminPrincipal)
-            return schoolIntegrationService.upsertIntegrationForPlatformAdmin(schoolId, request);
-        return schoolIntegrationService.upsertIntegration(
-                authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, request);
+        return schoolIntegrationService.upsertIntegrationForPlatformAdmin(schoolId, request);
     }
 
     @PostMapping("/test")
