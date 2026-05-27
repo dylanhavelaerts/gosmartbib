@@ -32,7 +32,7 @@ public class SchoolIntegrationAdminController {
     private final AuthHelper authHelper;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public SchoolIntegrationDTO getIntegration(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return schoolIntegrationService.getIntegrationForPlatformAdmin(schoolId);
@@ -49,7 +49,7 @@ public class SchoolIntegrationAdminController {
     }
 
     @PostMapping("/test")
-    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public SchoolIntegrationTestResponse testIntegration(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return schoolIntegrationAdminService.testIntegrationForPlatformAdmin(schoolId);
@@ -58,7 +58,7 @@ public class SchoolIntegrationAdminController {
     }
 
     @GetMapping("/live/schools")
-    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public SchoolIntegrationLiveSchoolsResponse getLiveSchools(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return schoolIntegrationAdminService.getLiveSchoolsForPlatformAdmin(schoolId);
@@ -67,7 +67,7 @@ public class SchoolIntegrationAdminController {
     }
 
     @GetMapping("/live/users")
-    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public SchoolIntegrationLiveUsersResponse getLiveUsers(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return schoolIntegrationAdminService.getLiveUsersForPlatformAdmin(schoolId);
@@ -76,7 +76,7 @@ public class SchoolIntegrationAdminController {
     }
 
     @GetMapping("/live/classes")
-    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public SchoolIntegrationLiveClassesResponse getLiveClasses(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return schoolIntegrationAdminService.getLiveClassesForPlatformAdmin(schoolId);

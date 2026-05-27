@@ -23,7 +23,7 @@ public class UserAdminController {
     private final AuthHelper authHelper;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public Page<AdminUserDTO> listUsers(Authentication authentication,
                                         @RequestParam(required = false) Long schoolId,
                                         @RequestParam(required = false) String name,
@@ -35,7 +35,7 @@ public class UserAdminController {
     }
 
     @PatchMapping("/{id}/role")
-    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public AdminUserDTO updateRole(@PathVariable long id,
                                    @RequestParam(required = false) Long schoolId,
                                    @RequestBody UpdateUserRoleRequestDTO request,
@@ -48,7 +48,7 @@ public class UserAdminController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public void deleteUser(@PathVariable long id,
                            @RequestParam(required = false) Long schoolId,
                            Authentication authentication) {

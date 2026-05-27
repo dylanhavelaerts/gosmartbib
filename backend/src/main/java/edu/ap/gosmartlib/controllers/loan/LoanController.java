@@ -33,7 +33,6 @@ public class LoanController {
 
 
 
-    // Bestaande functie: Boeken uitlenen
     @PostMapping
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> createLoans(@RequestBody List<LoanRequestDTO> requests) {
@@ -41,8 +40,6 @@ public class LoanController {
         return ResponseEntity.ok().build();
     }
 
-    // AANGEPAST: Actieve leningen ophalen voor de frontend kolom (Veilig via
-    // sessie)
     @GetMapping("/active")
     public ResponseEntity<List<ActiveLoanDTO>> getActiveLoans(
             @AuthenticationPrincipal OAuth2User principal,
@@ -51,8 +48,6 @@ public class LoanController {
         String smartschoolUid = authHelper.extractUid(principal);
 
 
-        // Als er een andere gebruiker wordt opgevraagd, controleer dan of de ingelogde
-        // gebruiker een bibliotheekbeheerder is
         if (smartschoolUserId != null && !smartschoolUserId.isBlank()
                 && !smartschoolUserId.equals(smartschoolUid)) {
             return ResponseEntity.ok(loanService.getActiveLoansAsAdmin(smartschoolUid, smartschoolUserId));
@@ -62,7 +57,6 @@ public class LoanController {
     }
 
 
-    // Student/leerkracht vraagt verlenging aan voor eigen lening
     @PostMapping("/{loanId}/extension-request")
     public ResponseEntity<Void> requestLoanExtension(
             @PathVariable Long loanId,
@@ -75,8 +69,8 @@ public class LoanController {
         return ResponseEntity.ok().build();
     }
 
-    // Bibliotheekbeheerder haalt open aanvragen op van eigen school
     @GetMapping("/extension-requests/pending")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<List<LoanExtensionRequestDTO>> getPendingExtensionRequests(
             @AuthenticationPrincipal OAuth2User principal) {
 
@@ -86,8 +80,8 @@ public class LoanController {
         return ResponseEntity.ok(loanService.getPendingExtensionRequestsForSchool(smartschoolUid));
     }
 
-    // Bibliotheekbeheerder keurt verlenging goed
     @PostMapping("/{loanId}/extension-request/approve")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> approveLoanExtension(
             @PathVariable Long loanId,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -99,8 +93,8 @@ public class LoanController {
         return ResponseEntity.ok().build();
     }
 
-    // Bibliotheekbeheerder weigert verlenging
     @PostMapping("/{loanId}/extension-request/deny")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> denyLoanExtension(
             @PathVariable Long loanId,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -111,7 +105,6 @@ public class LoanController {
         return ResponseEntity.ok().build();
     }
 
-    // Meerdere boeken in 1 keer terugbrengen via de frontend inlever-knop
     @PostMapping("/return")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> returnBooksBulk(@RequestBody List<ReturnBulkRequestDTO> requests) {
@@ -119,7 +112,6 @@ public class LoanController {
         return ResponseEntity.ok().build();
     }
 
-    // Enkel boek terugbrengen (kun je behouden voor interne aanroepen / admin
     // testing)
     @PostMapping("/{loanId}/return")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
