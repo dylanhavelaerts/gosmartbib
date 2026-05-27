@@ -706,3 +706,114 @@ main.returnsPageLayout .resultsFrame::-webkit-scrollbar-thumb {
 .toastClose:hover {
   opacity: 1;
 }
+
+@media (max-width: 999px) {
+  main.returnsPageLayout {
+    height: auto;
+    overflow: visible;
+  }
+
+  .pageHeader {
+    margin-bottom: 1.25rem;
+  }
+
+  .uitleenGrid.driekolomsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .gridColumn {
+    min-height: auto;
+  }
+
+  .borderRight {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .flexBetween {
+    padding: 0;
+  }
+
+  main.returnsPageLayout .resultsFrame {
+    flex: initial;
+    max-height: 420px;
+  }
+
+  .flexColumnGrow {
+    flex: initial;
+  }
+}
+
+@media (max-width: 700px) {
+  main.returnsPageLayout {
+    padding: 1rem 1rem 1.5rem;
+  }
+
+  .pageHeader {
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .pageHeader h1 {
+    font-size: 1.35rem;
+  }
+
+  .userProfileCard {
+    align-items: flex-start;
+  }
+
+  .listItem {
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .itemDetails {
+    min-width: 0;
+  }
+
+  .itemDetails strong,
+  .itemDetails span {
+    overflow-wrap: anywhere;
+  }
+
+  .addArea {
+    align-items: flex-end;
+  }
+
+  .gridColumn .searchbar {
+    align-items: stretch;
+  }
+
+  .gridColumn .searchbar input {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .gridColumn .searchbar #searchButton {
+    padding: 0.55rem 0.8rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .listItem {
+    flex-wrap: wrap;
+  }
+
+  .itemThumbnail,
+  .userPhotoSmall {
+    flex-shrink: 0;
+  }
+
+  .addArea,
+  .quantityControl,
+  .actionBtn {
+    margin-left: auto;
+  }
+
+  .actionFooter {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding-top: 0.75rem;
+    border-top: 1px solid #ece6f0;
+  }
+}

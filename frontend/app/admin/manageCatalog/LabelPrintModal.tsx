@@ -100,7 +100,7 @@ export default function LabelPrintModal({ labels, onClose }: Props) {
       `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Labels afdrukken</title>` +
         `<style>${PRINT_CSS}</style></head><body>` +
         grid.outerHTML +
-        `<script>window.onload=function(){window.print();window.close();};<\/script>` +
+        `<script>window.onload=function(){window.print();window.addEventListener('afterprint',function(){window.close();});};<\/script>` +
         `</body></html>`
     );
     win.document.close();

@@ -858,6 +858,66 @@
   background-color: #f1eef0;
 }
 
+@media (max-width: 899px) {
+  .manage-main-layout {
+    height: auto;
+    overflow: visible;
+    padding: 1rem 1.25rem 2rem;
+  }
+
+  .manage-wrapper {
+    overflow: visible;
+  }
+
+  .book-list-panel {
+    height: auto;
+    overflow: visible;
+  }
+
+  .list-container {
+    overflow-y: auto;
+    max-height: 420px;
+  }
+
+  .book-details-panel {
+    height: auto;
+    overflow: visible;
+  }
+
+  .manage-page-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .manage-main-layout {
+    padding: 0.75rem 0.75rem 2rem;
+  }
+
+  .manage-page-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .details-actions {
+    flex-wrap: wrap;
+  }
+
+  .details-content {
+    flex-direction: column;
+  }
+
+  .details-cover-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .label-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 800px) {
   .inventory-editor-grid {
     grid-template-columns: 1fr;
