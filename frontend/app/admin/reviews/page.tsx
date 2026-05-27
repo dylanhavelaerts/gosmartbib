@@ -16,6 +16,10 @@ const REVIEWS_PER_PAGE = 10;
 type SortOption = "newest" | "oldest";
 type FilterStatus = "all" | "awaitingModeration" | "approved" | "rejected";
 
+/**
+ * Beheerpagina voor reviewmoderatie, enkel toegankelijk voor BIBLIOTHEEKBEHEERDER.
+ * Toont reviews van de eigen school met filter- en sorteeropties.
+ */
 export default function AdminReviewsPage() {
   const {
     me,
@@ -86,6 +90,7 @@ export default function AdminReviewsPage() {
     setActionError("");
   }
 
+  /** "Afgekeurd"-filter omvat ook adminDeleted-reviews. */
   const filteredAndSorted = useMemo(() => {
     const byStatus = reviews.filter((review) => {
       if (filterStatus === "all") {

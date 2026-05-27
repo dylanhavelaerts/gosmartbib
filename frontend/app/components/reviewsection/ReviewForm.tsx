@@ -16,7 +16,10 @@ interface ReviewFormProps {
 interface SubmitReviewResponse {
   moderationNotice?: string | null;
 }
-
+/**
+ * Formulier voor het indienen of bewerken van een review.
+ * Bij een geslaagde submit wordt een optioneel moderatiebericht van de backend doorgegeven via onSubmitted.
+ */
 export default function ReviewForm({
   isbn,
   onSubmitted,
@@ -90,7 +93,13 @@ export default function ReviewForm({
         method: mode === "edit" ? "PATCH" : "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookIsbn: isbn, text, rating, spoiler, anonymous }),
+        body: JSON.stringify({
+          bookIsbn: isbn,
+          text,
+          rating,
+          spoiler,
+          anonymous,
+        }),
       });
 
       if (!res.ok) {

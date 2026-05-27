@@ -7,6 +7,7 @@ export interface ReviewSummary {
   reviewDate: string;
   rating: number;
   spoiler: boolean;
+  /** Bericht van de automatische moderatie bij indiening, bv. "Je review staat klaar voor controle." Null als de review direct goedgekeurd is. */
   moderationNotice?: string | null;
 }
 

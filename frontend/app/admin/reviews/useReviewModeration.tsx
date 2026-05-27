@@ -56,6 +56,10 @@ function extractServerErrorMessage(response: Response, fallback: string) {
     });
 }
 
+/**
+ * Beheert de toestand en acties voor de reviewmoderatiepagina.
+ * Laadt de ingelogde beheerder en de reviews van zijn school bij initialisatie.
+ */
 export function useReviewModeration(apiUrl?: string) {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [reviews, setReviews] = useState<ModerationReview[]>([]);
@@ -149,6 +153,10 @@ export function useReviewModeration(apiUrl?: string) {
     }
   }
 
+  /**
+   * Verbergt een review via soft-delete (roept het /admin-delete endpoint aan, niet /reject).
+   * Retourneert true bij succes, false bij een fout.
+   */
   async function softRejectReview(reviewId: number | null, reason: string) {
     if (!apiUrl || reviewId === null || isDeleting) {
       return false;
@@ -190,6 +198,7 @@ export function useReviewModeration(apiUrl?: string) {
     }
   }
 
+  /** Verwijdert een review permanent (roept het /librarian endpoint aan). */
   async function hardDeleteReview(reviewId: number) {
     if (!apiUrl || hardDeletingReviewId !== null) {
       return;

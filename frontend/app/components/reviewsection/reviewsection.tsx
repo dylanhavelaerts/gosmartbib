@@ -15,6 +15,10 @@ import type {
 
 const REVIEWS_PER_PAGE = 5;
 
+/**
+ * Toont alle reviews voor een boek en beheert indienen, bewerken, verwijderen en melden.
+ * TEACHER en BIBLIOTHEEKBEHEERDER kunnen elke review verwijderen; gewone gebruikers alleen hun eigen.
+ */
 export default function ReviewSection({
   isbn,
   onReviewSubmitted,
@@ -34,6 +38,8 @@ export default function ReviewSection({
   const [reportReviewId, setReportReviewId] = useState<number | null>(null);
   const [reportReason, setReportReason] = useState<ReportReason | "">("");
   const [reportError, setReportError] = useState("");
+
+  /** Voorkomt dat het formulier terugspringt naar de beginstatus telkens wanneer reviews herladen worden na authenticatie. */
   const hasInitializedForm = useRef(false);
   const ownReview = user
     ? (reviews.find((review) => review.userId === user.id) ?? null)
@@ -43,6 +49,10 @@ export default function ReviewSection({
       ? (reviews.find((review) => review.id === editingReviewId) ?? null)
       : null;
 
+  /**
+   * Probeert een leesbare foutmelding uit een mislukte response te halen.
+   * Probeert achtereenvolgens JSON-velden (message, error, detail) en daarna de ruwe tekst.
+   */
   async function extractErrorMessage(res: Response): Promise<string> {
     if (res.status === 409) {
       return "Je hebt deze review al gerapporteerd.";

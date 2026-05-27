@@ -58,6 +58,7 @@ export default function ReviewCard({
     setIsSpoilerRevealed((current) => !current);
   }
 
+  /** Maakt spoilertekst toetsenbordtoegankelijk: Enter en spatie tonen/verbergen de tekst. */
   function handleSpoilerKeyDown(event: KeyboardEvent<HTMLParagraphElement>) {
     if (!review.spoiler) {
       return;
