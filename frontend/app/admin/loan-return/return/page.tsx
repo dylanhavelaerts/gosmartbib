@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Book } from "../../../interfaces/Book";
 import { SmartschoolUser } from "../../../interfaces/SmartschoolUser";
 import "./returns.css";
@@ -33,7 +32,6 @@ const conditionLabels: Record<CopyCondition, string> = {
 };
 
 export default function ReturnsPage() {
-  const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   // --- Auth/School ---
@@ -470,9 +468,6 @@ export default function ReturnsPage() {
     <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="returnsPageLayout">
         <div className="pageHeader">
-          <button className="backButton" onClick={() => router.back()}>
-            ←
-          </button>
           <h1>Boeken Inleveren</h1>
         </div>
 

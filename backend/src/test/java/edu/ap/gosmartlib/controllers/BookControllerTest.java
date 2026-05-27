@@ -47,8 +47,6 @@ class BookControllerTest {
     @MockitoBean
     private UserService userService;
 
-    // â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
@@ -63,8 +61,6 @@ class BookControllerTest {
     private void stubAsLibrarian(String uid) {
         when(userService.getRoleBySmartschoolUid(uid)).thenReturn(UserRoles.LIBRARIAN);
     }
-
-    // â”€â”€â”€ GET /books/all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void getBooks_asStudent_returnsPagedBooks() throws Exception {
@@ -101,8 +97,6 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("Er is een onverwachte fout opgetreden"));
     }
 
-    // â”€â”€â”€ GET /books/all/unpaged â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
     @Test
     void getAllBooksUnpaged_returnsFullList() throws Exception {
         stubAsStudent("uid-1");
@@ -114,8 +108,6 @@ class BookControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
     }
-
-    // â”€â”€â”€ GET /books/search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void search_returnsMatchingBooks() throws Exception {
@@ -129,8 +121,6 @@ class BookControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].title").value("Clean Code"));
     }
-
-    // â”€â”€â”€ GET /books/filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void filterBooks_validRequest_returnsOk() throws Exception {
@@ -167,8 +157,6 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("Er is een databasefout opgetreden"));
     }
 
-    // â”€â”€â”€ GET /books/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
     @Test
     void getBookById_found_returnsOk() throws Exception {
         stubAsStudent("uid-1");
@@ -192,8 +180,6 @@ class BookControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").exists());
     }
-
-    // â”€â”€â”€ GET /books/spotlight â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void getSpotlight_withoutReadingLevel_callsDefaultMethod() throws Exception {
@@ -233,8 +219,6 @@ class BookControllerTest {
         verify(bookService).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
     }
 
-    // â”€â”€â”€ GET /books/spotlight/all â€” @PreAuthorize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
     @Test
     void getAllSpotlight_withoutLibrarianRole_returns403() throws Exception {
         mockMvc.perform(get("/books/spotlight/all")
@@ -257,8 +241,6 @@ class BookControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
     }
-
-    // â”€â”€â”€ GET /books/latest â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void getLatestBooks_withoutReadingLevel_callsDefaultMethod() throws Exception {
@@ -284,8 +266,6 @@ class BookControllerTest {
 
         verify(bookService, never()).getLatestBooks(UserRoles.STUDENT, null);
     }
-
-    // â”€â”€â”€ PATCH /books/{id}/spotlight â€” @PreAuthorize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void updateSpotlight_withoutLibrarianRole_returns403() throws Exception {
@@ -321,8 +301,6 @@ class BookControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").exists());
     }
-
-    // â”€â”€â”€ POST /books/add/{isbn} â€” @PreAuthorize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void addBookByIsbn_withoutLibrarianRole_returns403() throws Exception {
@@ -376,8 +354,6 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("Er is een onverwachte fout opgetreden"));
     }
 
-    // â”€â”€â”€ GET /books/search/{isbn} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
     @Test
     void searchBookByIsbn_found_returnsOk() throws Exception {
         when(bookService.searchBookByIsbn("9780132350884")).thenReturn(buildDTO(1L, "Clean Code"));
@@ -396,8 +372,6 @@ class BookControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Geen boek voor ISBN: 0000000000000"));
     }
-
-    // â”€â”€â”€ PATCH /books/{id} â€” @PreAuthorize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void updateBook_withoutLibrarianRole_returns403() throws Exception {
@@ -451,8 +425,6 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.message").value("Titel mag niet leeg zijn"));
     }
 
-    // â”€â”€â”€ POST /books/add â€” @PreAuthorize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
     @Test
     void addManualBook_withoutLibrarianRole_returns403() throws Exception {
         mockMvc.perform(post("/books/add")
@@ -494,8 +466,6 @@ class BookControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Titel is verplicht"));
     }
-
-    // â”€â”€â”€ POST /books/import â€” controller heeft eigen try-catch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     void importBooks_withoutLibrarianRole_returns403() throws Exception {
@@ -559,8 +529,6 @@ class BookControllerTest {
                         .value("Er is een fout opgetreden bij het importeren van het Excelbestand."));
     }
 
-    // â”€â”€â”€ GET /books/{id}/snowball â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
     @Test
     void getSnowball_returnsRelatedBooks() throws Exception {
         when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null))
@@ -582,8 +550,6 @@ class BookControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").exists());
     }
-
-    // â”€â”€â”€ private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private MockMultipartFile dummyExcelFile() {
         return new MockMultipartFile("file", "books.xlsx",

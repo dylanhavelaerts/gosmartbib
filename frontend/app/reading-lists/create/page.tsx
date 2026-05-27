@@ -307,14 +307,6 @@ export default function CreateReadingListPage() {
     <ProtectedRoute allowedRoles={["TEACHER", "LIBRARIAN"]}>
       <div className="readingListContainer">
         <div className="crl-subheader">
-          <button
-            type="button"
-            className="crl-back-link"
-            onClick={goBackToReadingLists}
-            aria-label="Ga terug naar leeslijsten"
-          >
-            ← Terug naar overzicht
-          </button>
           <h1 className="pageTitle">Nieuwe klasleeslijst aanmaken</h1>
         </div>
 

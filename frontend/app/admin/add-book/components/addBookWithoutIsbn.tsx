@@ -31,7 +31,6 @@ export default function AddBookWithoutIsbn() {
   const [language, setLanguage] = useState("");
   const [languageInputMode, setLanguageInputMode] = useState("");
   const [publishedYear, setPublishedYear] = useState(0);
-  const [rating, setRating] = useState(0);
   const [openDropdown, setOpenDropdown] = useState(false);
   const [openLabelDropdown, setOpenLabelDropdown] = useState(false);
   const [didacticTag, setDidacticTag] = useState(false);
@@ -79,7 +78,7 @@ export default function AddBookWithoutIsbn() {
       categories,
       thumbnail,
       language,
-      rating,
+      rating: 0,
       publishedYear,
       spotlight: false,
       didacticTag,
@@ -295,7 +294,6 @@ for (const inventory of inventories) {
       setLanguage("");
       setLanguageInputMode("");
       setPublishedYear(0);
-      setRating(0);
       setOpenDropdown(false);
       setOpenLabelDropdown(false);
       setDidacticTag(false);
@@ -710,20 +708,6 @@ useEffect(() => {
               disabled={previewBook !== null}
             />
           )}
-        </div>
-
-        <div className="fieldGroup">
-          <label className="label">Rating</label>
-          <input
-            type="number"
-            min="0"
-            max="5"
-            step="0.1"
-            value={rating}
-            onChange={(e) => setRating(Number(e.target.value) || 0)}
-            className="input"
-            disabled={previewBook !== null}
-          />
         </div>
 
         <div className="fieldGroup">

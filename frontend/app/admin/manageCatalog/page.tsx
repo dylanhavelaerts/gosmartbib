@@ -36,9 +36,8 @@ export default function ManageCatalogPage() {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [labelDropdownOpen, setLabelDropdownOpen] = useState(false);
   const [availableCategories, setAvailableCategories] =
-  useState<string[]>(BOOK_CATEGORIES);
-  const [availableLabels, setAvailableLabels] =
-    useState<string[]>(BOOK_LABELS);
+    useState<string[]>(BOOK_CATEGORIES);
+  const [availableLabels, setAvailableLabels] = useState<string[]>(BOOK_LABELS);
   const [newCategory, setNewCategory] = useState("");
   const [newLabel, setNewLabel] = useState("");
   const [query, setQuery] = useState("");
@@ -155,29 +154,29 @@ export default function ManageCatalogPage() {
   }, [apiUrl]);
 
   useEffect(() => {
-  const fetchOptions = async (endpoint: string) => {
-    const response = await fetch(`${apiUrl}/books/${endpoint}`, {
-      credentials: "include",
-    });
+    const fetchOptions = async (endpoint: string) => {
+      const response = await fetch(`${apiUrl}/books/${endpoint}`, {
+        credentials: "include",
+      });
 
-    if (!response.ok) {
-      return [];
-    }
+      if (!response.ok) {
+        return [];
+      }
 
-    const data = await response.json();
-    return Array.isArray(data) ? data : [];
-  };
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    };
 
-  Promise.all([fetchOptions("categories"), fetchOptions("labels")])
-    .then(([categories, labels]) => {
-      setAvailableCategories(mergeOptions(BOOK_CATEGORIES, categories));
-      setAvailableLabels(mergeOptions(BOOK_LABELS, labels));
-    })
-    .catch(() => {
-      setAvailableCategories(BOOK_CATEGORIES);
-      setAvailableLabels(BOOK_LABELS);
-    });
-}, [apiUrl]);
+    Promise.all([fetchOptions("categories"), fetchOptions("labels")])
+      .then(([categories, labels]) => {
+        setAvailableCategories(mergeOptions(BOOK_CATEGORIES, categories));
+        setAvailableLabels(mergeOptions(BOOK_LABELS, labels));
+      })
+      .catch(() => {
+        setAvailableCategories(BOOK_CATEGORIES);
+        setAvailableLabels(BOOK_LABELS);
+      });
+  }, [apiUrl]);
 
   function openModal() {
     if (!selectedBook) return;
@@ -193,26 +192,26 @@ export default function ManageCatalogPage() {
   }
 
   function mergeOptions(baseOptions: string[], databaseOptions: string[]) {
-  const mergedOptions: string[] = [];
-  const seenOptions = new Set<string>();
+    const mergedOptions: string[] = [];
+    const seenOptions = new Set<string>();
 
-  [...baseOptions, ...databaseOptions].forEach((option) => {
-    const trimmedOption = option.trim();
+    [...baseOptions, ...databaseOptions].forEach((option) => {
+      const trimmedOption = option.trim();
 
-    if (!trimmedOption) {
-      return;
-    }
+      if (!trimmedOption) {
+        return;
+      }
 
-    const normalizedOption = trimmedOption.toLowerCase();
+      const normalizedOption = trimmedOption.toLowerCase();
 
-    if (!seenOptions.has(normalizedOption)) {
-      seenOptions.add(normalizedOption);
-      mergedOptions.push(trimmedOption);
-    }
-  });
+      if (!seenOptions.has(normalizedOption)) {
+        seenOptions.add(normalizedOption);
+        mergedOptions.push(trimmedOption);
+      }
+    });
 
-  return mergedOptions.sort((a, b) => a.localeCompare(b));
-}
+    return mergedOptions.sort((a, b) => a.localeCompare(b));
+  }
 
   function closeModal() {
     setModalOpen(false);
@@ -875,7 +874,7 @@ export default function ManageCatalogPage() {
                             {cat}
                           </label>
                         ))}
-                         <div className="customOptionRow">
+                        <div className="customOptionRow">
                           <input
                             type="text"
                             className="customOptionInput"
@@ -890,16 +889,22 @@ export default function ManageCatalogPage() {
 
                                 setAvailableCategories((prev) =>
                                   prev.some(
-                                    (cat) => cat.toLowerCase() === trimmed.toLowerCase(),
+                                    (cat) =>
+                                      cat.toLowerCase() ===
+                                      trimmed.toLowerCase(),
                                   )
                                     ? prev
-                                    : [...prev, trimmed].sort((a, b) => a.localeCompare(b)),
+                                    : [...prev, trimmed].sort((a, b) =>
+                                        a.localeCompare(b),
+                                      ),
                                 );
 
                                 setFormData((prev) => ({
                                   ...prev,
                                   categories: prev.categories?.some(
-                                    (cat) => cat.toLowerCase() === trimmed.toLowerCase(),
+                                    (cat) =>
+                                      cat.toLowerCase() ===
+                                      trimmed.toLowerCase(),
                                   )
                                     ? prev.categories
                                     : [...(prev.categories ?? []), trimmed],
@@ -920,16 +925,20 @@ export default function ManageCatalogPage() {
 
                               setAvailableCategories((prev) =>
                                 prev.some(
-                                  (cat) => cat.toLowerCase() === trimmed.toLowerCase(),
+                                  (cat) =>
+                                    cat.toLowerCase() === trimmed.toLowerCase(),
                                 )
                                   ? prev
-                                  : [...prev, trimmed].sort((a, b) => a.localeCompare(b)),
+                                  : [...prev, trimmed].sort((a, b) =>
+                                      a.localeCompare(b),
+                                    ),
                               );
 
                               setFormData((prev) => ({
                                 ...prev,
                                 categories: prev.categories?.some(
-                                  (cat) => cat.toLowerCase() === trimmed.toLowerCase(),
+                                  (cat) =>
+                                    cat.toLowerCase() === trimmed.toLowerCase(),
                                 )
                                   ? prev.categories
                                   : [...(prev.categories ?? []), trimmed],
@@ -1004,72 +1013,84 @@ export default function ManageCatalogPage() {
                             {label}
                           </label>
                         ))}
-                          <div className="customOptionRow">
-                            <input
-                              type="text"
-                              className="customOptionInput"
-                              value={newLabel}
-                              onChange={(e) => setNewLabel(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
+                        <div className="customOptionRow">
+                          <input
+                            type="text"
+                            className="customOptionInput"
+                            value={newLabel}
+                            onChange={(e) => setNewLabel(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
 
-                                  const trimmed = newLabel.trim();
-                                  if (!trimmed) return;
-
-                                  setAvailableLabels((prev) =>
-                                    prev.some(
-                                      (label) => label.toLowerCase() === trimmed.toLowerCase(),
-                                    )
-                                      ? prev
-                                      : [...prev, trimmed].sort((a, b) => a.localeCompare(b)),
-                                  );
-
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    labels: prev.labels?.some(
-                                      (label) => label.toLowerCase() === trimmed.toLowerCase(),
-                                    )
-                                      ? prev.labels
-                                      : [...(prev.labels ?? []), trimmed],
-                                  }));
-
-                                  setNewLabel("");
-                                }
-                              }}
-                              placeholder="Nieuw leefwereldlabel"
-                            />
-
-                            <button
-                              type="button"
-                              className="customOptionButton"
-                              onClick={() => {
                                 const trimmed = newLabel.trim();
                                 if (!trimmed) return;
 
                                 setAvailableLabels((prev) =>
                                   prev.some(
-                                    (label) => label.toLowerCase() === trimmed.toLowerCase(),
+                                    (label) =>
+                                      label.toLowerCase() ===
+                                      trimmed.toLowerCase(),
                                   )
                                     ? prev
-                                    : [...prev, trimmed].sort((a, b) => a.localeCompare(b)),
+                                    : [...prev, trimmed].sort((a, b) =>
+                                        a.localeCompare(b),
+                                      ),
                                 );
 
                                 setFormData((prev) => ({
                                   ...prev,
                                   labels: prev.labels?.some(
-                                    (label) => label.toLowerCase() === trimmed.toLowerCase(),
+                                    (label) =>
+                                      label.toLowerCase() ===
+                                      trimmed.toLowerCase(),
                                   )
                                     ? prev.labels
                                     : [...(prev.labels ?? []), trimmed],
                                 }));
 
                                 setNewLabel("");
-                              }}
-                            >
-                              Toevoegen
-                            </button>
-                          </div>
+                              }
+                            }}
+                            placeholder="Nieuw leefwereldlabel"
+                          />
+
+                          <button
+                            type="button"
+                            className="customOptionButton"
+                            onClick={() => {
+                              const trimmed = newLabel.trim();
+                              if (!trimmed) return;
+
+                              setAvailableLabels((prev) =>
+                                prev.some(
+                                  (label) =>
+                                    label.toLowerCase() ===
+                                    trimmed.toLowerCase(),
+                                )
+                                  ? prev
+                                  : [...prev, trimmed].sort((a, b) =>
+                                      a.localeCompare(b),
+                                    ),
+                              );
+
+                              setFormData((prev) => ({
+                                ...prev,
+                                labels: prev.labels?.some(
+                                  (label) =>
+                                    label.toLowerCase() ===
+                                    trimmed.toLowerCase(),
+                                )
+                                  ? prev.labels
+                                  : [...(prev.labels ?? []), trimmed],
+                              }));
+
+                              setNewLabel("");
+                            }}
+                          >
+                            Toevoegen
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

@@ -238,13 +238,7 @@ export default function ReadingListDetailPage() {
 
   return (
     <div className="rld-page">
-      {/* ── Back ── */}
-      <button
-        className="rld-back-btn"
-        onClick={() => router.push("/reading-lists")}
-      >
-        ← Terug naar overzicht
-      </button>
+
 
       {loading && (
         <div className="rld-state">

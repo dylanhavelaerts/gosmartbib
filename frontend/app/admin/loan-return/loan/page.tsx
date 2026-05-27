@@ -242,9 +242,6 @@ export default function LendingPage() {
     <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="lendingPageLayout">
         <div className="pageHeader">
-          <button className="backButton" onClick={() => router.back()}>
-            ←
-          </button>
           <h1>Uitleen registreren</h1>
         </div>
 

@@ -21,7 +21,11 @@ export default function Home() {
   const [query, setQuery] = useState("");
 
   // Paging
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (typeof window === "undefined") return 1;
+    const saved = sessionStorage.getItem("catalogPage");
+    return saved ? Number(saved) : 1;
+  });
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -77,6 +81,10 @@ export default function Home() {
       if (saved) setQuery(saved);
     }
   }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem("catalogPage", String(currentPage));
+  }, [currentPage]);
 
 // -- Fetch filteropties voor school
 

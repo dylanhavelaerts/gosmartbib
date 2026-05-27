@@ -256,10 +256,6 @@ export default function DetailPage({
 
   return (
     <main className="detailPage">
-      <button onClick={() => router.back()} className="backLink">
-        ← Terug naar catalogus
-      </button>
-
       <div className="detailContainer">
         {/* LEFT PANEL */}
         <div className="detailLeft">

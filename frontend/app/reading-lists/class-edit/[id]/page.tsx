@@ -398,14 +398,6 @@ export default function EditClassReadingListPage() {
     <ProtectedRoute allowedRoles={["TEACHER", "LIBRARIAN"]}>
       <div className="readingListContainer">
         <div className="crl-subheader">
-          <button
-            type="button"
-            className="crl-back-link"
-            onClick={() => router.push(`/reading-lists/${id}`)}
-            aria-label="Ga terug naar leeslijst"
-          >
-            ← Terug naar leeslijst
-          </button>
 
           <h1 className="pageTitle">Klasleeslijst bewerken</h1>
         </div>
