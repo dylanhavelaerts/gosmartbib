@@ -15,6 +15,7 @@ import edu.ap.gosmartlib.repositories.loan.LoanRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -37,12 +38,14 @@ public class AdminLoanService {
     private final UserRepository userRepository;
     private final UserDirectoryService userDirectoryService;
     private final AdminLoanMapper mapper;
-    private final LoanAccessGuard accessGuard;
     private final SchoolClassRepository schoolClassRepository;
 
     @Transactional(readOnly = true)
     public Page<LibrarianActiveLoanDTO> getActiveLoansForSchool(String actorUid, Long classId, int page, int size) {
-        UserEntity actor = accessGuard.requireLibrarian(actorUid);
+        UserEntity actor = userRepository.findBySmartschoolUid(actorUid)
+                .orElseThrow(() -> new EntityNotFoundException("Gebruiker niet gevonden."));
+        if (actor.getSchool() == null)
+            throw new IllegalArgumentException("De gebruiker heeft geen school gekoppeld.");
         Long schoolId = actor.getSchool().getId();
         PageRequest pageable = PageRequest.of(page, size);
 
@@ -66,7 +69,10 @@ public class AdminLoanService {
 
     @Transactional(readOnly = true)
     public Page<LibrarianLoanHistoryDTO> getLoanHistoryForSchool(String actorUid, Long classId, int page, int size) {
-        UserEntity actor = accessGuard.requireLibrarian(actorUid);
+        UserEntity actor = userRepository.findBySmartschoolUid(actorUid)
+                .orElseThrow(() -> new EntityNotFoundException("Gebruiker niet gevonden."));
+        if (actor.getSchool() == null)
+            throw new IllegalArgumentException("De gebruiker heeft geen school gekoppeld.");
         Long schoolId = actor.getSchool().getId();
         PageRequest pageable = PageRequest.of(page, size);
 
@@ -89,7 +95,10 @@ public class AdminLoanService {
     }
     @Transactional(readOnly = true)
     public List<ReadingListAssignmentTargetsDTO.ClassTarget> getSchoolClasses(String actorUid) {
-        UserEntity actor = accessGuard.requireLibrarian(actorUid);
+        UserEntity actor = userRepository.findBySmartschoolUid(actorUid)
+                .orElseThrow(() -> new EntityNotFoundException("Gebruiker niet gevonden."));
+        if (actor.getSchool() == null)
+            throw new IllegalArgumentException("De gebruiker heeft geen school gekoppeld.");
         return schoolClassRepository.findAllBySchool_IdOrderByNameAsc(actor.getSchool().getId())
                 .stream()
                 .collect(Collectors.toMap(

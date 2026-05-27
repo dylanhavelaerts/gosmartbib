@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,7 +36,6 @@ class AdminLoanServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private UserDirectoryService userDirectoryService;
     @Mock private AdminLoanMapper mapper;
-    @Mock private LoanAccessGuard accessGuard;
     @Mock private SchoolClassRepository schoolClassRepository;
 
     @InjectMocks private AdminLoanService adminLoanService;
@@ -53,7 +53,7 @@ class AdminLoanServiceTest {
     @Test
     void givenNoLoans_whenGetActiveLoansForSchool_thenReturnsEmptyPage() {
         UserEntity actor = mockActor(1L);
-        when(accessGuard.requireLibrarian("uid")).thenReturn(actor);
+        when(userRepository.findBySmartschoolUid("uid")).thenReturn(Optional.of(actor));
         when(loanRepository.findAllActiveBySchoolId(eq(1L), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
@@ -66,7 +66,7 @@ class AdminLoanServiceTest {
     @Test
     void givenLoansExist_whenGetActiveLoansForSchool_thenReturnsMappedPage() {
         UserEntity actor = mockActor(1L);
-        when(accessGuard.requireLibrarian("uid")).thenReturn(actor);
+        when(userRepository.findBySmartschoolUid("uid")).thenReturn(Optional.of(actor));
 
         var loan = mock(edu.ap.gosmartlib.entities.loan.LoanEntity.class);
         when(loan.getSmartschoolUserId()).thenReturn("student1");
@@ -90,7 +90,7 @@ class AdminLoanServiceTest {
     @Test
     void givenClassId_whenGetActiveLoansForSchool_thenUsesClassFilter() {
         UserEntity actor = mockActor(1L);
-        when(accessGuard.requireLibrarian("uid")).thenReturn(actor);
+        when(userRepository.findBySmartschoolUid("uid")).thenReturn(Optional.of(actor));
         when(loanRepository.findAllActiveBySchoolIdAndClassId(eq(1L), eq(5L), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
@@ -105,7 +105,7 @@ class AdminLoanServiceTest {
     @Test
     void givenNoHistory_whenGetLoanHistoryForSchool_thenReturnsEmptyPage() {
         UserEntity actor = mockActor(1L);
-        when(accessGuard.requireLibrarian("uid")).thenReturn(actor);
+        when(userRepository.findBySmartschoolUid("uid")).thenReturn(Optional.of(actor));
         when(loanHistoryRepository.findAllBySchoolIdOrderByReturnDateDesc(eq(1L), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
@@ -117,7 +117,7 @@ class AdminLoanServiceTest {
     @Test
     void givenClassId_whenGetLoanHistoryForSchool_thenUsesClassFilter() {
         UserEntity actor = mockActor(1L);
-        when(accessGuard.requireLibrarian("uid")).thenReturn(actor);
+        when(userRepository.findBySmartschoolUid("uid")).thenReturn(Optional.of(actor));
         when(loanHistoryRepository.findAllBySchoolIdAndClassIdOrderByReturnDateDesc(eq(1L), eq(3L), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
@@ -132,7 +132,7 @@ class AdminLoanServiceTest {
     @Test
     void givenSchoolWithClasses_whenGetSchoolClasses_thenReturnsMappedList() {
         UserEntity actor = mockActor(1L);
-        when(accessGuard.requireLibrarian("uid")).thenReturn(actor);
+        when(userRepository.findBySmartschoolUid("uid")).thenReturn(Optional.of(actor));
 
         SchoolClassEntity cls = mock(SchoolClassEntity.class);
         when(cls.getId()).thenReturn(10L);
