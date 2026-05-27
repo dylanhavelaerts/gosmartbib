@@ -35,6 +35,28 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.findAllSummaryReviewsByBook(isbn, authHelper.extractUidOrNull(principal)));
     }
 
+    @PatchMapping("/{reviewId}/flag")
+    public ResponseEntity<Void> flagReview(@PathVariable Long reviewId, @RequestBody ReviewFlagRequestDTO request,
+                                           @AuthenticationPrincipal OAuth2User principal) {
+        reviewService.flagReview(reviewId, authHelper.extractUid(principal), request.reason());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{reviewId}")
+    public ResponseEntity<Void> userDeleteReview(@PathVariable Long reviewId,
+                                                 @AuthenticationPrincipal OAuth2User principal,
+                                                 Authentication authentication) {
+        reviewService.userDeleteReview(reviewId, authHelper.extractUid(principal), roleGuard.isLibrarian(authentication));
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping
+    public ResponseEntity<ReviewSummaryDTO> submitReview(@RequestBody ReviewRequestDTO request,
+                                                         @AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reviewService.submitReview(request, authHelper.extractUid(principal)));
+    }
+
     @GetMapping("/user/{smartschoolUid}")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<List<ReviewDetailDTO>> getReviewsByUser(@PathVariable String smartschoolUid,
@@ -61,12 +83,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.findAllSchoolReviewsForModerator(authHelper.extractUid(principal)));
     }
 
-    @PostMapping
-    public ResponseEntity<ReviewSummaryDTO> submitReview(@RequestBody ReviewRequestDTO request,
-            @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(reviewService.submitReview(request, authHelper.extractUid(principal)));
-    }
+
 
     @PatchMapping("/{reviewId}")
     public ResponseEntity<ReviewSummaryDTO> editReview(@PathVariable Long reviewId, @RequestBody ReviewRequestDTO request,
@@ -93,21 +110,6 @@ public class ReviewController {
     public ResponseEntity<Void> adminDeleteReview(@PathVariable Long reviewId,
                                                   @RequestBody AdminDeleteReviewRequestDTO request) {
         reviewService.adminDeleteReview(reviewId, request.reason());
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/{reviewId}/flag")
-    public ResponseEntity<Void> flagReview(@PathVariable Long reviewId, @RequestBody ReviewFlagRequestDTO request,
-            @AuthenticationPrincipal OAuth2User principal) {
-        reviewService.flagReview(reviewId, authHelper.extractUid(principal), request.reason());
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> userDeleteReview(@PathVariable Long reviewId,
-            @AuthenticationPrincipal OAuth2User principal,
-            Authentication authentication) {
-        reviewService.userDeleteReview(reviewId, authHelper.extractUid(principal), roleGuard.isLibrarian(authentication));
         return ResponseEntity.noContent().build();
     }
 

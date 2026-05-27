@@ -19,7 +19,7 @@ public enum UserRoles {
         return switch (basisrol.toLowerCase()) {
             case "leerling" -> STUDENT;
             case "leerkracht" -> TEACHER;
-            case "directie" -> LIBRARIAN; // moet mss weg als er geen directie word meegegeven
+            case "directie" -> LIBRARIAN; // in geval dat "Directie" bestaat, automatisch toewijzen aan LIBRARIAN
             case "librarian" -> LIBRARIAN;
             default -> OTHER;
         };

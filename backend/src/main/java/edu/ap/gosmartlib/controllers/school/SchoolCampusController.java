@@ -31,7 +31,7 @@ public class SchoolCampusController {
     private final AuthHelper authHelper;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isLibrarian(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
     public List<SchoolCampusDTO> getCampuses(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return schoolCampusService.getCampusesForPlatformAdmin(schoolId);
@@ -41,7 +41,7 @@ public class SchoolCampusController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isLibrarian(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
     public SchoolCampusDTO createCampus(@PathVariable Long schoolId,
                                         @Valid @RequestBody CreateSchoolCampusRequest request,
                                         Authentication authentication) {
@@ -53,7 +53,7 @@ public class SchoolCampusController {
 
     @DeleteMapping("/{campusId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isLibrarian(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianorAdmin(authentication)")
     public void deleteCampus(@PathVariable Long schoolId, @PathVariable Long campusId,
                              Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal) {

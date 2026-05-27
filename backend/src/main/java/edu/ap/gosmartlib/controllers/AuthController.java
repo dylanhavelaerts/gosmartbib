@@ -27,7 +27,6 @@ public class AuthController {
 
     private final UserService userService;
 
-
     /**
      * Redirect de gebruiker naar de Smartschool OAuth2 loginpagina.
      * Na succesvolle login zal de gebruiker teruggestuurd worden naar de frontend,

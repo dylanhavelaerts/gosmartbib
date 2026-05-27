@@ -26,11 +26,16 @@ public class RoleGuard {
     public boolean isLibrarian(Authentication authentication) {
         return hasAnyRole(authentication, UserRoles.LIBRARIAN);
     }
+
     @Transactional(readOnly = true)
     public boolean isTeacherOrLibrarian(Authentication authentication) {
         return hasAnyRole(authentication, UserRoles.TEACHER, UserRoles.LIBRARIAN);
     }
 
+    @Transactional(readOnly = true)
+    public boolean isLibrarianorAdmin(Authentication authentication) {
+        return hasAnyRole(authentication, UserRoles.LIBRARIAN, UserRoles.ADMIN);
+    }
 
     private boolean hasAnyRole(Authentication authentication, UserRoles... allowedRoles) {
         if (authentication == null) return false;
