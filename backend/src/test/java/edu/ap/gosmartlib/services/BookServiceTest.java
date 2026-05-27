@@ -11,6 +11,7 @@ import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
+import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
 import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
@@ -73,6 +74,12 @@ class BookServiceTest {
 
         @Mock
         private BookFilterValidator bookFilterValidator;
+
+        @Mock
+        private BookCopyRepository bookCopyRepository;
+
+        @Mock
+        private InventoryAdjustmentService inventoryAdjustmentService;
 
         @InjectMocks
         private BookService bookService;

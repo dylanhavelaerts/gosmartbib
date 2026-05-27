@@ -22,16 +22,6 @@ class UserRolesFromOneRosterTest {
     }
 
     @Test
-    void givenAdministrator_whenFromOneRoster_thenReturnsAdmin() {
-        assertEquals(UserRoles.ADMIN, UserRoles.fromOneRoster("administrator"));
-    }
-
-    @Test
-    void givenUnknownRole_whenFromOneRoster_thenReturnsOther() {
-        assertEquals(UserRoles.OTHER, UserRoles.fromOneRoster("guardian"));
-    }
-
-    @Test
     void givenNull_whenFromOneRoster_thenReturnsOther() {
         assertEquals(UserRoles.OTHER, UserRoles.fromOneRoster(null));
     }

@@ -1,1079 +1,615 @@
 package edu.ap.gosmartlib.controllers;
 
+import edu.ap.gosmartlib.config.TestSecurityConfig;
 import edu.ap.gosmartlib.dto.*;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.dto.importdto.ImportMismatchDTO;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
-import edu.ap.gosmartlib.repositories.UserRepository;
-import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.BookService;
+import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import static org.mockito.ArgumentMatchers.isNull;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 class BookControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
     private BookService bookService;
-    @Mock
-    private UserRepository userRepository;
 
-    // @Spy gebruikt de echte implementatie van AuthHelper zodat
-    // extractUid/extractUidOrNull
-    // correct werken zonder elke test afzonderlijk te stubben.
-    @Spy
-    private AuthHelper authHelper = new AuthHelper();
+    @MockitoBean
+    private UserService userService;
 
-    @InjectMocks
-    private BookController bookController;
+    // ─── helpers ──────────────────────────────────────────────────────────────
 
     private BookDTO buildDTO(Long id, String title) {
         return new BookDTO(id, title, List.of("Author"), "Publisher", "Description",
                 100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023, false, null, "A", 1, 1, "Eerste graad", "https://books.google.com/preview", null);
+                2023, false, null, "A", 1, 1, "Eerste graad",
+                "https://books.google.com/preview", null);
     }
 
-    // authentication=null → callerRole() returns STUDENT (most restrictive
-    // fallback)
-
-    @Test
-    void givenBooksExist_whenGetBooks_thenReturnsExpectedDTOs() {
-        List<BookDTO> books = List.of(buildDTO(1L, "Clean Code"));
-        Page<BookDTO> expected = toPage(books);
-        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, null)).thenReturn(expected);
-
-        Page<BookDTO> result = bookController.getBooks(0, 20, null);
-
-        assertEquals(expected, result);
-        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT, null);
+    private void stubAsStudent(String uid) {
+        when(userService.getRoleBySmartschoolUid(uid)).thenReturn(UserRoles.STUDENT);
     }
 
-    @Test
-    void givenNoBooksExist_whenGetBooks_thenReturnsEmptyPage() {
-        Page<BookDTO> expected = toPage(List.of());
-        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, null)).thenReturn(expected);
-
-        Page<BookDTO> result = bookController.getBooks(0, 20, null);
-
-        assertNotNull(result);
-        assertEquals(0, result.getTotalElements());
-        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT, null);
+    private void stubAsLibrarian(String uid) {
+        when(userService.getRoleBySmartschoolUid(uid)).thenReturn(UserRoles.BIBLIOTHEEKBEHEERDER);
     }
 
+    // ─── GET /books/all ───────────────────────────────────────────────────────
+
     @Test
-    void givenMultipleBooksExist_whenGetBooks_thenReturnsAllBooks() {
-        List<BookDTO> books = List.of(
-                buildDTO(1L, "Clean Code"),
-                buildDTO(2L, "Effective Java"),
-                buildDTO(3L, "Refactoring"));
-        Page<BookDTO> expected = toPage(books);
-        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, null)).thenReturn(expected);
+    void getBooks_asStudent_returnsPagedBooks() throws Exception {
+        stubAsStudent("uid-1");
+        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, "uid-1"))
+                .thenReturn(new PageImpl<>(List.of(buildDTO(1L, "Clean Code")), PageRequest.of(0, 20), 1));
 
-        Page<BookDTO> result = bookController.getBooks(0, 20, null);
+        mockMvc.perform(get("/books/all")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].title").value("Clean Code"))
+                .andExpect(jsonPath("$.totalElements").value(1));
 
-        assertEquals(3, result.getContent().size());
-        assertEquals("Clean Code", result.getContent().get(0).title());
-        assertEquals("Effective Java", result.getContent().get(1).title());
-        assertEquals("Refactoring", result.getContent().get(2).title());
-        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT, null);
+        verify(bookService).getAllBooks(0, 20, UserRoles.STUDENT, "uid-1");
     }
 
     @Test
-    void givenServiceFails_whenGetBooks_thenThrowsException() {
+    void getBooks_withoutLogin_treatsAsStudent() throws Exception {
         when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, null))
-                .thenThrow(new RuntimeException("Service unavailable"));
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
 
-        assertThrows(RuntimeException.class, () -> bookController.getBooks(0, 20, null));
-        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT, null);
+        mockMvc.perform(get("/books/all"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test
-    void givenServiceIsCalled_whenGetBooks_thenDelegatesOnlyToService() {
-        when(bookService.getAllBooks(0, 20, UserRoles.STUDENT, null)).thenReturn(toPage(List.of()));
+    void getBooks_serviceThrows_returns500() throws Exception {
+        when(bookService.getAllBooks(anyInt(), anyInt(), any(), any()))
+                .thenThrow(new RuntimeException("DB down"));
 
-        bookController.getBooks(0, 20, null);
+        mockMvc.perform(get("/books/all"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("Er is een onverwachte fout opgetreden"));
+    }
 
-        verify(bookService, times(1)).getAllBooks(0, 20, UserRoles.STUDENT, null);
-        verifyNoMoreInteractions(bookService);
+    // ─── GET /books/all/unpaged ───────────────────────────────────────────────
+
+    @Test
+    void getAllBooksUnpaged_returnsFullList() throws Exception {
+        stubAsStudent("uid-1");
+        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT, "uid-1"))
+                .thenReturn(List.of(buildDTO(1L, "Clean Code"), buildDTO(2L, "Effective Java")));
+
+        mockMvc.perform(get("/books/all/unpaged")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    // ─── GET /books/search ────────────────────────────────────────────────────
+
+    @Test
+    void search_returnsMatchingBooks() throws Exception {
+        stubAsStudent("uid-1");
+        when(bookService.searchByTitleOrAuthorOrCategory("Clean", 0, 20, UserRoles.STUDENT, "uid-1"))
+                .thenReturn(new PageImpl<>(List.of(buildDTO(1L, "Clean Code")), PageRequest.of(0, 20), 1));
+
+        mockMvc.perform(get("/books/search")
+                        .param("query", "Clean")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].title").value("Clean Code"));
+    }
+
+    // ─── GET /books/filter ────────────────────────────────────────────────────
+
+    @Test
+    void filterBooks_validRequest_returnsOk() throws Exception {
+        when(bookService.filterBooks(any(), eq(UserRoles.STUDENT), isNull()))
+                .thenReturn(new PageImpl<>(List.of(buildDTO(1L, "Clean Code")), PageRequest.of(0, 20), 1));
+
+        mockMvc.perform(get("/books/filter")
+                        .param("page", "0")
+                        .param("size", "20"))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void givenBookExists_whenGetBookById_thenReturnsCorrectDTO() throws BookNotFoundException {
-        BookDTO expected = buildDTO(1L, "Clean Code");
-        when(bookService.getBookById(1L, UserRoles.STUDENT, null)).thenReturn(expected);
+    void filterBooks_illegalArgument_returns400WithMessage() throws Exception {
+        when(bookService.filterBooks(any(), any(), any()))
+                .thenThrow(new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount"));
 
-        ResponseEntity<?> result = bookController.getBookById(1L, null);
-
-        assertEquals(200, result.getStatusCode().value());
-        assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).getBookById(1L, UserRoles.STUDENT, null);
+        mockMvc.perform(get("/books/filter")
+                        .param("page", "0")
+                        .param("size", "20"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("minPageCount cannot be bigger than maxPageCount"));
     }
 
     @Test
-    void givenBookDoesNotExist_whenGetBookById_thenReturnsNotFound() throws BookNotFoundException {
-        when(bookService.getBookById(99L, UserRoles.STUDENT, null)).thenThrow(new BookNotFoundException(99L));
+    void filterBooks_dataAccessException_returns500WithMessage() throws Exception {
+        when(bookService.filterBooks(any(), any(), any()))
+                .thenThrow(new DataAccessException("DB down") {});
 
-        ResponseEntity<?> result = bookController.getBookById(99L, null);
+        mockMvc.perform(get("/books/filter")
+                        .param("page", "0")
+                        .param("size", "20"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("Er is een databasefout opgetreden"));
+    }
 
-        assertEquals(404, result.getStatusCode().value());
-        verify(bookService, times(1)).getBookById(99L, UserRoles.STUDENT, null);
+    // ─── GET /books/{id} ──────────────────────────────────────────────────────
+
+    @Test
+    void getBookById_found_returnsOk() throws Exception {
+        stubAsStudent("uid-1");
+        when(bookService.getBookById(1L, UserRoles.STUDENT, "uid-1"))
+                .thenReturn(buildDTO(1L, "Clean Code"));
+
+        mockMvc.perform(get("/books/1")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Clean Code"));
     }
 
     @Test
-    void givenSpotlightBooksExist_whenGetBooksInSpotlight_thenReturnsExpectedDTOs() {
-        List<BookDTO> expected = List.of(
-                buildDTO(1L, "Spotlight Book 1"),
-                buildDTO(2L, "Spotlight Book 2"));
-        when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null)).thenReturn(expected);
+    void getBookById_notFound_returns404() throws Exception {
+        stubAsStudent("uid-1");
+        when(bookService.getBookById(99L, UserRoles.STUDENT, "uid-1"))
+                .thenThrow(new BookNotFoundException(99L));
 
-        List<BookDTO> result = bookController.getBooksInSpotlight(null, null);
+        mockMvc.perform(get("/books/99")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists());
+    }
 
-        assertEquals(expected, result);
-        verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
+    // ─── GET /books/spotlight ─────────────────────────────────────────────────
+
+    @Test
+    void getSpotlight_withoutReadingLevel_callsDefaultMethod() throws Exception {
+        when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null))
+                .thenReturn(List.of(buildDTO(1L, "Spotlight Book")));
+
+        mockMvc.perform(get("/books/spotlight"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+
+        verify(bookService).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
+        verify(bookService, never()).getTop4BooksInSpotlight(any(), any(), any());
     }
 
     @Test
-    void givenNoSpotlightBooksExist_whenGetBooksInSpotlight_thenReturnsEmptyList() {
-        when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null)).thenReturn(List.of());
-
-        List<BookDTO> result = bookController.getBooksInSpotlight(null, null);
-
-        assertNotNull(result);
-        assertEquals(0, result.size());
-        verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
-    }
-
-    @Test
-    void givenReadingLevel_whenGetBooksInSpotlight_thenUsesReadingLevelFilteredServiceMethod() {
-        List<BookDTO> expected = List.of(
-                buildDTO(1L, "Leesniveau A Book"),
-                buildDTO(2L, "Another Leesniveau A Book"));
-
+    void getSpotlight_withReadingLevel_callsFilteredMethod() throws Exception {
         when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null, "A"))
-                .thenReturn(expected);
+                .thenReturn(List.of(buildDTO(1L, "Niveau A Book")));
 
-        List<BookDTO> result = bookController.getBooksInSpotlight("A", null);
+        mockMvc.perform(get("/books/spotlight")
+                        .param("readingLevel", "A"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("Niveau A Book"));
 
-        assertEquals(expected, result);
-        verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT, null, "A");
         verify(bookService, never()).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
     }
 
     @Test
-    void givenBlankReadingLevel_whenGetBooksInSpotlight_thenUsesDefaultSpotlightServiceMethod() {
-        List<BookDTO> expected = List.of(
-                buildDTO(1L, "Default Spotlight Book"));
-
+    void getSpotlight_blankReadingLevel_callsDefaultMethod() throws Exception {
         when(bookService.getTop4BooksInSpotlight(UserRoles.STUDENT, null))
-                .thenReturn(expected);
+                .thenReturn(List.of());
 
-        List<BookDTO> result = bookController.getBooksInSpotlight("   ", null);
+        mockMvc.perform(get("/books/spotlight")
+                        .param("readingLevel", "   "))
+                .andExpect(status().isOk());
 
-        assertEquals(expected, result);
-        verify(bookService, times(1)).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
-        verify(bookService, never()).getTop4BooksInSpotlight(UserRoles.STUDENT, null, "   ");
+        verify(bookService).getTop4BooksInSpotlight(UserRoles.STUDENT, null);
+    }
+
+    // ─── GET /books/spotlight/all — @PreAuthorize ─────────────────────────────
+
+    @Test
+    void getAllSpotlight_withoutLibrarianRole_returns403() throws Exception {
+        mockMvc.perform(get("/books/spotlight/all")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-student"))))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(bookService);
     }
 
     @Test
-    void givenLatestBooksExist_whenGetLatestBooks_thenReturnsExpectedDTOs() {
-        List<BookDTO> expected = List.of(
-                buildDTO(10L, "Latest Book 1"),
-                buildDTO(11L, "Latest Book 2"),
-                buildDTO(12L, "Latest Book 3"));
-        when(bookService.getLatestBooks(UserRoles.STUDENT, null)).thenReturn(expected);
+    void getAllSpotlight_asLibrarian_returnsOk() throws Exception {
+        stubAsLibrarian("uid-lib");
+        when(bookService.getAllBooksInSpotlight(UserRoles.BIBLIOTHEEKBEHEERDER, "uid-lib"))
+                .thenReturn(List.of(buildDTO(1L, "Spotlight")));
 
-        List<BookDTO> result = bookController.getLatestBooks(null, null);
+        mockMvc.perform(get("/books/spotlight/all")
+                        .with(oauth2Login()
+                                .attributes(a -> a.put("userID", "uid-lib"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
 
-        assertEquals(expected, result);
-        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
+    // ─── GET /books/latest ────────────────────────────────────────────────────
+
+    @Test
+    void getLatestBooks_withoutReadingLevel_callsDefaultMethod() throws Exception {
+        when(bookService.getLatestBooks(UserRoles.STUDENT, null))
+                .thenReturn(List.of(buildDTO(1L, "Latest")));
+
+        mockMvc.perform(get("/books/latest"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+
+        verify(bookService, never()).getLatestBooks(any(), any(), any());
     }
 
     @Test
-    void givenNoLatestBooksExist_whenGetLatestBooks_thenReturnsEmptyList() {
-        when(bookService.getLatestBooks(UserRoles.STUDENT, null)).thenReturn(List.of());
+    void getLatestBooks_withReadingLevel_callsFilteredMethod() throws Exception {
+        when(bookService.getLatestBooks(UserRoles.STUDENT, null, "B"))
+                .thenReturn(List.of(buildDTO(2L, "Niveau B")));
 
-        List<BookDTO> result = bookController.getLatestBooks(null, null);
+        mockMvc.perform(get("/books/latest")
+                        .param("readingLevel", "B"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("Niveau B"));
 
-        assertNotNull(result);
-        assertEquals(0, result.size());
-        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
-    }
-
-    @Test
-    void givenReadingLevel_whenGetLatestBooks_thenUsesReadingLevelFilteredServiceMethod() {
-        List<BookDTO> expected = List.of(
-                buildDTO(10L, "Latest Leesniveau A Book"),
-                buildDTO(11L, "Another Latest Leesniveau A Book"));
-
-        when(bookService.getLatestBooks(UserRoles.STUDENT, null, "A"))
-                .thenReturn(expected);
-
-        List<BookDTO> result = bookController.getLatestBooks("A", null);
-
-        assertEquals(expected, result);
-        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null, "A");
         verify(bookService, never()).getLatestBooks(UserRoles.STUDENT, null);
     }
 
-    @Test
-    void givenBlankReadingLevel_whenGetLatestBooks_thenUsesDefaultLatestServiceMethod() {
-        List<BookDTO> expected = List.of(
-                buildDTO(10L, "Default Latest Book"));
-
-        when(bookService.getLatestBooks(UserRoles.STUDENT, null))
-                .thenReturn(expected);
-
-        List<BookDTO> result = bookController.getLatestBooks("   ", null);
-
-        assertEquals(expected, result);
-        verify(bookService, times(1)).getLatestBooks(UserRoles.STUDENT, null);
-        verify(bookService, never()).getLatestBooks(UserRoles.STUDENT, null, "   ");
-    }
-
-    // --- filterBooks Controller Tests ---
+    // ─── PATCH /books/{id}/spotlight — @PreAuthorize ──────────────────────────
 
     @Test
-    void givenValidFilters_whenFilterBooks_thenReturnsOk() {
-        BookFilterRequest filter = new BookFilterRequest(
-                null, "en", List.of("Programming"), List.of("Toekomst & technologie"), "A",
-            100, 500, 2000, 2023, 3.0, 5.0, null, null, 0, 20);
-        Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
-        when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
-                .thenReturn(expected);
+    void updateSpotlight_withoutLibrarianRole_returns403() throws Exception {
+        mockMvc.perform(patch("/books/1/spotlight")
+                        .param("value", "true")
+                        .with(oauth2Login()))
+                .andExpect(status().isForbidden());
 
-        ResponseEntity<?> result = bookController.filterBooks(filter, null);
-
-        assertEquals(200, result.getStatusCode().value());
-        assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).filterBooks(filter, UserRoles.STUDENT, null);
+        verifyNoInteractions(bookService);
     }
 
     @Test
-    void givenOnlyLabels_whenFilterBooks_thenReturnsOk() {
-        BookFilterRequest filter = new BookFilterRequest(
-                null, null, null, List.of("Toekomst & technologie"), null,
-            null, null, null, null, null, null, null, null, 0, 20);
-        Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
-        when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
-                .thenReturn(expected);
+    void updateSpotlight_asLibrarian_returns204() throws Exception {
+        doNothing().when(bookService).updateSpotlight(1L, true);
 
-        ResponseEntity<?> result = bookController.filterBooks(filter, null);
+        mockMvc.perform(patch("/books/1/spotlight")
+                        .param("value", "true")
+                        .with(oauth2Login()
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isNoContent());
 
-        assertEquals(200, result.getStatusCode().value());
-        assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).filterBooks(filter, UserRoles.STUDENT, null);
+        verify(bookService).updateSpotlight(1L, true);
     }
 
     @Test
-    void givenNullFilters_whenFilterBooks_thenReturnsOk() {
-        BookFilterRequest filter = new BookFilterRequest(
-                null, null, null, null, null,
-            null, null, null, null, null, null, null, null, 0, 20);
-        when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
-                .thenReturn(toPage(List.of(buildDTO(1L, "Clean Code"))));
-
-        ResponseEntity<?> result = bookController.filterBooks(filter, null);
-
-        assertEquals(200, result.getStatusCode().value());
-    }
-
-    @Test
-    void givenMinGreaterThanMax_whenFilterBooks_thenReturnsBadRequest() {
-        BookFilterRequest filter = new BookFilterRequest(
-                null, null, null, null, null,
-            500, 100, null, null, null, null, null, null, 0, 20);
-        when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
-                .thenThrow(new IllegalArgumentException("minPageCount cannot be bigger than maxPageCount"));
-
-        ResponseEntity<?> result = bookController.filterBooks(filter, null);
-
-        assertEquals(400, result.getStatusCode().value());
-        assertEquals("minPageCount cannot be bigger than maxPageCount", result.getBody());
-    }
-
-    @Test
-    void givenMinRatingGreaterThanMaxRating_whenFilterBooks_thenReturnsBadRequest() {
-        BookFilterRequest filter = new BookFilterRequest(
-                null, null, null, null, null,
-            null, null, null, null, 5.0, 3.0, null, null, 0, 20);
-        when(bookService.filterBooks(filter, UserRoles.STUDENT, null))
-                .thenThrow(new IllegalArgumentException("minRating mag niet groter zijn dan maxRating"));
-
-        ResponseEntity<?> result = bookController.filterBooks(filter, null);
-
-        assertEquals(400, result.getStatusCode().value());
-        assertEquals("minRating mag niet groter zijn dan maxRating", result.getBody());
-    }
-
-    @Test
-    void givenDatabaseFails_whenFilterBooks_thenReturnsInternalServerError() {
-        when(bookService.filterBooks(any(BookFilterRequest.class), any(), isNull()))
-                .thenThrow(new DataAccessException("DB down") {
-                });
-
-        ResponseEntity<?> result = bookController.filterBooks(new BookFilterRequest(
-                null, null, null, null, null,
-            null, null, null, null, null, null, null, null, 0, 20), null);
-
-        assertEquals(500, result.getStatusCode().value());
-    }
-
-    @Test
-    void givenNoResults_whenFilterBooks_thenReturnsEmptyPage() {
-        when(bookService.filterBooks(any(BookFilterRequest.class), any(), isNull()))
-                .thenReturn(toPage(List.of()));
-
-        ResponseEntity<?> result = bookController.filterBooks(new BookFilterRequest(
-                null, null, null, null, null,
-            null, null, null, null, null, null, null, null, 0, 20), null);
-
-        assertEquals(200, result.getStatusCode().value());
-        Page<?> body = (Page<?>) result.getBody();
-        assertNotNull(body);
-        assertEquals(0, body.getTotalElements());
-    }
-
-    // --- spotlight Controller Tests ---
-
-    @Test
-    void givenSpotlightBooksExist_whenGetAllBooksInSpotlight_thenReturnsExpectedDTOs() {
-        List<BookDTO> expected = List.of(
-                buildDTO(1L, "Spotlight Book 1"),
-                buildDTO(2L, "Spotlight Book 2"),
-                buildDTO(3L, "Spotlight Book 3"));
-
-        when(bookService.getAllBooksInSpotlight(UserRoles.STUDENT, null)).thenReturn(expected);
-
-        List<BookDTO> result = bookController.getAllBooksInSpotlight(null);
-
-        assertEquals(expected, result);
-        verify(bookService, times(1)).getAllBooksInSpotlight(UserRoles.STUDENT, null);
-    }
-
-    @Test
-    void givenNoSpotlightBooksExist_whenGetAllBooksInSpotlight_thenReturnsEmptyList() {
-        when(bookService.getAllBooksInSpotlight(UserRoles.STUDENT, null)).thenReturn(List.of());
-
-        List<BookDTO> result = bookController.getAllBooksInSpotlight(null);
-
-        assertNotNull(result);
-        assertEquals(0, result.size());
-        verify(bookService, times(1)).getAllBooksInSpotlight(UserRoles.STUDENT, null);
-    }
-
-    @Test
-    void givenBookExists_whenUpdateSpotlight_thenReturnsNoContent() throws BookNotFoundException {
-        ResponseEntity<Void> result = bookController.updateSpotlight(1L, true);
-
-        assertEquals(204, result.getStatusCode().value());
-        verify(bookService, times(1)).updateSpotlight(1L, true);
-    }
-
-    @Test
-    void givenBookDoesNotExist_whenUpdateSpotlight_thenThrowsBookNotFoundException() throws BookNotFoundException {
+    void updateSpotlight_bookNotFound_returns404() throws Exception {
         doThrow(new BookNotFoundException(99L)).when(bookService).updateSpotlight(99L, false);
 
-        assertThrows(BookNotFoundException.class, () -> bookController.updateSpotlight(99L, false));
-        verify(bookService, times(1)).updateSpotlight(99L, false);
+        mockMvc.perform(patch("/books/99/spotlight")
+                        .param("value", "false")
+                        .with(oauth2Login()
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    // ─── POST /books/add/{isbn} — @PreAuthorize ───────────────────────────────
+
+    @Test
+    void addBookByIsbn_withoutLibrarianRole_returns403() throws Exception {
+        mockMvc.perform(post("/books/add/9780132350884")
+                        .with(oauth2Login()))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(bookService);
     }
 
     @Test
-    void givenQuery_whenSearchByTitleOrAuthor_thenReturnsOkWithResults() {
-        Page<BookDTO> expected = toPage(List.of(buildDTO(1L, "Clean Code")));
-        when(bookService.searchByTitleOrAuthorOrCategory("Clean", 0, 20, UserRoles.STUDENT, null)).thenReturn(expected);
+    void addBookByIsbn_asLibrarian_returns201() throws Exception {
+        stubAsLibrarian("uid-lib");
+        when(bookService.addBookByIsbn("9780132350884", "uid-lib", "Campus Zuid", null))
+                .thenReturn(buildDTO(1L, "Clean Code"));
 
-        ResponseEntity<Page<BookDTO>> result = bookController.searchByTitleOrAuthorOrCategory("Clean", 0, 20, null);
-
-        assertEquals(200, result.getStatusCode().value());
-        assertEquals(expected, result.getBody());
-        verify(bookService, times(1)).searchByTitleOrAuthorOrCategory("Clean", 0, 20, UserRoles.STUDENT, null);
+        mockMvc.perform(post("/books/add/9780132350884")
+                        .param("campus", "Campus Zuid")
+                        .with(oauth2Login()
+                                .attributes(a -> a.put("userID", "uid-lib"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title").value("Clean Code"));
     }
 
     @Test
-    void givenValidExcelFile_whenImportBooks_thenReturnsOkWithImportSummary() {
-        OAuth2User principal = mockPrincipal("uid-123");
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "books.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "dummy".getBytes());
+    void addBookByIsbn_unknownIsbn_returns400() throws Exception {
+        stubAsLibrarian("uid-lib");
+        when(bookService.addBookByIsbn(eq("0000000000000"), eq("uid-lib"), any(), any()))
+                .thenThrow(new IllegalArgumentException("Geen boek voor ISBN: 0000000000000"));
 
-        BulkImportResponseDTO expected = new BulkImportResponseDTO(
-                3, 2, 1,
-                List.of(new ImportMismatchDTO(4, "9780132350884", "Wrong Title", "Clean Code",
-                        "De titel komt niet overeen (Clean Code)")));
-
-        when(bookService.importBooksFromExcel(
-                any(MultipartFile.class),
-                eq("uid-123"),
-                eq("Campus Zuid"),
-                eq(true),
-                eq(List.of(2))))
-                .thenReturn(expected);
-
-        ResponseEntity<?> result = bookController.importBooks(
-                file,
-                "Campus Zuid",
-                true,
-                List.of(2),
-                principal);
-
-        assertEquals(200, result.getStatusCode().value());
-        assertSame(expected, result.getBody());
-
-        verify(bookService, times(1)).importBooksFromExcel(
-                file,
-                "uid-123",
-                "Campus Zuid",
-                true,
-                List.of(2));
+        mockMvc.perform(post("/books/add/0000000000000")
+                        .with(oauth2Login()
+                                .attributes(a -> a.put("userID", "uid-lib"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Geen boek voor ISBN: 0000000000000"));
     }
 
     @Test
-    void givenInvalidExcelFile_whenImportBooks_thenReturnsBadRequest() {
-        OAuth2User principal = mockPrincipal("uid-123");
-
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "books.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                new byte[0]);
-
-        when(bookService.importBooksFromExcel(
-                any(MultipartFile.class),
-                eq("uid-123"),
-                eq("Campus Zuid"),
-                eq(true),
-                eq(List.of(2))))
-                .thenThrow(new IllegalArgumentException("Upload een excel file die niet leeg is"));
-
-        ResponseEntity<?> result = bookController.importBooks(
-                file,
-                "Campus Zuid",
-                true,
-                List.of(2),
-                principal);
-
-        assertEquals(400, result.getStatusCode().value());
-        assertInstanceOf(Map.class, result.getBody());
-
-        Map<?, ?> body = (Map<?, ?>) result.getBody();
-        assertEquals("Upload een excel file die niet leeg is", body.get("message"));
-
-        verify(bookService, times(1)).importBooksFromExcel(
-                file,
-                "uid-123",
-                "Campus Zuid",
-                true,
-                List.of(2));
-    }
-
-    @Test
-    void givenUnexpectedServiceError_whenImportBooks_thenReturnsInternalServerError() {
-        OAuth2User principal = mockPrincipal("uid-123");
-
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "books.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "dummy".getBytes());
-
-        when(bookService.importBooksFromExcel(
-                any(MultipartFile.class),
-                eq("uid-123"),
-                eq("Campus Zuid"),
-                eq(true),
-                eq(List.of(2))))
-                .thenThrow(new RuntimeException("DB down"));
-
-        ResponseEntity<?> result = bookController.importBooks(
-                file,
-                "Campus Zuid",
-                true,
-                List.of(2),
-                principal);
-
-        assertEquals(500, result.getStatusCode().value());
-        assertInstanceOf(Map.class, result.getBody());
-
-        Map<?, ?> body = (Map<?, ?>) result.getBody();
-        assertEquals("Er is een fout opgetreden bij het importeren van het Excelbestand.", body.get("message"));
-
-        verify(bookService, times(1)).importBooksFromExcel(
-                file,
-                "uid-123",
-                "Campus Zuid",
-                true,
-                List.of(2));
-    }
-
-    // --- updateBook Controller Tests ---
-
-    @Test
-    void givenBookExists_whenUpdateBook_thenReturnsOkWithUpdatedDTO() {
-        BookDTO updatedDTO = buildDTO(1L, "Updated Title");
-        when(bookService.updateBook(1L, updatedDTO)).thenReturn(updatedDTO);
-
-        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
-
-        assertEquals(200, result.getStatusCode().value());
-        assertEquals(updatedDTO, result.getBody());
-        verify(bookService, times(1)).updateBook(1L, updatedDTO);
-    }
-
-    @Test
-    void givenBookDoesNotExist_whenUpdateBook_thenReturnsNotFound() {
-        BookDTO updatedDTO = buildDTO(99L, "Some Title");
-        when(bookService.updateBook(99L, updatedDTO)).thenThrow(new BookNotFoundException(99L));
-
-        ResponseEntity<?> result = bookController.updateBook(99L, updatedDTO);
-
-        assertEquals(404, result.getStatusCode().value());
-        verify(bookService, times(1)).updateBook(99L, updatedDTO);
-    }
-
-    @Test
-    void givenBlankTitle_whenUpdateBook_thenReturnsBadRequest() {
-        BookDTO updatedDTO = buildDTO(1L, "");
-        when(bookService.updateBook(1L, updatedDTO))
-                .thenThrow(new IllegalArgumentException("Titel mag niet leeg zijn"));
-
-        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
-
-        assertEquals(400, result.getStatusCode().value());
-        assertEquals("Titel mag niet leeg zijn", result.getBody());
-        verify(bookService, times(1)).updateBook(1L, updatedDTO);
-    }
-
-    @Test
-    void givenNegativePageCount_whenUpdateBook_thenReturnsBadRequest() {
-        BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
-                -1, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 2023, false, null, "A", 1, 1,
-                "Eerste graad", null, null);
-        when(bookService.updateBook(1L, updatedDTO))
-                .thenThrow(new IllegalArgumentException("Paginacount mag niet negatief zijn"));
-
-        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
-
-        assertEquals(400, result.getStatusCode().value());
-        assertEquals("Paginacount mag niet negatief zijn", result.getBody());
-        verify(bookService, times(1)).updateBook(1L, updatedDTO);
-    }
-
-    @Test
-    void givenFuturePublishedYear_whenUpdateBook_thenReturnsBadRequest() {
-        BookDTO updatedDTO = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
-                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890", 9999, false, null, "A", 1, 1,
-                "Eerste graad", null, null);
-        when(bookService.updateBook(1L, updatedDTO))
-                .thenThrow(new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen"));
-
-        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
-
-        assertEquals(400, result.getStatusCode().value());
-        assertEquals("Publicatiejaar mag niet in de toekomst liggen", result.getBody());
-        verify(bookService, times(1)).updateBook(1L, updatedDTO);
-    }
-
-    @Test
-    void givenBookDoesNotExist_whenUpdateBook_thenReturnsNotFoundWithMessage() {
-        BookDTO updatedDTO = buildDTO(99L, "Some Title");
-        when(bookService.updateBook(99L, updatedDTO)).thenThrow(new BookNotFoundException(99L));
-
-        ResponseEntity<?> result = bookController.updateBook(99L, updatedDTO);
-
-        assertEquals(404, result.getStatusCode().value());
-        assertEquals("Book with id 99 could not be found", result.getBody());
-        verify(bookService, times(1)).updateBook(99L, updatedDTO);
-    }
-
-    @Test
-    void givenServiceIsCalled_whenUpdateBook_thenDelegatesOnlyToService() {
-        BookDTO updatedDTO = buildDTO(1L, "Clean Code");
-        when(bookService.updateBook(1L, updatedDTO)).thenReturn(updatedDTO);
-
-        bookController.updateBook(1L, updatedDTO);
-
-        verify(bookService, times(1)).updateBook(1L, updatedDTO);
-        verifyNoMoreInteractions(bookService);
-    }
-
-    @Test
-    void givenBooksExist_whenGetAllBooksUnpaged_thenReturnsAllDTOs() {
-        List<BookDTO> expected = List.of(buildDTO(1L, "Clean Code"), buildDTO(2L, "Effective Java"));
-        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT, null)).thenReturn(expected);
-
-        List<BookDTO> result = bookController.getAllBooksUnpaged(null);
-
-        assertEquals(expected, result);
-        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT, null);
-    }
-
-    @Test
-    void givenNoBooksExist_whenGetAllBooksUnpaged_thenReturnsEmptyList() {
-        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT, null)).thenReturn(List.of());
-
-        List<BookDTO> result = bookController.getAllBooksUnpaged(null);
-
-        assertNotNull(result);
-        assertEquals(0, result.size());
-        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT, null);
-    }
-
-    @Test
-    void givenServiceFails_whenGetAllBooksUnpaged_thenThrowsException() {
-        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT, null))
-                .thenThrow(new RuntimeException("Database unavailable"));
-
-        assertThrows(RuntimeException.class, () -> bookController.getAllBooksUnpaged(null));
-        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT, null);
-    }
-
-    @Test
-    void givenServiceIsCalled_whenGetAllBooksUnpaged_thenDelegatesOnlyToService() {
-        when(bookService.getAllBooksUnpaged(UserRoles.STUDENT, null)).thenReturn(List.of());
-
-        bookController.getAllBooksUnpaged(null);
-
-        verify(bookService, times(1)).getAllBooksUnpaged(UserRoles.STUDENT, null);
-        verifyNoMoreInteractions(bookService);
-    }
-
-    @Test
-    void updateBook_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
-        Method method = BookController.class.getMethod("updateBook", Long.class, edu.ap.gosmartlib.dto.BookDTO.class);
-        PreAuthorize preAuthorize = method.getAnnotation(PreAuthorize.class);
-
-        assertNotNull(preAuthorize);
-        assertEquals("hasAnyRole('BIBLIOTHEEKBEHEERDER', 'ADMIN')", preAuthorize.value());
-    }
-
-    @Test
-    void getAllBooksInSpotlight_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
-        Method method = BookController.class.getMethod("getAllBooksInSpotlight", OAuth2User.class);
-        PreAuthorize preAuthorize = method.getAnnotation(PreAuthorize.class);
-
-        assertNotNull(preAuthorize);
-        assertEquals("hasRole('BIBLIOTHEEKBEHEERDER')", preAuthorize.value());
-    }
-
-    @Test
-    void updateSpotlight_shouldHaveExpectedPreAuthorizeRule() throws NoSuchMethodException {
-        Method method = BookController.class.getMethod("updateSpotlight", Long.class, boolean.class);
-        PreAuthorize preAuthorize = method.getAnnotation(PreAuthorize.class);
-
-        assertNotNull(preAuthorize);
-        assertEquals("hasRole('BIBLIOTHEEKBEHEERDER')", preAuthorize.value());
-    }
-
-    @Test
-    void givenValidManualBookRequest_whenAddManualBook_thenReturnsCreatedBook() {
-        OAuth2User principal = mockPrincipal("uid-123");
-
-        CreateBookRequestDTO request = new CreateBookRequestDTO(
-                "Manual Book", List.of("Author One", "Author Two"), "Manual Publisher", "Manual Description",
-                321, List.of("Fantasy", "Young adult"), "thumbnail-url", "nl", 4.5, 2024,
-                false, false, null, "A", 1, 1, "Eerste graad", null);
-
-        BookDTO createdBook = new BookDTO(42L, "Manual Book", List.of("Author One", "Author Two"),
-                "Manual Publisher", "Manual Description", 321, List.of("Fantasy", "Young adult"),
-                "thumbnail-url", "nl", 4.5, "NOISBN-123e4567-e89b-12d3-a456-426614174000",
-                2024, false, null, "A", 1, 1, "Eerste graad", null, null);
-
-        when(bookService.addManualBook(request, "uid-123")).thenReturn(createdBook);
-
-        ResponseEntity<?> result = bookController.addManualBook(request, principal);
-
-        assertEquals(201, result.getStatusCode().value());
-        assertEquals(createdBook, result.getBody());
-        verify(bookService, times(1)).addManualBook(request, "uid-123");
-    }
-
-    @Test
-    void givenBlankTitle_whenAddManualBook_thenReturnsBadRequest() {
-        OAuth2User principal = mockPrincipal("uid-123");
-
-        CreateBookRequestDTO request = new CreateBookRequestDTO(
-                "   ", List.of("Author One"), "Publisher", "Description", 100,
-                List.of("Fantasy"), "thumbnail-url", "nl", 4.0, 2024,
-                false, false, null, "A", 1, 1, "Eerste graad", null);
-
-        when(bookService.addManualBook(request, "uid-123"))
-                .thenThrow(new IllegalArgumentException("Titel is verplicht"));
-
-        ResponseEntity<?> result = bookController.addManualBook(request, principal);
-
-        assertEquals(400, result.getStatusCode().value());
-        assertEquals("Titel is verplicht", result.getBody());
-        verify(bookService, times(1)).addManualBook(request, "uid-123");
-    }
-
-    @Test
-    void givenUnexpectedServiceError_whenAddManualBook_thenReturnsInternalServerError() {
-        OAuth2User principal = mockPrincipal("uid-123");
-
-        CreateBookRequestDTO request = new CreateBookRequestDTO(
-                "Manual Book", List.of("Author One"), "Publisher", "Description", 100,
-                List.of("Fantasy"), "thumbnail-url", "nl", 4.0, 2024,
-                false, false, null, "A", 1, 1, "Eerste graad", null);
-
-        when(bookService.addManualBook(request, "uid-123")).thenThrow(new RuntimeException("DB down"));
-
-        ResponseEntity<?> result = bookController.addManualBook(request, principal);
-
-        assertEquals(500, result.getStatusCode().value());
-        assertEquals("An error occurred while saving the book.", result.getBody());
-        verify(bookService, times(1)).addManualBook(request, "uid-123");
-    }
-
-    @Test
-    void givenValidIsbn_whenAddBookByIsbn_thenReturnsCreatedBook() {
-        OAuth2User principal = mockPrincipal("uid-123");
-
-        BookDTO createdBook = buildDTO(5L, "Clean Code");
-        when(bookService.addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null)).thenReturn(createdBook);
-
-        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", null, principal);
-
-        assertEquals(201, result.getStatusCode().value());
-        assertEquals(createdBook, result.getBody());
-        verify(bookService, times(1)).addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null);
-    }
-
-    @Test
-    void givenUnknownIsbn_whenAddBookByIsbn_thenReturnsNotFound() {
-        OAuth2User principal = mockPrincipal("uid-123");
-
-        when(bookService.addBookByIsbn("0000000000000", "uid-123", "Campus Zuid", null))
-                .thenThrow(new IllegalArgumentException("Geen boek voor ISBN: 0000000000000", null));
-
-        ResponseEntity<?> result = bookController.addBookByIsbn("0000000000000", "Campus Zuid", null, principal);
-
-        assertEquals(404, result.getStatusCode().value());
-        assertEquals("Geen boek voor ISBN: 0000000000000", result.getBody());
-        verify(bookService, times(1)).addBookByIsbn("0000000000000", "uid-123", "Campus Zuid", null);
-    }
-
-    @Test
-    void givenUnexpectedServiceError_whenAddBookByIsbn_thenReturnsInternalServerError() {
-        OAuth2User principal = mockPrincipal("uid-123");
-
-        when(bookService.addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null))
+    void addBookByIsbn_unexpectedError_returns500() throws Exception {
+        stubAsLibrarian("uid-lib");
+        when(bookService.addBookByIsbn(any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("Google API down"));
 
-        ResponseEntity<?> result = bookController.addBookByIsbn("9780132350884", "Campus Zuid", null, principal);
+        mockMvc.perform(post("/books/add/9780132350884")
+                        .with(oauth2Login()
+                                .attributes(a -> a.put("userID", "uid-lib"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("Er is een onverwachte fout opgetreden"));
+    }
 
-        assertEquals(500, result.getStatusCode().value());
-        assertEquals("An error occurred while fetching the book.", result.getBody());
-        verify(bookService, times(1)).addBookByIsbn("9780132350884", "uid-123", "Campus Zuid", null);
+    // ─── GET /books/search/{isbn} ─────────────────────────────────────────────
+
+    @Test
+    void searchBookByIsbn_found_returnsOk() throws Exception {
+        when(bookService.searchBookByIsbn("9780132350884")).thenReturn(buildDTO(1L, "Clean Code"));
+
+        mockMvc.perform(get("/books/search/9780132350884"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Clean Code"));
     }
 
     @Test
-    void givenValidIsbn_whenSearchBookByIsbn_thenReturnsPreviewBook() {
-        BookDTO previewBook = buildDTO(99L, "Preview Book");
-        when(bookService.searchBookByIsbn("9780132350884")).thenReturn(previewBook);
-
-        ResponseEntity<?> result = bookController.searchBookByIsbn("9780132350884");
-
-        assertEquals(200, result.getStatusCode().value());
-        assertEquals(previewBook, result.getBody());
-        verify(bookService, times(1)).searchBookByIsbn("9780132350884");
-    }
-
-    @Test
-    void givenUnknownIsbn_whenSearchBookByIsbn_thenReturnsNotFound() {
+    void searchBookByIsbn_unknownIsbn_returns400() throws Exception {
         when(bookService.searchBookByIsbn("0000000000000"))
                 .thenThrow(new IllegalArgumentException("Geen boek voor ISBN: 0000000000000"));
 
-        ResponseEntity<?> result = bookController.searchBookByIsbn("0000000000000");
+        mockMvc.perform(get("/books/search/0000000000000"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Geen boek voor ISBN: 0000000000000"));
+    }
 
-        assertEquals(404, result.getStatusCode().value());
-        assertEquals("Geen boek voor ISBN: 0000000000000", result.getBody());
-        verify(bookService, times(1)).searchBookByIsbn("0000000000000");
+    // ─── PATCH /books/{id} — @PreAuthorize ───────────────────────────────────
+
+    @Test
+    void updateBook_withoutLibrarianRole_returns403() throws Exception {
+        mockMvc.perform(patch("/books/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildDTOJson(1L, "Test"))
+                        .with(oauth2Login()))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(bookService);
     }
 
     @Test
-    void givenUnexpectedServiceError_whenSearchBookByIsbn_thenReturnsInternalServerError() {
-        when(bookService.searchBookByIsbn("9780132350884")).thenThrow(new RuntimeException("Google API down"));
+    void updateBook_asLibrarian_returnsOk() throws Exception {
+        BookDTO dto = buildDTO(1L, "Updated Title");
+        when(bookService.updateBook(eq(1L), any())).thenReturn(dto);
 
-        ResponseEntity<?> result = bookController.searchBookByIsbn("9780132350884");
-
-        assertEquals(500, result.getStatusCode().value());
-        assertEquals("An error occurred while fetching the book.", result.getBody());
-        verify(bookService, times(1)).searchBookByIsbn("9780132350884");
+        mockMvc.perform(patch("/books/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildDTOJson(1L, "Updated Title"))
+                        .with(oauth2Login()
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Updated Title"));
     }
 
     @Test
-    void givenBookWithInventories_whenGetBookById_thenReturnsInventoryData() throws BookNotFoundException {
-        BookDTO expected = new BookDTO(1L, "Clean Code", List.of("Author"), "Publisher", "Description",
-                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023, false, List.of("STEM"), "A", 5, 3, "Eerste graad", null, List.of(
-                        buildInventoryDTO(11L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
-                        buildInventoryDTO(12L, 2L, "GO! School", "Campus Zuid", 3, 2)));
+    void updateBook_bookNotFound_returns404() throws Exception {
+        when(bookService.updateBook(eq(99L), any())).thenThrow(new BookNotFoundException(99L));
 
-        when(bookService.getBookById(1L, UserRoles.STUDENT, null)).thenReturn(expected);
-
-        ResponseEntity<?> result = bookController.getBookById(1L, null);
-
-        assertEquals(200, result.getStatusCode().value());
-        assertInstanceOf(BookDTO.class, result.getBody());
-
-        BookDTO body = (BookDTO) result.getBody();
-        assertNotNull(body);
-        assertEquals(5, body.totalCopies());
-        assertEquals(3, body.availableCopies());
-        assertNotNull(body.inventories());
-        assertEquals(2, body.inventories().size());
-        assertEquals("Campus Noord", body.inventories().get(0).campus());
-        assertEquals(2, body.inventories().get(0).totalCopies());
-        assertEquals("GO! School", body.inventories().get(1).schoolName());
-        assertEquals(2, body.inventories().get(1).availableCopies());
-
-        verify(bookService).getBookById(1L, UserRoles.STUDENT, null);
+        mockMvc.perform(patch("/books/99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildDTOJson(99L, "Some Title"))
+                        .with(oauth2Login()
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists());
     }
 
     @Test
-    void givenBookWithInventories_whenUpdateBook_thenReturnsUpdatedInventoryData() {
-        BookDTO updatedDTO = new BookDTO(1L, "Updated Title", List.of("Author"), "Publisher", "Description",
-                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023, false, List.of("STEM"), "A", 10, 7, "Eerste graad", null, List.of(
-                        buildInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3),
-                        buildInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4)));
+    void updateBook_illegalArgument_returns400() throws Exception {
+        when(bookService.updateBook(eq(1L), any()))
+                .thenThrow(new IllegalArgumentException("Titel mag niet leeg zijn"));
 
-        when(bookService.updateBook(1L, updatedDTO)).thenReturn(updatedDTO);
+        mockMvc.perform(patch("/books/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildDTOJson(1L, ""))
+                        .with(oauth2Login()
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Titel mag niet leeg zijn"));
+    }
 
-        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
+    // ─── POST /books/add — @PreAuthorize ─────────────────────────────────────
 
-        assertEquals(200, result.getStatusCode().value());
-        assertEquals(updatedDTO, result.getBody());
+    @Test
+    void addManualBook_withoutLibrarianRole_returns403() throws Exception {
+        mockMvc.perform(post("/books/add")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildCreateRequestJson("New Book"))
+                        .with(oauth2Login()))
+                .andExpect(status().isForbidden());
 
-        BookDTO body = (BookDTO) result.getBody();
-        assertNotNull(body);
-        assertEquals(10, body.totalCopies());
-        assertEquals(7, body.availableCopies());
-        assertNotNull(body.inventories());
-        assertEquals(2, body.inventories().size());
-        assertEquals(1L, body.inventories().get(0).schoolId());
-        assertEquals("Campus B", body.inventories().get(1).campus());
-
-        verify(bookService).updateBook(1L, updatedDTO);
+        verifyNoInteractions(bookService);
     }
 
     @Test
-    void givenInvalidInventoryCounts_whenUpdateBook_thenReturnsBadRequest() {
-        BookDTO updatedDTO = new BookDTO(1L, "Updated Title", List.of("Author"), "Publisher", "Description",
-                100, List.of("Category"), "thumbnail", "en", 4.0, "9781234567890",
-                2023, false, List.of("STEM"), "A", 3, 5, "Eerste graad", null, List.of(
-                        buildInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 3, 5)));
+    void addManualBook_asLibrarian_returns201() throws Exception {
+        stubAsLibrarian("uid-lib");
+        when(bookService.addManualBook(any(), eq("uid-lib"))).thenReturn(buildDTO(1L, "New Book"));
 
-        when(bookService.updateBook(1L, updatedDTO))
-                .thenThrow(new IllegalArgumentException(
-                        "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren"));
-
-        ResponseEntity<?> result = bookController.updateBook(1L, updatedDTO);
-
-        assertEquals(400, result.getStatusCode().value());
-        assertEquals("Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren", result.getBody());
-        verify(bookService).updateBook(1L, updatedDTO);
+        mockMvc.perform(post("/books/add")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildCreateRequestJson("New Book"))
+                        .with(oauth2Login()
+                                .attributes(a -> a.put("userID", "uid-lib"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title").value("New Book"));
     }
 
     @Test
-    void givenManualBookRequestWithInventories_whenAddManualBook_thenReturnsCreatedBookWithInventories() {
-        OAuth2User principal = mockPrincipal("uid-123");
+    void addManualBook_illegalArgument_returns400() throws Exception {
+        stubAsLibrarian("uid-lib");
+        when(bookService.addManualBook(any(), eq("uid-lib")))
+                .thenThrow(new IllegalArgumentException("Titel is verplicht"));
 
-        CreateBookRequestDTO request = new CreateBookRequestDTO(
-                "Manual Book",
-                List.of("Author One", "Author Two"),
-                "Manual Publisher",
-                "Manual Description",
-                321,
-                List.of("Fantasy", "Young adult"),
-                "thumbnail-url",
-                "nl",
-                4.5,
-                2024,
-                false,
-                false,
-                List.of("STEM"),
-                "A",
-                5,
-                3,
-                "Eerste graad",
-                List.of(
-                        buildCreateInventoryRequest(1L, "Campus Noord", 2, 1),
-                        buildCreateInventoryRequest(2L, "Campus Zuid", 3, 2)));
+        mockMvc.perform(post("/books/add")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(buildCreateRequestJson(""))
+                        .with(oauth2Login()
+                                .attributes(a -> a.put("userID", "uid-lib"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Titel is verplicht"));
+    }
 
-        BookDTO createdBook = new BookDTO(42L, "Manual Book", List.of("Author One", "Author Two"),
-                "Manual Publisher", "Manual Description", 321, List.of("Fantasy", "Young adult"),
-                "thumbnail-url", "nl", 4.5, "NOISBN-123e4567-e89b-12d3-a456-426614174000",
-                2024, false, List.of("STEM"), "A", 5, 3, "Eerste graad", null, List.of(
-                        buildInventoryDTO(21L, 1L, "AP Hogeschool", "Campus Noord", 2, 1),
-                        buildInventoryDTO(22L, 2L, "GO! School", "Campus Zuid", 3, 2)));
+    // ─── POST /books/import — controller heeft eigen try-catch ────────────────
 
-        when(bookService.addManualBook(request, "uid-123")).thenReturn(createdBook);
+    @Test
+    void importBooks_withoutLibrarianRole_returns403() throws Exception {
+        mockMvc.perform(multipart("/books/import")
+                        .file(dummyExcelFile())
+                        .with(oauth2Login()))
+                .andExpect(status().isForbidden());
 
-        ResponseEntity<?> result = bookController.addManualBook(request, principal);
-
-        assertEquals(201, result.getStatusCode().value());
-        assertEquals(createdBook, result.getBody());
-
-        BookDTO body = (BookDTO) result.getBody();
-        assertNotNull(body);
-        assertEquals(5, body.totalCopies());
-        assertEquals(3, body.availableCopies());
-        assertNotNull(body.inventories());
-        assertEquals(2, body.inventories().size());
-        assertEquals("Campus Noord", body.inventories().get(0).campus());
-        assertEquals(3, body.inventories().get(1).totalCopies());
-
-        verify(bookService).addManualBook(request, "uid-123");
+        verifyNoInteractions(bookService);
     }
 
     @Test
-    void givenInvalidInventoryCounts_whenAddManualBook_thenReturnsBadRequest() {
-        OAuth2User principal = mockPrincipal("uid-123");
+    void importBooks_validFile_returnsOk() throws Exception {
+        stubAsLibrarian("uid-lib");
+        BulkImportResponseDTO response = new BulkImportResponseDTO(3, 2, 1,
+                List.of(new ImportMismatchDTO(4, "9780132350884", "Wrong", "Clean Code",
+                        "De titel komt niet overeen (Clean Code)")));
 
-        CreateBookRequestDTO request = new CreateBookRequestDTO(
-                "Manual Book",
-                List.of("Author One"),
-                "Publisher",
-                "Description",
-                100,
-                List.of("Fantasy"),
-                "thumbnail-url",
-                "nl",
-                4.0,
-                2024,
-                false,
-                false,
-                List.of("STEM"),
-                "A",
-                3,
-                5,
-                "Eerste graad",
-                List.of(buildCreateInventoryRequest(1L, "Campus Zuid", 3, 5)));
+        when(bookService.importBooksFromExcel(any(), eq("uid-lib"), eq("Campus Zuid"), eq(true), eq(List.of(2))))
+                .thenReturn(response);
 
-        when(bookService.addManualBook(request, "uid-123"))
-                .thenThrow(new IllegalArgumentException(
-                        "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren"));
-
-        ResponseEntity<?> result = bookController.addManualBook(request, principal);
-
-        assertEquals(400, result.getStatusCode().value());
-        assertEquals("Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren", result.getBody());
-        verify(bookService).addManualBook(request, "uid-123");
-    }
-
-    // --- Snowball Tests ---
-
-    @Test
-    void givenSnowballSectionsExist_whenGetSnowball_thenReturns200WithSections() {
-        List<SnowballSectionDTO> sections = List.of(
-                new SnowballSectionDTO("AUTHOR", "Auteur X", List.of(buildDTO(2L, "Boek B"))));
-        when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null)).thenReturn(sections);
-
-        ResponseEntity<List<SnowballSectionDTO>> result = bookController.getSnowball(1L, null);
-
-        assertEquals(200, result.getStatusCode().value());
-        assertEquals(1, result.getBody().size());
-        assertEquals("AUTHOR", result.getBody().get(0).type());
-        assertEquals("Auteur X", result.getBody().get(0).value());
-        verify(bookService, times(1)).getSnowballSections(1L, UserRoles.STUDENT, null);
+        mockMvc.perform(multipart("/books/import")
+                        .file(dummyExcelFile())
+                        .param("campus", "Campus Zuid")
+                        .param("confirmDuplicates", "true")
+                        .param("confirmedDuplicateRows", "2")
+                        .with(oauth2Login()
+                                .attributes(a -> a.put("userID", "uid-lib"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void givenNoSnowballSections_whenGetSnowball_thenReturns200WithEmptyList() {
-        when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null)).thenReturn(List.of());
+    void importBooks_emptyFile_returns400() throws Exception {
+        stubAsLibrarian("uid-lib");
+        when(bookService.importBooksFromExcel(any(), any(), any(), anyBoolean(), any()))
+                .thenThrow(new IllegalArgumentException("Upload een excel file die niet leeg is"));
 
-        ResponseEntity<List<SnowballSectionDTO>> result = bookController.getSnowball(1L, null);
-
-        assertEquals(200, result.getStatusCode().value());
-        assertNotNull(result.getBody());
-        assertTrue(result.getBody().isEmpty());
+        mockMvc.perform(multipart("/books/import")
+                        .file(dummyExcelFile())
+                        .with(oauth2Login()
+                                .attributes(a -> a.put("userID", "uid-lib"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Upload een excel file die niet leeg is"));
     }
 
     @Test
-    void givenNullPrincipal_whenGetSnowball_thenUsesStudentRole() {
-        when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null)).thenReturn(List.of());
+    void importBooks_unexpectedError_returns500() throws Exception {
+        stubAsLibrarian("uid-lib");
+        when(bookService.importBooksFromExcel(any(), any(), any(), anyBoolean(), any()))
+                .thenThrow(new RuntimeException("DB down"));
 
-        bookController.getSnowball(1L, null);
+        mockMvc.perform(multipart("/books/import")
+                        .file(dummyExcelFile())
+                        .with(oauth2Login()
+                                .attributes(a -> a.put("userID", "uid-lib"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_BIBLIOTHEEKBEHEERDER"))))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message")
+                        .value("Er is een fout opgetreden bij het importeren van het Excelbestand."));
+    }
 
-        verify(bookService, times(1)).getSnowballSections(1L, UserRoles.STUDENT, null);
+    // ─── GET /books/{id}/snowball ─────────────────────────────────────────────
+
+    @Test
+    void getSnowball_returnsRelatedBooks() throws Exception {
+        when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null))
+                .thenReturn(List.of(new SnowballSectionDTO("AUTHOR", "Auteur X",
+                        List.of(buildDTO(2L, "Boek B")))));
+
+        mockMvc.perform(get("/books/1/snowball"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].type").value("AUTHOR"));
     }
 
     @Test
-    void givenBookNotFound_whenGetSnowball_thenThrowsException() {
+    void getSnowball_bookNotFound_returns404() throws Exception {
         when(bookService.getSnowballSections(eq(99L), any(), any()))
                 .thenThrow(new BookNotFoundException(99L));
 
-        assertThrows(BookNotFoundException.class, () -> bookController.getSnowball(99L, null));
+        mockMvc.perform(get("/books/99/snowball"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists());
     }
 
-    @Test
-    void givenSnowball_whenGetSnowball_thenDelegatesOnlyToService() {
-        when(bookService.getSnowballSections(1L, UserRoles.STUDENT, null)).thenReturn(List.of());
+    // ─── private helpers ──────────────────────────────────────────────────────
 
-        bookController.getSnowball(1L, null);
-
-        verify(bookService, times(1)).getSnowballSections(1L, UserRoles.STUDENT, null);
-        verifyNoMoreInteractions(bookService);
+    private MockMultipartFile dummyExcelFile() {
+        return new MockMultipartFile("file", "books.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "dummy".getBytes());
     }
 
-    @Test
-    void givenPrincipal_whenGetAvailableLanguages_thenDelegatesToServiceWithUid() {
-        OAuth2User principal = mockPrincipal("uid-123");
-        List<String> expected = List.of("nl", "swe", "Geen taal ingegeven");
-
-        when(bookService.getAvailableLanguages("uid-123")).thenReturn(expected);
-
-        List<String> result = bookController.getAvailableLanguages(principal);
-
-        assertEquals(expected, result);
-        verify(bookService).getAvailableLanguages("uid-123");
+    private String buildDTOJson(Long id, String title) {
+        return """
+                {"id":%d,"title":"%s","authors":["Author"],"publisher":"Publisher",
+                 "description":"Description","pageCount":100,"categories":["Category"],
+                 "thumbnail":"thumbnail","language":"en","averageRating":4.0,
+                 "isbn":"9781234567890","publishedYear":2023,"spotlight":false,
+                 "labels":null,"readingLevel":"A","totalCopies":1,"availableCopies":1,
+                 "readingLevelDescription":"Eerste graad","previewLink":null,"inventories":null}
+                """.formatted(id, title);
     }
 
-    // -- helper
-    private Page<BookDTO> toPage(List<BookDTO> list) {
-        return new PageImpl<>(list, PageRequest.of(0, 20), list.size());
+    private String buildCreateRequestJson(String title) {
+        return """
+            {"title":"%s","authors":["Author"],"publisher":"Publisher",
+             "description":"Description","pageCount":100,"categories":["Category"],
+             "thumbnail":"thumbnail","language":"nl","rating":4.0,
+             "publishedYear":2023,"spotlight":false,"didacticTag":false,
+             "labels":null,"readingLevel":"A","totalCopies":1,"availableCopies":1,
+             "ageRange":"Eerste graad","inventories":null}
+            """.formatted(title);
     }
 
-    private OAuth2User mockPrincipal(String uid) {
-        OAuth2User principal = mock(OAuth2User.class);
-        when(principal.getAttribute("userID")).thenReturn(uid);
-        return principal;
-    }
-
-    private BookInventoryDTO buildInventoryDTO(Long id, Long schoolId, String schoolName, String campus,
-            Integer totalCopies, Integer availableCopies) {
-        return new BookInventoryDTO(id, schoolId, schoolName, campus, totalCopies, availableCopies, 0, 0, 0);
-    }
-
-    private CreateBookInventoryRequestDTO buildCreateInventoryRequest(Long schoolId, String campus,
-            Integer totalCopies, Integer availableCopies) {
-        return new CreateBookInventoryRequestDTO(schoolId, campus, totalCopies, availableCopies);
-    }
 }

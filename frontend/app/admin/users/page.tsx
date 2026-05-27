@@ -87,6 +87,10 @@ export default function AdminUserPage() {
   const [approvedSchools, setApprovedSchools] = useState<ApprovedSchool[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
 
+  const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
+  const [deleteUserName, setDeleteUserName] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     const init = async () => {
       if (!API_URL) {
@@ -188,11 +192,11 @@ export default function AdminUserPage() {
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-              uids: uniqueUids,
-              ...(me?.role === "ADMIN" && selectedSchoolId !== null
-                ? { schoolId: selectedSchoolId }
-                : {}),
-            }),
+                  uids: uniqueUids,
+                  ...(me?.role === "ADMIN" && selectedSchoolId !== null
+                    ? { schoolId: selectedSchoolId }
+                    : {}),
+                }),
               },
             );
             if (displayNamesRes.ok) {
@@ -297,6 +301,34 @@ export default function AdminUserPage() {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!API_URL || deleteUserId === null) return;
+    setDeleting(true);
+    setError("");
+    setSucces("");
+    try {
+      const params = new URLSearchParams();
+      if (me?.role === "ADMIN" && selectedSchoolId !== null)
+        params.append("schoolId", String(selectedSchoolId));
+      const res = await fetch(
+        `${API_URL}/admin/users/${deleteUserId}?${params.toString()}`,
+        { method: "DELETE", credentials: "include" },
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message ?? "Verwijderen mislukt");
+        return;
+      }
+      setUsers((prev) => prev.filter((u) => u.id !== deleteUserId));
+      setSucces(`Account van ${deleteUserName} verwijderd`);
+      setDeleteUserId(null);
+    } catch {
+      setError("Er ging iets mis bij het verwijderen");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return <div>Gebruikers laden...</div>;
   }
@@ -392,6 +424,7 @@ export default function AdminUserPage() {
                   <th className="fullScreen adminHeader">Klassen</th>
                   <th className="adminHeader">Nieuwe rol</th>
                   <th className="adminHeader"></th>
+                  <th className="adminHeader"></th>
                 </tr>
               </thead>
 
@@ -453,6 +486,19 @@ export default function AdminUserPage() {
                           {savingUserId === user.id ? "Opslaan..." : "Opslaan"}
                         </button>
                       </td>
+                      <td className="adminCell">
+                        <button
+                          className="adminTableButton adminTableButtonDanger"
+                          onClick={() => {
+                            setDeleteUserId(user.id);
+                            setDeleteUserName(
+                              resolvedName || user.smartschoolUid,
+                            );
+                          }}
+                        >
+                          Verwijderen
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -476,6 +522,35 @@ export default function AdminUserPage() {
           setSyncResult(null);
         }}
       />
+      {deleteUserId !== null && (
+        <div className="schoolModalOverlay">
+          <div className="schoolModalBox">
+            <h2>Account verwijderen</h2>
+            <p style={{ marginBottom: "1rem" }}>
+              Weet je zeker dat je het account van{" "}
+              <strong>{deleteUserName}</strong> wil verwijderen? Alle
+              persoonlijke gegevens worden verwijderd conform GDPR. Dit kan niet
+              ongedaan worden gemaakt.
+            </p>
+            <div className="schoolModalFooter">
+              <button
+                className="schoolModalCancel"
+                onClick={() => setDeleteUserId(null)}
+                disabled={deleting}
+              >
+                Annuleren
+              </button>
+              <button
+                className="adminDangerButton"
+                onClick={handleDeleteUser}
+                disabled={deleting}
+              >
+                {deleting ? "Bezig..." : "Verwijderen"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

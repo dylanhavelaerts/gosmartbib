@@ -30,7 +30,6 @@ public enum UserRoles {
         return switch (role.toLowerCase()) {
             case "student" -> STUDENT;
             case "teacher" -> TEACHER;
-//            case "administrator" -> ADMIN;
             default -> OTHER;
         };
     }

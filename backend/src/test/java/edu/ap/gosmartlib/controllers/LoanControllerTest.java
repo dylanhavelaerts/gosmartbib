@@ -1,296 +1,249 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.controllers.loan.LoanController;
-import edu.ap.gosmartlib.dto.loan.ActiveLoanDTO;
-import edu.ap.gosmartlib.dto.loan.LoanHistoryDTO;
-import edu.ap.gosmartlib.dto.loan.LoanRequestDTO;
-import edu.ap.gosmartlib.dto.loan.ReturnBulkRequestDTO;
-import edu.ap.gosmartlib.dto.loan.LoanExtensionRequestDTO;
+
+import edu.ap.gosmartlib.config.TestSecurityConfig;
+import edu.ap.gosmartlib.services.loans.LoanDueDateNotificationService;
 import edu.ap.gosmartlib.services.loans.LoanPolicyService;
 import edu.ap.gosmartlib.services.loans.LoanService;
+import edu.ap.gosmartlib.services.users.UserService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 class LoanControllerTest {
 
-    @Mock
-    private LoanService loanService;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @Mock
-    private OAuth2User principal;
+    @MockitoBean private LoanService loanService;
+    @MockitoBean private LoanPolicyService loanPolicyService;
+    @MockitoBean private LoanDueDateNotificationService loanDueDateNotificationService;
+    @MockitoBean private UserService userService;
 
-    @InjectMocks
-    private LoanController loanController;
-
-    @Mock
-    private LoanPolicyService loanPolicyService;
+    // ─── POST /loans ──────────────────────────────────────────────────────────
 
     @Test
-    void givenValidRequests_whenCreateLoans_thenReturnsOk() {
-        // Arrange
-        List<LoanRequestDTO> requests = List.of(mock(LoanRequestDTO.class));
+    void givenValidRequests_whenCreateLoans_thenReturnsOk() throws Exception {
+        mockMvc.perform(post("/loans")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"bookId\":1,\"quantity\":1,\"user\":null}]")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk());
 
-        // Act
-        ResponseEntity<Void> response = loanController.createLoans(requests);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(loanService, times(1)).createLoans(requests);
+        verify(loanService).createLoans(anyList());
     }
 
-    // --- Tests voor getActiveLoans ---
+    // ─── GET /loans/active ────────────────────────────────────────────────────
 
     @Test
-    void givenValidPrincipal_whenGetActiveLoans_thenReturnsOkWithLoans() {
-        String uid = "uid-123";
-        List<ActiveLoanDTO> expectedLoans = List.of(mock(ActiveLoanDTO.class));
+    void givenValidPrincipal_whenGetActiveLoans_thenReturnsOkWithLoans() throws Exception {
+        when(loanService.getActiveLoansByUser("uid-123")).thenReturn(List.of());
 
-        when(principal.getAttribute("userID")).thenReturn(uid);
-        when(loanService.getActiveLoansByUser(uid)).thenReturn(expectedLoans);
+        mockMvc.perform(get("/loans/active")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-123"))))
+                .andExpect(status().isOk());
 
-        // null = geen smartschoolUserId meegegeven (student bekijkt eigen leningen)
-        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(principal, null);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(expectedLoans, response.getBody());
-        verify(loanService, times(1)).getActiveLoansByUser(uid);
+        verify(loanService).getActiveLoansByUser("uid-123");
     }
 
     @Test
-    void givenNullPrincipal_whenGetActiveLoans_thenReturnsUnauthorized() {
-        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(null, null);
+    void givenNullPrincipal_whenGetActiveLoans_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/loans/active"))
+                .andExpect(status().isUnauthorized());
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(loanService);
     }
 
     @Test
-    void givenAdminWithOtherUserId_whenGetActiveLoans_thenCallsGetActiveLoansAsAdmin() {
-        String adminUid = "beheerder-123";
-        String targetUid = "lener-456";
-        List<ActiveLoanDTO> expectedLoans = List.of(mock(ActiveLoanDTO.class));
+    void givenAdminWithOtherUserId_whenGetActiveLoans_thenCallsGetActiveLoansAsAdmin() throws Exception {
+        when(loanService.getActiveLoansAsAdmin("beheerder-123", "lener-456")).thenReturn(List.of());
 
-        when(principal.getAttribute("userID")).thenReturn(adminUid);
-        when(loanService.getActiveLoansAsAdmin(adminUid, targetUid)).thenReturn(expectedLoans);
+        mockMvc.perform(get("/loans/active")
+                        .param("smartschoolUserId", "lener-456")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "beheerder-123"))))
+                .andExpect(status().isOk());
 
-        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(principal, targetUid);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(expectedLoans, response.getBody());
-        verify(loanService, times(1)).getActiveLoansAsAdmin(adminUid, targetUid);
+        verify(loanService).getActiveLoansAsAdmin("beheerder-123", "lener-456");
         verify(loanService, never()).getActiveLoansByUser(any());
     }
 
     @Test
-    void givenAdminWithOwnUserId_whenGetActiveLoans_thenCallsGetActiveLoansByUser() {
-        String uid = "beheerder-123";
-        List<ActiveLoanDTO> expectedLoans = List.of(mock(ActiveLoanDTO.class));
+    void givenAdminWithOwnUserId_whenGetActiveLoans_thenCallsGetActiveLoansByUser() throws Exception {
+        when(loanService.getActiveLoansByUser("beheerder-123")).thenReturn(List.of());
 
-        when(principal.getAttribute("userID")).thenReturn(uid);
-        when(loanService.getActiveLoansByUser(uid)).thenReturn(expectedLoans);
+        mockMvc.perform(get("/loans/active")
+                        .param("smartschoolUserId", "beheerder-123")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "beheerder-123"))))
+                .andExpect(status().isOk());
 
-        // smartschoolUserId == eigen uid → geen admin-pad nodig
-        ResponseEntity<List<ActiveLoanDTO>> response = loanController.getActiveLoans(principal, uid);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(loanService, times(1)).getActiveLoansByUser(uid);
+        verify(loanService).getActiveLoansByUser("beheerder-123");
         verify(loanService, never()).getActiveLoansAsAdmin(any(), any());
     }
 
-    // --- Tests voor Return endpoints ---
+    // ─── POST /loans/return ───────────────────────────────────────────────────
 
     @Test
-    void givenValidRequests_whenReturnBooksBulk_thenReturnsOk() {
-        // Arrange
-        List<ReturnBulkRequestDTO> requests = List.of(mock(ReturnBulkRequestDTO.class));
+    void givenValidRequests_whenReturnBooksBulk_thenReturnsOk() throws Exception {
+        mockMvc.perform(post("/loans/return")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"bookId\":1,\"quantity\":1,\"smartschoolUserId\":\"uid-1\",\"copyConditions\":null,\"damagedCount\":0,\"brokenCount\":0,\"lostCount\":0}]")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk());
 
-        // Act
-        ResponseEntity<Void> response = loanController.returnBooksBulk(requests);
+        verify(loanService).returnBooksBulk(anyList());
+    }
 
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(loanService, times(1)).returnBooksBulk(requests);
+    // ─── POST /loans/{loanId}/return ──────────────────────────────────────────
+
+    @Test
+    void givenValidRequest_whenReturnBook_thenReturnsOk() throws Exception {
+        mockMvc.perform(post("/loans/1/return")
+                        .param("quantity", "1")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
+                .andExpect(status().isOk());
+
+        verify(loanService).returnBook(1L, 1, 0, 0, 0);    }
+
+    // ─── GET /loans/history ───────────────────────────────────────────────────
+
+    @Test
+    void givenValidPrincipal_whenGetLoanHistory_thenReturnsOkWithHistory() throws Exception {
+        when(loanService.getLoanHistoryByUser(eq("uid-123"), any()))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
+
+        mockMvc.perform(get("/loans/history")
+                        .param("page", "0").param("size", "10")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-123"))))
+                .andExpect(status().isOk());
+
+        verify(loanService).getLoanHistoryByUser(eq("uid-123"), any());
     }
 
     @Test
-    void givenValidRequest_whenReturnBook_thenReturnsOk() {
-        // Arrange
-        Long loanId = 1L;
-        int quantity = 1;
+    void givenNullPrincipal_whenGetLoanHistory_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/loans/history"))
+                .andExpect(status().isUnauthorized());
 
-        // Act
-        ResponseEntity<Void> response = loanController.returnBook(loanId, quantity);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(loanService, times(1)).returnBook(loanId, quantity);
-    }
-
-    // --- Tests voor getLoanHistory ---
-
-    @Test
-    void givenValidPrincipal_whenGetLoanHistory_thenReturnsOkWithHistory() {
-        String uid = "uid-123";
-        Page<LoanHistoryDTO> expectedPage = new PageImpl<>(List.of(mock(LoanHistoryDTO.class)));
-
-        when(principal.getAttribute("userID")).thenReturn(uid);
-        when(loanService.getLoanHistoryByUser(eq(uid), any(Pageable.class))).thenReturn(expectedPage);
-
-        ResponseEntity<Page<LoanHistoryDTO>> response = loanController.getLoanHistory(principal, 0, 10);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(expectedPage, response.getBody());
-        verify(loanService, times(1)).getLoanHistoryByUser(eq(uid), any(Pageable.class));
-    }
-
-    @Test
-    void givenNullPrincipal_whenGetLoanHistory_thenThrowsException() {
-        assertThrows(Exception.class, () -> loanController.getLoanHistory(null, 0, 10));
         verifyNoInteractions(loanService);
     }
 
-    // --- Tests voor verlengingsaanvragen ---
+    // ─── POST /loans/{loanId}/extension-request ───────────────────────────────
 
     @Test
-    void givenValidPrincipal_whenRequestLoanExtension_thenReturnsOk() {
-        // Arrange
-        Long loanId = 1L;
-        String uid = "uid-123";
+    void givenValidPrincipal_whenRequestLoanExtension_thenReturnsOk() throws Exception {
+        mockMvc.perform(post("/loans/1/extension-request")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-123"))))
+                .andExpect(status().isOk());
 
-        when(principal.getAttribute("userID")).thenReturn(uid);
-
-        // Act
-        ResponseEntity<Void> response = loanController.requestLoanExtension(loanId, principal);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(loanService, times(1)).requestLoanExtension(loanId, uid);
+        verify(loanService).requestLoanExtension(1L, "uid-123");
     }
 
     @Test
-    void givenNullPrincipal_whenRequestLoanExtension_thenReturnsUnauthorized() {
-        // Act
-        ResponseEntity<Void> response = loanController.requestLoanExtension(1L, null);
+    void givenNullPrincipal_whenRequestLoanExtension_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(post("/loans/1/extension-request"))
+                .andExpect(status().isUnauthorized());
 
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(loanService);
     }
 
+    // ─── GET /loans/extension-requests/pending ────────────────────────────────
+
     @Test
-    void givenValidPrincipal_whenGetPendingExtensionRequests_thenReturnsOkWithRequests() {
-        // Arrange
-        String uid = "beheerder-123";
-        List<LoanExtensionRequestDTO> expectedRequests = List.of(mock(LoanExtensionRequestDTO.class));
+    void givenValidPrincipal_whenGetPendingExtensionRequests_thenReturnsOkWithRequests() throws Exception {
+        when(loanService.getPendingExtensionRequestsForSchool("beheerder-123")).thenReturn(List.of());
 
-        when(principal.getAttribute("userID")).thenReturn(uid);
-        when(loanService.getPendingExtensionRequestsForSchool(uid)).thenReturn(expectedRequests);
+        mockMvc.perform(get("/loans/extension-requests/pending")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "beheerder-123"))))
+                .andExpect(status().isOk());
 
-        // Act
-        ResponseEntity<List<LoanExtensionRequestDTO>> response = loanController.getPendingExtensionRequests(principal);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(expectedRequests, response.getBody());
-        verify(loanService, times(1)).getPendingExtensionRequestsForSchool(uid);
+        verify(loanService).getPendingExtensionRequestsForSchool("beheerder-123");
     }
 
     @Test
-    void givenNullPrincipal_whenGetPendingExtensionRequests_thenReturnsUnauthorized() {
-        // Act
-        ResponseEntity<List<LoanExtensionRequestDTO>> response = loanController.getPendingExtensionRequests(null);
+    void givenNullPrincipal_whenGetPendingExtensionRequests_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/loans/extension-requests/pending"))
+                .andExpect(status().isUnauthorized());
 
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(loanService);
     }
 
+    // ─── POST /loans/{loanId}/extension-request/approve ──────────────────────
+
     @Test
-    void givenValidPrincipal_whenApproveLoanExtension_thenReturnsOk() {
-        // Arrange
-        Long loanId = 1L;
-        String uid = "beheerder-123";
+    void givenValidPrincipal_whenApproveLoanExtension_thenReturnsOk() throws Exception {
+        mockMvc.perform(post("/loans/1/extension-request/approve")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "beheerder-123"))))
+                .andExpect(status().isOk());
 
-        when(principal.getAttribute("userID")).thenReturn(uid);
-
-        // Act
-        ResponseEntity<Void> response = loanController.approveLoanExtension(loanId, principal);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(loanService, times(1)).approveLoanExtension(loanId, uid);
+        verify(loanService).approveLoanExtension(1L, "beheerder-123");
     }
 
     @Test
-    void givenNullPrincipal_whenApproveLoanExtension_thenReturnsUnauthorized() {
-        // Act
-        ResponseEntity<Void> response = loanController.approveLoanExtension(1L, null);
+    void givenNullPrincipal_whenApproveLoanExtension_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(post("/loans/1/extension-request/approve"))
+                .andExpect(status().isUnauthorized());
 
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(loanService);
     }
 
+    // ─── POST /loans/{loanId}/extension-request/deny ─────────────────────────
+
     @Test
-    void givenValidPrincipal_whenDenyLoanExtension_thenReturnsOk() {
-        // Arrange
-        Long loanId = 1L;
-        String uid = "beheerder-123";
+    void givenValidPrincipal_whenDenyLoanExtension_thenReturnsOk() throws Exception {
+        mockMvc.perform(post("/loans/1/extension-request/deny")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "beheerder-123"))))
+                .andExpect(status().isOk());
 
-        when(principal.getAttribute("userID")).thenReturn(uid);
-
-        // Act
-        ResponseEntity<Void> response = loanController.denyLoanExtension(loanId, principal);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(loanService, times(1)).denyLoanExtension(loanId, uid);
+        verify(loanService).denyLoanExtension(1L, "beheerder-123");
     }
 
     @Test
-    void givenNullPrincipal_whenDenyLoanExtension_thenReturnsUnauthorized() {
-        // Act
-        ResponseEntity<Void> response = loanController.denyLoanExtension(1L, null);
+    void givenNullPrincipal_whenDenyLoanExtension_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(post("/loans/1/extension-request/deny"))
+                .andExpect(status().isUnauthorized());
 
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(loanService);
     }
+
+    // ─── GET /loans/reminder-days ─────────────────────────────────────────────
+
     @Test
-    void givenValidPrincipal_whenGetReminderDays_thenReturnsOkWithDays() {
-        String uid = "uid-123";
-        when(principal.getAttribute("userID")).thenReturn(uid);
-        when(loanPolicyService.getReminderDaysForUser(uid)).thenReturn(5);
+    void givenValidPrincipal_whenGetReminderDays_thenReturnsOkWithDays() throws Exception {
+        when(loanPolicyService.getReminderDaysForUser("uid-123")).thenReturn(5);
 
-        ResponseEntity<Integer> response = loanController.getReminderDays(principal);
+        mockMvc.perform(get("/loans/reminder-days")
+                        .with(oauth2Login().attributes(a -> a.put("userID", "uid-123"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(5));
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(5, response.getBody());
-        verify(loanPolicyService, times(1)).getReminderDaysForUser(uid);
+        verify(loanPolicyService).getReminderDaysForUser("uid-123");
     }
 
     @Test
-    void givenNullPrincipal_whenGetReminderDays_thenReturnsUnauthorized() {
-        ResponseEntity<Integer> response = loanController.getReminderDays(null);
+    void givenNullPrincipal_whenGetReminderDays_thenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/loans/reminder-days"))
+                .andExpect(status().isUnauthorized());
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(loanPolicyService);
     }
-
 }

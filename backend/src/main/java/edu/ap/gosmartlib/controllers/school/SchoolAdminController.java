@@ -3,6 +3,7 @@ package edu.ap.gosmartlib.controllers.school;
 import edu.ap.gosmartlib.dto.school.ApproveSchoolRequest;
 import edu.ap.gosmartlib.dto.school.CreateSchoolRequest;
 import edu.ap.gosmartlib.dto.school.SchoolDTO;
+import edu.ap.gosmartlib.dto.school.UpdateSchoolRequest;
 import edu.ap.gosmartlib.services.school.SchoolAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -53,4 +54,11 @@ public class SchoolAdminController {
     public void deleteSchool(@PathVariable Long id) {
         schoolAdminService.deleteSchool(id);
     }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("@roleGuard.isAdmin(authentication)")
+    public SchoolDTO renameSchool(@PathVariable Long id, @RequestBody UpdateSchoolRequest request) {
+        return schoolAdminService.renameSchool(id, request);
+    }
+
 }

@@ -403,6 +403,89 @@
   border: 1px solid #ddd;
 }
 
+/* --- ACTIES CEL --- */
+.loansOverviewPage .actionCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* --- WAARSCHUWING KNOP --- */
+.loansOverviewPage .warnButtonSmall {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: transparent;
+  color: #c62828;
+  border: 1.5px solid #c62828;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, transform 0.15s;
+}
+
+.loansOverviewPage .warnButtonSmall:hover:not(:disabled) {
+  background: #ffebee;
+  transform: translateY(-1px);
+}
+
+.loansOverviewPage .warnButtonSmall:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* --- TOAST NOTIFICATIES --- */
+.toastNotification {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  max-width: 380px;
+  border-radius: 10px;
+  padding: 0.85rem 1rem 0.85rem 1.1rem;
+  font-size: 0.92rem;
+  z-index: 1300;
+  box-shadow: 0 4px 16px rgba(40, 15, 24, 0.13);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.toastSuccess {
+  background: #e8f8ef;
+  border: 1px solid #a8d7bc;
+  color: #1f6a3f;
+}
+
+.toastError {
+  background: #f9ecf1;
+  border: 1px solid #d4a0b5;
+  color: #7a1d3f;
+}
+
+.toastMessage {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.toastClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: inherit;
+  opacity: 0.7;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.toastClose:hover {
+  opacity: 1;
+}
+
+
 @media (max-width: 768px) {
   .loansOverviewPage.pageLayout {
     padding: 1rem 1.5rem 2rem;

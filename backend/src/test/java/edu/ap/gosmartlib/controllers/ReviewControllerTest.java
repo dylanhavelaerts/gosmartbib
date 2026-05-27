@@ -198,7 +198,7 @@ class ReviewControllerTest {
     }
 
     @Test
-    void givenTeacherPrincipal_whenUserDeleteReview_thenDelegatesWithModeratorDeleteAccess() {
+    void givenTeacherPrincipal_whenUserDeleteReview_thenDelegatesWithoutModeratorDeleteAccess() {
         when(principal.getAttribute("userID")).thenReturn("teacher-uid");
         Collection<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_TEACHER"));
         doReturn(authorities).when(authentication).getAuthorities();
@@ -206,8 +206,9 @@ class ReviewControllerTest {
         ResponseEntity<Void> response = reviewController.userDeleteReview(11L, principal, authentication);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(reviewService, times(1)).userDeleteReview(11L, "teacher-uid", true);
+        verify(reviewService, times(1)).userDeleteReview(11L, "teacher-uid", false);
     }
+
 
     @Test
     void givenReviewId_whenApproveReview_thenReturnsNoContentAndDelegatesToService() {

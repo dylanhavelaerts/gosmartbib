@@ -278,6 +278,72 @@
   cursor: pointer;
 }
 
+.adminDangerButton {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.adminDangerButton:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+.adminDangerButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.schoolModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.schoolModalBox {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.schoolModalBox h2 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+}
+
+.schoolModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.schoolModalCancel {
+  background: none;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.schoolModalCancel:hover:not(:disabled) {
+  background-color: #f3f4f6;
+}
+
+
 @media (max-width: 640px) {
   #userMain {
     margin-top: 4.2rem;

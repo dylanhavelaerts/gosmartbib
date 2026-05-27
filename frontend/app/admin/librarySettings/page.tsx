@@ -372,7 +372,27 @@ export default function LibrarySettings() {
                   </label>
                 </div>
               </section>
-
+              {/* --- BERICHTEN CARD --- */}
+              <section className="card">
+                <h2>Berichten</h2>
+                <p className="help">
+                  De naam die getoond wordt als afzender bij automatische
+                  Smartschool-berichten. Laat leeg om als je dit niet wilt
+                  gebruiken.
+                </p>
+                <div className="form">
+                  <label className="field">
+                    <span>Afzendernaam</span>
+                    <input
+                      type="text"
+                      value={senderIdentifier}
+                      onChange={(e) => setSenderIdentifier(e.target.value)}
+                      placeholder="bv. jan.janssens"
+                      disabled={saving}
+                    />
+                  </label>
+                </div>
+              </section>
               {/* --- HOMEPAGE WEERGAVE CARD --- */}
               <section className="card">
                 <h2>Weergave Homepage</h2>
@@ -381,7 +401,6 @@ export default function LibrarySettings() {
                   op de homepage van jouw school.
                 </p>
 
-                {/* Let op: geen className="form" of className="field" hier, anders verstoort de CSS de styling */}
                 <div
                   style={{
                     display: "flex",
@@ -625,6 +644,15 @@ export default function LibrarySettings() {
                   <strong className="infoValue">
                     {savedReminderDays} dagen
                   </strong>
+                </div>
+                <div className="infoPanel">
+                  <p className="infoPanelTitle">Berichten</p>
+                  <div className="infoRow">
+                    <span className="infoLabel">Afzender</span>
+                    <strong className="infoValue">
+                      {savedSenderIdentifier || "—"}
+                    </strong>
+                  </div>
                 </div>
               </div>
 

@@ -8,16 +8,11 @@ import edu.ap.gosmartlib.services.users.UserAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/admin/users")
@@ -50,5 +45,20 @@ public class UserAdminController {
         return userAdminService.updateUserRoleForBibbeheerder(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, id, request.role());
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
+    public void deleteUser(@PathVariable long id,
+                           @RequestParam(required = false) Long schoolId,
+                           Authentication authentication) {
+        if (authentication.getPrincipal() instanceof AdminPrincipal) {
+            userAdminService.deleteUserForPlatformAdmin(schoolId, id);
+            return;
+        }
+        userAdminService.deleteUserForBibbeheerder(
+                authHelper.extractUid((OAuth2User) authentication.getPrincipal()), id);
+    }
+
 
 }
