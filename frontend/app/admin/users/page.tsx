@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import "./userAdmin.css";
 import Pagination from "@/app/catalog/pagination";
 import SyncModal from "./SyncModal";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -334,6 +335,7 @@ export default function AdminUserPage() {
   }
 
   return (
+    <ProtectedRoute allowedRoles={["LIBRARIAN", "ADMIN"]}>
     <main>
       {error && <p className="adminMessage adminMessageError">{error}</p>}
       {succes && <p className="adminMessage adminMessageSuccess">{succes}</p>}
@@ -552,5 +554,6 @@ export default function AdminUserPage() {
         </div>
       )}
     </main>
+    </ProtectedRoute>
   );
 }
