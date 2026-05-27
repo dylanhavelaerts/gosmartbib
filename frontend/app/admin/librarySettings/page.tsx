@@ -282,7 +282,7 @@ export default function LibrarySettings() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="page">
         <div className="pageHeader">
           <div>

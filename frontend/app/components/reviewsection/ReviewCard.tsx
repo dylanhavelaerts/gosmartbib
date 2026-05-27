@@ -45,7 +45,7 @@ export default function ReviewCard({
   const roleLabel: Record<string, string> = {
     STUDENT: "Leerling",
     TEACHER: "Leerkracht",
-    BIBLIOTHEEKBEHEERDER: "Bibliothecaris",
+    LIBRARIAN: "Bibliothecaris",
     ADMIN: "Administrator",
   };
 

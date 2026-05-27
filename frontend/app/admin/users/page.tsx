@@ -11,7 +11,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "STUDENT", label: "LEERLING" },
   { value: "TEACHER", label: "LEERKRACHT" },
-  { value: "BIBLIOTHEEKBEHEERDER", label: "BEHEERDER" },
+  { value: "LIBRARIAN", label: "BEHEERDER" },
 ];
 
 type DisplayNamesResponse = {
@@ -48,7 +48,7 @@ const SYNC_STEPS = [
 
 const replaceRoleName = (role: string): string => {
   switch (role) {
-    case "BIBLIOTHEEKBEHEERDER":
+    case "LIBRARIAN":
       return "BEHEERDER";
     case "TEACHER":
       return "LEERKRACHT";
@@ -110,7 +110,7 @@ export default function AdminUserPage() {
         const meData: MeResponse = await meRes.json();
         setMe(meData);
 
-        if (meData.role !== "ADMIN" && meData.role !== "BIBLIOTHEEKBEHEERDER") {
+        if (meData.role !== "ADMIN" && meData.role !== "LIBRARIAN") {
           setError("Je hebt geen toegang tot deze pagina");
           setLoading(false);
           return;
@@ -339,7 +339,7 @@ export default function AdminUserPage() {
       {succes && <p className="adminMessage adminMessageSuccess">{succes}</p>}
 
       {!error &&
-        (me?.role === "ADMIN" || me?.role === "BIBLIOTHEEKBEHEERDER") && (
+        (me?.role === "ADMIN" || me?.role === "LIBRARIAN") && (
           <div id="userMain">
             <div className="adminPageHeader">
               <div>

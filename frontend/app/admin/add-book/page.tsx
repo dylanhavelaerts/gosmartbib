@@ -18,7 +18,7 @@ export default function AddBookPage() {
     `tabBtn ${selected === id ? "selectedCategory" : ""}`.trim();
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN", "ADMIN"]}>
       <div className="mainPage">
         <nav className="lowerNav">
           <button className={cls("Boek")} onClick={() => setSelected("Boek")}>

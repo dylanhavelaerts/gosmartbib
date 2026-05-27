@@ -239,7 +239,7 @@ export default function LendingPage() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="lendingPageLayout">
         <div className="pageHeader">
           <button className="backButton" onClick={() => router.back()}>

@@ -467,7 +467,7 @@ export default function ReturnsPage() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="returnsPageLayout">
         <div className="pageHeader">
           <button className="backButton" onClick={() => router.back()}>

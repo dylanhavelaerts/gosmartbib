@@ -63,12 +63,12 @@ export default function DetailPage({
 
   const isStaff =
     currentUser?.role === "TEACHER" ||
-    currentUser?.role === "BIBLIOTHEEKBEHEERDER" ||
+    currentUser?.role === "LIBRARIAN" ||
     currentUser?.role === "ADMIN";
 
   const canSeeLestips =
     currentUser?.role === "TEACHER" ||
-    currentUser?.role === "BIBLIOTHEEKBEHEERDER";
+    currentUser?.role === "LIBRARIAN";
 
   const normalizedRating =
     typeof averageReviewRating === "number"

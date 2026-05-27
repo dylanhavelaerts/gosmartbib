@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import type { ReadingListOverview } from "@/app/interfaces/ReadingList";
 import "./readingLists.css";
 
-const STAFF_ROLES = ["TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"];
+const STAFF_ROLES = ["TEACHER", "ADMIN", "LIBRARIAN"];
 
 export default function ReadingListsPage() {
   const { user } = useAuth();

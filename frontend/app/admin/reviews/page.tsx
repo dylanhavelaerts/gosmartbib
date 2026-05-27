@@ -134,7 +134,7 @@ export default function AdminReviewsPage() {
   ];
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="adminReviewPage">
         <h1 className="adminReviewTitle">Reviewmoderatie</h1>
         <p className="adminReviewSubtitle">

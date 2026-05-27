@@ -230,7 +230,7 @@ export default function MyReadingListPage() {
 
   return (
     <ProtectedRoute
-      allowedRoles={["STUDENT", "TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"]}
+      allowedRoles={["STUDENT", "TEACHER", "ADMIN", "LIBRARIAN"]}
     >
       <div className="mrl-page">
         {view === "overview" && (

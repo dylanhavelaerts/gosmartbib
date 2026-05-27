@@ -7,7 +7,7 @@ import "./mockRoleSwitcher.css";
 const roles: { label: string; value: string }[] = [
   { label: "Leerling", value: "leerling" },
   { label: "Leerkracht", value: "leerkracht" },
-  { label: "Bibliotheekbeheerder", value: "bibliotheekbeheerder" },
+  { label: "Bibliotheekbeheerder", value: "librarian" },
 ];
 
 export default function MockRoleSwitcher() {

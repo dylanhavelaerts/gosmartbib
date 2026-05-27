@@ -60,7 +60,7 @@ export default function Home() {
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
-  const canManageSpotlight = user?.role === "BIBLIOTHEEKBEHEERDER";
+  const canManageSpotlight = user?.role === "LIBRARIAN";
 
   // -- URL zoek aspect --------------------------------------------------------------------------------------------------------------------
   // Leest de ?search query param bij het laden van de pagina en zet deze als zoekquery.
@@ -552,7 +552,7 @@ export default function Home() {
               </select>
             </div>
             {(user?.role === "TEACHER" ||
-              user?.role === "BIBLIOTHEEKBEHEERDER" ||
+              user?.role === "LIBRARIAN" ||
               user?.role === "ADMIN") && (
               <div className="filterGroup">
                 <span className="filterGroupLabel">Didactische boeken</span>

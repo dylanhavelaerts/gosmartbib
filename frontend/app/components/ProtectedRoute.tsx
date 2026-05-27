@@ -7,7 +7,7 @@ import { useEffect } from "react";
 type UserRole =
   | "STUDENT"
   | "TEACHER"
-  | "BIBLIOTHEEKBEHEERDER"
+  | "LIBRARIAN"
   | "ADMIN"
   | "OTHER";
 

@@ -11,7 +11,7 @@ import type {
 } from "@/app/interfaces/ReadingList";
 import { formatReadingListTargets } from "@/app/utils/readingListTargets";
 
-const STAFF_ROLES = ["TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"];
+const STAFF_ROLES = ["TEACHER", "ADMIN", "LIBRARIAN"];
 
 export default function ReadingListDetailPage() {
   const { user } = useAuth();

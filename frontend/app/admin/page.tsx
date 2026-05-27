@@ -105,7 +105,7 @@ export default function AdminHome() {
   function getWidgets() {
     if (user?.role === "ADMIN") {
       return adminWidgets;
-    } else if (user?.role === "BIBLIOTHEEKBEHEERDER") {
+    } else if (user?.role === "LIBRARIAN") {
       return [...beheerderWidgets, ...teacherWidgets];
     } else if (user?.role === "TEACHER") {
       return teacherWidgets;
@@ -117,7 +117,7 @@ export default function AdminHome() {
   const widgets = getWidgets();
 
   return (
-    <ProtectedRoute allowedRoles={["TEACHER", "BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
+    <ProtectedRoute allowedRoles={["TEACHER", "LIBRARIAN", "ADMIN"]}>
       <div className="admin-page">
         <div className="admin-header">
           <h2 className="admin-header-title">Beheer</h2>
