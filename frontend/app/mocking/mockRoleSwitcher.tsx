@@ -12,8 +12,7 @@ const roles: { label: string; value: string }[] = [
 
 export default function MockRoleSwitcher() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-  const isDevEnvironment =
-    apiUrl.includes("localhost") || apiUrl.includes("gosmartbib.tech");
+  const isDevEnvironment = apiUrl.includes("localhost");
   const { user } = useAuth();
 
   const [open, setOpen] = useState(false);
