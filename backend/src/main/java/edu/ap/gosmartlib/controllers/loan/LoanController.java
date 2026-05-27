@@ -146,7 +146,7 @@ public class LoanController {
         return ResponseEntity.ok(loanPolicyService.getReminderDaysForUser(smartschoolUid));
     }
     @PostMapping("/{loanId}/overdue-warning")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<Void> sendOverdueWarning(
             @PathVariable Long loanId,
             @AuthenticationPrincipal OAuth2User principal) {

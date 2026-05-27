@@ -24,32 +24,32 @@ public class PurchaseRequestController {
     private final AuthHelper authHelper;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isTeacherOrBibbeheerder(authentication)")
     public ResponseEntity<PurchaseRequestDTO> createRequest(@RequestBody CreatePurchaseRequestDTO dto, @AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(purchaseRequestService.createRequest(dto, authHelper.extractUid(principal)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isTeacherOrBibbeheerder(authentication)")
     public ResponseEntity<List<PurchaseRequestDTO>> getAllForSchool(@AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(purchaseRequestService.findAllForSchool(authHelper.extractUid(principal)));
     }
 
     @PatchMapping("/{id}/approve")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<PurchaseRequestDTO> approveRequest(@PathVariable Long id, @RequestBody PurchaseRequestNoteDTO note) {
         return ResponseEntity.ok(purchaseRequestService.approveRequest(id, note.note()));
     }
 
     @PatchMapping("/{id}/reject")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<PurchaseRequestDTO> rejectRequest(@PathVariable Long id, @RequestBody PurchaseRequestNoteDTO note) {
         return ResponseEntity.ok(purchaseRequestService.rejectRequest(id, note.note()));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<Void> deleteRequest(@PathVariable Long id) {
         purchaseRequestService.deleteRequest(id);
         return ResponseEntity.noContent().build();

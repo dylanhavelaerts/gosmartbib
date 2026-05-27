@@ -119,7 +119,7 @@ public class BookController {
     /**
      * Geeft alle boeken terug met spotlight = true
      */
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     @GetMapping("/spotlight/all")
     public List<BookDTO> getAllBooksInSpotlight(@AuthenticationPrincipal OAuth2User principal) {
         return bookService.getAllBooksInSpotlight(callerRole(principal), authHelper.extractUidOrNull(principal));
@@ -159,7 +159,7 @@ public class BookController {
     /**
      * Voegt een boek toe aan de database via ISBN (opgehaald van Google Books).
      */
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     @PostMapping("/add/{isbn}")
     public ResponseEntity<?> addBookByIsbn(@PathVariable String isbn,
                                            @RequestParam(required = false) String campus,
@@ -181,7 +181,7 @@ public class BookController {
     /**
      * Past de spotlight status aan van een boek.
      */
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     @PatchMapping("/{id}/spotlight")
     public ResponseEntity<Void> updateSpotlight(
             @PathVariable Long id,
@@ -193,7 +193,7 @@ public class BookController {
     /**
      * Importeert boeken vanuit een Excel-bestand.
      */
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importBooks(
             @RequestParam("file") MultipartFile file,
@@ -219,7 +219,7 @@ public class BookController {
         }
     }
 
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     @PostMapping(value = "/import/no-isbn", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BulkImportResponseDTO> importBooksWithoutIsbn(
             @RequestParam("file") MultipartFile file,
@@ -238,7 +238,7 @@ public class BookController {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
         return ResponseEntity.ok(bookService.updateBook(id, bookDTO));
@@ -248,7 +248,7 @@ public class BookController {
      * Voegt boek toe aan database
      */
     @PostMapping("/add")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request,
                                            @AuthenticationPrincipal OAuth2User principal) {
         BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
@@ -264,13 +264,13 @@ public class BookController {
     }
 
     @GetMapping("/{bookId}/copies/labels")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<List<BookCopyLabelDTO>> getCopyLabels(@PathVariable Long bookId, @RequestParam Long inventoryId) {
         return ResponseEntity.ok(bookService.getCopyLabelsForInventory(bookId, inventoryId));
     }
 
     @GetMapping("/{bookId}/copies/labels/school")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<List<BookCopyLabelDTO>> getCopyLabelsForBook(
             @PathVariable Long bookId,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -278,13 +278,13 @@ public class BookController {
     }
 
     @GetMapping("/copies/labels/school")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<List<BookCopyLabelDTO>> getAllCopyLabelsForSchool(@AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(bookService.getCopyLabelsForSchool(authHelper.extractUid(principal)));
     }
 
     @GetMapping("/by-barcode")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<BookDTO> getBookByBarcode(
             @RequestParam String barcode,
             @AuthenticationPrincipal OAuth2User principal) {
@@ -292,13 +292,13 @@ public class BookController {
     }
 
     @GetMapping("/{bookId}/copies/by-barcode")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<BookCopyLabelDTO> getCopyByBarcode(@PathVariable Long bookId, @RequestParam String barcode) {
         return ResponseEntity.ok(bookService.getCopyByBarcode(bookId, barcode));
     }
 
     @PatchMapping("/copies/{copyId}/condition")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateCopyCondition(@PathVariable Long copyId, @RequestBody UpdateCopyConditionRequest request) {
         bookService.updateCopyCondition(copyId, request.condition(), request.notes());
