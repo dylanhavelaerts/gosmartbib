@@ -35,6 +35,7 @@ public class LoanController {
 
     // Bestaande functie: Boeken uitlenen
     @PostMapping
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<Void> createLoans(@RequestBody List<LoanRequestDTO> requests) {
         loanService.createLoans(requests);
         return ResponseEntity.ok().build();
@@ -112,6 +113,7 @@ public class LoanController {
 
     // Meerdere boeken in 1 keer terugbrengen via de frontend inlever-knop
     @PostMapping("/return")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<Void> returnBooksBulk(@RequestBody List<ReturnBulkRequestDTO> requests) {
         loanService.returnBooksBulk(requests);
         return ResponseEntity.ok().build();
@@ -120,6 +122,7 @@ public class LoanController {
     // Enkel boek terugbrengen (kun je behouden voor interne aanroepen / admin
     // testing)
     @PostMapping("/{loanId}/return")
+    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
     public ResponseEntity<Void> returnBook(@PathVariable Long loanId, @RequestParam int quantity) {
         loanService.returnBook(loanId, quantity, 0, 0, 0);
         return ResponseEntity.ok().build();

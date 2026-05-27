@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.text.Normalizer;
@@ -558,7 +559,8 @@ public class BookService {
                     addInventory(fetchedBook, userSchool, normalizedCampus, totalCopies, availableCopies);
                     recomputeBookCopyTotals(fetchedBook);
 
-                    bookRepository.save(fetchedBook);
+                    BookEntity savedFetched = bookRepository.save(fetchedBook);
+                    savedFetched.getInventories().forEach(this::reconcileCopiesForInventory);
                     savedCount++;
 
                 } catch (IllegalArgumentException e) {
@@ -781,7 +783,8 @@ public class BookService {
                             availableCopies);
 
                     recomputeBookCopyTotals(book);
-                    bookRepository.save(book);
+                    BookEntity savedNoIsbn = bookRepository.save(book);
+                    savedNoIsbn.getInventories().forEach(this::reconcileCopiesForInventory);
                     savedCount++;
 
                 } catch (Exception e) {
@@ -979,13 +982,21 @@ public class BookService {
     }
 
     public BookDTO getBookByBarcode(String barcode, UserRoles callerRole, String currentUserUid) {
-        BookCopyEntity copy = bookCopyRepository.findByBarcode(barcode)
+        Optional<BookCopyEntity> copy = bookCopyRepository.findByBarcode(barcode);
+        if (copy.isPresent()) {
+            BookEntity book = bookRepository.findDetailedById(copy.get().getInventory().getBook().getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden"));
+            BookDTO dto = toVisibleBookDTO(book, callerRole, currentUserUid);
+            if (dto == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden");
+            }
+            return dto;
+        }
+
+        // Fall back naar ISBN als het barcode niet is gevonden
+        BookEntity bookByIsbn = bookRepository.findByIsbn(barcode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode niet gevonden"));
-
-        BookEntity book = bookRepository.findDetailedById(copy.getInventory().getBook().getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden"));
-
-        BookDTO dto = toVisibleBookDTO(book, callerRole, currentUserUid);
+        BookDTO dto = toVisibleBookDTO(bookByIsbn, callerRole, currentUserUid);
         if (dto == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden");
         }
@@ -1345,7 +1356,8 @@ public class BookService {
         }
 
         recomputeBookCopyTotals(book);
-        bookRepository.save(book);
+        BookEntity saved = bookRepository.save(book);
+        saved.getInventories().forEach(this::reconcileCopiesForInventory);
     }
 
     private BookInventoryEntity findInventory(BookEntity book, SchoolEntity school, String campus) {
