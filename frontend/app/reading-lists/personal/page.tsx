@@ -189,21 +189,13 @@ export default function MyReadingListPage() {
 
       if (!res.ok) throw new Error();
 
-      setFormMsg({
-        type: "success",
-        text: isEdit ? "Leeslijst bijgewerkt" : "Leeslijst aangemaakt",
-      });
-
       fetchMyLists();
 
       if (!isEdit) {
         setFormTitle("");
         setFormDescription("");
         setFormBooks([]);
-        setTimeout(() => {
-          setView("overview");
-          setFormMsg(null);
-        }, 1200);
+        setView("overview");
       }
     } catch {
       setFormMsg({ type: "error", text: "Opslaan mislukt. Probeer opnieuw" });

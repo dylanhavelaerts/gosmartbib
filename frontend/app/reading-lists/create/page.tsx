@@ -282,14 +282,7 @@ export default function CreateReadingListPage() {
         throw new Error(errorText || "Fout bij opslaan");
       }
 
-      setMessage({
-        type: "success",
-        text: "Klasleeslijst succesvol aangemaakt",
-      });
-
       resetForm();
-
-      setTimeout(() => setMessage(null), 5000);
     } catch (error) {
       setMessage({
         type: "error",

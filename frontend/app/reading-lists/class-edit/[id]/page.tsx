@@ -375,12 +375,7 @@ export default function EditClassReadingListPage() {
         throw new Error(body || "Fout bij opslaan");
       }
 
-      setMessage({
-        type: "success",
-        text: "Klasleeslijst succesvol bijgewerkt",
-      });
-
-      setTimeout(() => router.push("/reading-lists/" + id), 700);
+      router.push("/reading-lists/" + id);
     } catch (error) {
       setMessage({
         type: "error",
