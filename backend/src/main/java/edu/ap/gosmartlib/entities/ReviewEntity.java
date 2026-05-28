@@ -50,7 +50,6 @@ public class ReviewEntity {
     @Column(name = "review_date")
     private LocalDate reviewDate;
 
-//   TODO review if deprecated
     @Column(name = "review_status")
     private ReviewStatus reviewStatus;
 
