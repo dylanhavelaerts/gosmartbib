@@ -32,7 +32,7 @@ const conditionLabels: Record<CopyCondition, string> = {
 };
 
 export default function ReturnsPage() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
   // --- Auth/School ---
   const [barcodesEnabled, setBarcodesEnabled] = useState(false);

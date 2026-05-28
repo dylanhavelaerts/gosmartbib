@@ -40,10 +40,9 @@ export default function LendingPage() {
   }
 
   const availableForSchool = (book: Book): number => {
-    const schoolId = selectedUser?.schoolId
-      ? parseInt(selectedUser.schoolId)
-      : null;
-    if (schoolId && book.inventories?.length) {
+    const rawId = selectedUser?.schoolId;
+    const schoolId = rawId != null ? parseInt(String(rawId), 10) : null;
+    if (schoolId != null && !isNaN(schoolId) && book.inventories?.length) {
       const inv = book.inventories.find((i) => i.schoolId === schoolId);
       if (inv !== undefined) return inv.availableCopies;
     }
