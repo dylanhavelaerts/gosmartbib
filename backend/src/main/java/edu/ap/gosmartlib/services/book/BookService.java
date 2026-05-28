@@ -10,6 +10,7 @@ import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
 import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.entities.school.SchoolCampusEntity;
 import edu.ap.gosmartlib.exceptions.BookNotFoundException;
 import edu.ap.gosmartlib.exceptions.NegativeValueException;
 import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
@@ -74,6 +75,8 @@ public class BookService {
     private final SchoolCampusRepository schoolCampusRepository;
 
     private final InventoryAdjustmentService inventoryAdjustmentService;
+
+    private static final String DEFAULT_CAMPUS_NAME = "Hoofdcampus";
 
     @Value("${google.books.api.url}")
     private String googleBooksApiUrl;
@@ -440,7 +443,7 @@ public class BookService {
         }
 
         SchoolEntity userSchool = resolveSchoolForUser(smartschoolUid);
-        String normalizedCampus = resolveRequiredExistingCampus(userSchool, fallbackCampus);
+        String normalizedCampus = resolveCampusForSchool(userSchool, fallbackCampus);
 
         List<ImportMismatchDTO> mismatches = new ArrayList<>();
         List<BulkImportDuplicateWarningDTO> duplicateWarnings = new ArrayList<>();
@@ -648,7 +651,7 @@ public class BookService {
         }
 
         SchoolEntity userSchool = resolveSchoolForUser(smartschoolUid);
-        String normalizedCampus = resolveRequiredExistingCampus(userSchool, fallbackCampus);
+        String normalizedCampus = resolveCampusForSchool(userSchool, fallbackCampus);
 
         List<ImportMismatchDTO> mismatches = new ArrayList<>();
         List<BulkImportDuplicateWarningDTO> duplicateWarnings = new ArrayList<>();
@@ -1300,7 +1303,7 @@ public class BookService {
                     ? resolveSchoolById(requestInventory.schoolId())
                     : resolveSchoolForUser(smartschoolUid);
 
-            String campus = normalizeCampus(requestInventory.campus());
+            String campus = resolveCampusForSchool(school, requestInventory.campus());
             int totalCopies = requestInventory.totalCopies() != null ? requestInventory.totalCopies() : 0;
             int availableCopies = requestInventory.availableCopies() != null
                     ? requestInventory.availableCopies()
@@ -1325,10 +1328,13 @@ public class BookService {
             int availableCopies = inventoryDTO.availableCopies() != null ? inventoryDTO.availableCopies() : totalCopies;
 
             validateInventoryCounts(totalCopies, availableCopies);
+            SchoolEntity school = resolveSchoolById(inventoryDTO.schoolId());
+            String campus = resolveCampusForSchool(school, inventoryDTO.campus());
+
             addInventory(
                     book,
-                    resolveSchoolById(inventoryDTO.schoolId()),
-                    normalizeCampus(inventoryDTO.campus()),
+                    school,
+                    campus,
                     totalCopies,
                     availableCopies);
         }
@@ -1341,7 +1347,15 @@ public class BookService {
             int availableCopies) {
         validateInventoryCounts(totalCopies, availableCopies);
         book.getInventories().clear();
-        addInventory(book, resolveSchoolForUser(smartschoolUid), normalizeCampus(campus), totalCopies, availableCopies);
+        SchoolEntity school = resolveSchoolForUser(smartschoolUid);
+        String resolvedCampus = resolveCampusForSchool(school, campus);
+
+        addInventory(
+                book,
+                school,
+                resolvedCampus,
+                totalCopies,
+                availableCopies);
     }
 
     private void addInventory(BookEntity book,
@@ -1707,22 +1721,36 @@ public class BookService {
         return trimmed == null ? "" : trimmed;
     }
 
-    private String resolveRequiredExistingCampus(SchoolEntity school, String campus) {
-        String normalizedCampus = normalizeCampus(campus);
-
-        if (normalizedCampus.isBlank()) {
-            throw new IllegalArgumentException("Kies eerst een campus op de importpagina");
-        }
-
+    private String resolveCampusForSchool(SchoolEntity school, String campus) {
         Long schoolId = school == null ? null : school.getId();
 
         if (schoolId == null) {
             throw new IllegalArgumentException("Geen school gevonden voor de ingelogde gebruiker");
         }
 
-        boolean campusExists = schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(
-                schoolId,
-                normalizedCampus);
+        List<SchoolCampusEntity> campuses = schoolCampusRepository.findBySchool_IdOrderByNameAsc(schoolId);
+
+        if (campuses.isEmpty()) {
+            SchoolCampusEntity defaultCampus = new SchoolCampusEntity();
+            defaultCampus.setSchool(school);
+            defaultCampus.setName(DEFAULT_CAMPUS_NAME);
+
+            SchoolCampusEntity savedDefaultCampus = schoolCampusRepository.save(defaultCampus);
+            return savedDefaultCampus.getName();
+        }
+
+        if (campuses.size() == 1) {
+            return campuses.get(0).getName();
+        }
+
+        String normalizedCampus = normalizeCampus(campus);
+
+        if (normalizedCampus.isBlank()) {
+            throw new IllegalArgumentException("Kies eerst een campus");
+        }
+
+        boolean campusExists = campuses.stream()
+                .anyMatch(existingCampus -> existingCampus.getName().equalsIgnoreCase(normalizedCampus));
 
         if (!campusExists) {
             throw new IllegalArgumentException(
@@ -1730,7 +1758,11 @@ public class BookService {
                             + "' bestaat niet voor jouw school. Maak de campus eerst aan op de schoolbeheerpagina.");
         }
 
-        return normalizedCampus;
+        return campuses.stream()
+                .map(SchoolCampusEntity::getName)
+                .filter(existingCampusName -> existingCampusName.equalsIgnoreCase(normalizedCampus))
+                .findFirst()
+                .orElse(normalizedCampus);
     }
 
     private SchoolEntity resolveSchoolForUser(String smartschoolUid) {

@@ -5,6 +5,8 @@ import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
 import edu.ap.gosmartlib.exceptions.SchoolNotApprovedException;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.entities.school.SchoolCampusEntity;
+import edu.ap.gosmartlib.repositories.school.SchoolCampusRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
@@ -38,8 +40,11 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final SchoolRepository schoolRepository;
+    private final SchoolCampusRepository schoolCampusRepository;
     private final HttpServletRequest request;
     private final SchoolClassHelper schoolClassHelper;
+
+    private static final String DEFAULT_CAMPUS_NAME = "Hoofdcampus";
 
     /**
      * Synchroniseert een Smartschool OAuth2User met de lokale database.
@@ -76,8 +81,12 @@ public class UserService {
                     SchoolEntity e = new SchoolEntity();
                     e.setDomain(domain);
                     e.setName(domain);
-                    return schoolRepository.save(e);
+                    SchoolEntity savedSchool = schoolRepository.save(e);
+                    createDefaultCampusIfMissing(savedSchool);
+
+                    return savedSchool;
                 });
+        createDefaultCampusIfMissing(school);
 
         // Zoek een gebruiker, als gebruiker niet bestaat -> maak aan
         // Nieuwe gebruikers van een niet-goedgekeurde school worden geblokkeerd
@@ -222,5 +231,20 @@ public class UserService {
         LocalDate today = LocalDate.now();
         int year = today.getMonthValue() >= 9 ? today.getYear() : today.getYear() - 1;
         return year + "-" + (year + 1);
+    }
+
+    private void createDefaultCampusIfMissing(SchoolEntity school) {
+        if (school == null || school.getId() == null) {
+            return;
+        }
+
+        if (schoolCampusRepository.countBySchool_Id(school.getId()) > 0) {
+            return;
+        }
+
+        SchoolCampusEntity defaultCampus = new SchoolCampusEntity();
+        defaultCampus.setSchool(school);
+        defaultCampus.setName(DEFAULT_CAMPUS_NAME);
+        schoolCampusRepository.save(defaultCampus);
     }
 }

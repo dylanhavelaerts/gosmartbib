@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
 
@@ -43,19 +44,33 @@ public class SchoolCampusController {
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public SchoolCampusDTO createCampus(@PathVariable Long schoolId,
-                                        @Valid @RequestBody CreateSchoolCampusRequest request,
-                                        Authentication authentication) {
+            @Valid @RequestBody CreateSchoolCampusRequest request,
+            Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return schoolCampusService.createCampusForPlatformAdmin(schoolId, request);
         return schoolCampusService.createCampusForLibrarian(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, request);
     }
 
+    @PutMapping("/{campusId}")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
+    public SchoolCampusDTO updateCampus(@PathVariable Long schoolId,
+            @PathVariable Long campusId,
+            @Valid @RequestBody CreateSchoolCampusRequest request,
+            Authentication authentication) {
+        if (authentication.getPrincipal() instanceof AdminPrincipal) {
+            return schoolCampusService.updateCampusForPlatformAdmin(schoolId, campusId, request);
+        }
+
+        return schoolCampusService.updateCampusForLibrarian(
+                authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, campusId, request);
+    }
+
     @DeleteMapping("/{campusId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public void deleteCampus(@PathVariable Long schoolId, @PathVariable Long campusId,
-                             Authentication authentication) {
+            Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal) {
             schoolCampusService.deleteCampusForPlatformAdmin(schoolId, campusId);
             return;
