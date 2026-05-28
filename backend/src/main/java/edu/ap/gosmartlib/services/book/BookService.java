@@ -1415,7 +1415,7 @@ public class BookService {
         String normalizedPublisher = normalizeDuplicateText(publisher);
 
         return bookRepository.findPossibleDuplicateBooksWithoutIsbn(
-                title.trim(),
+                normalizedTitle,
                 publisher,
                 school.getId())
                 .stream()

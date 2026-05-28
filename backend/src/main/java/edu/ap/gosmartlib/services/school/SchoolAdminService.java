@@ -98,6 +98,6 @@ public class SchoolAdminService {
 
     private String normalizeDomain(String raw) {
         if (raw == null) return "";
-        return raw.trim().toLowerCase().replaceAll("/+$", "");
+        return raw.trim().toLowerCase().replaceAll("/++$", "");
     }
 }

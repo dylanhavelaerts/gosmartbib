@@ -46,7 +46,7 @@ public class UserService {
         String uid = oauth2User.getAttribute("userID");
         String role = oauth2User.getAttribute("basisrol");
         String rawDomain = oauth2User.getAttribute("platform");
-        String domain = rawDomain != null ? rawDomain.trim().toLowerCase().replaceAll("/+$", "") : "";
+        String domain = rawDomain != null ? rawDomain.trim().toLowerCase().replaceAll("/++$", "") : "";
 
         // Zoek een school op basis van domein, als de school niet bestaat maak een
         // nieuwe aan
