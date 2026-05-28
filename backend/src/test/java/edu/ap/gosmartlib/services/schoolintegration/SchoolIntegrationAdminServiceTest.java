@@ -56,7 +56,7 @@ class SchoolIntegrationAdminServiceTest {
                 Map.of("identifier", "sof2.first.last", "givenName", "First", "familyName", "Last"),
                 Map.of("identifier", "sof01.leerkracht", "givenName", "Team01", "familyName", "ITSOF"));
 
-        when(schoolIntegrationService.getIntegrationEntityForBibbeheerder("admin-uid", 1L)).thenReturn(integration);
+        when(schoolIntegrationService.getIntegrationEntityForLibrarian("admin-uid", 1L)).thenReturn(integration);
         when(authService.getAccessToken(integration)).thenReturn("token-123");
         when(oneRosterClient.getUsers(integration, "token-123")).thenReturn(users);
 
@@ -72,7 +72,7 @@ class SchoolIntegrationAdminServiceTest {
     void givenDisabledIntegration_whenGetLiveUsers_thenReturnsDisabledResponse() {
         SchoolIntegrationEntity integration = integration(false);
 
-        when(schoolIntegrationService.getIntegrationEntityForBibbeheerder("admin-uid", 1L)).thenReturn(integration);
+        when(schoolIntegrationService.getIntegrationEntityForLibrarian("admin-uid", 1L)).thenReturn(integration);
 
         SchoolIntegrationLiveUsersResponse response = schoolIntegrationAdminService.getLiveUsers("admin-uid", 1L);
 
@@ -92,7 +92,7 @@ class SchoolIntegrationAdminServiceTest {
         List<Map<String, Object>> schools = List.of(
                 Map.of("sourcedId", "5905", "name", "AP Hogeschool"));
 
-        when(schoolIntegrationService.getIntegrationEntityForBibbeheerder("admin-uid", 1L)).thenReturn(integration);
+        when(schoolIntegrationService.getIntegrationEntityForLibrarian("admin-uid", 1L)).thenReturn(integration);
         when(authService.getAccessToken(integration)).thenReturn("token-123");
         when(oneRosterClient.getSchools(integration, "token-123")).thenReturn(schools);
 
@@ -117,7 +117,7 @@ class SchoolIntegrationAdminServiceTest {
     void givenClassesCallFails_whenGetLiveClasses_thenReturnsFailureResponse() {
         SchoolIntegrationEntity integration = integration(true);
 
-        when(schoolIntegrationService.getIntegrationEntityForBibbeheerder("admin-uid", 1L)).thenReturn(integration);
+        when(schoolIntegrationService.getIntegrationEntityForLibrarian("admin-uid", 1L)).thenReturn(integration);
         when(authService.getAccessToken(integration)).thenReturn("token-123");
         when(oneRosterClient.getClasses(integration, "token-123"))
                 .thenThrow(new RuntimeException("401 Unauthorized"));

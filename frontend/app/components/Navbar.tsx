@@ -90,7 +90,7 @@ export default function Navbar() {
                 </Link>{" "}
               </>
             )}
-            {(user?.role === "BIBLIOTHEEKBEHEERDER" ||
+            {(user?.role === "LIBRARIAN" ||
               user?.role === "ADMIN" ||
               user?.role === "TEACHER") && (
               <>

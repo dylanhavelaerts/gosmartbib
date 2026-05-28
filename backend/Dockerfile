@@ -1,4 +1,5 @@
-FROM maven:3.9-eclipse-temurin-17
+# Stage 1: Build
+FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
@@ -7,11 +8,13 @@ COPY src ./src
 
 RUN mvn clean package -DskipTests -Dmaven.test.skip=true
 
-# Debug: Toont wat er in target directory zit
-RUN ls -la target/
+# Stage 2: Run
+FROM eclipse-temurin:17-jre
+
+WORKDIR /app
+
+COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
-
-# Gebruikt een robuustere aanpak om de jar te vinden en te runnen
-CMD ["sh", "-c", "java -jar target/*.jar"]
+CMD ["java", "-jar", "app.jar"]

@@ -15,13 +15,13 @@ public class SchoolLibrarySettingsController {
     private final SchoolLibrarySettingsService librarySettingsService;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<SchoolLibrarySettingsDTO> getSettings(@PathVariable Long schoolId) {
         return ResponseEntity.ok(librarySettingsService.getSettings(schoolId));
     }
 
     @PutMapping
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<SchoolLibrarySettingsDTO> saveSettings(
             @PathVariable Long schoolId,
             @RequestBody SchoolLibrarySettingsDTO request) {

@@ -12,6 +12,7 @@ import type {
 import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
 import { useEffect, useMemo, useState } from "react";
 import "./schoolIntegration.css";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -447,6 +448,7 @@ export default function SchoolIntegrationPage() {
   }
 
   return (
+    <ProtectedRoute allowedRoles="ADMIN">
     <main className="page">
       <h1>Schoolintegratie</h1>
 
@@ -778,5 +780,6 @@ export default function SchoolIntegrationPage() {
         </>
       )}
     </main>
+    </ProtectedRoute>
   );
 }

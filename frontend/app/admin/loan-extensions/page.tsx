@@ -20,7 +20,7 @@ interface LoanExtensionRequestDTO {
   borrowerRole:
     | "STUDENT"
     | "TEACHER"
-    | "BIBLIOTHEEKBEHEERDER"
+    | "LIBRARIAN"
     | "ADMIN"
     | string;
   quantity: number;
@@ -128,7 +128,7 @@ export default function LoanExtensionsPage() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="loanExtensionsPage">
         <div className="loanExtensionsHeader">
           <div>

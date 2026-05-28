@@ -62,7 +62,7 @@ export default function HomeReadingLists({
 
         {!loading && !error && lists.length === 0 && (
           <div className="homeReadingListsState">
-            <p>Je hebt nog geen persoonlijke leeslijst.</p>
+            <p>Je hebt nog geen persoonlijke leeslijst</p>
             <button
               className="semitransparentButton homeRlBtn"
               onClick={onOpenPersonal}

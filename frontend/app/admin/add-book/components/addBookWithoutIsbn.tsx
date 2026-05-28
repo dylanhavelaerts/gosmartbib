@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {  BOOK_CATEGORIES, BOOK_LABELS, BOOK_LANGUAGE_PRESETS } from "../../../interfaces/Book";
+import {
+  BOOK_CATEGORIES,
+  BOOK_LABELS,
+  BOOK_LANGUAGE_PRESETS,
+} from "../../../interfaces/Book";
 import type { Book, BookInventory } from "../../../interfaces/Book";
 import "./addBookForm.css";
 import type { MeResponse } from "@/app/interfaces/user";
@@ -25,19 +29,17 @@ export default function AddBookWithoutIsbn() {
   const [pageCount, setPageCount] = useState(0);
   const [categories, setCategories] = useState<string[]>([]);
   const [availableCategories, setAvailableCategories] =
-  useState<string[]>(BOOK_CATEGORIES);
+    useState<string[]>(BOOK_CATEGORIES);
   const [newCategory, setNewCategory] = useState("");
   const [thumbnail, setThumbnail] = useState("");
   const [language, setLanguage] = useState("");
   const [languageInputMode, setLanguageInputMode] = useState("");
   const [publishedYear, setPublishedYear] = useState(0);
-  const [rating, setRating] = useState(0);
   const [openDropdown, setOpenDropdown] = useState(false);
   const [openLabelDropdown, setOpenLabelDropdown] = useState(false);
   const [didacticTag, setDidacticTag] = useState(false);
   const [labels, setLabels] = useState<string[]>([]);
-  const [availableLabels, setAvailableLabels] =
-  useState<string[]>(BOOK_LABELS);
+  const [availableLabels, setAvailableLabels] = useState<string[]>(BOOK_LABELS);
   const [newLabel, setNewLabel] = useState("");
   const [readingLevel, setReadingLevel] = useState("");
   const [imgSrc, setImgSrc] = useState("/No-Image-Available-Placeholder.png");
@@ -79,7 +81,7 @@ export default function AddBookWithoutIsbn() {
       categories,
       thumbnail,
       language,
-      rating,
+      rating: 0,
       publishedYear,
       spotlight: false,
       didacticTag,
@@ -88,7 +90,7 @@ export default function AddBookWithoutIsbn() {
       totalCopies: totalCopiesFromInventories,
       availableCopies: availableCopiesFromInventories,
       ageRange,
-      inventories
+      inventories,
     };
 
     setPreviewBook(book);
@@ -147,96 +149,94 @@ export default function AddBookWithoutIsbn() {
     }
 
     setLanguage(value);
-};
+  };
 
-function mergeOptions(baseOptions: string[], databaseOptions: string[]) {
-  const mergedOptions: string[] = [];
-  const seenOptions = new Set<string>();
+  function mergeOptions(baseOptions: string[], databaseOptions: string[]) {
+    const mergedOptions: string[] = [];
+    const seenOptions = new Set<string>();
 
-  [...baseOptions, ...databaseOptions].forEach((option) => {
-    const trimmedOption = option.trim();
+    [...baseOptions, ...databaseOptions].forEach((option) => {
+      const trimmedOption = option.trim();
 
-    if (!trimmedOption) {
+      if (!trimmedOption) {
+        return;
+      }
+
+      const normalizedOption = trimmedOption.toLowerCase();
+
+      if (!seenOptions.has(normalizedOption)) {
+        seenOptions.add(normalizedOption);
+        mergedOptions.push(trimmedOption);
+      }
+    });
+
+    return mergedOptions.sort((a, b) => a.localeCompare(b));
+  }
+
+  function isOptionSelected(values: string[], option: string) {
+    return values.some((value) => value.toLowerCase() === option.toLowerCase());
+  }
+
+  function toggleOption(
+    setSelectedValues: React.Dispatch<React.SetStateAction<string[]>>,
+    option: string,
+  ) {
+    setSelectedValues((prev) =>
+      isOptionSelected(prev, option)
+        ? prev.filter((value) => value.toLowerCase() !== option.toLowerCase())
+        : [...prev, option],
+    );
+  }
+
+  function addCustomOption(
+    value: string,
+    setValue: React.Dispatch<React.SetStateAction<string>>,
+    setSelectedValues: React.Dispatch<React.SetStateAction<string[]>>,
+    setAvailableOptions: React.Dispatch<React.SetStateAction<string[]>>,
+  ) {
+    const trimmedValue = value.trim();
+
+    if (!trimmedValue) {
       return;
     }
 
-    const normalizedOption = trimmedOption.toLowerCase();
+    setAvailableOptions((prev) =>
+      prev.some((option) => option.toLowerCase() === trimmedValue.toLowerCase())
+        ? prev
+        : [...prev, trimmedValue].sort((a, b) => a.localeCompare(b)),
+    );
 
-    if (!seenOptions.has(normalizedOption)) {
-      seenOptions.add(normalizedOption);
-      mergedOptions.push(trimmedOption);
-    }
-  });
+    setSelectedValues((prev) =>
+      isOptionSelected(prev, trimmedValue) ? prev : [...prev, trimmedValue],
+    );
 
-  return mergedOptions.sort((a, b) => a.localeCompare(b));
-}
-
-function isOptionSelected(values: string[], option: string) {
-  return values.some(
-    (value) => value.toLowerCase() === option.toLowerCase(),
-  );
-}
-
-function toggleOption(
-  setSelectedValues: React.Dispatch<React.SetStateAction<string[]>>,
-  option: string,
-) {
-  setSelectedValues((prev) =>
-    isOptionSelected(prev, option)
-      ? prev.filter((value) => value.toLowerCase() !== option.toLowerCase())
-      : [...prev, option],
-  );
-}
-
-function addCustomOption(
-  value: string,
-  setValue: React.Dispatch<React.SetStateAction<string>>,
-  setSelectedValues: React.Dispatch<React.SetStateAction<string[]>>,
-  setAvailableOptions: React.Dispatch<React.SetStateAction<string[]>>,
-) {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return;
+    setValue("");
   }
-
-  setAvailableOptions((prev) =>
-    prev.some((option) => option.toLowerCase() === trimmedValue.toLowerCase())
-      ? prev
-      : [...prev, trimmedValue].sort((a, b) => a.localeCompare(b)),
-  );
-
-  setSelectedValues((prev) =>
-    isOptionSelected(prev, trimmedValue) ? prev : [...prev, trimmedValue],
-  );
-
-  setValue("");
-}
 
   const handleConfirmAdd = async () => {
     if (!previewBook) return;
 
     if (inventories.length === 0) {
-  setMessage("Voeg minstens één inventarisregel toe");
-  return;
-}
+      setMessage("Voeg minstens één inventarisregel toe");
+      return;
+    }
 
-for (const inventory of inventories) {
-  if (!inventory.schoolId) {
-    setMessage("Elke inventarisregel moet een school hebben");
-    return;
-  }
+    for (const inventory of inventories) {
+      if (!inventory.schoolId) {
+        setMessage("Elke inventarisregel moet een school hebben");
+        return;
+      }
 
-  if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
-    setMessage("Aantallen mogen niet negatief zijn");
-    return;
-  }
+      if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
+        setMessage("Aantallen mogen niet negatief zijn");
+        return;
+      }
 
-  if (inventory.availableCopies > inventory.totalCopies) {
-    setMessage("Beschikbare exemplaren mogen niet groter zijn dan totaal");
-    return;
-  }
-}
+      if (inventory.availableCopies > inventory.totalCopies) {
+        setMessage("Beschikbare exemplaren mogen niet groter zijn dan totaal");
+        return;
+      }
+    }
 
     setLoading(true);
     setMessage("");
@@ -246,7 +246,8 @@ for (const inventory of inventories) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-        }, credentials: "include",
+        },
+        credentials: "include",
         body: JSON.stringify({
           title,
           authors: authors.filter((author) => author.trim() !== ""),
@@ -256,28 +257,30 @@ for (const inventory of inventories) {
           categories,
           thumbnail,
           language,
-          rating,
+          rating: 0,
           publishedYear,
           spotlight: false,
           didacticTag,
           labels,
           readingLevel,
           totalCopies: totalCopiesFromInventories,
-              availableCopies: availableCopiesFromInventories,
-              ageRange,
-              inventories: inventories.map((inventory) => ({
-                schoolId: inventory.schoolId,
-                campus: inventory.campus,
-                totalCopies: inventory.totalCopies,
-                availableCopies: inventory.availableCopies,
-              })),
+          availableCopies: availableCopiesFromInventories,
+          ageRange,
+          inventories: inventories.map((inventory) => ({
+            schoolId: inventory.schoolId,
+            campus: inventory.campus,
+            totalCopies: inventory.totalCopies,
+            availableCopies: inventory.availableCopies,
+          })),
         }),
       });
 
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setMessage(data?.message || "Er ging iets mis bij het opslaan van het boek");
+        setMessage(
+          data?.message || "Er ging iets mis bij het opslaan van het boek",
+        );
         return;
       }
 
@@ -295,7 +298,6 @@ for (const inventory of inventories) {
       setLanguage("");
       setLanguageInputMode("");
       setPublishedYear(0);
-      setRating(0);
       setOpenDropdown(false);
       setOpenLabelDropdown(false);
       setDidacticTag(false);
@@ -321,7 +323,8 @@ for (const inventory of inventories) {
     setImgSrc(previewBook?.thumbnail || "/No-Image-Available-Placeholder.png");
   }, [previewBook]);
 
-  const submitButtonClass = `submitButton ${loading ? "submitButtonLoading" : ""}`.trim();
+  const submitButtonClass =
+    `submitButton ${loading ? "submitButtonLoading" : ""}`.trim();
   const messageClass = `message ${
     message.includes("succesvol")
       ? "messageSuccess"
@@ -331,71 +334,73 @@ for (const inventory of inventories) {
   }`.trim();
 
   const createEmptyInventory = (
-  school: MeResponse["school"] | null,
-): BookInventory => ({
-  id: null,
-  schoolId: school?.id ?? null,
-  schoolName: school?.name ?? "",
-  campus: "",
-  totalCopies: 1,
-  availableCopies: 1,
-});
+    school: MeResponse["school"] | null,
+  ): BookInventory => ({
+    id: null,
+    schoolId: school?.id ?? null,
+    schoolName: school?.name ?? "",
+    campus: "",
+    totalCopies: 1,
+    availableCopies: 1,
+  });
 
-const totalCopiesFromInventories = inventories.reduce(
-  (sum, inventory) => sum + (inventory.totalCopies || 0),
-  0,
-);
-
-const availableCopiesFromInventories = inventories.reduce(
-  (sum, inventory) => sum + (inventory.availableCopies || 0),
-  0,
-);
-
-
-function updateInventory(
-  index: number,
-  field: keyof BookInventory,
-  value: string | number | null,
-) {
-  setInventories((prev) =>
-    prev.map((inventory, i) =>
-      i === index ? { ...inventory, [field]: value } : inventory,
-    ),
+  const totalCopiesFromInventories = inventories.reduce(
+    (sum, inventory) => sum + (inventory.totalCopies || 0),
+    0,
   );
-}
 
-function addInventoryRow() {
-  setInventories((prev) => [...prev, createEmptyInventory(me?.school ?? null)]);
-}
+  const availableCopiesFromInventories = inventories.reduce(
+    (sum, inventory) => sum + (inventory.availableCopies || 0),
+    0,
+  );
 
-function removeInventoryRow(index: number) {
-  setInventories((prev) => prev.filter((_, i) => i !== index));
-}
+  function updateInventory(
+    index: number,
+    field: keyof BookInventory,
+    value: string | number | null,
+  ) {
+    setInventories((prev) =>
+      prev.map((inventory, i) =>
+        i === index ? { ...inventory, [field]: value } : inventory,
+      ),
+    );
+  }
 
-useEffect(() => {
-  async function loadMeAndCampuses() {
-    if (!API_URL) return;
+  function addInventoryRow() {
+    setInventories((prev) => [
+      ...prev,
+      createEmptyInventory(me?.school ?? null),
+    ]);
+  }
 
-    try {
-      setLoadingCampuses(true);
-      setCampusLoadError("");
+  function removeInventoryRow(index: number) {
+    setInventories((prev) => prev.filter((_, i) => i !== index));
+  }
 
-      const response = await fetch(`${API_URL}/auth/me`, {
-        credentials: "include",
-      });
+  useEffect(() => {
+    async function loadMeAndCampuses() {
+      if (!API_URL) return;
 
-      if (!response.ok) return;
+      try {
+        setLoadingCampuses(true);
+        setCampusLoadError("");
 
-      const data: MeResponse = await response.json();
-      setMe(data);
+        const response = await fetch(`${API_URL}/auth/me`, {
+          credentials: "include",
+        });
 
-      if (data.school) {
-        setInventories([createEmptyInventory(data.school)]);
+        if (!response.ok) return;
 
-        const campusData = await fetchSchoolCampuses(API_URL, data.school.id);
+        const data: MeResponse = await response.json();
+        setMe(data);
+
+        if (data.school) {
+          setInventories([createEmptyInventory(data.school)]);
+
+          const campusData = await fetchSchoolCampuses(API_URL, data.school.id);
           setCampuses(campusData);
-      }
-    } catch (error) {
+        }
+      } catch (error) {
         console.error("Kon gebruiker of campussen niet ophalen:", error);
         setCampusLoadError(
           error instanceof Error
@@ -407,40 +412,37 @@ useEffect(() => {
       }
     }
 
-  loadMeAndCampuses();
-}, [API_URL]);
+    loadMeAndCampuses();
+  }, [API_URL]);
 
-useEffect(() => {
-  if (!API_URL) return;
+  useEffect(() => {
+    if (!API_URL) return;
 
-  const fetchOptions = async (endpoint: string) => {
-    const response = await fetch(`${API_URL}/books/${endpoint}`, {
-      credentials: "include",
-    });
+    const fetchOptions = async (endpoint: string) => {
+      const response = await fetch(`${API_URL}/books/${endpoint}`, {
+        credentials: "include",
+      });
 
-    if (!response.ok) {
-      return [];
-    }
+      if (!response.ok) {
+        return [];
+      }
 
-    const data = await response.json();
-    return Array.isArray(data) ? data : [];
-  };
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    };
 
-  Promise.all([fetchOptions("categories"), fetchOptions("labels")])
-    .then(([databaseCategories, databaseLabels]) => {
-      setAvailableCategories(
-        mergeOptions(BOOK_CATEGORIES, databaseCategories),
-      );
-      setAvailableLabels(
-        mergeOptions(BOOK_LABELS, databaseLabels),
-      );
-    })
-    .catch(() => {
-      setAvailableCategories(BOOK_CATEGORIES);
-      setAvailableLabels(BOOK_LABELS);
-    });
-}, [API_URL]);
-
+    Promise.all([fetchOptions("categories"), fetchOptions("labels")])
+      .then(([databaseCategories, databaseLabels]) => {
+        setAvailableCategories(
+          mergeOptions(BOOK_CATEGORIES, databaseCategories),
+        );
+        setAvailableLabels(mergeOptions(BOOK_LABELS, databaseLabels));
+      })
+      .catch(() => {
+        setAvailableCategories(BOOK_CATEGORIES);
+        setAvailableLabels(BOOK_LABELS);
+      });
+  }, [API_URL]);
 
   return (
     <>
@@ -713,20 +715,6 @@ useEffect(() => {
         </div>
 
         <div className="fieldGroup">
-          <label className="label">Rating</label>
-          <input
-            type="number"
-            min="0"
-            max="5"
-            step="0.1"
-            value={rating}
-            onChange={(e) => setRating(Number(e.target.value) || 0)}
-            className="input"
-            disabled={previewBook !== null}
-          />
-        </div>
-
-        <div className="fieldGroup">
           <label className="label">Jaar van uitgave</label>
           <input
             type="number"
@@ -817,7 +805,11 @@ useEffect(() => {
                     min="0"
                     value={inventory.totalCopies}
                     onChange={(e) =>
-                      updateInventory(index, "totalCopies", Number(e.target.value) || 0)
+                      updateInventory(
+                        index,
+                        "totalCopies",
+                        Number(e.target.value) || 0,
+                      )
                     }
                     className="input"
                     disabled={previewBook !== null}
@@ -876,7 +868,11 @@ useEffect(() => {
         </div>
 
         {!previewBook && (
-          <button type="submit" disabled={loading} className={submitButtonClass}>
+          <button
+            type="submit"
+            disabled={loading}
+            className={submitButtonClass}
+          >
             {loading ? "Bezig..." : "Toon boek"}
           </button>
         )}

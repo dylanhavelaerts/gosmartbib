@@ -21,7 +21,7 @@ public class SmartschoolController {
     private final AuthHelper authHelper;
 
     @GetMapping("/users")
-    @PreAuthorize("hasRole('BIBLIOTHEEKBEHEERDER')")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<List<SmartschoolUserDTO>> searchSmartschoolUsers(
             @RequestParam String query,
             @AuthenticationPrincipal OAuth2User principal) {

@@ -403,7 +403,7 @@ public class ReadingListService {
     private boolean isStaffRole(UserRoles role) {
         return role == UserRoles.TEACHER
                 || role == UserRoles.ADMIN
-                || role == UserRoles.BIBLIOTHEEKBEHEERDER;
+                || role == UserRoles.LIBRARIAN;
     }
 
     private Long requireSchoolId(UserEntity user) {
@@ -921,7 +921,7 @@ public class ReadingListService {
         return switch (role) {
             case STUDENT -> "Leerling";
             case TEACHER -> "Leerkracht";
-            case BIBLIOTHEEKBEHEERDER -> "Bibliothecaris";
+            case LIBRARIAN -> "Bibliothecaris";
             case ADMIN -> "Admin";
             case OTHER -> "Gebruiker";
         };

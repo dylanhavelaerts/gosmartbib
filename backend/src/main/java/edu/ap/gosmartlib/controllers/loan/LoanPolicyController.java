@@ -16,13 +16,13 @@ public class LoanPolicyController {
     private final LoanPolicyService loanPolicyService;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<LoanPolicyDTO> getPolicy(@PathVariable Long schoolId) {
         return ResponseEntity.ok(loanPolicyService.getPolicy(schoolId));
     }
 
     @PutMapping
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<LoanPolicyDTO> upsertPolicy(@PathVariable Long schoolId, @RequestBody UpsertLoanPolicyRequest request) {
         return ResponseEntity.ok(loanPolicyService.savePolicy(schoolId, request));
     }

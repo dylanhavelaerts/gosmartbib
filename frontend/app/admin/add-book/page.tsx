@@ -9,7 +9,11 @@ import BookListImport from "./components/bookListImport";
 import BookListWithoutIsbnImport from "./components/bookListWithoutIsbnImport";
 import ProtectedRoute from "@/app/components/ProtectedRoute";
 
-type TabId = "Boek" | "Boek zonder ISBN" | "Boekenlijst" | "Boekenlijst zonder ISBN";
+type TabId =
+  | "Boek"
+  | "Boek zonder ISBN"
+  | "Boekenlijst"
+  | "Boekenlijst zonder ISBN";
 
 export default function AddBookPage() {
   const [selected, setSelected] = useState<TabId>("Boek");
@@ -18,7 +22,7 @@ export default function AddBookPage() {
     `tabBtn ${selected === id ? "selectedCategory" : ""}`.trim();
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={"LIBRARIAN"}>
       <div className="mainPage">
         <nav className="lowerNav">
           <button className={cls("Boek")} onClick={() => setSelected("Boek")}>
@@ -47,7 +51,9 @@ export default function AddBookPage() {
         {selected === "Boek" && <AddBookWithIsbn />}
         {selected === "Boek zonder ISBN" && <AddBookWithoutIsbn />}
         {selected === "Boekenlijst" && <BookListImport />}
-        {selected === "Boekenlijst zonder ISBN" && <BookListWithoutIsbnImport />}
+        {selected === "Boekenlijst zonder ISBN" && (
+          <BookListWithoutIsbnImport />
+        )}
       </div>
     </ProtectedRoute>
   );

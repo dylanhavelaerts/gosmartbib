@@ -543,6 +543,18 @@
   padding-left: 0.65rem;
 }
 
+.filterInputError {
+  border-color: #c0392b;
+  background: #fff5f5;
+}
+
+.filterRangeError {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #c0392b;
+}
+
 .filterInput::-webkit-inner-spin-button,
 .filterInput::-webkit-outer-spin-button {
   -webkit-appearance: none;

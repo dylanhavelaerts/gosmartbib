@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
-import edu.ap.gosmartlib.dto.UserDTO;
+import edu.ap.gosmartlib.dto.user.UserDTO;
 import edu.ap.gosmartlib.security.AdminPrincipal;
 import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;

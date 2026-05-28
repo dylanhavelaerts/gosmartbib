@@ -54,7 +54,7 @@ class AdminLoanControllerTest {
 
     @Test
     void givenNoLibrarianRole_whenGetActiveLoans_thenReturnsForbidden() throws Exception {
-        // roleGuard.isBibbeheerder() default = false → 403
+        // roleGuard.isLibrarian() default = false → 403
         mockMvc.perform(get("/loans/school/active")
                         .with(oauth2Login().attributes(a -> a.put("userID", "uid-1"))))
                 .andExpect(status().isForbidden());
@@ -64,7 +64,7 @@ class AdminLoanControllerTest {
 
     @Test
     void givenValidPrincipal_whenGetActiveLoans_thenCallsServiceWithCorrectParams() throws Exception {
-        when(roleGuard.isBibbeheerder(any())).thenReturn(true);
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         when(adminLoanService.getActiveLoansForSchool("uid-1", null, 0, 10)).thenReturn(Page.empty());
 
         mockMvc.perform(get("/loans/school/active")
@@ -87,7 +87,7 @@ class AdminLoanControllerTest {
 
     @Test
     void givenValidPrincipal_whenGetLoanHistory_thenCallsServiceWithCorrectParams() throws Exception {
-        when(roleGuard.isBibbeheerder(any())).thenReturn(true);
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         when(adminLoanService.getLoanHistoryForSchool("uid-1", 5L, 1, 10)).thenReturn(Page.empty());
 
         mockMvc.perform(get("/loans/school/history")
@@ -109,7 +109,7 @@ class AdminLoanControllerTest {
 
     @Test
     void givenValidPrincipal_whenGetSchoolClasses_thenReturnsClasses() throws Exception {
-        when(roleGuard.isBibbeheerder(any())).thenReturn(true);
+        when(roleGuard.isLibrarian(any())).thenReturn(true);
         when(adminLoanService.getSchoolClasses("uid-1")).thenReturn(List.of());
 
         mockMvc.perform(get("/loans/school/classes")

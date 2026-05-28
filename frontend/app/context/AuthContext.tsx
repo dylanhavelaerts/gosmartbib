@@ -12,7 +12,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 type UserRole =
   | "STUDENT"
   | "TEACHER"
-  | "BIBLIOTHEEKBEHEERDER"
+  | "LIBRARIAN"
   | "ADMIN"
   | "OTHER";
 

@@ -7,13 +7,12 @@ import "./mockRoleSwitcher.css";
 const roles: { label: string; value: string }[] = [
   { label: "Leerling", value: "leerling" },
   { label: "Leerkracht", value: "leerkracht" },
-  { label: "Bibliotheekbeheerder", value: "bibliotheekbeheerder" },
+  { label: "Bibliotheekbeheerder", value: "librarian" },
 ];
 
 export default function MockRoleSwitcher() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-  const isDevEnvironment =
-    apiUrl.includes("localhost") || apiUrl.includes("gosmartbib.tech");
+  const isDevEnvironment = apiUrl.includes("localhost");
   const { user } = useAuth();
 
   const [open, setOpen] = useState(false);

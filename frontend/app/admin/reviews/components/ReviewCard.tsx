@@ -61,6 +61,12 @@ function statusClassName(status: ReviewStatus): string {
   }
 }
 
+const roleLabel: Record<string, string> = {
+  STUDENT: "Leerling",
+  TEACHER: "Leerkracht",
+  LIBRARIAN: "Bibliotheekbeheerder",
+};
+
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("nl-BE", {
     day: "2-digit",
@@ -119,7 +125,9 @@ export default function ReviewCard({
         <p className="reviewUid">
           {review.reviewerName ?? review.userSmartschoolUid}
         </p>
-        <p className="reviewMeta">{review.userRole}</p>
+        <p className="reviewMeta">
+          {roleLabel[review.userRole] ?? review.userRole}
+        </p>
         <p className="reviewMeta">{formatSchoolLabel(review.schoolName)}</p>
       </div>
 

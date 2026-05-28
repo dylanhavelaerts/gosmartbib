@@ -181,20 +181,20 @@ export default function StatisticsPage() {
 
   if (isLoading)
     return (
-      <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "TEACHER"]}>
+      <ProtectedRoute allowedRoles={["LIBRARIAN", "TEACHER"]}>
         <p className="statsState">Statistieken laden...</p>
       </ProtectedRoute>
     );
 
   if (error)
     return (
-      <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "TEACHER"]}>
+      <ProtectedRoute allowedRoles={["LIBRARIAN", "TEACHER"]}>
         <p className="statsState">{error}</p>
       </ProtectedRoute>
     );
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "TEACHER"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN", "TEACHER"]}>
       <main className="statisticsPage">
         <div className="statisticsHeader">
           <h1>Statistieken</h1>

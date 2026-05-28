@@ -5,13 +5,14 @@ import { useEffect, useState } from "react";
 import "./userAdmin.css";
 import Pagination from "@/app/catalog/pagination";
 import SyncModal from "./SyncModal";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "STUDENT", label: "LEERLING" },
   { value: "TEACHER", label: "LEERKRACHT" },
-  { value: "BIBLIOTHEEKBEHEERDER", label: "BEHEERDER" },
+  { value: "LIBRARIAN", label: "BEHEERDER" },
 ];
 
 type DisplayNamesResponse = {
@@ -48,7 +49,7 @@ const SYNC_STEPS = [
 
 const replaceRoleName = (role: string): string => {
   switch (role) {
-    case "BIBLIOTHEEKBEHEERDER":
+    case "LIBRARIAN":
       return "BEHEERDER";
     case "TEACHER":
       return "LEERKRACHT";
@@ -110,7 +111,7 @@ export default function AdminUserPage() {
         const meData: MeResponse = await meRes.json();
         setMe(meData);
 
-        if (meData.role !== "ADMIN" && meData.role !== "BIBLIOTHEEKBEHEERDER") {
+        if (meData.role !== "ADMIN" && meData.role !== "LIBRARIAN") {
           setError("Je hebt geen toegang tot deze pagina");
           setLoading(false);
           return;
@@ -230,7 +231,6 @@ export default function AdminUserPage() {
       setError("");
       setSucces("");
 
-      // Admin must pass schoolId as a query param (no school on their session)
       const roleParams = new URLSearchParams();
       if (me?.role === "ADMIN" && selectedSchoolId !== null)
         roleParams.append("schoolId", String(selectedSchoolId));
@@ -334,12 +334,12 @@ export default function AdminUserPage() {
   }
 
   return (
-    <main>
-      {error && <p className="adminMessage adminMessageError">{error}</p>}
-      {succes && <p className="adminMessage adminMessageSuccess">{succes}</p>}
+    <ProtectedRoute allowedRoles={["LIBRARIAN", "ADMIN"]}>
+      <main>
+        {error && <p className="adminMessage adminMessageError">{error}</p>}
+        {succes && <p className="adminMessage adminMessageSuccess">{succes}</p>}
 
-      {!error &&
-        (me?.role === "ADMIN" || me?.role === "BIBLIOTHEEKBEHEERDER") && (
+        {!error && (me?.role === "ADMIN" || me?.role === "LIBRARIAN") && (
           <div id="userMain">
             <div className="adminPageHeader">
               <div>
@@ -511,46 +511,47 @@ export default function AdminUserPage() {
             />
           </div>
         )}
-      <SyncModal
-        syncStatus={syncStatus}
-        syncStep={syncStep}
-        syncResult={syncResult}
-        syncSteps={SYNC_STEPS}
-        onConfirm={handleSync}
-        onClose={() => {
-          setSyncStatus("idle");
-          setSyncResult(null);
-        }}
-      />
-      {deleteUserId !== null && (
-        <div className="schoolModalOverlay">
-          <div className="schoolModalBox">
-            <h2>Account verwijderen</h2>
-            <p style={{ marginBottom: "1rem" }}>
-              Weet je zeker dat je het account van{" "}
-              <strong>{deleteUserName}</strong> wil verwijderen? Alle
-              persoonlijke gegevens worden verwijderd conform GDPR. Dit kan niet
-              ongedaan worden gemaakt.
-            </p>
-            <div className="schoolModalFooter">
-              <button
-                className="schoolModalCancel"
-                onClick={() => setDeleteUserId(null)}
-                disabled={deleting}
-              >
-                Annuleren
-              </button>
-              <button
-                className="adminDangerButton"
-                onClick={handleDeleteUser}
-                disabled={deleting}
-              >
-                {deleting ? "Bezig..." : "Verwijderen"}
-              </button>
+        <SyncModal
+          syncStatus={syncStatus}
+          syncStep={syncStep}
+          syncResult={syncResult}
+          syncSteps={SYNC_STEPS}
+          onConfirm={handleSync}
+          onClose={() => {
+            setSyncStatus("idle");
+            setSyncResult(null);
+          }}
+        />
+        {deleteUserId !== null && (
+          <div className="schoolModalOverlay">
+            <div className="schoolModalBox">
+              <h2>Account verwijderen</h2>
+              <p style={{ marginBottom: "1rem" }}>
+                Weet je zeker dat je het account van{" "}
+                <strong>{deleteUserName}</strong> wil verwijderen? Alle
+                persoonlijke gegevens worden verwijderd conform GDPR. Dit kan
+                niet ongedaan worden gemaakt.
+              </p>
+              <div className="schoolModalFooter">
+                <button
+                  className="schoolModalCancel"
+                  onClick={() => setDeleteUserId(null)}
+                  disabled={deleting}
+                >
+                  Annuleren
+                </button>
+                <button
+                  className="adminDangerButton"
+                  onClick={handleDeleteUser}
+                  disabled={deleting}
+                >
+                  {deleting ? "Bezig..." : "Verwijderen"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </main>
+        )}
+      </main>
+    </ProtectedRoute>
   );
 }

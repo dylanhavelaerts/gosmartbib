@@ -21,7 +21,7 @@ export default function ReviewSection({
 }: ReviewSectionProps) {
   const { user } = useAuth();
   const canModerateReviewDelete =
-    user?.role === "TEACHER" || user?.role === "BIBLIOTHEEKBEHEERDER";
+    user?.role === "TEACHER" || user?.role === "LIBRARIAN";
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -60,14 +60,14 @@ export default function ReviewSection({
         return payload.detail;
       }
     } catch {
-      // Fallback handled below.
+      // Fallback
     }
 
     try {
       const text = (await res.text()).trim();
       if (text) return text;
     } catch {
-      // Fallback handled below.
+      // Fallback
     }
 
     return "Er liep iets fout. Probeer opnieuw.";

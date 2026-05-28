@@ -24,8 +24,7 @@ import java.io.IOException;
 
 public class AdminLoginFilter extends AbstractAuthenticationProcessingFilter {
 
-    private final HttpSessionSecurityContextRepository contextRepository =
-            new HttpSessionSecurityContextRepository();
+    private final HttpSessionSecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
     private final LoginAttemptService loginAttemptService;
 
     public AdminLoginFilter(AuthenticationManager authenticationManager, LoginAttemptService loginAttemptService) {

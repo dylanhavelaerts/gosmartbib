@@ -198,7 +198,7 @@ export default function LoansOverviewPage() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="loansOverviewPage pageLayout">
         <div className="pageHeader">
           <div className="pageHeaderText">

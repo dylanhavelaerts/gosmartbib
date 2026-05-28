@@ -4,6 +4,7 @@ import edu.ap.gosmartlib.entities.AdminEntity;
 import edu.ap.gosmartlib.repositories.AdminRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -16,12 +17,15 @@ public class LocalAdminSeeder {
     private final AdminRepository adminRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    @Value("${LOCAL_ADMIN_PASSWORD}")
+    private String localAdminPassword;
+
     @PostConstruct
     public void seed() {
         if (adminRepository.findByUsername("admin").isEmpty()) {
             AdminEntity admin = new AdminEntity();
             admin.setUsername("admin");
-            admin.setPasswordHash(passwordEncoder.encode("admin123"));
+            admin.setPasswordHash(passwordEncoder.encode(localAdminPassword));
             adminRepository.save(admin);
         }
     }

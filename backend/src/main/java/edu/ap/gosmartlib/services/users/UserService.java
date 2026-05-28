@@ -1,6 +1,6 @@
 package edu.ap.gosmartlib.services.users;
 
-import edu.ap.gosmartlib.dto.UserDTO;
+import edu.ap.gosmartlib.dto.user.UserDTO;
 import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
 import edu.ap.gosmartlib.exceptions.SchoolNotApprovedException;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
@@ -66,16 +66,15 @@ public class UserService {
         String uid = oauth2User.getAttribute("userID");
         String role = oauth2User.getAttribute("basisrol");
         String rawDomain = oauth2User.getAttribute("platform");
-        String domain = rawDomain != null ? rawDomain.trim().toLowerCase().replaceAll("/+$", "") : "";
+        String domain = rawDomain != null ? rawDomain.trim().toLowerCase().replaceAll("/++$", "") : "";
 
-        // Zoek een school op basis van domein, als de school niet bestaat maak een
-        // nieuwe aan
+        // Zoek een school op basis van domein, als de school niet bestaat maak een nieuwe aan
         SchoolEntity school = schoolRepository.findByDomain(domain)
                 .orElseGet(() -> {
                     log.info("Nieuwe school gevonden, toevoegen aan database: {}", domain);
                     SchoolEntity e = new SchoolEntity();
                     e.setDomain(domain);
-                    e.setName(domain); // TODO: misschien later aanpassen naar echte naam van school
+                    e.setName(domain);
                     return schoolRepository.save(e);
                 });
 
@@ -169,6 +168,7 @@ public class UserService {
         cookie.setPath("/");
         cookie.setMaxAge(0);
         cookie.setHttpOnly(true);
+        cookie.setSecure(true);
         response.addCookie(cookie);
     }
 

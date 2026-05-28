@@ -31,36 +31,36 @@ public class SchoolCampusController {
     private final AuthHelper authHelper;
 
     @GetMapping
-    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public List<SchoolCampusDTO> getCampuses(@PathVariable Long schoolId, Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return schoolCampusService.getCampusesForPlatformAdmin(schoolId);
-        return schoolCampusService.getCampusesForBibbeheerder(
+        return schoolCampusService.getCampusesForLibrarian(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public SchoolCampusDTO createCampus(@PathVariable Long schoolId,
                                         @Valid @RequestBody CreateSchoolCampusRequest request,
                                         Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal)
             return schoolCampusService.createCampusForPlatformAdmin(schoolId, request);
-        return schoolCampusService.createCampusForBibbeheerder(
+        return schoolCampusService.createCampusForLibrarian(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, request);
     }
 
     @DeleteMapping("/{campusId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@roleGuard.isAdmin(authentication) or @roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarianOrAdmin(authentication)")
     public void deleteCampus(@PathVariable Long schoolId, @PathVariable Long campusId,
                              Authentication authentication) {
         if (authentication.getPrincipal() instanceof AdminPrincipal) {
             schoolCampusService.deleteCampusForPlatformAdmin(schoolId, campusId);
             return;
         }
-        schoolCampusService.deleteCampusForBibbeheerder(
+        schoolCampusService.deleteCampusForLibrarian(
                 authHelper.extractUid((OAuth2User) authentication.getPrincipal()), schoolId, campusId);
     }
 

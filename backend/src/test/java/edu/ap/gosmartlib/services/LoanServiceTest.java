@@ -376,7 +376,7 @@ class LoanServiceTest {
     @Test
     void givenBeheerder_whenGetActiveLoansAsAdmin_thenReturnsMappedDTOs() {
         SchoolEntity school = buildSchool(5L);
-        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.BIBLIOTHEEKBEHEERDER);
+        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.LIBRARIAN);
 
         LoanEntity loan = buildLoan(1L, "lener-1", "9780000000001", 2);
         BookEntity book = buildBookWithInventory("9780000000001", 5, buildInventory(school, 5));
@@ -456,7 +456,7 @@ class LoanServiceTest {
     void givenBibliotheekbeheerder_whenRequestLoanExtension_thenThrowsException() {
         // Arrange
         SchoolEntity school = buildSchool(5L);
-        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.BIBLIOTHEEKBEHEERDER);
+        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.LIBRARIAN);
 
         when(userRepository.findBySmartschoolUid("beheerder-1")).thenReturn(Optional.of(beheerder));
 
@@ -532,7 +532,7 @@ class LoanServiceTest {
     void givenBibliotheekbeheerder_whenGetPendingExtensionRequestsForSchool_thenReturnsOnlyOwnSchoolRequests() {
         // Arrange
         SchoolEntity school = buildSchool(5L);
-        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.BIBLIOTHEEKBEHEERDER);
+        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.LIBRARIAN);
         UserEntity borrower = buildUserWithRole(2L, "uid-1", school, UserRoles.STUDENT);
 
         LoanEntity loan = buildLoan(1L, "uid-1", "9780000000001", 1);
@@ -588,7 +588,7 @@ class LoanServiceTest {
     void givenPendingLoanFromOwnSchool_whenApproveLoanExtension_thenDoublesLoanPeriod() {
         // Arrange
         SchoolEntity school = buildSchool(5L);
-        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.BIBLIOTHEEKBEHEERDER);
+        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.LIBRARIAN);
         UserEntity borrower = buildUserWithRole(2L, "uid-1", school, UserRoles.STUDENT);
 
         LoanEntity loan = buildLoan(1L, "uid-1", "9780000000001", 1);
@@ -618,7 +618,7 @@ class LoanServiceTest {
     void givenPendingLoanFromOwnSchool_whenDenyLoanExtension_thenSetsStatusDenied() {
         // Arrange
         SchoolEntity school = buildSchool(5L);
-        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.BIBLIOTHEEKBEHEERDER);
+        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.LIBRARIAN);
         UserEntity borrower = buildUserWithRole(2L, "uid-1", school, UserRoles.STUDENT);
 
         LoanEntity loan = buildLoan(1L, "uid-1", "9780000000001", 1);
@@ -645,7 +645,7 @@ class LoanServiceTest {
         SchoolEntity beheerderSchool = buildSchool(5L);
         SchoolEntity otherSchool = buildSchool(99L);
 
-        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", beheerderSchool, UserRoles.BIBLIOTHEEKBEHEERDER);
+        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", beheerderSchool, UserRoles.LIBRARIAN);
         UserEntity borrower = buildUserWithRole(2L, "uid-1", otherSchool, UserRoles.STUDENT);
 
         LoanEntity loan = buildLoan(1L, "uid-1", "9780000000001", 1);
@@ -668,7 +668,7 @@ class LoanServiceTest {
     void givenLoanWithoutPendingRequest_whenApproveLoanExtension_thenThrowsException() {
         // Arrange
         SchoolEntity school = buildSchool(5L);
-        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.BIBLIOTHEEKBEHEERDER);
+        UserEntity beheerder = buildUserWithRole(1L, "beheerder-1", school, UserRoles.LIBRARIAN);
         UserEntity borrower = buildUserWithRole(2L, "uid-1", school, UserRoles.STUDENT);
 
         LoanEntity loan = buildLoan(1L, "uid-1", "9780000000001", 1);
