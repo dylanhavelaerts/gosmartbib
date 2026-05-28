@@ -29,6 +29,7 @@ import org.springframework.security.access.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -746,6 +748,103 @@ class ReadingListServiceTest {
                 () -> readingListService.updatePersonalListVisibility(911L, true, "owner-uid"));
 
         verify(readingListRepository, never()).save(any());
+    }
+
+    @Test
+    void givenExistingReadingListWithBooks_whenGetBookIds_thenReturnsBookIds() {
+        UserEntity owner = user(140L, "owner-uid", UserRoles.STUDENT);
+        BookEntity book1 = book(1L, "Book One");
+        BookEntity book2 = book(2L, "Book Two");
+        ReadingListEntity list = readingList(920L, "My List", ReadingListType.PERSONAL, owner,
+                Set.of(book1, book2));
+
+        when(readingListRepository.findByIdWithBooks(920L)).thenReturn(Optional.of(list));
+
+        List<Long> result = readingListService.getBookIds(920L);
+
+        assertEquals(2, result.size());
+        assertTrue(result.containsAll(List.of(1L, 2L)));
+    }
+
+    @Test
+    void givenMissingReadingList_whenGetBookIds_thenThrowsEntityNotFoundException() {
+        when(readingListRepository.findByIdWithBooks(999L)).thenReturn(Optional.empty());
+
+        assertThrows(jakarta.persistence.EntityNotFoundException.class,
+                () -> readingListService.getBookIds(999L));
+    }
+
+    @Test
+    void givenStaffUser_whenGetAssignmentTargets_thenReturnsClassesWithYearAndGrade() {
+        SchoolEntity school = school(1L, "Testschool");
+        UserEntity teacher = user(150L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(school);
+
+        SchoolClassEntity c1 = schoolClass(10L, "3LAT", school);
+        SchoolClassEntity c2 = schoolClass(11L, "5ITN", school);
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(schoolClassRepository.findAllBySchool_IdOrderByNameAsc(1L)).thenReturn(List.of(c1, c2));
+
+        var result = readingListService.getAssignmentTargets("teacher-uid");
+
+        assertEquals(2, result.classes().size());
+        var class3 = result.classes().stream().filter(c -> c.name().equals("3LAT")).findFirst().orElseThrow();
+        assertEquals(3, class3.year());
+        assertEquals(2, class3.grade());
+        var class5 = result.classes().stream().filter(c -> c.name().equals("5ITN")).findFirst().orElseThrow();
+        assertEquals(5, class5.year());
+        assertEquals(3, class5.grade());
+    }
+
+    @Test
+    void givenStudentUser_whenGetAssignmentTargets_thenThrowsAccessDenied() {
+        UserEntity student = user(151L, "student-uid", UserRoles.STUDENT);
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> readingListService.getAssignmentTargets("student-uid"));
+    }
+
+    @Test
+    void givenQueryTooShort_whenSearchAssignmentStudents_thenReturnsEmptyList() {
+        UserEntity teacher = user(160L, "teacher-uid", UserRoles.TEACHER);
+        SchoolEntity school = school(1L, "Testschool");
+        teacher.setSchool(school);
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+
+        List<edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO.StudentTarget> result =
+                readingListService.searchAssignmentStudents("teacher-uid", "a");
+
+        assertTrue(result.isEmpty());
+        verify(userRepository, never()).findAllBySchool_IdOrderBySmartschoolUidAsc(any());
+    }
+
+    @Test
+    void givenMatchingStudents_whenSearchAssignmentStudents_thenReturnsFilteredAndSortedResults() {
+        SchoolEntity school = school(1L, "Testschool");
+        UserEntity teacher = user(160L, "teacher-uid", UserRoles.TEACHER);
+        teacher.setSchool(school);
+
+        UserEntity student1 = user(200L, "jan.peeters", UserRoles.STUDENT);
+        student1.setSchool(school);
+        UserEntity student2 = user(201L, "ann.smeets", UserRoles.STUDENT);
+        student2.setSchool(school);
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(1L))
+                .thenReturn(List.of(student1, student2));
+        when(userDirectoryService.resolveDisplayNames(eq("teacher-uid"), any()))
+                .thenReturn(new edu.ap.gosmartlib.dto.userdirectory.ResolveDisplayNamesResponse(
+                        true, 2, 2,
+                        Map.of("jan.peeters", "Jan Peeters", "ann.smeets", "Ann Smeets"),
+                        List.of(), null));
+
+        List<edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO.StudentTarget> result =
+                readingListService.searchAssignmentStudents("teacher-uid", "peeters");
+
+        assertEquals(1, result.size());
+        assertEquals("Jan Peeters", result.get(0).displayName());
     }
 
     private CreateReadingListDTO dto(String title, String description, String deadline, List<Long> bookIds) {
