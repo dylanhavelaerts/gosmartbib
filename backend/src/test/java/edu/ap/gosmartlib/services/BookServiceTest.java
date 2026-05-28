@@ -8,6 +8,7 @@ import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
 import edu.ap.gosmartlib.dto.importdto.BulkImportDuplicateWarningDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.school.SchoolCampusEntity;
 import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -116,6 +117,15 @@ class BookServiceTest {
 
                 lenient().when(schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(eq(1L), anyString()))
                                 .thenReturn(true);
+                lenient().when(schoolCampusRepository.findBySchool_IdOrderByNameAsc(anyLong()))
+                                .thenAnswer(invocation -> {
+                                        Long schoolId = invocation.getArgument(0);
+                                        return List.of(
+                                                        buildCampus(1L, schoolId, "Campus Zuid"),
+                                                        buildCampus(2L, schoolId, "Campus Noord"),
+                                                        buildCampus(3L, schoolId, "Campus A"),
+                                                        buildCampus(4L, schoolId, "Campus B"));
+                                });
         }
 
         // --- Google API Tests ---
@@ -2196,8 +2206,11 @@ class BookServiceTest {
                 savedEntity.setRating(4.5);
                 savedEntity.setPublishedYear(2024);
                 savedEntity.setSpotlight(true);
-                savedEntity.setInventories(new ArrayList<>());
+                savedEntity.setInventories(new ArrayList<>(List.of(
+                                buildInventory(school, "Hoofdcampus", 1, 1))));
 
+                when(schoolCampusRepository.findBySchool_IdOrderByNameAsc(1L))
+                                .thenReturn(List.of(buildCampus(1L, 1L, "Hoofdcampus")));
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
                         BookEntity entity = invocation.getArgument(0);
@@ -2250,8 +2263,11 @@ class BookServiceTest {
                 savedEntity.setCategories(List.of());
                 savedEntity.setRating(0.0);
                 savedEntity.setSpotlight(false);
-                savedEntity.setInventories(new ArrayList<>());
+                savedEntity.setInventories(new ArrayList<>(List.of(
+                                buildInventory(school, "Hoofdcampus", 1, 1))));
 
+                when(schoolCampusRepository.findBySchool_IdOrderByNameAsc(1L))
+                                .thenReturn(List.of(buildCampus(1L, 1L, "Hoofdcampus")));
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
                         BookEntity entity = invocation.getArgument(0);
@@ -2487,8 +2503,10 @@ class BookServiceTest {
                 reloaded.setTotalCopies(4);
                 reloaded.setAvailableCopies(2);
                 reloaded.setInventories(new ArrayList<>(List.of(
-                                buildInventory(school, null, 4, 2))));
+                                buildInventory(school, "Hoofdcampus", 4, 2))));
 
+                when(schoolCampusRepository.findBySchool_IdOrderByNameAsc(1L))
+                                .thenReturn(List.of(buildCampus(1L, 1L, "Hoofdcampus")));
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
                         BookEntity entity = invocation.getArgument(0);
@@ -2505,7 +2523,7 @@ class BookServiceTest {
                 BookEntity persisted = captor.getValue();
                 assertEquals(1, persisted.getInventories().size());
                 assertEquals(1L, persisted.getInventories().get(0).getSchool().getId());
-                assertEquals("", persisted.getInventories().get(0).getCampus());
+                assertEquals("Hoofdcampus", persisted.getInventories().get(0).getCampus());
                 assertEquals(4, persisted.getInventories().get(0).getTotalCopies());
                 assertEquals(2, persisted.getInventories().get(0).getAvailableCopies());
 
@@ -3160,6 +3178,18 @@ class BookServiceTest {
                 inventory.setTotalCopies(totalCopies);
                 inventory.setAvailableCopies(availableCopies);
                 return inventory;
+        }
+
+        private SchoolCampusEntity buildCampus(Long id, Long schoolId, String name) {
+                SchoolEntity campusSchool = new SchoolEntity();
+                campusSchool.setId(schoolId);
+
+                SchoolCampusEntity campus = new SchoolCampusEntity();
+                campus.setId(id);
+                campus.setSchool(campusSchool);
+                campus.setName(name);
+
+                return campus;
         }
 
         private BookEntity buildBookEntityForSnowball(Long id, String title, List<String> authors,
