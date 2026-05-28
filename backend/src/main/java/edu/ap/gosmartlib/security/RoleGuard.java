@@ -34,7 +34,8 @@ public class RoleGuard {
 
     @Transactional(readOnly = true)
     public boolean isLibrarianOrAdmin(Authentication authentication) {
-        return hasAnyRole(authentication, UserRoles.LIBRARIAN, UserRoles.ADMIN);
+        if (isAdmin(authentication)) return true;
+        return hasAnyRole(authentication, UserRoles.LIBRARIAN);
     }
 
     private boolean hasAnyRole(Authentication authentication, UserRoles... allowedRoles) {
