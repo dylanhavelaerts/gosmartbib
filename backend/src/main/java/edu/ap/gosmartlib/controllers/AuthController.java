@@ -17,6 +17,15 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.view.RedirectView;
 import java.util.Set;
 
+/**
+ * Controller voor de login- en sessie-endpoints van de OAuthFlow.
+ *
+ * Deze controller start de Smartschool OAuth2-login via /auth/login en levert
+ * via /auth/me de huidige ingelogde gebruiker aan de frontend. De frontend
+ * gebruikt /auth/me als bron van waarheid, omdat HttpOnly sessiecookies niet
+ * rechtstreeks door JavaScript gelezen kunnen worden.
+ */
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -27,11 +36,13 @@ public class AuthController {
 
     private final UserService userService;
 
-
     /**
-     * Redirect de gebruiker naar de Smartschool OAuth2 loginpagina.
-     * Na succesvolle login zal de gebruiker teruggestuurd worden naar de frontend,
-     * waar de app de gebruikersinfo kan ophalen via de /auth/me endpoint.
+     * Start de Smartschool OAuth2-login.
+     *
+     * De frontend navigeert naar dit endpoint, waarna Spring Security de OAuth2
+     * authorization request opbouwt en de browser naar Smartschool doorstuurt.
+     *
+     * @return redirect naar de Spring Security OAuth2 authorization endpoint
      */
     @GetMapping("/login")
     public RedirectView login() {
@@ -39,7 +50,14 @@ public class AuthController {
     }
 
     /**
-     * Endpoint om de informatie van de ingelogde gebruiker op te halen.
+     * Geeft de huidige ingelogde gebruiker terug op basis van de actieve sessie.
+     *
+     * Voor gewone Smartschoolgebruikers wordt de userID uit de OAuth2User gehaald
+     * en wordt de lokale UserDTO uit de database opgehaald. Voor platformadmins
+     * wordt de AdminPrincipal omgezet naar een UserDTO met ADMIN-rol.
+     *
+     * @param authentication de huidige Spring Security authenticatie
+     * @return de huidige gebruiker, of 401 wanneer er geen geldige sessie bestaat
      */
     @GetMapping("/me")
     @Transactional

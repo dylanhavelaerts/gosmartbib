@@ -23,6 +23,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.*;
 
+/**
+ * Service voor gebruikerssynchronisatie, sessiegegevens en logout.
+ *
+ * Deze service vertaalt Smartschool OAuth2-attributen naar lokale GoSmartLib
+ * entiteiten zoals UserEntity, SchoolEntity en SchoolClassEntity. De service is
+ * verantwoordelijk voor het aanmaken of bijwerken van gebruikers na login.
+ */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -34,13 +42,25 @@ public class UserService {
     private final SchoolClassHelper schoolClassHelper;
 
     /**
-     * Wordt aangeroepen elke login
-     * - Als een gebruiker niet bestaat -> nieuw account aanmaken
-     * - Als een gebruiker al bestaat -> gegevens updaten indien nodig (naam,
-     * klassen, ...)
-     * - ROL wordt niet overgeschreven aangezien een leerkracht miss de bibbeheerder
-     * rol heeft gekregen
+     * Synchroniseert een Smartschool OAuth2User met de lokale database.
+     *
+     * Bij elke login worden school, gebruiker, klassen en OneRoster sourcedId
+     * bijgewerkt. Nieuwe scholen worden automatisch aangemaakt maar niet
+     * automatisch
+     * goedgekeurd. Nieuwe gebruikers van een niet-goedgekeurde school worden
+     * geblokkeerd.
+     *
+     * De rol van bestaande gebruikers wordt bewust niet overschreven. Zo kan een
+     * lokaal toegekende rol, zoals BIBLIOTHEEKBEHEERDER, behouden blijven na een
+     * nieuwe Smartschool-login.
+     *
+     * @param oauth2User de door Smartschool aangemelde gebruiker
+     * @return de aangemaakte of bijgewerkte lokale gebruiker
+     * @throws SchoolNotApprovedException wanneer een nieuwe gebruiker via een
+     *                                    niet-goedgekeurde school probeert in te
+     *                                    loggen
      */
+
     @Transactional
     public UserEntity syncUser(OAuth2User oauth2User) {
         String uid = oauth2User.getAttribute("userID");
@@ -106,6 +126,16 @@ public class UserService {
                 });
     }
 
+    /**
+     * Haalt de huidige gebruiker op als UserDTO.
+     *
+     * Dit wordt gebruikt door /auth/me. De frontend gebruikt deze DTO om navigatie,
+     * UI en client-side routebescherming op rol te sturen.
+     *
+     * @param uid Smartschool userID van de ingelogde gebruiker
+     * @return UserDTO met rol, school en klasgegevens
+     */
+
     @Transactional(readOnly = true)
     public UserDTO getCurrentUser(String uid) {
         UserEntity user = userRepository.findDetailedBySmartschoolUid(uid)
@@ -113,6 +143,16 @@ public class UserService {
 
         return UserDTO.from(user);
     }
+
+    /**
+     * Logt de huidige gebruiker uit.
+     *
+     * De Spring Security context wordt gewist en zowel JSESSIONID als AUTHENTICATED
+     * worden verwijderd, zodat de browser niet langer aan een actieve sessie
+     * gekoppeld is.
+     *
+     * @param response HTTP response waarin de verwijdercookies worden geplaatst
+     */
 
     public void logUserOut(HttpServletResponse response) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -133,7 +173,8 @@ public class UserService {
     }
 
     // Maakt van Smartschool groups een SchoolClassEntity
-    private Set<SchoolClassEntity> resolveClasses(List<Map<String, Object>> groups, List<Map<String, Object>> parentGroups, SchoolEntity school) {
+    private Set<SchoolClassEntity> resolveClasses(List<Map<String, Object>> groups,
+            List<Map<String, Object>> parentGroups, SchoolEntity school) {
         String grade = parentGroups.stream()
                 .map(pg -> (String) pg.get("name"))
                 .filter(n -> n != null && n.toLowerCase().contains("jaars"))
@@ -151,17 +192,32 @@ public class UserService {
 
             schoolClass.setSchoolYear(schoolYear);
 
-            if (name != null) schoolClass.setName(name);
-            if (grade != null) schoolClass.setGrade(grade);
+            if (name != null)
+                schoolClass.setName(name);
+            if (grade != null)
+                schoolClass.setGrade(grade);
 
             resolved.add(schoolClass);
         }
         return resolved;
     }
 
+    /**
+     * Zet Smartschool groups en parentGroups om naar lokale
+     * SchoolClassEntity-koppelingen.
+     *
+     * De groups bevatten de concrete klassen van de gebruiker. De parentGroups
+     * worden
+     * gebruikt om extra context zoals het jaar of de graad af te leiden. Bestaande
+     * klassen worden hergebruikt, nieuwe klassen worden aangemaakt via
+     * SchoolClassHelper.
+     *
+     * @param groups       Smartschoolgroepen van de gebruiker
+     * @param parentGroups bovenliggende Smartschoolgroepen
+     * @param school       lokale school waartoe de gebruiker behoort
+     * @return set met lokale klassen voor de gebruiker
+     */
 
-
-    // Vindt het momentele schooljaar
     private String resolveCurrentSchoolYear() {
         LocalDate today = LocalDate.now();
         int year = today.getMonthValue() >= 9 ? today.getYear() : today.getYear() - 1;
