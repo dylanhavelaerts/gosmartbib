@@ -17,6 +17,7 @@ import edu.ap.gosmartlib.repositories.book.BookInventoryRepository;
 import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolCampusRepository;
 import edu.ap.gosmartlib.services.InventoryAdjustmentService;
 import edu.ap.gosmartlib.util.BookCopyCondition;
 import org.springframework.data.domain.*;
@@ -70,6 +71,7 @@ public class BookService {
     private final SchoolRepository schoolRepository;
     private final BookCopyRepository bookCopyRepository;
     private final BookInventoryRepository bookInventoryRepository;
+    private final SchoolCampusRepository schoolCampusRepository;
 
     private final InventoryAdjustmentService inventoryAdjustmentService;
 
@@ -114,10 +116,14 @@ public class BookService {
         return toDTO(previewBook);
     }
 
-    // AANGEPAST: 4 argumenten (inclusief Integer copies), passend bij de
-    // BookController
     public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer copies) {
+        return addBookByIsbn(isbn, smartschoolUid, campus, copies, false);
+    }
+
+    public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer copies,
+            boolean didacticBook) {
         BookEntity newBook = buildBookEntityFromGoogle(isbn);
+        newBook.setDidacticTag(didacticBook);
 
         // Zorg dat er altijd minimaal 1 copy is als er null wordt meegegeven
         int totalCopies = (copies != null && copies > 0) ? copies : 1;
@@ -434,6 +440,7 @@ public class BookService {
         }
 
         SchoolEntity userSchool = resolveSchoolForUser(smartschoolUid);
+        String normalizedCampus = resolveRequiredExistingCampus(userSchool, fallbackCampus);
 
         List<ImportMismatchDTO> mismatches = new ArrayList<>();
         List<BulkImportDuplicateWarningDTO> duplicateWarnings = new ArrayList<>();
@@ -487,7 +494,8 @@ public class BookService {
                     String categories = getImportCell(row, columns, formatter, "categorieën");
                     String labels = getImportCell(row, columns, formatter, "leefwereldlabels");
                     String readingLevel = getImportCell(row, columns, formatter, "leesniveau");
-                    String rowCampus = getImportCell(row, columns, formatter, "campus");
+                    boolean rowDidacticBook = parseDidacticBoolean(
+                            getImportCell(row, columns, formatter, "didactisch boek"));
                     String totalCopiesValue = getImportCell(row, columns, formatter, "totaal aantal boeken");
                     String availableCopiesValue = getImportCell(row, columns, formatter, "beschikbaar aantal boeken");
 
@@ -501,11 +509,6 @@ public class BookService {
                             "Beschikbaar aantal boeken");
 
                     validateInventoryCounts(totalCopies, availableCopies);
-
-                    String campusToUse = !rowCampus.isBlank()
-                            ? rowCampus
-                            : fallbackCampus;
-                    String normalizedCampus = normalizeCampus(campusToUse);
 
                     BookEntity duplicateBook = bookRepository.findByNormalizedIsbn(isbn)
                             .orElse(null);
@@ -540,6 +543,8 @@ public class BookService {
                             continue;
                         }
 
+                        markBookDidacticWhenRequested(duplicateBook, rowDidacticBook);
+
                         addOrIncreaseInventory(
                                 duplicateBook,
                                 userSchool,
@@ -564,11 +569,12 @@ public class BookService {
                                 excelTitle,
                                 fetchedBook.getTitle(),
                                 "De titel komt niet overeen (" + fetchedBook.getTitle() + ")",
-                                totalCopies));
+                                totalCopies,
+                                rowDidacticBook));
                         continue;
                     }
 
-                    applyBulkIsbnImportFields(fetchedBook, categories, labels, readingLevel);
+                    applyBulkIsbnImportFields(fetchedBook, categories, labels, readingLevel, rowDidacticBook);
                     fetchedBook.getInventories().clear();
                     addInventory(fetchedBook, userSchool, normalizedCampus, totalCopies, availableCopies);
                     recomputeBookCopyTotals(fetchedBook);
@@ -642,6 +648,7 @@ public class BookService {
         }
 
         SchoolEntity userSchool = resolveSchoolForUser(smartschoolUid);
+        String normalizedCampus = resolveRequiredExistingCampus(userSchool, fallbackCampus);
 
         List<ImportMismatchDTO> mismatches = new ArrayList<>();
         List<BulkImportDuplicateWarningDTO> duplicateWarnings = new ArrayList<>();
@@ -695,8 +702,8 @@ public class BookService {
                     String language = getImportCell(row, columns, formatter, "taal");
                     String publishedYear = getImportCell(row, columns, formatter, "jaar van uitgave");
                     String readingLevel = getImportCell(row, columns, formatter, "leesniveau");
-                    String didacticBook = getImportCell(row, columns, formatter, "didactisch boek");
-                    String rowCampus = getImportCell(row, columns, formatter, "campus");
+                    boolean rowDidacticBook = parseDidacticBoolean(
+                            getImportCell(row, columns, formatter, "didactisch boek"));
                     String totalCopiesValue = getImportCell(row, columns, formatter, "totaal aantal boeken");
                     String availableCopiesValue = getImportCell(row, columns, formatter, "beschikbaar aantal boeken");
 
@@ -711,12 +718,6 @@ public class BookService {
 
                     List<String> parsedAuthors = splitImportList(authors);
                     String normalizedPublisher = valueOrFallback(publisher, "Onbekende uitgever");
-
-                    String campusToUse = !rowCampus.isBlank()
-                            ? rowCampus
-                            : fallbackCampus;
-
-                    String normalizedCampus = normalizeCampus(campusToUse);
 
                     BookEntity duplicateBook = findDuplicateBookForNoIsbnImport(
                             title,
@@ -756,6 +757,8 @@ public class BookService {
                             continue;
                         }
 
+                        markBookDidacticWhenRequested(duplicateBook, rowDidacticBook);
+
                         addOrIncreaseInventory(
                                 duplicateBook,
                                 userSchool,
@@ -784,7 +787,7 @@ public class BookService {
                     book.setRating(0.0);
                     book.setPublishedYear(parsePublishedYearOrNull(publishedYear));
                     book.setSpotlight(false);
-                    book.setDidacticTag(parseDidacticBoolean(didacticBook));
+                    book.setDidacticTag(rowDidacticBook);
                     book.setReadingLevel(normalizeReadingLevel(readingLevel));
                     book.setAgeRange(null);
                     book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
@@ -1399,6 +1402,12 @@ public class BookService {
         return value == null ? 0 : value;
     }
 
+    private void markBookDidacticWhenRequested(BookEntity book, boolean didacticBook) {
+        if (didacticBook && book != null && !book.isDidacticTag()) {
+            book.setDidacticTag(true);
+        }
+    }
+
     private BookEntity findDuplicateBookForNoIsbnImport(
             String title,
             List<String> authors,
@@ -1477,7 +1486,8 @@ public class BookService {
             BookEntity book,
             String categories,
             String labels,
-            String readingLevel) {
+            String readingLevel,
+            boolean didacticBook) {
 
         if (categories != null && !categories.isBlank()) {
             book.setCategories(splitImportList(categories));
@@ -1487,6 +1497,7 @@ public class BookService {
 
         book.setLabels(splitImportList(labels));
         book.setReadingLevel(normalizeReadingLevel(readingLevel));
+        book.setDidacticTag(didacticBook);
     }
 
     private void validateInventoryCounts(int totalCopies, int availableCopies) {
@@ -1694,6 +1705,32 @@ public class BookService {
     private String normalizeCampus(String campus) {
         String trimmed = safeTrim(campus);
         return trimmed == null ? "" : trimmed;
+    }
+
+    private String resolveRequiredExistingCampus(SchoolEntity school, String campus) {
+        String normalizedCampus = normalizeCampus(campus);
+
+        if (normalizedCampus.isBlank()) {
+            throw new IllegalArgumentException("Kies eerst een campus op de importpagina");
+        }
+
+        Long schoolId = school == null ? null : school.getId();
+
+        if (schoolId == null) {
+            throw new IllegalArgumentException("Geen school gevonden voor de ingelogde gebruiker");
+        }
+
+        boolean campusExists = schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(
+                schoolId,
+                normalizedCampus);
+
+        if (!campusExists) {
+            throw new IllegalArgumentException(
+                    "Campus '" + normalizedCampus
+                            + "' bestaat niet voor jouw school. Maak de campus eerst aan op de schoolbeheerpagina.");
+        }
+
+        return normalizedCampus;
     }
 
     private SchoolEntity resolveSchoolForUser(String smartschoolUid) {
@@ -1965,8 +2002,10 @@ public class BookService {
             return false;
         }
 
-        return switch (value.trim().toLowerCase(Locale.ROOT)) {
-            case "ja", "yes", "true", "1", "waar" -> true;
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+
+        return switch (normalized) {
+            case "ja", "j", "yes", "y", "true", "1", "waar", "x", "☑", "☑ ja", "☑️", "☑️ ja", "checked" -> true;
             default -> false;
         };
     }

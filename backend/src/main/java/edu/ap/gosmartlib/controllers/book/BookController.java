@@ -177,8 +177,10 @@ public class BookController {
     public ResponseEntity<?> addBookByIsbn(@PathVariable String isbn,
             @RequestParam(required = false) String campus,
             @RequestParam(required = false) Integer amount,
+            @RequestParam(defaultValue = "false") boolean didacticBook,
             @AuthenticationPrincipal OAuth2User principal) {
-        BookDTO addedBook = bookService.addBookByIsbn(isbn, authHelper.extractUidOrNull(principal), campus, amount);
+        BookDTO addedBook = bookService.addBookByIsbn(isbn, authHelper.extractUidOrNull(principal), campus, amount,
+                didacticBook);
         return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
     }
 
@@ -233,21 +235,28 @@ public class BookController {
 
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     @PostMapping(value = "/import/no-isbn", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<BulkImportResponseDTO> importBooksWithoutIsbn(
+    public ResponseEntity<?> importBooksWithoutIsbn(
             @RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String campus,
             @RequestParam(defaultValue = "false") boolean confirmDuplicates,
             @RequestParam(required = false) List<Integer> confirmedDuplicateRows,
             @AuthenticationPrincipal OAuth2User principal) {
+        try {
+            BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
+                    file,
+                    authHelper.extractUid(principal),
+                    campus,
+                    confirmDuplicates,
+                    confirmedDuplicateRows == null ? List.of() : confirmedDuplicateRows);
 
-        BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
-                file,
-                authHelper.extractUid(principal),
-                campus,
-                confirmDuplicates,
-                confirmedDuplicateRows == null ? List.of() : confirmedDuplicateRows);
-
-        return new ResponseEntity<>(result, HttpStatus.OK);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", "Er is een fout opgetreden bij het importeren van het Excelbestand."));
+        }
     }
 
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
@@ -277,7 +286,8 @@ public class BookController {
 
     @GetMapping("/{bookId}/copies/labels")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
-    public ResponseEntity<List<BookCopyLabelDTO>> getCopyLabels(@PathVariable Long bookId, @RequestParam Long inventoryId) {
+    public ResponseEntity<List<BookCopyLabelDTO>> getCopyLabels(@PathVariable Long bookId,
+            @RequestParam Long inventoryId) {
         return ResponseEntity.ok(bookService.getCopyLabelsForInventory(bookId, inventoryId));
     }
 
@@ -291,7 +301,8 @@ public class BookController {
 
     @GetMapping("/copies/labels/school")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
-    public ResponseEntity<List<BookCopyLabelDTO>> getAllCopyLabelsForSchool(@AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<List<BookCopyLabelDTO>> getAllCopyLabelsForSchool(
+            @AuthenticationPrincipal OAuth2User principal) {
         return ResponseEntity.ok(bookService.getCopyLabelsForSchool(authHelper.extractUid(principal)));
     }
 
@@ -300,7 +311,8 @@ public class BookController {
     public ResponseEntity<BookDTO> getBookByBarcode(
             @RequestParam String barcode,
             @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(bookService.getBookByBarcode(barcode, callerRole(principal), authHelper.extractUidOrNull(principal)));
+        return ResponseEntity.ok(
+                bookService.getBookByBarcode(barcode, callerRole(principal), authHelper.extractUidOrNull(principal)));
     }
 
     @GetMapping("/{bookId}/copies/by-barcode")

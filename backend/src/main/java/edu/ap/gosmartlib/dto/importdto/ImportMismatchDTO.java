@@ -6,7 +6,8 @@ public record ImportMismatchDTO(
                 String excelTitle,
                 String fetchedTitle,
                 String reason,
-                Integer amount) {
+                Integer amount,
+                Boolean didacticBook) {
 
         public ImportMismatchDTO(
                         int rowNumber,
@@ -14,6 +15,16 @@ public record ImportMismatchDTO(
                         String excelTitle,
                         String fetchedTitle,
                         String reason) {
-                this(rowNumber, isbn, excelTitle, fetchedTitle, reason, null);
+                this(rowNumber, isbn, excelTitle, fetchedTitle, reason, null, null);
+        }
+
+        public ImportMismatchDTO(
+                        int rowNumber,
+                        String isbn,
+                        String excelTitle,
+                        String fetchedTitle,
+                        String reason,
+                        Integer amount) {
+                this(rowNumber, isbn, excelTitle, fetchedTitle, reason, amount, null);
         }
 }
