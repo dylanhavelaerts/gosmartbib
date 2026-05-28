@@ -24,6 +24,13 @@ const PROFILE_TINTS: Record<string, string> = {
   TITAN: "#f8fbff",
 };
 
+/**
+ * Logt de huidige gebruiker uit.
+ *
+ * De backend wist de Spring Security sessie en verwijdert de sessiecookies.
+ * Daarna stuurt de frontend de gebruiker terug naar de loginpagina.
+ */
+
 async function logoutUser() {
   await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/logout`, {
     method: "POST",

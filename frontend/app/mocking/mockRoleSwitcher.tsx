@@ -10,6 +10,14 @@ const roles: { label: string; value: string }[] = [
   { label: "Bibliotheekbeheerder", value: "librarian" },
 ];
 
+/**
+ * Developmentcomponent om lokaal snel tussen mockrollen te wisselen.
+ *
+ * Deze component is alleen bedoeld voor development/testing. Hij roept het
+ * backend mock-role endpoint aan, waarna de pagina herlaadt en AuthContext de
+ * nieuwe mockgebruiker via /auth/me ophaalt.
+ */
+
 export default function MockRoleSwitcher() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
   const isDevEnvironment = apiUrl.includes("localhost");
@@ -18,6 +26,15 @@ export default function MockRoleSwitcher() {
   const [open, setOpen] = useState(false);
 
   if (!isDevEnvironment || !user) return null;
+
+  /**
+   * Wisselt de actieve mockrol in de lokale backend.
+   *
+   * Na de POST-call wordt de pagina herladen zodat alle role-based UI opnieuw
+   * berekend wordt op basis van de nieuwe /auth/me response.
+   *
+   * @param role de gewenste mockrol, bijvoorbeeld leerling of bibliotheekbeheerder
+   */
 
   const switchRole = async (role: string) => {
     await fetch(`${apiUrl}/auth/mock-role/${role}`, {

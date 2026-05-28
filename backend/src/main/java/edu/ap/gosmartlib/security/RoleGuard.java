@@ -53,10 +53,28 @@ public class RoleGuard {
         return hasAnyRole(authentication, UserRoles.LIBRARIAN);
     }
 
+    /**
+     * Controleert of de ingelogde Smartschoolgebruiker leerkracht of
+     * bibliotheekbeheerder is.
+     *
+     * @param authentication huidige authenticatie
+     * @return true wanneer de database de rol TEACHER of LIBRARIAN bevat
+     */
+
     @Transactional(readOnly = true)
     public boolean isTeacherOrLibrarian(Authentication authentication) {
         return hasAnyRole(authentication, UserRoles.TEACHER, UserRoles.LIBRARIAN);
     }
+
+    /**
+     * Controleert of de gebruiker platformadministrator of bibliotheekbeheerder is.
+     *
+     * Admins worden herkend via AdminPrincipal. Bibliotheekbeheerders worden
+     * gecontroleerd via de actuele rol in de database.
+     *
+     * @param authentication huidige authenticatie
+     * @return true wanneer de gebruiker ADMIN of LIBRARIAN is
+     */
 
     @Transactional(readOnly = true)
     public boolean isLibrarianOrAdmin(Authentication authentication) {

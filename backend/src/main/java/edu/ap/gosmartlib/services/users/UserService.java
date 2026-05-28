@@ -68,7 +68,8 @@ public class UserService {
         String rawDomain = oauth2User.getAttribute("platform");
         String domain = rawDomain != null ? rawDomain.trim().toLowerCase().replaceAll("/++$", "") : "";
 
-        // Zoek een school op basis van domein, als de school niet bestaat maak een nieuwe aan
+        // Zoek een school op basis van domein, als de school niet bestaat maak een
+        // nieuwe aan
         SchoolEntity school = schoolRepository.findByDomain(domain)
                 .orElseGet(() -> {
                     log.info("Nieuwe school gevonden, toevoegen aan database: {}", domain);
@@ -172,7 +173,22 @@ public class UserService {
         response.addCookie(cookie);
     }
 
-    // Maakt van Smartschool groups een SchoolClassEntity
+    /**
+     * Zet Smartschool groups en parentGroups om naar lokale
+     * SchoolClassEntity-koppelingen.
+     *
+     * De groups bevatten de concrete klassen van de gebruiker. De parentGroups
+     * worden
+     * gebruikt om extra context zoals het jaar of de graad af te leiden. Bestaande
+     * klassen worden hergebruikt, nieuwe klassen worden aangemaakt via
+     * SchoolClassHelper.
+     *
+     * @param groups       Smartschoolgroepen van de gebruiker
+     * @param parentGroups bovenliggende Smartschoolgroepen
+     * @param school       lokale school waartoe de gebruiker behoort
+     * @return set met lokale klassen voor de gebruiker
+     */
+
     private Set<SchoolClassEntity> resolveClasses(List<Map<String, Object>> groups,
             List<Map<String, Object>> parentGroups, SchoolEntity school) {
         String grade = parentGroups.stream()
@@ -201,22 +217,6 @@ public class UserService {
         }
         return resolved;
     }
-
-    /**
-     * Zet Smartschool groups en parentGroups om naar lokale
-     * SchoolClassEntity-koppelingen.
-     *
-     * De groups bevatten de concrete klassen van de gebruiker. De parentGroups
-     * worden
-     * gebruikt om extra context zoals het jaar of de graad af te leiden. Bestaande
-     * klassen worden hergebruikt, nieuwe klassen worden aangemaakt via
-     * SchoolClassHelper.
-     *
-     * @param groups       Smartschoolgroepen van de gebruiker
-     * @param parentGroups bovenliggende Smartschoolgroepen
-     * @param school       lokale school waartoe de gebruiker behoort
-     * @return set met lokale klassen voor de gebruiker
-     */
 
     private String resolveCurrentSchoolYear() {
         LocalDate today = LocalDate.now();

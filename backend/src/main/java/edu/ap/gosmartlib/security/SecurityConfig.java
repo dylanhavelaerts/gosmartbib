@@ -72,6 +72,10 @@ public class SecurityConfig {
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                // CSRF is uitgeschakeld omdat de frontend momenteel geen Spring CSRF-token
+                                // meestuurt bij JSON/API-calls. Omdat de app wel sessiecookies gebruikt,
+                                // wordt dit gecompenseerd met strikte CORS, SameSite/Secure/HttpOnly cookies,
+                                // HTTPS in productie en backendautorisatie.
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(

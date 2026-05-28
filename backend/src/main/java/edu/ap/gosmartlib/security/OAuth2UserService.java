@@ -59,7 +59,6 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
 
         Map<String, Object> groupInfoResponse = fetchGroupInfo(platform, accessToken);
 
-
         List<Map<String, Object>> groups = extractGroupList(groupInfoResponse.get("groups"));
         List<Map<String, Object>> parentGroups = extractGroupList(groupInfoResponse.get("parentGroups"));
 
@@ -81,7 +80,7 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         mergedAttributes.put("groups", groupInfoResponse.getOrDefault("groups", Collections.emptyList()));
         mergedAttributes.put("parentGroups", groupInfoResponse.getOrDefault("parentGroups", Collections.emptyList()));
 
-        // Stap 4. return de OAuth2User met de gemenge attributen
+        // Stap 4. return de OAuth2User met de gemengde attributen
         return new DefaultOAuth2User(
                 fulluserinfo.getAuthorities(),
                 mergedAttributes,
