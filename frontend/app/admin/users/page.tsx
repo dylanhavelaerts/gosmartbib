@@ -231,7 +231,6 @@ export default function AdminUserPage() {
       setError("");
       setSucces("");
 
-      // Admin must pass schoolId as a query param (no school on their session)
       const roleParams = new URLSearchParams();
       if (me?.role === "ADMIN" && selectedSchoolId !== null)
         roleParams.append("schoolId", String(selectedSchoolId));
@@ -336,12 +335,11 @@ export default function AdminUserPage() {
 
   return (
     <ProtectedRoute allowedRoles={["LIBRARIAN", "ADMIN"]}>
-    <main>
-      {error && <p className="adminMessage adminMessageError">{error}</p>}
-      {succes && <p className="adminMessage adminMessageSuccess">{succes}</p>}
+      <main>
+        {error && <p className="adminMessage adminMessageError">{error}</p>}
+        {succes && <p className="adminMessage adminMessageSuccess">{succes}</p>}
 
-      {!error &&
-        (me?.role === "ADMIN" || me?.role === "LIBRARIAN") && (
+        {!error && (me?.role === "ADMIN" || me?.role === "LIBRARIAN") && (
           <div id="userMain">
             <div className="adminPageHeader">
               <div>
@@ -513,47 +511,47 @@ export default function AdminUserPage() {
             />
           </div>
         )}
-      <SyncModal
-        syncStatus={syncStatus}
-        syncStep={syncStep}
-        syncResult={syncResult}
-        syncSteps={SYNC_STEPS}
-        onConfirm={handleSync}
-        onClose={() => {
-          setSyncStatus("idle");
-          setSyncResult(null);
-        }}
-      />
-      {deleteUserId !== null && (
-        <div className="schoolModalOverlay">
-          <div className="schoolModalBox">
-            <h2>Account verwijderen</h2>
-            <p style={{ marginBottom: "1rem" }}>
-              Weet je zeker dat je het account van{" "}
-              <strong>{deleteUserName}</strong> wil verwijderen? Alle
-              persoonlijke gegevens worden verwijderd conform GDPR. Dit kan niet
-              ongedaan worden gemaakt.
-            </p>
-            <div className="schoolModalFooter">
-              <button
-                className="schoolModalCancel"
-                onClick={() => setDeleteUserId(null)}
-                disabled={deleting}
-              >
-                Annuleren
-              </button>
-              <button
-                className="adminDangerButton"
-                onClick={handleDeleteUser}
-                disabled={deleting}
-              >
-                {deleting ? "Bezig..." : "Verwijderen"}
-              </button>
+        <SyncModal
+          syncStatus={syncStatus}
+          syncStep={syncStep}
+          syncResult={syncResult}
+          syncSteps={SYNC_STEPS}
+          onConfirm={handleSync}
+          onClose={() => {
+            setSyncStatus("idle");
+            setSyncResult(null);
+          }}
+        />
+        {deleteUserId !== null && (
+          <div className="schoolModalOverlay">
+            <div className="schoolModalBox">
+              <h2>Account verwijderen</h2>
+              <p style={{ marginBottom: "1rem" }}>
+                Weet je zeker dat je het account van{" "}
+                <strong>{deleteUserName}</strong> wil verwijderen? Alle
+                persoonlijke gegevens worden verwijderd conform GDPR. Dit kan
+                niet ongedaan worden gemaakt.
+              </p>
+              <div className="schoolModalFooter">
+                <button
+                  className="schoolModalCancel"
+                  onClick={() => setDeleteUserId(null)}
+                  disabled={deleting}
+                >
+                  Annuleren
+                </button>
+                <button
+                  className="adminDangerButton"
+                  onClick={handleDeleteUser}
+                  disabled={deleting}
+                >
+                  {deleting ? "Bezig..." : "Verwijderen"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </main>
+        )}
+      </main>
     </ProtectedRoute>
   );
 }

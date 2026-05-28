@@ -58,7 +58,6 @@ export default function LendingPage() {
     }
 
     try {
-      // Call our backend proxy which communicates with the Smartschool API
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/smartschool/users?query=${encodeURIComponent(
           userQuery.trim(),
@@ -84,7 +83,6 @@ export default function LendingPage() {
   };
 
   const handleSelectUser = (user: SmartschoolUser) => {
-    // This replaces the currently selected user with the new one
     setSelectedUser(user);
     setUserSearchResults([]);
     setUserQuery("");
@@ -193,8 +191,6 @@ export default function LendingPage() {
   const handleRegisterLoan = async () => {
     if (cart.length === 0 || !selectedUser) return;
 
-    // The payload sends the required user info.
-    // The backend LoanService extracts ONLY the smartschoolUserId to save into the DB.
     const payload = cart.map((item) => ({
       bookId: item.book.id,
       quantity: item.quantity,

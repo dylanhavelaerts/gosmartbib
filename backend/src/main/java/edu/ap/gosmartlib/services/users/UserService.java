@@ -48,14 +48,13 @@ public class UserService {
         String rawDomain = oauth2User.getAttribute("platform");
         String domain = rawDomain != null ? rawDomain.trim().toLowerCase().replaceAll("/++$", "") : "";
 
-        // Zoek een school op basis van domein, als de school niet bestaat maak een
-        // nieuwe aan
+        // Zoek een school op basis van domein, als de school niet bestaat maak een nieuwe aan
         SchoolEntity school = schoolRepository.findByDomain(domain)
                 .orElseGet(() -> {
                     log.info("Nieuwe school gevonden, toevoegen aan database: {}", domain);
                     SchoolEntity e = new SchoolEntity();
                     e.setDomain(domain);
-                    e.setName(domain); // TODO: misschien later aanpassen naar echte naam van school
+                    e.setName(domain);
                     return schoolRepository.save(e);
                 });
 

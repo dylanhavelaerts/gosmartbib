@@ -447,8 +447,6 @@ public class LoanService {
             int remainingToReturn = request.quantity();
             boolean damageCountsApplied = false;
 
-            // In barcode mode the frontend sends copyConditions and leaves the counts as 0.
-            // Derive the actual counts from the scanned copies so the history record is correct.
             int historyDamagedCount = request.damagedCount();
             int historyBrokenCount  = request.brokenCount();
             int historyLostCount    = request.lostCount();
@@ -477,7 +475,6 @@ public class LoanService {
                 remainingToReturn -= returnForThisLoan;
             }
 
-            // Process copy conditions after availability is restored
             if (request.copyConditions() != null && !request.copyConditions().isEmpty()) {
                 processBarcodeConditions(request.copyConditions(), book);
             } else if (request.damagedCount() > 0 || request.brokenCount() > 0 || request.lostCount() > 0) {

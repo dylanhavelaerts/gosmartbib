@@ -2,7 +2,7 @@ package edu.ap.gosmartlib.dto.statistics;
 
 public record ReaderProfileDTO(
         String profileType,   // "AVONTURIER" | "PIONIER" | "SPRINTER" | "TITAN" | null
-        String profileLabel,  // Dutch display name | null
+        String profileLabel,
         int booksRead,
-        int booksNeeded       // 0 once unlocked, (5 - booksRead) when still locked
+        int booksNeeded // 0 - 5,  5 boeken nodig voor je iets ziet
 ) {}

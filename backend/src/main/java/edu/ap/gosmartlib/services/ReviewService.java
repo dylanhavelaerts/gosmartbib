@@ -586,7 +586,6 @@ public class ReviewService {
             return true;
         }
 
-        // Backward compatibility: existing rows before is_admin_deleted column.
         if (review.getReviewStatus() != ReviewStatus.REJECTED) {
             return false;
         }

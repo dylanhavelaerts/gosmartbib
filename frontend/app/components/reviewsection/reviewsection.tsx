@@ -60,14 +60,14 @@ export default function ReviewSection({
         return payload.detail;
       }
     } catch {
-      // Fallback handled below.
+      // Fallback
     }
 
     try {
       const text = (await res.text()).trim();
       if (text) return text;
     } catch {
-      // Fallback handled below.
+      // Fallback
     }
 
     return "Er liep iets fout. Probeer opnieuw.";

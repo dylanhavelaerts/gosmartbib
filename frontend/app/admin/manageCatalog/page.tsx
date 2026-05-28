@@ -56,7 +56,6 @@ export default function ManageCatalogPage() {
 
   const router = useRouter();
 
-  // Fetch paged books from backend (with search debounce)
   useEffect(() => {
     const params = new URLSearchParams();
     params.append("page", String(currentPage - 1));
@@ -81,8 +80,6 @@ export default function ManageCatalogPage() {
     return () => clearTimeout(timer);
   }, [query, currentPage, pageSize, apiUrl]);
 
-  // Handle ?selectedId param — fetch the specific book by ID.
-  // If ?edit=true is present, immediately open the edit modal for that book.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const selectedId = params.get("selectedId");

@@ -100,7 +100,6 @@ export default function ReturnsPage() {
     loadSettings();
   }, []);
 
-  // Melding states
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -302,7 +301,6 @@ export default function ReturnsPage() {
     const val = barcodeInputs[bookId]?.trim();
     if (!val) return;
 
-    // Duplicate check
     if ((copyConditions[bookId] ?? []).find((c) => c.barcode === val)) {
       setScanErrors((prev) => ({ ...prev, [bookId]: "Barcode al gescand." }));
       return;
@@ -571,7 +569,9 @@ export default function ReturnsPage() {
                 type="text"
                 placeholder="Filter of scan barcode..."
                 value={bookQuery}
-                onChange={(e) => handleBorrowedBooksBarcodeInput(e.target.value)}
+                onChange={(e) =>
+                  handleBorrowedBooksBarcodeInput(e.target.value)
+                }
                 disabled={!selectedUser}
               />
             </div>
