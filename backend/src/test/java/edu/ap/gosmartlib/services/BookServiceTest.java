@@ -16,6 +16,8 @@ import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
 import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.repositories.book.BookInventoryRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolCampusRepository;
 import edu.ap.gosmartlib.services.book.BookFilterValidator;
 import edu.ap.gosmartlib.services.book.BookService;
 import edu.ap.gosmartlib.util.UserRoles;
@@ -82,6 +84,12 @@ class BookServiceTest {
         private BookCopyRepository bookCopyRepository;
 
         @Mock
+        private BookInventoryRepository bookInventoryRepository;
+
+        @Mock
+        private SchoolCampusRepository schoolCampusRepository;
+
+        @Mock
         private InventoryAdjustmentService inventoryAdjustmentService;
 
         @InjectMocks
@@ -105,6 +113,9 @@ class BookServiceTest {
                 user.setSmartschoolUid(STUDENT_UID);
                 user.setSchool(school);
                 user.setRole(UserRoles.STUDENT);
+
+                lenient().when(schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(eq(1L), anyString()))
+                                .thenReturn(true);
         }
 
         // --- Google API Tests ---
@@ -1535,7 +1546,7 @@ class BookServiceTest {
                                                 "Programming; Software Engineering",
                                                 "Toekomst & technologie",
                                                 "A",
-                                                "Campus Zuid",
+                                                "Nee",
                                                 "3",
                                                 "2"
                                 }
@@ -1587,7 +1598,7 @@ class BookServiceTest {
                                                 "Programming",
                                                 "Toekomst & technologie",
                                                 "A",
-                                                "Campus Zuid",
+                                                "Nee",
                                                 "3",
                                                 "2"
                                 }
@@ -1637,7 +1648,7 @@ class BookServiceTest {
                                                 "Programming",
                                                 "Toekomst & technologie",
                                                 "A",
-                                                "Campus Zuid",
+                                                "Nee",
                                                 "3",
                                                 "2"
                                 }
@@ -1658,7 +1669,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus",
+                                "Campus Zuid",
                                 true,
                                 List.of(2));
 
@@ -1765,7 +1776,7 @@ class BookServiceTest {
         void givenDuplicateNoIsbnBookOnSameCampus_whenImportBooksWithoutIsbn_thenIncreasesExistingInventory()
                         throws IOException {
                 MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
-                                { "De Hobbit", "J.R.R. Tolkien; John Doe", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                                { "De Hobbit", "J.R.R. Tolkien; John Doe", "Uitgeverij X", "Nee", "3", "2" }
                 });
 
                 BookEntity existingBook = new BookEntity();
@@ -1783,7 +1794,7 @@ class BookServiceTest {
                 existingBook.getInventories().add(existingInventory);
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("de hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
                 when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
                 when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
@@ -1791,7 +1802,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of(2));
+                                "Campus Zuid", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1813,7 +1824,7 @@ class BookServiceTest {
         void givenDuplicateNoIsbnBookOnDifferentCampus_whenImportBooksWithoutIsbn_thenAddsNewInventoryRow()
                         throws IOException {
                 MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
-                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Nee", "3", "2" }
                 });
 
                 BookEntity existingBook = new BookEntity();
@@ -1831,7 +1842,7 @@ class BookServiceTest {
                 existingBook.getInventories().add(existingInventory);
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("de hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
                 when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
                 when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
@@ -1839,7 +1850,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of(2));
+                                "Campus Zuid", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1867,7 +1878,7 @@ class BookServiceTest {
         void givenPossibleDuplicateWithDifferentAuthors_whenImportBooksWithoutIsbn_thenCreatesNewBook()
                         throws IOException {
                 MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
-                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Nee", "3", "2" }
                 });
 
                 BookEntity existingBook = new BookEntity();
@@ -1882,7 +1893,7 @@ class BookServiceTest {
                                 buildInventory(school, "Campus Zuid", 2, 1))));
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("de hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
                 when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
                 when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
@@ -1890,7 +1901,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of(2));
+                                "Campus Zuid", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1919,7 +1930,7 @@ class BookServiceTest {
         void givenNoAuthors_whenPossibleDuplicateCouldExist_thenDoesNotMergeAndCreatesNewBook()
                         throws IOException {
                 MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
-                                { "De Hobbit", "", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                                { "De Hobbit", "", "Uitgeverij X", "Nee", "3", "2" }
                 });
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
@@ -1929,7 +1940,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of(2));
+                                "Campus Zuid", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1957,7 +1968,7 @@ class BookServiceTest {
         void givenDuplicateNoIsbnBook_whenImportBooksWithoutIsbnWithoutConfirmation_thenReturnsWarningAndDoesNotSave()
                         throws IOException {
                 MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
-                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Nee", "3", "2" }
                 });
 
                 BookEntity existingBook = new BookEntity();
@@ -1975,13 +1986,13 @@ class BookServiceTest {
                 existingBook.getInventories().add(existingInventory);
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("de hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
 
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus",
+                                "Campus Zuid",
                                 false, List.of());
 
                 assertEquals(1, result.totalRows());
@@ -3108,7 +3119,7 @@ class BookServiceTest {
                                         "Categorieën",
                                         "Leefwereldlabels",
                                         "Leesniveau",
-                                        "Campus",
+                                        "Didactisch boek",
                                         "Totaal aantal boeken",
                                         "Beschikbaar aantal boeken"
                         };
@@ -3174,7 +3185,7 @@ class BookServiceTest {
                                         "Titel",
                                         "Auteurs",
                                         "Uitgever",
-                                        "Campus",
+                                        "Didactisch boek",
                                         "Totaal aantal boeken",
                                         "Beschikbaar aantal boeken"
                         };
