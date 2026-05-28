@@ -81,6 +81,17 @@ export default function BookListImport() {
     const handleUploadExcel = async (confirmDuplicates = false) => {
     if (!selectedFile) return;
 
+    if (!API_URL) {
+      setMessage("NEXT_PUBLIC_API_URL ontbreekt.");
+      return;
+    }
+
+    const trimmedCampus = campus.trim();
+    if (!trimmedCampus) {
+      setMessage("Kies eerst een campus voor deze import.");
+      return;
+    }
+
     setLoading(true);
     setMessage("");
 
@@ -94,10 +105,7 @@ export default function BookListImport() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      const trimmedCampus = campus.trim();
-      if (trimmedCampus) {
-        formData.append("campus", trimmedCampus);
-      }
+      formData.append("campus", trimmedCampus);
 
       if (confirmDuplicates) {
         selectedDuplicateRows.forEach((rowNumber) => {
@@ -145,15 +153,31 @@ export default function BookListImport() {
   };
 
    const addSingleBook = async (mismatch: ImportMismatch) => {
+      if (!API_URL) {
+        setMessage("NEXT_PUBLIC_API_URL ontbreekt.");
+        return;
+      }
+
+      const trimmedCampus = campus.trim();
+      if (!trimmedCampus) {
+        setMessage("Kies eerst een campus voor deze import.");
+        return;
+      }
+
+      if (!mismatch.isbn) {
+        setMessage("Geen ISBN gevonden voor deze rij.");
+        return;
+      }
+
       setLoading(true);
 
       try {
         const params = new URLSearchParams();
 
-        const trimmedCampus = campus.trim();
+        params.set("campus", trimmedCampus);
 
-        if (trimmedCampus) {
-          params.set("campus", trimmedCampus);
+        if (mismatch.didacticBook === true) {
+          params.set("didacticBook", "true");
         }
 
         if (mismatch.amount !== null && mismatch.amount !== undefined) {
@@ -234,7 +258,7 @@ export default function BookListImport() {
           disabled={loadingCampuses}
         >
           <option value="">
-            {loadingCampuses ? "Campussen laden..." : "Geen campus"}
+            {loadingCampuses ? "Campussen laden..." : "Kies een campus"}
           </option>
 
           {campuses.map((campusOption) => (
@@ -247,7 +271,7 @@ export default function BookListImport() {
       {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
 
       <p className="helperText">
-        Deze campus wordt toegepast op alle boeken waar de Campus-kolom leeg is
+          Deze campus wordt toegepast op alle boeken in dit Excelbestand. Nieuwe campussen maak je enkel aan op de schoolbeheerpagina.
       </p>
 
         <p className="spacedText">
@@ -266,7 +290,7 @@ export default function BookListImport() {
               <button
                 type="button"
                 onClick={() => handleUploadExcel(false)}
-                disabled={loading}
+                disabled={loading || !campus.trim()}
                 className={uploadButtonClass}
               >
                 {loading ? "Bezig met importeren..." : "Importeer Excelbestand"}

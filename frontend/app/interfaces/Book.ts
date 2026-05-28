@@ -98,6 +98,7 @@ export type ImportMismatch = {
   fetchedTitle?: string | null;
   reason: string;
   amount: number | null;
+  didacticBook?: boolean | null;
 };
 
 export type DuplicateWarning = {

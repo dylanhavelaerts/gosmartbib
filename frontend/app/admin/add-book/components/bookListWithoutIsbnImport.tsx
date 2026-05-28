@@ -84,6 +84,12 @@ export default function BookListWithoutIsbnImport() {
       return;
     }
 
+    const trimmedCampus = campus.trim();
+    if (!trimmedCampus) {
+      setMessage("Kies eerst een campus voor deze import.");
+      return;
+    }
+
     setLoading(true);
     setMessage("");
     setImportResult(null);
@@ -97,11 +103,7 @@ export default function BookListWithoutIsbnImport() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      const trimmedCampus = campus.trim();
-
-      if (trimmedCampus) {
-        formData.append("campus", trimmedCampus);
-      }
+      formData.append("campus", trimmedCampus);
 
       if (confirmDuplicates) {
         selectedDuplicateRows.forEach((rowNumber) => {
@@ -174,11 +176,6 @@ export default function BookListWithoutIsbnImport() {
         Download Excelbestand
       </a>
 
-      <p className="helperText">
-        Deze campus wordt gebruikt als basis voor rijen waar de Campus-kolom
-        leeg is
-      </p>
-
       <label className="campusField">
         Campus
         <select
@@ -188,7 +185,7 @@ export default function BookListWithoutIsbnImport() {
           disabled={loadingCampuses}
         >
           <option value="">
-            {loadingCampuses ? "Campussen laden..." : "Geen campus"}
+            {loadingCampuses ? "Campussen laden..." : "Kies een campus"}
           </option>
 
           {campuses.map((campusOption) => (
@@ -201,6 +198,9 @@ export default function BookListWithoutIsbnImport() {
 
       {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
 
+      <p className="helperText">
+        Deze campus wordt toegepast op alle boeken in dit Excelbestand. Nieuwe campussen maak je enkel aan op de schoolbeheerpagina.
+      </p>
       <p className="spacedText">Voeg hieronder de aangevulde Excel-file toe</p>
 
       <div className="fileInputBox">
@@ -215,7 +215,7 @@ export default function BookListWithoutIsbnImport() {
             <button
               type="button"
               onClick={() => handleUploadExcel(false)}
-              disabled={loading}
+              disabled={loading || !campus.trim()}
               className={uploadButtonClass}
             >
               {loading ? "Bezig met importeren..." : "Importeer Excelbestand"}
