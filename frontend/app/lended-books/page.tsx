@@ -113,6 +113,10 @@ export default function MijnBoekenPage() {
     });
   };
 
+  /**
+   * Geeft alle openstaande verlengingsaanvragen voor de school van de bibliotheekbeheerder.
+   * Resolvet de weergavenamen van leners via Smartschool.
+   */
   const getDueDateStatus = (dueDateString: string) => {
     const due = new Date(dueDateString);
     const now = new Date();

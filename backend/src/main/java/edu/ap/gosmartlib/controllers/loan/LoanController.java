@@ -89,6 +89,9 @@ public class LoanController {
         return ResponseEntity.ok(loanService.getPendingExtensionRequestsForSchool(smartschoolUid));
     }
 
+    /**
+     * Keurt een verlengingsaanvraag goed. De dueDate schuift op met de originele leenperiode.
+     */
     @PostMapping("/{loanId}/extension-request/approve")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> approveLoanExtension(

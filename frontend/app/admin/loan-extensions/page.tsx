@@ -166,15 +166,16 @@ export default function LoanExtensionsPage() {
               <article key={request.loanId} className="loanExtensionCard">
                 <div className="loanExtensionCover">
                   {request.book?.thumbnail ? (
-                    <Image
+                    <img
                       src={request.book.thumbnail}
                       alt={request.book.title}
-                      fill
-                      className="object-contain"
-                      sizes="120px"
+                      className="bookCoverImg"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
                     />
                   ) : (
-                    <span>Geen cover</span>
+                    <div className="noCover">...</div>
                   )}
                 </div>
 

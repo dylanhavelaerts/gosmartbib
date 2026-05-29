@@ -311,7 +311,14 @@ public class LoanService {
         loanRepository.save(loan);
     }
 
-    // --- VERLENGINGSAANVRAGEN VOOR EIGEN SCHOOL OPHALEN ---
+    /**
+     * Geeft alle openstaande verlengingsaanvragen voor de school van de bibliotheekbeheerder.
+     * Alleen aanvragen met status PENDING worden teruggegeven.
+     * De weergavenamen van leners worden opgezocht via Smartschool.
+     *
+     * @param actorUid de Smartschool UID van de bibliotheekbeheerder
+     * @return lijst van openstaande verlengingsaanvragen, gesorteerd op volgorde van de repository
+     */
     @Transactional(readOnly = true)
     public List<LoanExtensionRequestDTO> getPendingExtensionRequestsForSchool(String actorUid) {
         UserEntity actor = requireLibrarian(actorUid);
