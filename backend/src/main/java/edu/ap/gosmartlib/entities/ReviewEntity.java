@@ -17,7 +17,9 @@ import java.time.LocalDate;
  * Een bibliotheekbeheerder kan daarna goedkeuren, afkeuren of permanent verwijderen.
  */
 @Entity
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 @Table(name = "tblReviews")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class ReviewEntity {
@@ -31,7 +33,7 @@ public class ReviewEntity {
     private UserEntity user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name= "book_id")
+    @JoinColumn(name = "book_id")
     private BookEntity book;
 
     @Column(columnDefinition = "TEXT")
@@ -44,7 +46,9 @@ public class ReviewEntity {
     @Column(name = "status")
     private ReviewStatus status = ReviewStatus.AWAITING_MODERATION;
 
-    /** Rating van 1 tot en met 5. */
+    /**
+     * Rating van 1 tot en met 5.
+     */
     private float rating;
 
     @Column(name = "review_date")
@@ -53,22 +57,30 @@ public class ReviewEntity {
     @Column(name = "review_status")
     private ReviewStatus reviewStatus;
 
-    /** Aantal keer gemeld*/
+    /**
+     * Aantal keer gemeld
+     */
     @Column(name = "flag_count")
     private int flagCount;
 
-    /** Kommagescheiden lijst van UIDs die deze review gemeld hebben. Voorbeeld: "uid1,uid2,AUTO_MODERATOR" */
+    /**
+     * Kommagescheiden lijst van UIDs die deze review gemeld hebben. Voorbeeld: "uid1,uid2,AUTO_MODERATOR"
+     */
     @Column(name = "flagged_by_uids", columnDefinition = "TEXT")
     private String flaggedByUids;
 
-    /** Geserialiseerde meldingsdetails per melder. Formaat: "uid|REDEN;uid2|REDEN2". Voorbeeld: "uid1|SPAM;AUTO_MODERATOR|FOUT_TAALGEBRUIK" */
+    /**
+     * Geserialiseerde meldingsdetails per melder. Formaat: "uid|REDEN;uid2|REDEN2". Voorbeeld: "uid1|SPAM;AUTO_MODERATOR|FOUT_TAALGEBRUIK"
+     */
     @Column(name = "flag_details", columnDefinition = "TEXT")
     private String flagDetails;
 
     @Column(name = "admin_delete_note", columnDefinition = "TEXT")
     private String adminDeleteNote;
 
-    /** Record blijft in de database maar is niet zichtbaar voor gebruikers. Zie adminDeleteNote voor de optionele reden. */
+    /**
+     * Record blijft in de database maar is niet zichtbaar voor gebruikers. Zie adminDeleteNote voor de optionele reden.
+     */
     @Column(name = "is_admin_deleted", nullable = false)
     private boolean adminDeleted = false;
 

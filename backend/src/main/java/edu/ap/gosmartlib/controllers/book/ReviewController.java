@@ -48,6 +48,10 @@ public class ReviewController {
         return ResponseEntity.noContent().build();
     }
 
+/**
+ * Verwijdert een review als eigenaar of als bibliotheekbeheerder.
+ * Gewone gebruikers mogen alleen hun eigen review verwijderen.
+ */
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> userDeleteReview(@PathVariable Long reviewId,
                                                  @AuthenticationPrincipal OAuth2User principal,
@@ -56,6 +60,10 @@ public class ReviewController {
         return ResponseEntity.noContent().build();
     }
 
+/**
+ * Dient een nieuwe review in. De review wordt automatisch gescand door
+ * ReviewAutoModerationService en krijgt status APPROVED of AWAITING_MODERATION.
+ */
     @PostMapping
     public ResponseEntity<ReviewSummaryDTO> submitReview(@RequestBody ReviewRequestDTO request,
                                                          @AuthenticationPrincipal OAuth2User principal) {
