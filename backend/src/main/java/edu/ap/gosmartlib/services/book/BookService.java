@@ -1293,6 +1293,7 @@ public class BookService {
             List<CreateBookInventoryRequestDTO> requestInventories,
             String smartschoolUid) {
         book.getInventories().clear();
+        Set<String> seenInventoryKeys = new HashSet<>();
 
         for (CreateBookInventoryRequestDTO requestInventory : requestInventories) {
             if (requestInventory == null) {
@@ -1304,17 +1305,24 @@ public class BookService {
                     : resolveSchoolForUser(smartschoolUid);
 
             String campus = resolveCampusForSchool(school, requestInventory.campus());
+            String key = school.getId() + "::" + normalizeCampus(campus).toLowerCase(Locale.ROOT);
             int totalCopies = requestInventory.totalCopies() != null ? requestInventory.totalCopies() : 0;
             int availableCopies = requestInventory.availableCopies() != null
                     ? requestInventory.availableCopies()
                     : totalCopies;
 
             validateInventoryCounts(totalCopies, availableCopies);
+            if (!seenInventoryKeys.add(key)) {
+                throw new IllegalArgumentException("Elke campus mag maar één inventarisregel hebben per school");
+            }
             addInventory(book, school, campus, totalCopies, availableCopies);
         }
     }
 
     private void replaceInventoriesFromDto(BookEntity book, List<BookInventoryDTO> inventoryDTOs) {
+
+        Set<String> seenInventoryKeys = new HashSet<>();
+
         for (BookInventoryDTO inventoryDTO : inventoryDTOs) {
             if (inventoryDTO == null) {
                 continue;
@@ -1330,6 +1338,12 @@ public class BookService {
             validateInventoryCounts(totalCopies, availableCopies);
             SchoolEntity school = resolveSchoolById(inventoryDTO.schoolId());
             String campus = resolveCampusForSchool(school, inventoryDTO.campus());
+
+            String key = school.getId() + "::" + normalizeCampus(campus).toLowerCase(Locale.ROOT);
+
+            if (!seenInventoryKeys.add(key)) {
+                throw new IllegalArgumentException("Elke campus mag maar één inventarisregel hebben per school");
+            }
 
             addInventory(
                     book,
@@ -1438,7 +1452,7 @@ public class BookService {
         String normalizedPublisher = normalizeDuplicateText(publisher);
 
         return bookRepository.findPossibleDuplicateBooksWithoutIsbn(
-                normalizedTitle,
+                title,
                 publisher,
                 school.getId())
                 .stream()
@@ -2059,8 +2073,12 @@ public class BookService {
     private int parsePositiveIntOrDefault(String value, int fallback, String fieldName) {
         Integer parsed = parseIntegerOrNull(value);
 
-        if (parsed == null || parsed <= 0) {
+        if (parsed == null) {
             return fallback;
+        }
+
+        if (parsed <= 0) {
+            throw new IllegalArgumentException(fieldName + " moet groter zijn dan 0");
         }
 
         return parsed;

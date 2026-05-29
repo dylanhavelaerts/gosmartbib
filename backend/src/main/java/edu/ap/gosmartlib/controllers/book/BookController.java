@@ -11,6 +11,7 @@ import edu.ap.gosmartlib.services.book.BookService;
 import edu.ap.gosmartlib.services.users.UserService;
 import edu.ap.gosmartlib.util.UserRoles;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/books")
 @RequiredArgsConstructor
@@ -227,9 +229,9 @@ public class BookController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("message", "Er is een fout opgetreden bij het importeren van het Excelbestand."));
+            log.error("Onverwachte fout bij Excelimport met ISBN", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "message", "Er is een fout opgetreden bij het importeren van het Excelbestand."));
         }
     }
 
@@ -253,9 +255,9 @@ public class BookController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("message", "Er is een fout opgetreden bij het importeren van het Excelbestand."));
+            log.error("Onverwachte fout bij Excelimport zonder ISBN", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "message", "Er is een fout opgetreden bij het importeren van het Excelbestand."));
         }
     }
 

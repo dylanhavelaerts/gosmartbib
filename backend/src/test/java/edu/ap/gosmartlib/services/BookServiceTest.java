@@ -1804,7 +1804,7 @@ class BookServiceTest {
                 existingBook.getInventories().add(existingInventory);
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("de hobbit", "Uitgeverij X", 1L))
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
                 when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
                 when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
@@ -1852,7 +1852,7 @@ class BookServiceTest {
                 existingBook.getInventories().add(existingInventory);
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("de hobbit", "Uitgeverij X", 1L))
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
                 when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
                 when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
@@ -1903,7 +1903,7 @@ class BookServiceTest {
                                 buildInventory(school, "Campus Zuid", 2, 1))));
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("de hobbit", "Uitgeverij X", 1L))
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
                 when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
                 when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
@@ -1996,7 +1996,7 @@ class BookServiceTest {
                 existingBook.getInventories().add(existingInventory);
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
-                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("de hobbit", "Uitgeverij X", 1L))
+                when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
 
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
