@@ -310,6 +310,27 @@ export default function ManageCatalogPage() {
 
     const inventories = formData.inventories ?? [];
 
+    const ownSchoolInventories = inventories.filter(
+      (inventory) => inventory.schoolId === me?.school?.id,
+    );
+
+    if (ownSchoolInventories.length > campuses.length) {
+      setError(
+        "Je kan niet meer inventarisregels toevoegen dan er campussen zijn voor jouw school.",
+      );
+      return;
+    }
+
+    const duplicateCampusNames = ownSchoolInventories
+      .map((inventory) => inventory.campus?.trim().toLowerCase() ?? "")
+      .filter((campus) => campus !== "")
+      .filter((campus, index, allCampuses) => allCampuses.indexOf(campus) !== index);
+
+    if (duplicateCampusNames.length > 0) {
+      setError("Elke campus mag maar één keer voorkomen in de inventaris.");
+      return;
+    }
+
     for (const inventory of inventories) {
       if (!inventory.schoolId) {
         setError("Elke inventarisregel moet een school hebben.");
@@ -408,21 +429,64 @@ export default function ManageCatalogPage() {
     }));
   }
 
+    function getUsedCampusNames(inventories: BookInventory[]) {
+    return inventories
+      .filter((inventory) => inventory.schoolId === me?.school?.id)
+      .map((inventory) => inventory.campus?.trim().toLowerCase() ?? "")
+      .filter((campus) => campus !== "");
+  }
+
+  function getNextAvailableCampusName(inventories: BookInventory[]) {
+    const usedCampusNames = getUsedCampusNames(inventories);
+
+    return (
+      campuses.find(
+        (campus) =>
+          !usedCampusNames.includes(campus.name.trim().toLowerCase()),
+      )?.name ?? ""
+    );
+  }
+
+  function hasReachedMaxCampusRows(inventories: BookInventory[]) {
+    if (campuses.length === 0) {
+      return true;
+    }
+
+    const ownSchoolInventoryCount = inventories.filter(
+      (inventory) => inventory.schoolId === me?.school?.id,
+    ).length;
+
+    return ownSchoolInventoryCount >= campuses.length;
+  }
+
   function addInventoryRow() {
-    setFormData((prev) => ({
-      ...prev,
-      inventories: [
-        ...(prev.inventories ?? []),
-        {
-          id: null,
-          schoolId: me?.school?.id ?? null,
-          schoolName: me?.school?.name ?? "",
-          campus: "",
-          totalCopies: 1,
-          availableCopies: 1,
-        },
-      ],
-    }));
+    setFormData((prev) => {
+      const currentInventories = prev.inventories ?? [];
+
+      if (hasReachedMaxCampusRows(currentInventories)) {
+        setError(
+          "Je hebt al een inventarisregel voor elke campus van jouw school.",
+        );
+        return prev;
+      }
+
+      const nextCampusName = getNextAvailableCampusName(currentInventories);
+
+      return {
+        ...prev,
+        inventories: [
+          ...currentInventories,
+          {
+            id: null,
+            schoolId: me?.school?.id ?? null,
+            schoolName: me?.school?.name ?? "",
+            campus: nextCampusName,
+            totalCopies: 1,
+            availableCopies: 1,
+          },
+        ],
+      };
+    });
   }
 
   function removeInventoryRow(index: number) {
@@ -471,6 +535,13 @@ export default function ManageCatalogPage() {
   const editableInventoryRows = (formData.inventories ?? [])
     .map((inventory, index) => ({ inventory, index }))
     .filter(({ inventory }) => inventory.schoolId === me?.school?.id);
+
+  const canAddInventoryRow =
+    campuses.length > 0 &&
+    editableInventoryRows.length < campuses.length;
+
+  const shouldShowAddCampusButton =
+  campuses.length > 1 && canAddInventoryRow;
 
   return (
     <ProtectedRoute allowedRoles="LIBRARIAN">
@@ -1256,10 +1327,23 @@ export default function ManageCatalogPage() {
                                 : "Geen campus"}
                             </option>
 
-                            {getCampusSelectOptions(
-                              campuses,
-                              inventory.campus,
-                            ).map((campusOption) => (
+                          {getCampusSelectOptions(campuses, inventory.campus)
+                            .filter((campusOption) => {
+                              const campusName = campusOption.name.trim().toLowerCase();
+                              const currentCampusName =
+                                inventory.campus?.trim().toLowerCase() ?? "";
+
+                              if (campusName === currentCampusName) {
+                                return true;
+                              }
+
+                              return !editableInventoryRows.some(
+                                ({ inventory: otherInventory, index: otherIndex }) =>
+                                  otherIndex !== index &&
+                                  otherInventory.campus?.trim().toLowerCase() === campusName,
+                              );
+                            })
+                            .map((campusOption) => (
                               <option
                                 key={`${campusOption.id}-${campusOption.name}`}
                                 value={campusOption.name}
@@ -1316,15 +1400,17 @@ export default function ManageCatalogPage() {
                       )}
                     </div>
                   ))}
-
-                  <button
-                    type="button"
-                    className="modal-btn-save"
-                    style={{ width: "fit-content", marginTop: "0.25rem" }}
-                    onClick={addInventoryRow}
-                  >
-                    + Campus toevoegen
-                  </button>
+                  {shouldShowAddCampusButton && (
+                    <button
+                      type="button"
+                      className="modal-btn-save"
+                      disabled={!canAddInventoryRow}
+                      style={{ width: "fit-content", marginTop: "0.25rem" }}
+                      onClick={addInventoryRow}
+                    >
+                      + Campus toevoegen
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">

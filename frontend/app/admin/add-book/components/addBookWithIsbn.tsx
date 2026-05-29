@@ -49,6 +49,10 @@ export default function AddBookWithIsbn() {
 
         const campusData = await fetchSchoolCampuses(API_URL, meData.school.id);
         setCampuses(campusData);
+
+        if (campusData.length === 1) {
+          setCampus(campusData[0].name);
+        }
       } catch (error) {
         console.error(error);
         setCampusLoadError(
@@ -67,6 +71,11 @@ export default function AddBookWithIsbn() {
   const handleSearchBook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isbn.trim()) return;
+
+    if (campuses.length > 1 && !campus.trim()) {
+      setMessage("Kies eerst een campus.");
+      return;
+    }
 
     setLoading(true);
     setMessage("");
@@ -97,14 +106,22 @@ export default function AddBookWithIsbn() {
   const handleConfirmAdd = async () => {
     if (!isbn.trim()) return;
 
+    const selectedCampus = campuses.length === 1 ? campuses[0].name : campus.trim();
+
+    if (campuses.length > 1 && !selectedCampus) {
+      setMessage("Kies eerst een campus.");
+      return;
+    }
+
     setLoading(true);
     setMessage("");
 
     try {
       const params = new URLSearchParams();
-        if (campus.trim()) {
-          params.set("campus", campus.trim());
-        }
+
+      if (selectedCampus) {
+        params.set("campus", selectedCampus);
+      }
 
         const response = await fetch(
           `${API_URL}/books/add/${isbn}${params.toString() ? `?${params.toString()}` : ""}`,
@@ -147,6 +164,8 @@ export default function AddBookWithIsbn() {
     setImgSrc(previewBook?.thumbnail || "/No-Image-Available-Placeholder.png");
   }, [previewBook]);
 
+  const shouldShowCampusSelect = campuses.length > 1;
+  const selectedCampusLabel = campuses.length === 1 ? campuses[0].name : campus;
   const searchButtonClass = `submitButton ${loading ? "submitButtonLoading" : ""}`.trim();
   const messageClass = `message ${
     message.includes("succesvol")
@@ -182,34 +201,45 @@ export default function AddBookWithIsbn() {
           />
         </div>
 
-        <div className="fieldGroup">
-          <label htmlFor="campus" className="label">
-            Campus
-          </label>
+        {shouldShowCampusSelect && (
+          <div className="fieldGroup">
+            <label htmlFor="campus" className="label">
+              Campus
+            </label>
 
-          <select
-            id="campus"
-            value={campus}
-            onChange={(e) => setCampus(e.target.value)}
-            className="select"
-            disabled={previewBook !== null || loadingCampuses}
-          >
-            <option value="">
-              {loadingCampuses ? "Campussen laden..." : "Geen campus"}
-            </option>
-
-            {campuses.map((campusOption) => (
-              <option key={campusOption.id} value={campusOption.name}>
-                {campusOption.name}
+            <select
+              id="campus"
+              value={campus}
+              onChange={(e) => setCampus(e.target.value)}
+              className="select"
+              disabled={previewBook !== null || loadingCampuses}
+            >
+              <option value="">
+                {loadingCampuses ? "Campussen laden..." : "Kies een campus"}
               </option>
-            ))}
-          </select>
 
-          {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
-        </div>
+              {campuses.map((campusOption) => (
+                <option key={campusOption.id} value={campusOption.name}>
+                  {campusOption.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
 
         {!previewBook && (
-          <button type="submit" disabled={loading} className={searchButtonClass}>
+          <button
+            type="submit"
+            disabled={
+              loading ||
+              loadingCampuses ||
+              Boolean(campusLoadError) ||
+              (shouldShowCampusSelect && !campus.trim())
+            }
+            className={searchButtonClass}
+          >
             {loading ? "Bezig met zoeken..." : "Zoek Boek"}
           </button>
         )}
@@ -244,9 +274,11 @@ export default function AddBookWithIsbn() {
               <p>
                 <strong>ISBN:</strong> {previewBook.isbn}
               </p>
-              <p>
-                <strong>Campus:</strong> {campus || "Geen campus"}
-              </p>
+              {shouldShowCampusSelect && (
+                <p>
+                  <strong>Campus:</strong> {selectedCampusLabel}
+                </p>
+              )}
               <p>
                 <strong>Pagina's:</strong> {previewBook.pageCount}
               </p>

@@ -70,6 +70,18 @@ export default function AddBookWithoutIsbn() {
   const handlePreviewBook = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (
+      campuses.length > 1 &&
+      inventories.some((inventory) => !inventory.campus.trim())
+    ) {
+      setMessage("Kies voor elke inventarisregel een campus.");
+      return;
+    }
+    if (hasDuplicateInventoryCampuses()) {
+      setMessage("Elke campus mag maar één keer voorkomen.");
+      return;
+    }
+
     const book: Book = {
       id: 0,
       isbn: "",
@@ -221,13 +233,18 @@ export default function AddBookWithoutIsbn() {
       return;
     }
 
-    for (const inventory of inventories) {
-      if (!inventory.schoolId) {
-        setMessage("Elke inventarisregel moet een school hebben");
-        return;
-      }
+  for (const inventory of inventories) {
+    if (!inventory.schoolId) {
+      setMessage("Elke inventarisregel moet een school hebben");
+      return;
+    }
 
-      if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
+    if (campuses.length > 1 && !inventory.campus.trim()) {
+      setMessage("Kies voor elke inventarisregel een campus.");
+      return;
+    }
+
+    if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
         setMessage("Aantallen mogen niet negatief zijn");
         return;
       }
@@ -268,7 +285,7 @@ export default function AddBookWithoutIsbn() {
           ageRange,
           inventories: inventories.map((inventory) => ({
             schoolId: inventory.schoolId,
-            campus: inventory.campus,
+            campus: campuses.length === 1 ? campuses[0].name : inventory.campus,
             totalCopies: inventory.totalCopies,
             availableCopies: inventory.availableCopies,
           })),
@@ -305,7 +322,12 @@ export default function AddBookWithoutIsbn() {
       setNewLabel("");
       setReadingLevel("");
       setAgeRange("");
-      setInventories(me?.school ? [createEmptyInventory(me.school)] : []);
+      setInventories([
+        createEmptyInventory(
+          me?.school ?? null,
+          campuses.length === 1 ? campuses[0].name : "",
+        ),
+      ]); 
     } catch (error) {
       console.error(error);
       setMessage("Kan de server niet bereiken");
@@ -334,15 +356,23 @@ export default function AddBookWithoutIsbn() {
   }`.trim();
 
   const createEmptyInventory = (
-    school: MeResponse["school"] | null,
+    school: MeResponse["school"] | null, campusName = "",
   ): BookInventory => ({
     id: null,
     schoolId: school?.id ?? null,
     schoolName: school?.name ?? "",
-    campus: "",
+    campus: campusName,
     totalCopies: 1,
     availableCopies: 1,
   });
+
+  const shouldShowCampusSelect = campuses.length > 1;
+
+  const canAddInventoryRow =
+    campuses.length > 0 && inventories.length < campuses.length;
+
+  const shouldShowAddCampusButton =
+    shouldShowCampusSelect && canAddInventoryRow;
 
   const totalCopiesFromInventories = inventories.reduce(
     (sum, inventory) => sum + (inventory.totalCopies || 0),
@@ -365,11 +395,11 @@ export default function AddBookWithoutIsbn() {
       ),
     );
   }
-
   function addInventoryRow() {
+    // Add extra campus row
     setInventories((prev) => [
       ...prev,
-      createEmptyInventory(me?.school ?? null),
+      createEmptyInventory(me?.school ?? null, getNextAvailableCampusName()),
     ]);
   }
 
@@ -395,10 +425,11 @@ export default function AddBookWithoutIsbn() {
         setMe(data);
 
         if (data.school) {
-          setInventories([createEmptyInventory(data.school)]);
-
           const campusData = await fetchSchoolCampuses(API_URL, data.school.id);
           setCampuses(campusData);
+          setInventories([
+            createEmptyInventory(data.school, campusData.length === 1 ? campusData[0].name : ""),
+          ]);
         }
       } catch (error) {
         console.error("Kon gebruiker of campussen niet ophalen:", error);
@@ -443,6 +474,31 @@ export default function AddBookWithoutIsbn() {
         setAvailableLabels(BOOK_LABELS);
       });
   }, [API_URL]);
+
+  function getUsedCampusNames() {
+    return inventories
+      .map((inventory) => inventory.campus?.trim().toLowerCase() ?? "")
+      .filter((campusName) => campusName !== "");
+  }
+
+  function getNextAvailableCampusName() {
+    const usedCampusNames = getUsedCampusNames();
+
+    return (
+      campuses.find(
+        (campusOption) =>
+          !usedCampusNames.includes(campusOption.name.trim().toLowerCase()),
+      )?.name ?? ""
+    );
+  }
+
+  const hasDuplicateInventoryCampuses = () => {
+    const selectedCampuses = inventories
+      .map((inventory) => inventory.campus.trim().toLowerCase())
+      .filter(Boolean);
+
+    return new Set(selectedCampuses).size !== selectedCampuses.length;
+  };
 
   return (
     <>
@@ -754,7 +810,9 @@ export default function AddBookWithoutIsbn() {
           </select>
         </div>
         <div className="fieldGroup">
-          <label className="label">Inventaris per school/campus</label>
+          <label className="label">
+            {shouldShowCampusSelect ? "Inventaris per school/campus" : "Inventaris"}
+          </label>
 
           {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
 
@@ -771,32 +829,34 @@ export default function AddBookWithoutIsbn() {
                   />
                 </div>
 
-                <div className="inventoryField">
-                  <label className="label">Campus</label>
-                  <select
-                    value={inventory.campus}
-                    onChange={(e) =>
-                      updateInventory(index, "campus", e.target.value)
-                    }
-                    className="select"
-                    disabled={previewBook !== null || loadingCampuses}
-                  >
-                    <option value="">
-                      {loadingCampuses ? "Campussen laden..." : "Geen campus"}
-                    </option>
+                {shouldShowCampusSelect && (
+                  <div className="inventoryField">
+                    <label className="label">Campus</label>
+                    <select
+                      value={inventory.campus}
+                      onChange={(e) =>
+                        updateInventory(index, "campus", e.target.value)
+                      }
+                      className="select"
+                      disabled={previewBook !== null || loadingCampuses}
+                    >
+                      <option value="">
+                        {loadingCampuses ? "Campussen laden..." : "Kies een campus"}
+                      </option>
 
-                    {getCampusSelectOptions(campuses, inventory.campus).map(
-                      (campusOption) => (
-                        <option
-                          key={`${campusOption.id}-${campusOption.name}`}
-                          value={campusOption.name}
-                        >
-                          {campusOption.name}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
+                      {getCampusSelectOptions(campuses, inventory.campus).map(
+                        (campusOption) => (
+                          <option
+                            key={`${campusOption.id}-${campusOption.name}`}
+                            value={campusOption.name}
+                          >
+                            {campusOption.name}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+                )}
 
                 <div className="inventoryField">
                   <label className="label">Totaal</label>
@@ -834,22 +894,10 @@ export default function AddBookWithoutIsbn() {
                   />
                 </div>
               </div>
-
-              {!previewBook && inventories.length > 1 && (
-                <div className="inventoryActions">
-                  <button
-                    type="button"
-                    onClick={() => removeInventoryRow(index)}
-                    className="smallButton"
-                  >
-                    Verwijder regel
-                  </button>
-                </div>
-              )}
             </div>
           ))}
 
-          {!previewBook && (
+          {!previewBook && shouldShowAddCampusButton && (
             <div className="inventoryActions">
               <button
                 type="button"
@@ -870,7 +918,13 @@ export default function AddBookWithoutIsbn() {
         {!previewBook && (
           <button
             type="submit"
-            disabled={loading}
+            disabled={
+              loading ||
+              loadingCampuses ||
+              Boolean(campusLoadError) ||
+              (shouldShowCampusSelect &&
+                inventories.some((inventory) => !inventory.campus.trim()))
+            }
             className={submitButtonClass}
           >
             {loading ? "Bezig..." : "Toon boek"}

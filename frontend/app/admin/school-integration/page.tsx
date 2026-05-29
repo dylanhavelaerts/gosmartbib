@@ -40,7 +40,10 @@ export default function SchoolIntegrationPage() {
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [loadingCampuses, setLoadingCampuses] = useState(false);
   const [savingCampus, setSavingCampus] = useState(false);
+  const [savingCampusId, setSavingCampusId] = useState<number | null>(null);
   const [deletingCampusId, setDeletingCampusId] = useState<number | null>(null);
+  const [editingCampusId, setEditingCampusId] = useState<number | null>(null);
+  const [editingCampusName, setEditingCampusName] = useState("");
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -238,6 +241,70 @@ export default function SchoolIntegrationPage() {
       );
     } finally {
       setSavingCampus(false);
+    }
+  };
+
+  const handleStartEditCampus = (campus: SchoolCampusDTO) => {
+    setEditingCampusId(campus.id);
+    setEditingCampusName(campus.name);
+    setError("");
+    setSuccess("");
+  };
+
+  const handleCancelEditCampus = () => {
+    setEditingCampusId(null);
+    setEditingCampusName("");
+  };
+
+  const handleUpdateCampus = async (campusId: number) => {
+    if (!API_URL || !schoolId) return;
+
+    const trimmedName = editingCampusName.trim();
+    if (!trimmedName) {
+      setError("Campusnaam mag niet leeg zijn");
+      return;
+    }
+
+    try {
+      setSavingCampusId(campusId);
+      setError("");
+      setSuccess("");
+
+      const response = await fetch(
+        `${API_URL}/admin/schools/${schoolId}/campuses/${campusId}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name: trimmedName }),
+        },
+      );
+
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(body || "Campus wijzigen mislukt");
+      }
+
+      const updatedCampus: SchoolCampusDTO = await response.json();
+      setCampuses((prev) =>
+        prev.map((campus) =>
+          campus.id === updatedCampus.id ? updatedCampus : campus,
+        ),
+      );
+      setEditingCampusId(null);
+      setEditingCampusName("");
+      setSuccess("Campus succesvol gewijzigd");
+    } catch (err) {
+      console.error(err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Er ging iets mis bij het wijzigen van de campus",
+      );
+    } finally {
+      setSavingCampusId(null);
     }
   };
 
@@ -536,21 +603,82 @@ export default function SchoolIntegrationPage() {
               <p className="emptyState">Nog geen campussen toegevoegd.</p>
             ) : (
               <ul className="campusList">
-                {campuses.map((campus) => (
-                  <li key={campus.id} className="campusListItem">
-                    <span>{campus.name}</span>
-                    <button
-                      type="button"
-                      className="button dangerButton"
-                      onClick={() => handleDeleteCampus(campus.id)}
-                      disabled={deletingCampusId === campus.id}
-                    >
-                      {deletingCampusId === campus.id
-                        ? "Verwijderen..."
-                        : "Verwijderen"}
-                    </button>
-                  </li>
-                ))}
+                {campuses.map((campus) => {
+                  const isEditing = editingCampusId === campus.id;
+                  const isLastCampus = campuses.length <= 1;
+
+                  return (
+                    <li key={campus.id} className="campusListItem">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editingCampusName}
+                          onChange={(e) => setEditingCampusName(e.target.value)}
+                          className="campusEditInput"
+                          disabled={savingCampusId === campus.id}
+                        />
+                      ) : (
+                        <span>{campus.name}</span>
+                      )}
+
+                      <div className="campusActions">
+                        {isEditing ? (
+                          <>
+                            <button
+                              type="button"
+                              className="button primaryButton"
+                              onClick={() => handleUpdateCampus(campus.id)}
+                              disabled={
+                                savingCampusId === campus.id ||
+                                !editingCampusName.trim()
+                              }
+                            >
+                              {savingCampusId === campus.id
+                                ? "Opslaan..."
+                                : "Opslaan"}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="button"
+                              onClick={handleCancelEditCampus}
+                              disabled={savingCampusId === campus.id}
+                            >
+                              Annuleren
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className="button"
+                              onClick={() => handleStartEditCampus(campus)}
+                              disabled={deletingCampusId === campus.id}
+                            >
+                              Wijzigen
+                            </button>
+
+                            <button
+                              type="button"
+                              className="button dangerButton"
+                              onClick={() => handleDeleteCampus(campus.id)}
+                              disabled={deletingCampusId === campus.id || isLastCampus}
+                              title={
+                                isLastCampus
+                                  ? "De laatste campus kan niet verwijderd worden"
+                                  : undefined
+                              }
+                            >
+                              {deletingCampusId === campus.id
+                                ? "Verwijderen..."
+                                : "Verwijderen"}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>
