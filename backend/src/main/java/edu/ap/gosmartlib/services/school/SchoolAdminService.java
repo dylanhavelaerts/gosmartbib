@@ -3,6 +3,8 @@ package edu.ap.gosmartlib.services.school;
 import edu.ap.gosmartlib.dto.school.*;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.entities.school.SchoolCampusEntity;
+import edu.ap.gosmartlib.repositories.school.SchoolCampusRepository;
 import edu.ap.gosmartlib.repositories.*;
 import edu.ap.gosmartlib.repositories.book.BookInventoryRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolClassRepository;
@@ -25,8 +27,11 @@ public class SchoolAdminService {
     private final UserRepository userRepository;
     private final UserDeletionService userDeletionService;
     private final SchoolClassRepository schoolClassRepository;
+    private final SchoolCampusRepository schoolCampusRepository;
     private final SchoolIntegrationRepository schoolIntegrationRepository;
     private final BookInventoryRepository bookInventoryRepository;
+
+    private static final String DEFAULT_CAMPUS_NAME = "Hoofdcampus";
 
     public List<SchoolDTO> listAllSchools() {
         return schoolRepository.findAllByOrderByAdminApprovedAscNameAsc()
@@ -40,8 +45,10 @@ public class SchoolAdminService {
         String name = request.name() != null ? request.name().trim() : "";
         String domain = normalizeDomain(request.domain());
 
-        if (name.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schoolnaam is verplicht");
-        if (domain.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schooldomein is verplicht");
+        if (name.isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schoolnaam is verplicht");
+        if (domain.isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schooldomein is verplicht");
 
         var existing = schoolRepository.findByDomain(domain);
         if (existing.isPresent()) {
@@ -53,7 +60,10 @@ public class SchoolAdminService {
         school.setDomain(domain);
         school.setAdminApproved(true);
 
-        return new CreateSchoolResult(SchoolDTO.from(schoolRepository.save(school)), false);
+        SchoolEntity savedSchool = schoolRepository.save(school);
+        createDefaultCampusIfMissing(savedSchool);
+
+        return new CreateSchoolResult(SchoolDTO.from(savedSchool), false);
     }
 
     @Transactional
@@ -70,34 +80,56 @@ public class SchoolAdminService {
 
         schoolIntegrationRepository.findBySchool_Id(schoolId).ifPresent(schoolIntegrationRepository::delete);
         bookInventoryRepository.deleteAllBySchool_Id(schoolId);
+        schoolCampusRepository.deleteAllBySchool_Id(schoolId);
         schoolRepository.delete(school);
     }
 
+    @Transactional
     public SchoolDTO approveSchool(Long schoolId, ApproveSchoolRequest request) {
         SchoolEntity school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School niet gevonden"));
 
         String name = request.name() != null ? request.name().trim() : "";
-        if (name.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schoolnaam is verplicht");
+        if (name.isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schoolnaam is verplicht");
 
         school.setName(name);
         school.setAdminApproved(true);
 
-        return SchoolDTO.from(schoolRepository.save(school));
+        SchoolEntity savedSchool = schoolRepository.save(school);
+        createDefaultCampusIfMissing(savedSchool);
+
+        return SchoolDTO.from(savedSchool);
     }
 
     public SchoolDTO renameSchool(Long schoolId, UpdateSchoolRequest request) {
         SchoolEntity school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School niet gevonden"));
         String name = request.name() != null ? request.name().trim() : "";
-        if (name.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schoolnaam is verplicht");
+        if (name.isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schoolnaam is verplicht");
         school.setName(name);
         return SchoolDTO.from(schoolRepository.save(school));
     }
 
-
     private String normalizeDomain(String raw) {
-        if (raw == null) return "";
-        return raw.trim().toLowerCase().replaceAll("/+$", "");
+        if (raw == null)
+            return "";
+        return raw.trim().toLowerCase().replaceAll("/++$", "");
+    }
+
+    private void createDefaultCampusIfMissing(SchoolEntity school) {
+        if (school == null || school.getId() == null) {
+            return;
+        }
+
+        if (schoolCampusRepository.countBySchool_Id(school.getId()) > 0) {
+            return;
+        }
+
+        SchoolCampusEntity defaultCampus = new SchoolCampusEntity();
+        defaultCampus.setSchool(school);
+        defaultCampus.setName(DEFAULT_CAMPUS_NAME);
+        schoolCampusRepository.save(defaultCampus);
     }
 }

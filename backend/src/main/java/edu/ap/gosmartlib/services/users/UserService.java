@@ -1,10 +1,12 @@
 package edu.ap.gosmartlib.services.users;
 
-import edu.ap.gosmartlib.dto.UserDTO;
+import edu.ap.gosmartlib.dto.user.UserDTO;
 import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
 import edu.ap.gosmartlib.exceptions.SchoolNotApprovedException;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
+import edu.ap.gosmartlib.entities.school.SchoolCampusEntity;
+import edu.ap.gosmartlib.repositories.school.SchoolCampusRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.util.UserRoles;
@@ -23,6 +25,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.*;
 
+/**
+ * Service voor gebruikerssynchronisatie, sessiegegevens en logout.
+ *
+ * Deze service vertaalt Smartschool OAuth2-attributen naar lokale GoSmartLib
+ * entiteiten zoals UserEntity, SchoolEntity en SchoolClassEntity. De service is
+ * verantwoordelijk voor het aanmaken of bijwerken van gebruikers na login.
+ */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -30,23 +40,38 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final SchoolRepository schoolRepository;
+    private final SchoolCampusRepository schoolCampusRepository;
     private final HttpServletRequest request;
     private final SchoolClassHelper schoolClassHelper;
 
+    private static final String DEFAULT_CAMPUS_NAME = "Hoofdcampus";
+
     /**
-     * Wordt aangeroepen elke login
-     * - Als een gebruiker niet bestaat -> nieuw account aanmaken
-     * - Als een gebruiker al bestaat -> gegevens updaten indien nodig (naam,
-     * klassen, ...)
-     * - ROL wordt niet overgeschreven aangezien een leerkracht miss de bibbeheerder
-     * rol heeft gekregen
+     * Synchroniseert een Smartschool OAuth2User met de lokale database.
+     *
+     * Bij elke login worden school, gebruiker, klassen en OneRoster sourcedId
+     * bijgewerkt. Nieuwe scholen worden automatisch aangemaakt maar niet
+     * automatisch
+     * goedgekeurd. Nieuwe gebruikers van een niet-goedgekeurde school worden
+     * geblokkeerd.
+     *
+     * De rol van bestaande gebruikers wordt bewust niet overschreven. Zo kan een
+     * lokaal toegekende rol, zoals BIBLIOTHEEKBEHEERDER, behouden blijven na een
+     * nieuwe Smartschool-login.
+     *
+     * @param oauth2User de door Smartschool aangemelde gebruiker
+     * @return de aangemaakte of bijgewerkte lokale gebruiker
+     * @throws SchoolNotApprovedException wanneer een nieuwe gebruiker via een
+     *                                    niet-goedgekeurde school probeert in te
+     *                                    loggen
      */
+
     @Transactional
     public UserEntity syncUser(OAuth2User oauth2User) {
         String uid = oauth2User.getAttribute("userID");
         String role = oauth2User.getAttribute("basisrol");
         String rawDomain = oauth2User.getAttribute("platform");
-        String domain = rawDomain != null ? rawDomain.trim().toLowerCase().replaceAll("/+$", "") : "";
+        String domain = rawDomain != null ? rawDomain.trim().toLowerCase().replaceAll("/++$", "") : "";
 
         // Zoek een school op basis van domein, als de school niet bestaat maak een
         // nieuwe aan
@@ -55,9 +80,13 @@ public class UserService {
                     log.info("Nieuwe school gevonden, toevoegen aan database: {}", domain);
                     SchoolEntity e = new SchoolEntity();
                     e.setDomain(domain);
-                    e.setName(domain); // TODO: misschien later aanpassen naar echte naam van school
-                    return schoolRepository.save(e);
+                    e.setName(domain);
+                    SchoolEntity savedSchool = schoolRepository.save(e);
+                    createDefaultCampusIfMissing(savedSchool);
+
+                    return savedSchool;
                 });
+        createDefaultCampusIfMissing(school);
 
         // Zoek een gebruiker, als gebruiker niet bestaat -> maak aan
         // Nieuwe gebruikers van een niet-goedgekeurde school worden geblokkeerd
@@ -106,6 +135,16 @@ public class UserService {
                 });
     }
 
+    /**
+     * Haalt de huidige gebruiker op als UserDTO.
+     *
+     * Dit wordt gebruikt door /auth/me. De frontend gebruikt deze DTO om navigatie,
+     * UI en client-side routebescherming op rol te sturen.
+     *
+     * @param uid Smartschool userID van de ingelogde gebruiker
+     * @return UserDTO met rol, school en klasgegevens
+     */
+
     @Transactional(readOnly = true)
     public UserDTO getCurrentUser(String uid) {
         UserEntity user = userRepository.findDetailedBySmartschoolUid(uid)
@@ -113,6 +152,16 @@ public class UserService {
 
         return UserDTO.from(user);
     }
+
+    /**
+     * Logt de huidige gebruiker uit.
+     *
+     * De Spring Security context wordt gewist en zowel JSESSIONID als AUTHENTICATED
+     * worden verwijderd, zodat de browser niet langer aan een actieve sessie
+     * gekoppeld is.
+     *
+     * @param response HTTP response waarin de verwijdercookies worden geplaatst
+     */
 
     public void logUserOut(HttpServletResponse response) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -129,11 +178,28 @@ public class UserService {
         cookie.setPath("/");
         cookie.setMaxAge(0);
         cookie.setHttpOnly(true);
+        cookie.setSecure(true);
         response.addCookie(cookie);
     }
 
-    // Maakt van Smartschool groups een SchoolClassEntity
-    private Set<SchoolClassEntity> resolveClasses(List<Map<String, Object>> groups, List<Map<String, Object>> parentGroups, SchoolEntity school) {
+    /**
+     * Zet Smartschool groups en parentGroups om naar lokale
+     * SchoolClassEntity-koppelingen.
+     *
+     * De groups bevatten de concrete klassen van de gebruiker. De parentGroups
+     * worden
+     * gebruikt om extra context zoals het jaar of de graad af te leiden. Bestaande
+     * klassen worden hergebruikt, nieuwe klassen worden aangemaakt via
+     * SchoolClassHelper.
+     *
+     * @param groups       Smartschoolgroepen van de gebruiker
+     * @param parentGroups bovenliggende Smartschoolgroepen
+     * @param school       lokale school waartoe de gebruiker behoort
+     * @return set met lokale klassen voor de gebruiker
+     */
+
+    private Set<SchoolClassEntity> resolveClasses(List<Map<String, Object>> groups,
+            List<Map<String, Object>> parentGroups, SchoolEntity school) {
         String grade = parentGroups.stream()
                 .map(pg -> (String) pg.get("name"))
                 .filter(n -> n != null && n.toLowerCase().contains("jaars"))
@@ -151,20 +217,34 @@ public class UserService {
 
             schoolClass.setSchoolYear(schoolYear);
 
-            if (name != null) schoolClass.setName(name);
-            if (grade != null) schoolClass.setGrade(grade);
+            if (name != null)
+                schoolClass.setName(name);
+            if (grade != null)
+                schoolClass.setGrade(grade);
 
             resolved.add(schoolClass);
         }
         return resolved;
     }
 
-
-
-    // Vindt het momentele schooljaar
     private String resolveCurrentSchoolYear() {
         LocalDate today = LocalDate.now();
         int year = today.getMonthValue() >= 9 ? today.getYear() : today.getYear() - 1;
         return year + "-" + (year + 1);
+    }
+
+    private void createDefaultCampusIfMissing(SchoolEntity school) {
+        if (school == null || school.getId() == null) {
+            return;
+        }
+
+        if (schoolCampusRepository.countBySchool_Id(school.getId()) > 0) {
+            return;
+        }
+
+        SchoolCampusEntity defaultCampus = new SchoolCampusEntity();
+        defaultCampus.setSchool(school);
+        defaultCampus.setName(DEFAULT_CAMPUS_NAME);
+        schoolCampusRepository.save(defaultCampus);
     }
 }

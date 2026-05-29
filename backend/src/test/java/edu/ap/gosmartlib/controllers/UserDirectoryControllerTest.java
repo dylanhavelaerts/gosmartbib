@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
+import edu.ap.gosmartlib.controllers.user.UserDirectoryController;
 import edu.ap.gosmartlib.services.users.UserDirectoryService;
 import edu.ap.gosmartlib.services.users.UserService;
 import jakarta.servlet.http.HttpServletResponse;

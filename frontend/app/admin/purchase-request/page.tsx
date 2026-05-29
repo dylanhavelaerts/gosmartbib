@@ -18,7 +18,7 @@ type ActiveTab = "form" | "overview";
 
 export default function PurchaseRequestPage() {
   const { user } = useAuth();
-  const isBeheerder = user?.role === "BIBLIOTHEEKBEHEERDER";
+  const isBeheerder = user?.role === "LIBRARIAN";
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("form");
 
@@ -143,7 +143,7 @@ export default function PurchaseRequestPage() {
   ];
 
   return (
-    <ProtectedRoute allowedRoles={["TEACHER", "BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["TEACHER", "LIBRARIAN"]}>
       <main className="purchase-page">
         <h1 className="purchase-title">Aankoopsuggesties</h1>
         <p className="purchase-subtitle">

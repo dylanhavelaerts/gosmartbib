@@ -282,14 +282,7 @@ export default function CreateReadingListPage() {
         throw new Error(errorText || "Fout bij opslaan");
       }
 
-      setMessage({
-        type: "success",
-        text: "Klasleeslijst succesvol aangemaakt",
-      });
-
       resetForm();
-
-      setTimeout(() => setMessage(null), 5000);
     } catch (error) {
       setMessage({
         type: "error",
@@ -304,17 +297,9 @@ export default function CreateReadingListPage() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={["TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["TEACHER", "LIBRARIAN"]}>
       <div className="readingListContainer">
         <div className="crl-subheader">
-          <button
-            type="button"
-            className="crl-back-link"
-            onClick={goBackToReadingLists}
-            aria-label="Ga terug naar leeslijsten"
-          >
-            ← Terug naar overzicht
-          </button>
           <h1 className="pageTitle">Nieuwe klasleeslijst aanmaken</h1>
         </div>
 

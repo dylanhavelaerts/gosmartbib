@@ -4,8 +4,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Book,
-  BOOK_CATEGORIES,
-  BOOK_LABELS,
   BOOK_READING_LEVELS,
 } from "../interfaces/Book";
 import BookCard from "./bookCard";
@@ -23,7 +21,11 @@ export default function Home() {
   const [query, setQuery] = useState("");
 
   // Paging
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (typeof window === "undefined") return 1;
+    const saved = sessionStorage.getItem("catalogPage");
+    return saved ? Number(saved) : 1;
+  });
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -31,6 +33,8 @@ export default function Home() {
   // Filters
   const [language, setLanguage] = useState("");
   const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableLabels, setAvailableLabels] = useState<string[]>([]);
   const [readingLevel, setReadingLevel] = useState("");
   const [categories, setCategories] = useState<Set<string>>(new Set());
   const [labels, setLabels] = useState<Set<string>>(new Set());
@@ -60,7 +64,7 @@ export default function Home() {
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
-  const canManageSpotlight = user?.role === "BIBLIOTHEEKBEHEERDER";
+  const canManageSpotlight = user?.role === "LIBRARIAN";
 
   // -- URL zoek aspect --------------------------------------------------------------------------------------------------------------------
   // Leest de ?search query param bij het laden van de pagina en zet deze als zoekquery.
@@ -78,25 +82,58 @@ export default function Home() {
     }
   }, []);
 
-// -- Fetch alle talen voor school
-
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/languages`, {
-      credentials: "include",
+    sessionStorage.setItem("catalogPage", String(currentPage));
+  }, [currentPage]);
+
+// -- Fetch filteropties voor school
+
+useEffect(() => {
+  const fetchOptions = async (endpoint: string) => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/books/${endpoint}`,
+      {
+        credentials: "include",
+      },
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  };
+
+  Promise.all([
+    fetchOptions("languages"),
+    fetchOptions("categories"),
+    fetchOptions("labels"),
+  ])
+    .then(([languages, categories, labels]) => {
+      setAvailableLanguages(languages);
+      setAvailableCategories(categories);
+      setAvailableLabels(labels);
     })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: string[]) => {
-        setAvailableLanguages(Array.isArray(data) ? data : []);
-      })
-      .catch(() => setAvailableLanguages([]));
-  }, []);
+    .catch(() => {
+      setAvailableLanguages([]);
+      setAvailableCategories([]);
+      setAvailableLabels([]);
+    });
+}, []);
 
   // -- Fetch boeken ------------------------------------------------------------------------------------------------------------------------------
   // Rent filters en zoekquery uit als dependencies zodat er automatisch een nieuwe fetch wordt gedaan bij verandering.
   // Bij het fetchen wordt ook rekening gehouden met de huidige pagina en aantal items per pagina (pageSize).
   // Bij een zoekopdracht is er een kleine debounce (300ms) om onnodige fetches te voorkomen tijdens het typen.
 
+  const pagesInvalid = minPages !== "" && maxPages !== "" && Number(minPages) > Number(maxPages);
+  const yearInvalid = minYear !== "" && maxYear !== "" && Number(minYear) > Number(maxYear);
+  const ratingInvalid = minRating !== null && maxRating !== null && minRating > maxRating;
+
   useEffect(() => {
+    if (pagesInvalid || yearInvalid || ratingInvalid) return;
+
     const params = new URLSearchParams();
     params.append("page", String(currentPage - 1)); // backend is 0-based
     params.append("size", String(pageSize));
@@ -383,7 +420,7 @@ export default function Home() {
                 </button>
                 {categoryOpen && (
                   <div className="filterDropdownPanel">
-                    {BOOK_CATEGORIES.map((cat) => (
+                    {availableCategories.map((cat) => (
                       <label key={cat} className="filterCheckboxLabel">
                         <input
                           type="checkbox"
@@ -411,7 +448,7 @@ export default function Home() {
                 </button>
                 {labelOpen && (
                   <div className="filterDropdownPanel">
-                    {BOOK_LABELS.map((label) => (
+                    {availableLabels.map((label) => (
                       <label key={label} className="filterCheckboxLabel">
                         <input
                           type="checkbox"
@@ -437,7 +474,7 @@ export default function Home() {
                     setMinPages(e.target.value);
                     resetPage();
                   }}
-                  className="filterInput"
+                  className={`filterInput${pagesInvalid ? " filterInputError" : ""}`}
                 />
                 <input
                   type="number"
@@ -447,9 +484,10 @@ export default function Home() {
                     setMaxPages(e.target.value);
                     resetPage();
                   }}
-                  className="filterInput"
+                  className={`filterInput${pagesInvalid ? " filterInputError" : ""}`}
                 />
               </div>
+              {pagesInvalid && <span className="filterRangeError">Min mag niet groter zijn dan max</span>}
             </div>
 
             <div className="filterGroup">
@@ -463,7 +501,7 @@ export default function Home() {
                     setMinYear(e.target.value);
                     resetPage();
                   }}
-                  className="filterInput"
+                  className={`filterInput${yearInvalid ? " filterInputError" : ""}`}
                 />
                 <input
                   type="number"
@@ -473,9 +511,10 @@ export default function Home() {
                     setMaxYear(e.target.value);
                     resetPage();
                   }}
-                  className="filterInput"
+                  className={`filterInput${yearInvalid ? " filterInputError" : ""}`}
                 />
               </div>
+              {yearInvalid && <span className="filterRangeError">Min mag niet groter zijn dan max</span>}
             </div>
 
             <div className="filterGroup">
@@ -522,27 +561,29 @@ export default function Home() {
                   </button>
                 </div>
               </div>
-              <div className="filterGroup">
-                <label className="filterGroupLabel" htmlFor="catalog-sort">
-                  Sorteren
-                </label>
-                <select
-                  id="catalog-sort"
-                  className="filterSelect"
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value as SortOption);
-                    resetPage();
-                  }}
-                >
-                  <option value="default">Standaard</option>
-                  <option value="title_asc">Alfabetisch (A–Z)</option>
-                  <option value="newest">Nieuwste eerst</option>
-                </select>
-              </div>
+              {ratingInvalid && <span className="filterRangeError">Min mag niet groter zijn dan max</span>}
+            </div>
+
+            <div className="filterGroup">
+              <label className="filterGroupLabel" htmlFor="catalog-sort">
+                Sorteren
+              </label>
+              <select
+                id="catalog-sort"
+                className="filterSelect"
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value as SortOption);
+                  resetPage();
+                }}
+              >
+                <option value="default">Standaard</option>
+                <option value="title_asc">Alfabetisch (A–Z)</option>
+                <option value="newest">Nieuwste eerst</option>
+              </select>
             </div>
             {(user?.role === "TEACHER" ||
-              user?.role === "BIBLIOTHEEKBEHEERDER" ||
+              user?.role === "LIBRARIAN" ||
               user?.role === "ADMIN") && (
               <div className="filterGroup">
                 <span className="filterGroupLabel">Didactische boeken</span>

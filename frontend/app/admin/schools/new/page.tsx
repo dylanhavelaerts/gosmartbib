@@ -34,6 +34,7 @@ export default function NewSchoolPage() {
   const [success, setSuccess] = useState("");
 
   const [savedSchoolId, setSavedSchoolId] = useState<number | null>(null);
+
   const [previewing, setPreviewing] = useState(false);
   const [previewStudents, setPreviewStudents] = useState<PreviewUser[] | null>(
     null,

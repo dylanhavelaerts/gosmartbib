@@ -375,12 +375,7 @@ export default function EditClassReadingListPage() {
         throw new Error(body || "Fout bij opslaan");
       }
 
-      setMessage({
-        type: "success",
-        text: "Klasleeslijst succesvol bijgewerkt",
-      });
-
-      setTimeout(() => router.push("/reading-lists/" + id), 700);
+      router.push("/reading-lists/" + id);
     } catch (error) {
       setMessage({
         type: "error",
@@ -395,17 +390,9 @@ export default function EditClassReadingListPage() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={["TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["TEACHER", "LIBRARIAN"]}>
       <div className="readingListContainer">
         <div className="crl-subheader">
-          <button
-            type="button"
-            className="crl-back-link"
-            onClick={() => router.push(`/reading-lists/${id}`)}
-            aria-label="Ga terug naar leeslijst"
-          >
-            ← Terug naar leeslijst
-          </button>
 
           <h1 className="pageTitle">Klasleeslijst bewerken</h1>
         </div>

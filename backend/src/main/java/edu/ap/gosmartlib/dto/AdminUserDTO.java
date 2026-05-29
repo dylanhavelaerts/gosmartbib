@@ -3,6 +3,7 @@ package edu.ap.gosmartlib.dto;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import edu.ap.gosmartlib.dto.school.SchoolClassDTO;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.util.UserRoles;
 

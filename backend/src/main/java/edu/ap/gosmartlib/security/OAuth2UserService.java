@@ -17,17 +17,32 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * In deze klasse zorgen we ervoor dat Spring Security meer dan 1 attribuut
- * meeneemt in memory na login
- * Spring Security haalt standaard de userID, platform en isMainAccount op van
- * Smartschool, maar we willen ook de groepen van de gebruiker in memory hebben.
- * Daarom maken we een custom OAuth2UserService die na het ophalen van de
- * basisinformatie van nog een extra API call roept voor de groupInfo
- * Na aanroep mergen we deze informatie bij de fulluserinfo
+ * Custom OAuth2UserService voor Smartschoolgebruikers.
+ *
+ * Spring Security haalt standaard fulluserinfo op via de user-info-uri.
+ * GoSmartLib
+ * heeft daarnaast ook groupinfo nodig om klassen en parentgroepen te kunnen
+ * synchroniseren. Deze service haalt daarom na fulluserinfo nog groupinfo op en
+ * voegt beide bronnen samen in één OAuth2User.
  */
 @Slf4j
 @Component
 public class OAuth2UserService extends DefaultOAuth2UserService {
+
+    /**
+     * Laadt de Smartschoolgebruiker en verrijkt die met groupinfo.
+     *
+     * Eerst haalt Spring Security fulluserinfo op. Daarna wordt met dezelfde access
+     * token de Smartschool groupinfo endpoint aangeroepen. De groepen en
+     * parentgroepen worden toegevoegd aan de OAuth2User-attributen, zodat
+     * UserService
+     * later schoolklassen kan synchroniseren.
+     *
+     * @param userReq OAuth2 user request met clientregistratie en access token
+     * @return OAuth2User met fulluserinfo, groups en parentGroups
+     * @throws OAuth2AuthenticationException wanneer de standaard userinfo-ophaling
+     *                                       faalt
+     */
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userReq) throws OAuth2AuthenticationException {
@@ -37,18 +52,12 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         // en returnt een OAuth2User met alle benodigde info
         OAuth2User fulluserinfo = super.loadUser(userReq);
 
-        log.info("=== FULLUSERINFO ===");
-        fulluserinfo.getAttributes().forEach((k, v) -> log.info("  {} = {}", k, v));
-        log.info("====================");
-
         // Stap 2. we halen de accessToken en het platform zodat we groupinfo kunnen
         // ophalen
         String accessToken = userReq.getAccessToken().getTokenValue();
         String platform = fulluserinfo.getAttribute("platform");
 
         Map<String, Object> groupInfoResponse = fetchGroupInfo(platform, accessToken);
-
-        log.info("=== GROUPINFO ===");
 
         List<Map<String, Object>> groups = extractGroupList(groupInfoResponse.get("groups"));
         List<Map<String, Object>> parentGroups = extractGroupList(groupInfoResponse.get("parentGroups"));
@@ -71,7 +80,7 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         mergedAttributes.put("groups", groupInfoResponse.getOrDefault("groups", Collections.emptyList()));
         mergedAttributes.put("parentGroups", groupInfoResponse.getOrDefault("parentGroups", Collections.emptyList()));
 
-        // Stap 4. return de OAuth2User met de gemenge attributen
+        // Stap 4. return de OAuth2User met de gemengde attributen
         return new DefaultOAuth2User(
                 fulluserinfo.getAuthorities(),
                 mergedAttributes,
@@ -79,10 +88,16 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
     }
 
     /**
-     * Roept smartschools /Api/V1/groupinfo endpoint aan via de accessToken
-     * @param platform    - het platform van de gebruiker, nodig om de juiste URL aan te roepen (lokaal of productie)
-     * @param accessToken - de access token die we gekregen hebben van Spring Security
-     * @return raw responsemap met "groups" en "parentGroups"
+     * Haalt groupinfo op bij Smartschool.
+     *
+     * Wanneer deze call faalt, wordt de login niet volledig geblokkeerd. In dat
+     * geval
+     * wordt een lege map teruggegeven en kan de gebruiker nog steeds worden
+     * aangemeld, maar zonder geüpdatete groepsinformatie.
+     *
+     * @param platform    Smartschoolplatform van de gebruiker
+     * @param accessToken access token verkregen via de OAuth2 token exchange
+     * @return responsemap met groups en parentGroups, of een lege map bij fouten
      */
     private Map<String, Object> fetchGroupInfo(String platform, String accessToken) {
         try {
@@ -102,6 +117,19 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
             return Collections.emptyMap();
         }
     }
+
+    /**
+     * Normaliseert een ruwe Smartschool groupinfo-lijst naar een lijst van maps.
+     *
+     * Smartschool geeft geneste JSON-structuren terug. Deze helper zet elke entry
+     * om
+     * naar een Map<String, Object>, zodat de rest van de applicatie veilig met de
+     * groepsdata kan werken.
+     *
+     * @param value ruwe waarde uit de Smartschool groupinfo response
+     * @return genormaliseerde lijst van groepsmaps, of null wanneer de waarde geen
+     *         lijst is
+     */
 
     private List<Map<String, Object>> extractGroupList(Object value) {
         if (!(value instanceof List<?> list)) {

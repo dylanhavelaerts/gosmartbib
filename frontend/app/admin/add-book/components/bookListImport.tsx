@@ -54,6 +54,9 @@ export default function BookListImport() {
 
         const campusData = await fetchSchoolCampuses(API_URL, meData.school.id);
         setCampuses(campusData);
+        if (campusData.length === 1) {
+          setCampus(campusData[0].name);
+        }
       } catch (error) {
         console.error(error);
         setCampusLoadError(
@@ -81,6 +84,17 @@ export default function BookListImport() {
     const handleUploadExcel = async (confirmDuplicates = false) => {
     if (!selectedFile) return;
 
+    if (!API_URL) {
+      setMessage("NEXT_PUBLIC_API_URL ontbreekt.");
+      return;
+    }
+
+    const selectedCampus = campuses.length === 1 ? campuses[0].name : campus.trim();
+    if (campuses.length > 1 && !selectedCampus) {
+      setMessage("Kies eerst een campus voor deze import.");
+      return;
+    }
+
     setLoading(true);
     setMessage("");
 
@@ -94,9 +108,8 @@ export default function BookListImport() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      const trimmedCampus = campus.trim();
-      if (trimmedCampus) {
-        formData.append("campus", trimmedCampus);
+      if (selectedCampus) {
+        formData.append("campus", selectedCampus);
       }
 
       if (confirmDuplicates) {
@@ -145,15 +158,33 @@ export default function BookListImport() {
   };
 
    const addSingleBook = async (mismatch: ImportMismatch) => {
+      if (!API_URL) {
+        setMessage("NEXT_PUBLIC_API_URL ontbreekt.");
+        return;
+      }
+
+      const selectedCampus = campuses.length === 1 ? campuses[0].name : campus.trim();
+      if (campuses.length > 1 && !selectedCampus) {
+        setMessage("Kies eerst een campus voor deze import.");
+        return;
+      }
+
+      if (!mismatch.isbn) {
+        setMessage("Geen ISBN gevonden voor deze rij.");
+        return;
+      }
+
       setLoading(true);
 
       try {
         const params = new URLSearchParams();
 
-        const trimmedCampus = campus.trim();
+        if (selectedCampus) {
+          params.set("campus", selectedCampus);
+        }
 
-        if (trimmedCampus) {
-          params.set("campus", trimmedCampus);
+        if (mismatch.didacticBook === true) {
+          params.set("didacticBook", "true");
         }
 
         if (mismatch.amount !== null && mismatch.amount !== undefined) {
@@ -205,6 +236,13 @@ export default function BookListImport() {
       }
     };
 
+  const shouldShowCampusSelect = campuses.length > 1;
+  const importButtonDisabled =
+    loading ||
+    loadingCampuses ||
+    Boolean(campusLoadError) ||
+    (shouldShowCampusSelect && !campus.trim());
+
   const uploadButtonClass =
     `uploadButton ${loading ? "uploadButtonLoading" : ""}`.trim();
   const messageClass = `message ${
@@ -225,31 +263,34 @@ export default function BookListImport() {
         Download Excelbestand
       </a>
 
-      <label className="campusField">
-        Campus
-        <select
-          value={campus}
-          onChange={(e) => setCampus(e.target.value)}
-          className="campusInput"
-          disabled={loadingCampuses}
-        >
-          <option value="">
-            {loadingCampuses ? "Campussen laden..." : "Geen campus"}
-          </option>
+      {shouldShowCampusSelect && (
+        <>
+          <label className="campusField">
+            Campus
+            <select
+              value={campus}
+              onChange={(e) => setCampus(e.target.value)}
+              className="campusInput"
+              disabled={loadingCampuses}
+            >
+              <option value="">
+                {loadingCampuses ? "Campussen laden..." : "Kies een campus"}
+              </option>
 
-          {campuses.map((campusOption) => (
-            <option key={campusOption.id} value={campusOption.name}>
-              {campusOption.name}
-            </option>
-          ))}
-        </select>
-      </label>
+              {campuses.map((campusOption) => (
+                <option key={campusOption.id} value={campusOption.name}>
+                  {campusOption.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          
+          <p className="helperText">
+              Deze campus wordt toegepast op alle boeken in dit Excelbestand. Nieuwe campussen maak je enkel aan op de schoolbeheerpagina.
+          </p>
+        </>
+      )}
       {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
-
-      <p className="helperText">
-        Deze campus wordt toegepast op alle boeken waar de Campus-kolom leeg is
-      </p>
-
         <p className="spacedText">
           Voeg hieronder de aangevulde excel file toe
         </p>
@@ -266,7 +307,7 @@ export default function BookListImport() {
               <button
                 type="button"
                 onClick={() => handleUploadExcel(false)}
-                disabled={loading}
+                disabled={importButtonDisabled}
                 className={uploadButtonClass}
               >
                 {loading ? "Bezig met importeren..." : "Importeer Excelbestand"}

@@ -3,6 +3,7 @@ package edu.ap.gosmartlib.services;
 import edu.ap.gosmartlib.repositories.school.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolCampusRepository;
 import edu.ap.gosmartlib.services.users.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +34,8 @@ class UserServiceTest {
     private SchoolClassRepository schoolClassRepository;
     @Mock
     private SchoolRepository schoolRepository;
+    @Mock
+    private SchoolCampusRepository schoolCampusRepository;
     @Mock
     private HttpServletRequest request;
     @Mock

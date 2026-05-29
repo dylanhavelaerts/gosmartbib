@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
+import edu.ap.gosmartlib.controllers.book.BookNotificationController;
 import edu.ap.gosmartlib.security.AuthHelper;
 import edu.ap.gosmartlib.services.messages.BookNotificationService;
 import org.junit.jupiter.api.Test;

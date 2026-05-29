@@ -3,6 +3,14 @@
 import { useEffect, useState } from "react";
 import "./login.css";
 
+/**
+ * Loginpagina voor Smartschoolgebruikers en platformadministrators.
+ *
+ * De gewone login start de backend OAuth2-flow via /auth/login. De administrator-
+ * login gebruikt een aparte username/password-flow via /admin/login en staat los
+ * van Smartschool OAuth2.
+ */
+
 export default function LoginPage() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
   const [hasError] = useState(() =>
@@ -24,6 +32,14 @@ export default function LoginPage() {
     };
   }, []);
 
+  /**
+   * Start de Smartschool OAuth2-login.
+   *
+   * De frontend navigeert naar de backend, niet rechtstreeks naar Smartschool.
+   * Daardoor kan Spring Security de authorization request correct opbouwen en de
+   * callback later verwerken.
+   */
+
   const handleLogin = () => {
     if (!apiBaseUrl) {
       alert("NEXT_PUBLIC_API_URL is not set.");
@@ -38,6 +54,14 @@ export default function LoginPage() {
   const [adminError, setAdminError] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
   const [rateLimited, setRateLimited] = useState(false);
+
+  /**
+   * Voert de aparte administratorlogin uit.
+   *
+   * Deze login gebruikt credentials: "include", zodat de backend na succesvolle
+   * authenticatie een sessiecookie kan plaatsen. Bij succes wordt de administrator
+   * doorgestuurd naar het schoolbeheer.
+   */
 
   const handleAdminLogin = async () => {
     if (!apiBaseUrl) return;

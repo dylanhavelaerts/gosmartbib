@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import LabelPrintModal from "./LabelPrintModal";
+import type { BookCopyLabel } from "../../interfaces/BookCopyLabel";
 import {
   BOOK_CATEGORIES,
   BOOK_LABELS,
@@ -33,6 +35,11 @@ export default function ManageCatalogPage() {
 
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [labelDropdownOpen, setLabelDropdownOpen] = useState(false);
+  const [availableCategories, setAvailableCategories] =
+    useState<string[]>(BOOK_CATEGORIES);
+  const [availableLabels, setAvailableLabels] = useState<string[]>(BOOK_LABELS);
+  const [newCategory, setNewCategory] = useState("");
+  const [newLabel, setNewLabel] = useState("");
   const [query, setQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(25);
@@ -49,7 +56,6 @@ export default function ManageCatalogPage() {
 
   const router = useRouter();
 
-  // Fetch paged books from backend (with search debounce)
   useEffect(() => {
     const params = new URLSearchParams();
     params.append("page", String(currentPage - 1));
@@ -74,8 +80,6 @@ export default function ManageCatalogPage() {
     return () => clearTimeout(timer);
   }, [query, currentPage, pageSize, apiUrl]);
 
-  // Handle ?selectedId param — fetch the specific book by ID.
-  // If ?edit=true is present, immediately open the edit modal for that book.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const selectedId = params.get("selectedId");
@@ -146,6 +150,31 @@ export default function ManageCatalogPage() {
     loadMeAndCampuses();
   }, [apiUrl]);
 
+  useEffect(() => {
+    const fetchOptions = async (endpoint: string) => {
+      const response = await fetch(`${apiUrl}/books/${endpoint}`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    };
+
+    Promise.all([fetchOptions("categories"), fetchOptions("labels")])
+      .then(([categories, labels]) => {
+        setAvailableCategories(mergeOptions(BOOK_CATEGORIES, categories));
+        setAvailableLabels(mergeOptions(BOOK_LABELS, labels));
+      })
+      .catch(() => {
+        setAvailableCategories(BOOK_CATEGORIES);
+        setAvailableLabels(BOOK_LABELS);
+      });
+  }, [apiUrl]);
+
   function openModal() {
     if (!selectedBook) return;
     setFormData({
@@ -157,6 +186,28 @@ export default function ManageCatalogPage() {
 
     setModalOpen(true);
     setError(null);
+  }
+
+  function mergeOptions(baseOptions: string[], databaseOptions: string[]) {
+    const mergedOptions: string[] = [];
+    const seenOptions = new Set<string>();
+
+    [...baseOptions, ...databaseOptions].forEach((option) => {
+      const trimmedOption = option.trim();
+
+      if (!trimmedOption) {
+        return;
+      }
+
+      const normalizedOption = trimmedOption.toLowerCase();
+
+      if (!seenOptions.has(normalizedOption)) {
+        seenOptions.add(normalizedOption);
+        mergedOptions.push(trimmedOption);
+      }
+    });
+
+    return mergedOptions.sort((a, b) => a.localeCompare(b));
   }
 
   function closeModal() {
@@ -259,6 +310,27 @@ export default function ManageCatalogPage() {
 
     const inventories = formData.inventories ?? [];
 
+    const ownSchoolInventories = inventories.filter(
+      (inventory) => inventory.schoolId === me?.school?.id,
+    );
+
+    if (ownSchoolInventories.length > campuses.length) {
+      setError(
+        "Je kan niet meer inventarisregels toevoegen dan er campussen zijn voor jouw school.",
+      );
+      return;
+    }
+
+    const duplicateCampusNames = ownSchoolInventories
+      .map((inventory) => inventory.campus?.trim().toLowerCase() ?? "")
+      .filter((campus) => campus !== "")
+      .filter((campus, index, allCampuses) => allCampuses.indexOf(campus) !== index);
+
+    if (duplicateCampusNames.length > 0) {
+      setError("Elke campus mag maar één keer voorkomen in de inventaris.");
+      return;
+    }
+
     for (const inventory of inventories) {
       if (!inventory.schoolId) {
         setError("Elke inventarisregel moet een school hebben.");
@@ -357,21 +429,64 @@ export default function ManageCatalogPage() {
     }));
   }
 
+    function getUsedCampusNames(inventories: BookInventory[]) {
+    return inventories
+      .filter((inventory) => inventory.schoolId === me?.school?.id)
+      .map((inventory) => inventory.campus?.trim().toLowerCase() ?? "")
+      .filter((campus) => campus !== "");
+  }
+
+  function getNextAvailableCampusName(inventories: BookInventory[]) {
+    const usedCampusNames = getUsedCampusNames(inventories);
+
+    return (
+      campuses.find(
+        (campus) =>
+          !usedCampusNames.includes(campus.name.trim().toLowerCase()),
+      )?.name ?? ""
+    );
+  }
+
+  function hasReachedMaxCampusRows(inventories: BookInventory[]) {
+    if (campuses.length === 0) {
+      return true;
+    }
+
+    const ownSchoolInventoryCount = inventories.filter(
+      (inventory) => inventory.schoolId === me?.school?.id,
+    ).length;
+
+    return ownSchoolInventoryCount >= campuses.length;
+  }
+
   function addInventoryRow() {
-    setFormData((prev) => ({
-      ...prev,
-      inventories: [
-        ...(prev.inventories ?? []),
-        {
-          id: null,
-          schoolId: me?.school?.id ?? null,
-          schoolName: me?.school?.name ?? "",
-          campus: "",
-          totalCopies: 1,
-          availableCopies: 1,
-        },
-      ],
-    }));
+    setFormData((prev) => {
+      const currentInventories = prev.inventories ?? [];
+
+      if (hasReachedMaxCampusRows(currentInventories)) {
+        setError(
+          "Je hebt al een inventarisregel voor elke campus van jouw school.",
+        );
+        return prev;
+      }
+
+      const nextCampusName = getNextAvailableCampusName(currentInventories);
+
+      return {
+        ...prev,
+        inventories: [
+          ...currentInventories,
+          {
+            id: null,
+            schoolId: me?.school?.id ?? null,
+            schoolName: me?.school?.name ?? "",
+            campus: nextCampusName,
+            totalCopies: 1,
+            availableCopies: 1,
+          },
+        ],
+      };
+    });
   }
 
   function removeInventoryRow(index: number) {
@@ -381,12 +496,29 @@ export default function ManageCatalogPage() {
     }));
   }
 
-  async function handleOpenLabels(inventoryId: number) {
+  async function handlePrintAllLabels() {
+    setLoadingLabels(true);
+    try {
+      const res = await fetch(`${apiUrl}/books/copies/labels/school`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error();
+      const data: BookCopyLabel[] = await res.json();
+      setPrintLabels(data);
+      setLabelModalOpen(true);
+    } catch {
+      setError("Kon labels niet ophalen.");
+    } finally {
+      setLoadingLabels(false);
+    }
+  }
+
+  async function handleOpenLabels() {
     if (!selectedBook) return;
     setLoadingLabels(true);
     try {
       const res = await fetch(
-        `${apiUrl}/books/${selectedBook.id}/copies/labels?inventoryId=${inventoryId}`,
+        `${apiUrl}/books/${selectedBook.id}/copies/labels/school`,
         { credentials: "include" },
       );
       if (!res.ok) throw new Error();
@@ -404,16 +536,37 @@ export default function ManageCatalogPage() {
     .map((inventory, index) => ({ inventory, index }))
     .filter(({ inventory }) => inventory.schoolId === me?.school?.id);
 
+  const canAddInventoryRow =
+    campuses.length > 0 &&
+    editableInventoryRows.length < campuses.length;
+
+  const shouldShowAddCampusButton =
+  campuses.length > 1 && canAddInventoryRow;
+
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER", "ADMIN"]}>
+    <ProtectedRoute allowedRoles="LIBRARIAN">
       <main className="manage-main-layout">
         <div className="manage-page-header">
-          <h1>Catalogusbeheer</h1>
-          <p>Beheer boeken, inventaris en exemplaren voor jouw bibliotheek.</p>
+          <div>
+            <h1>Catalogusbeheer</h1>
+            <p>
+              Beheer boeken, inventaris en exemplaren voor jouw bibliotheek.
+            </p>
+          </div>
+          {barcodesEnabled && (
+            <button
+              className="btn-labels"
+              disabled={loadingLabels}
+              onClick={handlePrintAllLabels}
+              type="button"
+            >
+              {loadingLabels ? "Bezig…" : "Alle labels afdrukken"}
+            </button>
+          )}
         </div>
         <div className="manage-wrapper">
-          {/* EILAND LIJST */}
-          <div className="eiland-lijst">
+          {/* BOOK LIST */}
+          <div className="book-list-panel">
             <div className="headerdiv">
               <button
                 onClick={() => router.push("/admin/add-book")}
@@ -503,8 +656,8 @@ export default function ManageCatalogPage() {
             </div>
           </div>
 
-          {/* EILAND DETAILS */}
-          <div className="eiland-details">
+          {/* BOOK DETAILS */}
+          <div className="book-details-panel">
             {!selectedBook ? (
               <div className="details-empty">
                 <p>Klik op een boek in de lijst om de details te bekijken.</p>
@@ -599,7 +752,7 @@ export default function ManageCatalogPage() {
                             type="button"
                             className="btn-labels"
                             disabled={loadingLabels}
-                            onClick={() => handleOpenLabels(myInventory.id!)}
+                            onClick={() => handleOpenLabels()}
                           >
                             {loadingLabels ? "Bezig…" : "Labels afdrukken"}
                           </button>
@@ -768,7 +921,7 @@ export default function ManageCatalogPage() {
                     </button>
                     {categoryDropdownOpen && (
                       <div className="filterDropdownPanel">
-                        {BOOK_CATEGORIES.map((cat) => (
+                        {availableCategories.map((cat) => (
                           <label key={cat} className="filterCheckboxLabel">
                             <input
                               type="checkbox"
@@ -789,6 +942,82 @@ export default function ManageCatalogPage() {
                             {cat}
                           </label>
                         ))}
+                        <div className="customOptionRow">
+                          <input
+                            type="text"
+                            className="customOptionInput"
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+
+                                const trimmed = newCategory.trim();
+                                if (!trimmed) return;
+
+                                setAvailableCategories((prev) =>
+                                  prev.some(
+                                    (cat) =>
+                                      cat.toLowerCase() ===
+                                      trimmed.toLowerCase(),
+                                  )
+                                    ? prev
+                                    : [...prev, trimmed].sort((a, b) =>
+                                        a.localeCompare(b),
+                                      ),
+                                );
+
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  categories: prev.categories?.some(
+                                    (cat) =>
+                                      cat.toLowerCase() ===
+                                      trimmed.toLowerCase(),
+                                  )
+                                    ? prev.categories
+                                    : [...(prev.categories ?? []), trimmed],
+                                }));
+
+                                setNewCategory("");
+                              }
+                            }}
+                            placeholder="Nieuwe categorie"
+                          />
+
+                          <button
+                            type="button"
+                            className="customOptionButton"
+                            onClick={() => {
+                              const trimmed = newCategory.trim();
+                              if (!trimmed) return;
+
+                              setAvailableCategories((prev) =>
+                                prev.some(
+                                  (cat) =>
+                                    cat.toLowerCase() === trimmed.toLowerCase(),
+                                )
+                                  ? prev
+                                  : [...prev, trimmed].sort((a, b) =>
+                                      a.localeCompare(b),
+                                    ),
+                              );
+
+                              setFormData((prev) => ({
+                                ...prev,
+                                categories: prev.categories?.some(
+                                  (cat) =>
+                                    cat.toLowerCase() === trimmed.toLowerCase(),
+                                )
+                                  ? prev.categories
+                                  : [...(prev.categories ?? []), trimmed],
+                              }));
+
+                              setNewCategory("");
+                            }}
+                          >
+                            Toevoegen
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -831,7 +1060,7 @@ export default function ManageCatalogPage() {
                     </button>
                     {labelDropdownOpen && (
                       <div className="filterDropdownPanel">
-                        {BOOK_LABELS.map((label) => (
+                        {availableLabels.map((label) => (
                           <label key={label} className="filterCheckboxLabel">
                             <input
                               type="checkbox"
@@ -852,6 +1081,84 @@ export default function ManageCatalogPage() {
                             {label}
                           </label>
                         ))}
+                        <div className="customOptionRow">
+                          <input
+                            type="text"
+                            className="customOptionInput"
+                            value={newLabel}
+                            onChange={(e) => setNewLabel(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+
+                                const trimmed = newLabel.trim();
+                                if (!trimmed) return;
+
+                                setAvailableLabels((prev) =>
+                                  prev.some(
+                                    (label) =>
+                                      label.toLowerCase() ===
+                                      trimmed.toLowerCase(),
+                                  )
+                                    ? prev
+                                    : [...prev, trimmed].sort((a, b) =>
+                                        a.localeCompare(b),
+                                      ),
+                                );
+
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  labels: prev.labels?.some(
+                                    (label) =>
+                                      label.toLowerCase() ===
+                                      trimmed.toLowerCase(),
+                                  )
+                                    ? prev.labels
+                                    : [...(prev.labels ?? []), trimmed],
+                                }));
+
+                                setNewLabel("");
+                              }
+                            }}
+                            placeholder="Nieuw leefwereldlabel"
+                          />
+
+                          <button
+                            type="button"
+                            className="customOptionButton"
+                            onClick={() => {
+                              const trimmed = newLabel.trim();
+                              if (!trimmed) return;
+
+                              setAvailableLabels((prev) =>
+                                prev.some(
+                                  (label) =>
+                                    label.toLowerCase() ===
+                                    trimmed.toLowerCase(),
+                                )
+                                  ? prev
+                                  : [...prev, trimmed].sort((a, b) =>
+                                      a.localeCompare(b),
+                                    ),
+                              );
+
+                              setFormData((prev) => ({
+                                ...prev,
+                                labels: prev.labels?.some(
+                                  (label) =>
+                                    label.toLowerCase() ===
+                                    trimmed.toLowerCase(),
+                                )
+                                  ? prev.labels
+                                  : [...(prev.labels ?? []), trimmed],
+                              }));
+
+                              setNewLabel("");
+                            }}
+                          >
+                            Toevoegen
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -995,7 +1302,9 @@ export default function ManageCatalogPage() {
                       className="inventory-editor-card"
                     >
                       <p className="inventory-editor-school">
-                        {formatSchoolLabel(inventory.schoolName || me?.school?.name || "")}
+                        {formatSchoolLabel(
+                          inventory.schoolName || me?.school?.name || "",
+                        )}
                       </p>
                       <div className="inventory-editor-grid">
                         <div>
@@ -1018,10 +1327,23 @@ export default function ManageCatalogPage() {
                                 : "Geen campus"}
                             </option>
 
-                            {getCampusSelectOptions(
-                              campuses,
-                              inventory.campus,
-                            ).map((campusOption) => (
+                          {getCampusSelectOptions(campuses, inventory.campus)
+                            .filter((campusOption) => {
+                              const campusName = campusOption.name.trim().toLowerCase();
+                              const currentCampusName =
+                                inventory.campus?.trim().toLowerCase() ?? "";
+
+                              if (campusName === currentCampusName) {
+                                return true;
+                              }
+
+                              return !editableInventoryRows.some(
+                                ({ inventory: otherInventory, index: otherIndex }) =>
+                                  otherIndex !== index &&
+                                  otherInventory.campus?.trim().toLowerCase() === campusName,
+                              );
+                            })
+                            .map((campusOption) => (
                               <option
                                 key={`${campusOption.id}-${campusOption.name}`}
                                 value={campusOption.name}
@@ -1078,15 +1400,17 @@ export default function ManageCatalogPage() {
                       )}
                     </div>
                   ))}
-
-                  <button
-                    type="button"
-                    className="modal-btn-save"
-                    style={{ width: "fit-content", marginTop: "0.25rem" }}
-                    onClick={addInventoryRow}
-                  >
-                    + Campus toevoegen
-                  </button>
+                  {shouldShowAddCampusButton && (
+                    <button
+                      type="button"
+                      className="modal-btn-save"
+                      disabled={!canAddInventoryRow}
+                      style={{ width: "fit-content", marginTop: "0.25rem" }}
+                      onClick={addInventoryRow}
+                    >
+                      + Campus toevoegen
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">
@@ -1109,72 +1433,10 @@ export default function ManageCatalogPage() {
           </div>
         )}
         {labelModalOpen && (
-          <div
-            className="modal-overlay"
-            onClick={() => setLabelModalOpen(false)}
-          >
-            <div
-              className="modal-box label-print-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-header label-modal-header">
-                <div>
-                  <h2>Labels afdrukken</h2>
-                  <p className="label-modal-count">
-                    {printLabels.length === 0
-                      ? "Barcodes worden toegewezen bij het afdrukken"
-                      : `${printLabels.length} exempla${printLabels.length !== 1 ? "ren" : "ar"}`}
-                  </p>
-                </div>
-                <div className="label-modal-header-actions">
-                  {printLabels.length > 0 && (
-                    <button
-                      type="button"
-                      className="modal-btn-save"
-                      onClick={() => window.print()}
-                    >
-                      Afdrukken
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="modal-btn-cancel"
-                    onClick={() => setLabelModalOpen(false)}
-                  >
-                    Sluiten
-                  </button>
-                </div>
-              </div>
-              <div className="modal-body">
-                {printLabels.length === 0 ? (
-                  <div className="label-empty-state">
-                    <p>Nog geen barcodes toegewezen.</p>
-                    <p>Voeg exemplaren toe aan de inventaris en druk daarna opnieuw af — barcodes worden automatisch aangemaakt.</p>
-                  </div>
-                ) : (
-                  <div className="label-grid" id="label-print-area">
-                    {printLabels.map((label) => (
-                      <div key={label.copyId} className="label-card">
-                        <div className="label-card-top">
-                          <span className="label-title">{label.bookTitle}</span>
-                          {label.campus && (
-                            <span className="label-campus">{label.campus}</span>
-                          )}
-                        </div>
-                        <div className="label-card-middle">
-                          <span className="label-copy-number">{label.copyNumber}</span>
-                          <span className="label-copy-text">exemplaar</span>
-                        </div>
-                        <div className="label-card-bottom">
-                          <span className="label-barcode">{label.barcode}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <LabelPrintModal
+            labels={printLabels}
+            onClose={() => setLabelModalOpen(false)}
+          />
         )}
       </main>
     </ProtectedRoute>

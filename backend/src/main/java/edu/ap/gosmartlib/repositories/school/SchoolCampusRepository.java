@@ -12,4 +12,8 @@ public interface SchoolCampusRepository extends JpaRepository<SchoolCampusEntity
     Optional<SchoolCampusEntity> findByIdAndSchool_Id(Long campusId, Long schoolId);
 
     boolean existsBySchool_IdAndNameIgnoreCase(Long schoolId, String name);
+
+    long countBySchool_Id(Long schoolId);
+
+    void deleteAllBySchool_Id(Long schoolId);
 }

@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
+import edu.ap.gosmartlib.controllers.readinglist.ReadingListController;
 import edu.ap.gosmartlib.dto.readinglist.CreateReadingListDTO;
 import edu.ap.gosmartlib.dto.readinglist.PublicReadingListDetailDTO;
 import edu.ap.gosmartlib.dto.readinglist.ReadingListBookDTO;

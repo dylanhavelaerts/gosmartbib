@@ -6,6 +6,7 @@ import edu.ap.gosmartlib.entities.school.SchoolCampusEntity;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.school.SchoolCampusRepository;
+import edu.ap.gosmartlib.repositories.book.BookInventoryRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.schoolintegration.schoolCampus.SchoolCampusService;
@@ -26,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +41,9 @@ class SchoolCampusServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private BookInventoryRepository bookInventoryRepository;
+
+    @Mock
     private SchoolRepository schoolRepository;
 
     @InjectMocks
@@ -45,7 +51,7 @@ class SchoolCampusServiceTest {
 
     @Test
     void givenBibbeheerderFromRequestedSchool_whenGetCampuses_thenReturnsCampusesForThatSchool() {
-        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School");
 
         List<SchoolCampusEntity> campuses = List.of(
                 buildCampus(1L, 100L, "Campus Noord"),
@@ -54,7 +60,7 @@ class SchoolCampusServiceTest {
         when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(admin));
         when(schoolCampusRepository.findBySchool_IdOrderByNameAsc(100L)).thenReturn(campuses);
 
-        List<SchoolCampusDTO> result = schoolCampusService.getCampusesForBibbeheerder("bibbeheerder-uid", 100L);
+        List<SchoolCampusDTO> result = schoolCampusService.getCampusesForLibrarian("bibbeheerder-uid", 100L);
 
         assertEquals(2, result.size());
         assertEquals(1L, result.get(0).id());
@@ -69,12 +75,12 @@ class SchoolCampusServiceTest {
 
     @Test
     void givenBibbeheerderFromOtherSchool_whenGetCampuses_thenThrowsForbiddenAndDoesNotLoadCampuses() {
-        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School");
 
         when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(admin));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.getCampusesForBibbeheerder("bibbeheerder-uid", 200L));
+                () -> schoolCampusService.getCampusesForLibrarian("bibbeheerder-uid", 200L));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Geen toegang tot deze school", exception.getReason());
@@ -91,7 +97,7 @@ class SchoolCampusServiceTest {
         when(userRepository.findDetailedBySmartschoolUid("leerkracht-uid")).thenReturn(Optional.of(actor));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.getCampusesForBibbeheerder("leerkracht-uid", 100L));
+                () -> schoolCampusService.getCampusesForLibrarian("leerkracht-uid", 100L));
 
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Geen toegang", exception.getReason());
@@ -102,7 +108,7 @@ class SchoolCampusServiceTest {
 
     @Test
     void givenBibbeheerderAndNewCampusName_whenCreateCampus_thenNormalizesNameAndSavesForBibbeheerderSchool() {
-        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School");
         CreateSchoolCampusRequest request = new CreateSchoolCampusRequest("  Campus   Zuid  ");
 
         when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(admin));
@@ -113,7 +119,7 @@ class SchoolCampusServiceTest {
             return campus;
         });
 
-        SchoolCampusDTO result = schoolCampusService.createCampusForBibbeheerder("bibbeheerder-uid", 100L, request);
+        SchoolCampusDTO result = schoolCampusService.createCampusForLibrarian("bibbeheerder-uid", 100L, request);
 
         assertEquals(10L, result.id());
         assertEquals("Campus Zuid", result.name());
@@ -133,13 +139,13 @@ class SchoolCampusServiceTest {
 
     @Test
     void givenBlankCampusName_whenCreateCampus_thenThrowsBadRequest() {
-        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School");
         CreateSchoolCampusRequest request = new CreateSchoolCampusRequest("   ");
 
         when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(admin));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.createCampusForBibbeheerder("bibbeheerder-uid", 100L, request));
+                () -> schoolCampusService.createCampusForLibrarian("bibbeheerder-uid", 100L, request));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("Campusnaam is verplicht", exception.getReason());
@@ -151,14 +157,14 @@ class SchoolCampusServiceTest {
 
     @Test
     void givenDuplicateCampusName_whenCreateCampus_thenThrowsConflict() {
-        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School");
         CreateSchoolCampusRequest request = new CreateSchoolCampusRequest("Campus Zuid");
 
         when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(admin));
         when(schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(100L, "Campus Zuid")).thenReturn(true);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.createCampusForBibbeheerder("bibbeheerder-uid", 100L, request));
+                () -> schoolCampusService.createCampusForLibrarian("bibbeheerder-uid", 100L, request));
 
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
         assertEquals("Campus bestaat al voor deze school", exception.getReason());
@@ -171,29 +177,33 @@ class SchoolCampusServiceTest {
 
     @Test
     void givenExistingCampusInBibbeheerderSchool_whenDeleteCampus_thenDeletesCampus() {
-        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School");
         SchoolCampusEntity campus = buildCampus(5L, 100L, "Campus Zuid");
 
         when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(admin));
         when(schoolCampusRepository.findByIdAndSchool_Id(5L, 100L)).thenReturn(Optional.of(campus));
+        when(schoolCampusRepository.countBySchool_Id(100L)).thenReturn(2L);
+        when(bookInventoryRepository.existsBySchool_IdAndCampusIgnoreCase(100L, "Campus Zuid")).thenReturn(false);
 
-        schoolCampusService.deleteCampusForBibbeheerder("bibbeheerder-uid", 100L, 5L);
+        schoolCampusService.deleteCampusForLibrarian("bibbeheerder-uid", 100L, 5L);
 
         verify(userRepository).findDetailedBySmartschoolUid("bibbeheerder-uid");
         verify(schoolCampusRepository).findByIdAndSchool_Id(5L, 100L);
+        verify(schoolCampusRepository).countBySchool_Id(100L);
+        verify(bookInventoryRepository).existsBySchool_IdAndCampusIgnoreCase(100L, "Campus Zuid");
         verify(schoolCampusRepository).delete(campus);
-        verifyNoMoreInteractions(userRepository, schoolCampusRepository);
+        verifyNoMoreInteractions(userRepository, schoolCampusRepository, bookInventoryRepository);
     }
 
     @Test
     void givenCampusDoesNotExistInBibbeheerderSchool_whenDeleteCampus_thenThrowsNotFound() {
-        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.BIBLIOTHEEKBEHEERDER, 100L, "GO! School");
+        UserEntity admin = buildUser("bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School");
 
         when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(admin));
         when(schoolCampusRepository.findByIdAndSchool_Id(99L, 100L)).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> schoolCampusService.deleteCampusForBibbeheerder("bibbeheerder-uid", 100L, 99L));
+                () -> schoolCampusService.deleteCampusForLibrarian("bibbeheerder-uid", 100L, 99L));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Campus niet gevonden", exception.getReason());
@@ -262,7 +272,12 @@ class SchoolCampusServiceTest {
 
     @Test
     void givenBlankName_whenCreateCampusForPlatformAdmin_thenThrowsBadRequest() {
+        SchoolEntity school = new SchoolEntity();
+        school.setId(100L);
+
         CreateSchoolCampusRequest request = new CreateSchoolCampusRequest("   ");
+
+        when(schoolRepository.findById(100L)).thenReturn(Optional.of(school));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> schoolCampusService.createCampusForPlatformAdmin(100L, request));
@@ -270,14 +285,19 @@ class SchoolCampusServiceTest {
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("Campusnaam is verplicht", exception.getReason());
 
+        verify(schoolRepository).findById(100L);
         verify(schoolCampusRepository, never()).save(any());
         verifyNoMoreInteractions(schoolCampusRepository, schoolRepository, userRepository);
     }
 
     @Test
     void givenDuplicateName_whenCreateCampusForPlatformAdmin_thenThrowsConflict() {
+        SchoolEntity school = new SchoolEntity();
+        school.setId(100L);
+
         CreateSchoolCampusRequest request = new CreateSchoolCampusRequest("Campus Noord");
 
+        when(schoolRepository.findById(100L)).thenReturn(Optional.of(school));
         when(schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(100L, "Campus Noord")).thenReturn(true);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
@@ -286,6 +306,7 @@ class SchoolCampusServiceTest {
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
         assertEquals("Campus bestaat al voor deze school", exception.getReason());
 
+        verify(schoolRepository).findById(100L);
         verify(schoolCampusRepository).existsBySchool_IdAndNameIgnoreCase(100L, "Campus Noord");
         verify(schoolCampusRepository, never()).save(any());
         verifyNoMoreInteractions(schoolCampusRepository, schoolRepository, userRepository);
@@ -295,7 +316,6 @@ class SchoolCampusServiceTest {
     void givenUnknownSchoolId_whenCreateCampusForPlatformAdmin_thenThrowsNotFound() {
         CreateSchoolCampusRequest request = new CreateSchoolCampusRequest("Campus Noord");
 
-        when(schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(99L, "Campus Noord")).thenReturn(false);
         when(schoolRepository.findById(99L)).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
@@ -304,6 +324,7 @@ class SchoolCampusServiceTest {
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("School niet gevonden", exception.getReason());
 
+        verify(schoolRepository).findById(99L);
         verify(schoolCampusRepository, never()).save(any());
         verifyNoMoreInteractions(schoolCampusRepository, schoolRepository, userRepository);
     }
@@ -313,12 +334,16 @@ class SchoolCampusServiceTest {
         SchoolCampusEntity campus = buildCampus(5L, 100L, "Campus Noord");
 
         when(schoolCampusRepository.findByIdAndSchool_Id(5L, 100L)).thenReturn(Optional.of(campus));
+        when(schoolCampusRepository.countBySchool_Id(100L)).thenReturn(2L);
+        when(bookInventoryRepository.existsBySchool_IdAndCampusIgnoreCase(100L, "Campus Noord")).thenReturn(false);
 
         schoolCampusService.deleteCampusForPlatformAdmin(100L, 5L);
 
         verify(schoolCampusRepository).findByIdAndSchool_Id(5L, 100L);
+        verify(schoolCampusRepository).countBySchool_Id(100L);
+        verify(bookInventoryRepository).existsBySchool_IdAndCampusIgnoreCase(100L, "Campus Noord");
         verify(schoolCampusRepository).delete(campus);
-        verifyNoMoreInteractions(schoolCampusRepository, schoolRepository, userRepository);
+        verifyNoMoreInteractions(userRepository, schoolCampusRepository, bookInventoryRepository);
     }
 
     @Test
@@ -334,6 +359,67 @@ class SchoolCampusServiceTest {
         verify(schoolCampusRepository).findByIdAndSchool_Id(99L, 100L);
         verify(schoolCampusRepository, never()).delete(any());
         verifyNoMoreInteractions(schoolCampusRepository, schoolRepository, userRepository);
+    }
+
+    @Test
+    void givenLastCampus_whenDeleteCampusForPlatformAdmin_thenThrowsBadRequest() {
+        SchoolCampusEntity campus = buildCampus(5L, 100L, "Hoofdcampus");
+
+        when(schoolCampusRepository.findByIdAndSchool_Id(5L, 100L)).thenReturn(Optional.of(campus));
+        when(schoolCampusRepository.countBySchool_Id(100L)).thenReturn(1L);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> schoolCampusService.deleteCampusForPlatformAdmin(100L, 5L));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertEquals("De laatste campus van een school kan niet verwijderd worden", exception.getReason());
+
+        verify(schoolCampusRepository).findByIdAndSchool_Id(5L, 100L);
+        verify(schoolCampusRepository).countBySchool_Id(100L);
+        verify(bookInventoryRepository, never()).existsBySchool_IdAndCampusIgnoreCase(anyLong(), anyString());
+        verify(schoolCampusRepository, never()).delete(any());
+    }
+
+    @Test
+    void givenCampusUsedByInventory_whenDeleteCampusForPlatformAdmin_thenThrowsConflict() {
+        SchoolCampusEntity campus = buildCampus(5L, 100L, "Campus Noord");
+
+        when(schoolCampusRepository.findByIdAndSchool_Id(5L, 100L)).thenReturn(Optional.of(campus));
+        when(schoolCampusRepository.countBySchool_Id(100L)).thenReturn(2L);
+        when(bookInventoryRepository.existsBySchool_IdAndCampusIgnoreCase(100L, "Campus Noord")).thenReturn(true);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> schoolCampusService.deleteCampusForPlatformAdmin(100L, 5L));
+
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        assertEquals("Deze campus wordt nog gebruikt door boekinventaris en kan niet verwijderd worden",
+                exception.getReason());
+
+        verify(schoolCampusRepository).findByIdAndSchool_Id(5L, 100L);
+        verify(schoolCampusRepository).countBySchool_Id(100L);
+        verify(bookInventoryRepository).existsBySchool_IdAndCampusIgnoreCase(100L, "Campus Noord");
+        verify(schoolCampusRepository, never()).delete(any());
+    }
+
+    @Test
+    void givenExistingCampus_whenUpdateCampusForPlatformAdmin_thenRenamesCampusAndInventoryRows() {
+        SchoolCampusEntity campus = buildCampus(5L, 100L, "Hoofdcampus");
+        CreateSchoolCampusRequest request = new CreateSchoolCampusRequest(" Campus Noord ");
+
+        when(schoolCampusRepository.findByIdAndSchool_Id(5L, 100L)).thenReturn(Optional.of(campus));
+        when(schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(100L, "Campus Noord")).thenReturn(false);
+        when(schoolCampusRepository.save(campus)).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SchoolCampusDTO result = schoolCampusService.updateCampusForPlatformAdmin(100L, 5L, request);
+
+        assertEquals(5L, result.id());
+        assertEquals("Campus Noord", result.name());
+        assertEquals("Campus Noord", campus.getName());
+
+        verify(schoolCampusRepository).findByIdAndSchool_Id(5L, 100L);
+        verify(schoolCampusRepository).existsBySchool_IdAndNameIgnoreCase(100L, "Campus Noord");
+        verify(schoolCampusRepository).save(campus);
+        verify(bookInventoryRepository).renameCampusForSchool(100L, "Hoofdcampus", "Campus Noord");
     }
 
     private UserEntity buildUser(String uid, UserRoles role, Long schoolId, String schoolName) {

@@ -77,7 +77,7 @@ export default function SpotlightPage() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="spotlightAdminPage">
         <header className="spotlightAdminHeader">
           <div>

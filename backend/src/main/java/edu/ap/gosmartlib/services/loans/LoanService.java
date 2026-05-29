@@ -191,7 +191,7 @@ public class LoanService {
         }
     }
     public List<ActiveLoanDTO> getActiveLoansAsAdmin(String actorUid, String targetUid) {
-        requireBibliotheekbeheerder(actorUid); // gooit exception als de caller geen beheerder is
+        requireLibrarian(actorUid); // gooit exception als de caller geen beheerder is
         return getActiveLoansByUser(targetUid);
     }
 
@@ -282,7 +282,7 @@ public class LoanService {
     // --- VERLENGINGSAANVRAGEN VOOR EIGEN SCHOOL OPHALEN ---
     @Transactional(readOnly = true)
     public List<LoanExtensionRequestDTO> getPendingExtensionRequestsForSchool(String actorUid) {
-        UserEntity actor = requireBibliotheekbeheerder(actorUid);
+        UserEntity actor = requireLibrarian(actorUid);
         Long schoolId = actor.getSchool().getId();
 
         List<LoanEntity> loans = loanRepository.findExtensionRequestsForSchool(
@@ -304,7 +304,7 @@ public class LoanService {
 
     // --- VERLENGING GOEDKEUREN ---
     public void approveLoanExtension(Long loanId, String actorUid) {
-        requireBibliotheekbeheerder(actorUid);
+        requireLibrarian(actorUid);
 
         LoanEntity loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Uitleen-record niet gevonden."));
@@ -325,7 +325,7 @@ public class LoanService {
 
     // --- VERLENGING WEIGEREN ---
     public void denyLoanExtension(Long loanId, String actorUid) {
-        requireBibliotheekbeheerder(actorUid);
+        requireLibrarian(actorUid);
 
         LoanEntity loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Uitleen-record niet gevonden."));
@@ -343,7 +343,7 @@ public class LoanService {
         loanRepository.save(loan);
     }
 
-    private UserEntity requireBibliotheekbeheerder(String actorUid) {
+    private UserEntity requireLibrarian(String actorUid) {
         UserEntity actor = userRepository.findBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new IllegalArgumentException("Gebruiker niet gevonden."));
 
@@ -351,7 +351,7 @@ public class LoanService {
             throw new IllegalArgumentException("De gebruiker heeft geen school gekoppeld in de database.");
         }
 
-        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER) {
+        if (actor.getRole() != UserRoles.LIBRARIAN) {
             throw new IllegalArgumentException("Alleen bibliotheekbeheerders kunnen verlengingsaanvragen beheren.");
         }
 
@@ -359,7 +359,7 @@ public class LoanService {
     }
 
     private void assertLoanBelongsToActorSchool(LoanEntity loan, String actorUid) {
-        UserEntity actor = requireBibliotheekbeheerder(actorUid);
+        UserEntity actor = requireLibrarian(actorUid);
 
         UserEntity borrower = userRepository.findBySmartschoolUid(loan.getSmartschoolUserId())
                 .orElseThrow(() -> new IllegalArgumentException("Lener niet gevonden."));
@@ -447,8 +447,6 @@ public class LoanService {
             int remainingToReturn = request.quantity();
             boolean damageCountsApplied = false;
 
-            // In barcode mode the frontend sends copyConditions and leaves the counts as 0.
-            // Derive the actual counts from the scanned copies so the history record is correct.
             int historyDamagedCount = request.damagedCount();
             int historyBrokenCount  = request.brokenCount();
             int historyLostCount    = request.lostCount();
@@ -477,7 +475,6 @@ public class LoanService {
                 remainingToReturn -= returnForThisLoan;
             }
 
-            // Process copy conditions after availability is restored
             if (request.copyConditions() != null && !request.copyConditions().isEmpty()) {
                 processBarcodeConditions(request.copyConditions(), book);
             } else if (request.damagedCount() > 0 || request.brokenCount() > 0 || request.lostCount() > 0) {

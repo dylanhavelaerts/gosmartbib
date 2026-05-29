@@ -1,12 +1,14 @@
 package edu.ap.gosmartlib.services;
 
 import edu.ap.gosmartlib.dto.*;
+import edu.ap.gosmartlib.dto.book.*;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBookItem;
 import edu.ap.gosmartlib.dto.googlebooks.GoogleBooksResponse;
 import edu.ap.gosmartlib.dto.googlebooks.VolumeInfo;
 import edu.ap.gosmartlib.dto.importdto.BulkImportDuplicateWarningDTO;
 import edu.ap.gosmartlib.dto.importdto.BulkImportResponseDTO;
 import edu.ap.gosmartlib.entities.book.BookEntity;
+import edu.ap.gosmartlib.entities.school.SchoolCampusEntity;
 import edu.ap.gosmartlib.entities.book.BookInventoryEntity;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -15,6 +17,10 @@ import edu.ap.gosmartlib.repositories.book.BookCopyRepository;
 import edu.ap.gosmartlib.repositories.book.BookRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.repositories.book.BookInventoryRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolCampusRepository;
+import edu.ap.gosmartlib.services.book.BookFilterValidator;
+import edu.ap.gosmartlib.services.book.BookService;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -79,6 +85,12 @@ class BookServiceTest {
         private BookCopyRepository bookCopyRepository;
 
         @Mock
+        private BookInventoryRepository bookInventoryRepository;
+
+        @Mock
+        private SchoolCampusRepository schoolCampusRepository;
+
+        @Mock
         private InventoryAdjustmentService inventoryAdjustmentService;
 
         @InjectMocks
@@ -102,6 +114,18 @@ class BookServiceTest {
                 user.setSmartschoolUid(STUDENT_UID);
                 user.setSchool(school);
                 user.setRole(UserRoles.STUDENT);
+
+                lenient().when(schoolCampusRepository.existsBySchool_IdAndNameIgnoreCase(eq(1L), anyString()))
+                                .thenReturn(true);
+                lenient().when(schoolCampusRepository.findBySchool_IdOrderByNameAsc(anyLong()))
+                                .thenAnswer(invocation -> {
+                                        Long schoolId = invocation.getArgument(0);
+                                        return List.of(
+                                                        buildCampus(1L, schoolId, "Campus Zuid"),
+                                                        buildCampus(2L, schoolId, "Campus Noord"),
+                                                        buildCampus(3L, schoolId, "Campus A"),
+                                                        buildCampus(4L, schoolId, "Campus B"));
+                                });
         }
 
         // --- Google API Tests ---
@@ -1532,7 +1556,7 @@ class BookServiceTest {
                                                 "Programming; Software Engineering",
                                                 "Toekomst & technologie",
                                                 "A",
-                                                "Campus Zuid",
+                                                "Nee",
                                                 "3",
                                                 "2"
                                 }
@@ -1584,7 +1608,7 @@ class BookServiceTest {
                                                 "Programming",
                                                 "Toekomst & technologie",
                                                 "A",
-                                                "Campus Zuid",
+                                                "Nee",
                                                 "3",
                                                 "2"
                                 }
@@ -1634,7 +1658,7 @@ class BookServiceTest {
                                                 "Programming",
                                                 "Toekomst & technologie",
                                                 "A",
-                                                "Campus Zuid",
+                                                "Nee",
                                                 "3",
                                                 "2"
                                 }
@@ -1655,7 +1679,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus",
+                                "Campus Zuid",
                                 true,
                                 List.of(2));
 
@@ -1762,7 +1786,7 @@ class BookServiceTest {
         void givenDuplicateNoIsbnBookOnSameCampus_whenImportBooksWithoutIsbn_thenIncreasesExistingInventory()
                         throws IOException {
                 MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
-                                { "De Hobbit", "J.R.R. Tolkien; John Doe", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                                { "De Hobbit", "J.R.R. Tolkien; John Doe", "Uitgeverij X", "Nee", "3", "2" }
                 });
 
                 BookEntity existingBook = new BookEntity();
@@ -1782,11 +1806,13 @@ class BookServiceTest {
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
+                when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
 
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of(2));
+                                "Campus Zuid", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1808,7 +1834,7 @@ class BookServiceTest {
         void givenDuplicateNoIsbnBookOnDifferentCampus_whenImportBooksWithoutIsbn_thenAddsNewInventoryRow()
                         throws IOException {
                 MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
-                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Nee", "3", "2" }
                 });
 
                 BookEntity existingBook = new BookEntity();
@@ -1828,11 +1854,13 @@ class BookServiceTest {
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
+                when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
 
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of(2));
+                                "Campus Zuid", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1860,7 +1888,7 @@ class BookServiceTest {
         void givenPossibleDuplicateWithDifferentAuthors_whenImportBooksWithoutIsbn_thenCreatesNewBook()
                         throws IOException {
                 MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
-                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Nee", "3", "2" }
                 });
 
                 BookEntity existingBook = new BookEntity();
@@ -1877,11 +1905,13 @@ class BookServiceTest {
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.findPossibleDuplicateBooksWithoutIsbn("De Hobbit", "Uitgeverij X", 1L))
                                 .thenReturn(List.of(existingBook));
+                when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
 
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of(2));
+                                "Campus Zuid", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1910,15 +1940,17 @@ class BookServiceTest {
         void givenNoAuthors_whenPossibleDuplicateCouldExist_thenDoesNotMergeAndCreatesNewBook()
                         throws IOException {
                 MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
-                                { "De Hobbit", "", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                                { "De Hobbit", "", "Uitgeverij X", "Nee", "3", "2" }
                 });
 
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
+                when(bookRepository.save(any(BookEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(bookCopyRepository.findByInventory(any())).thenReturn(List.of());
 
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus", true, List.of(2));
+                                "Campus Zuid", true, List.of(2));
 
                 assertEquals(1, result.totalRows());
                 assertEquals(1, result.savedCount());
@@ -1946,7 +1978,7 @@ class BookServiceTest {
         void givenDuplicateNoIsbnBook_whenImportBooksWithoutIsbnWithoutConfirmation_thenReturnsWarningAndDoesNotSave()
                         throws IOException {
                 MockMultipartFile file = createNoIsbnExcelFile(new String[][] {
-                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Campus Zuid", "3", "2" }
+                                { "De Hobbit", "J.R.R. Tolkien", "Uitgeverij X", "Nee", "3", "2" }
                 });
 
                 BookEntity existingBook = new BookEntity();
@@ -1970,7 +2002,7 @@ class BookServiceTest {
                 BulkImportResponseDTO result = bookService.importBooksWithoutIsbnFromExcel(
                                 file,
                                 STUDENT_UID,
-                                "Fallback Campus",
+                                "Campus Zuid",
                                 false, List.of());
 
                 assertEquals(1, result.totalRows());
@@ -2174,8 +2206,11 @@ class BookServiceTest {
                 savedEntity.setRating(4.5);
                 savedEntity.setPublishedYear(2024);
                 savedEntity.setSpotlight(true);
-                savedEntity.setInventories(new ArrayList<>());
+                savedEntity.setInventories(new ArrayList<>(List.of(
+                                buildInventory(school, "Hoofdcampus", 1, 1))));
 
+                when(schoolCampusRepository.findBySchool_IdOrderByNameAsc(1L))
+                                .thenReturn(List.of(buildCampus(1L, 1L, "Hoofdcampus")));
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
                         BookEntity entity = invocation.getArgument(0);
@@ -2228,8 +2263,11 @@ class BookServiceTest {
                 savedEntity.setCategories(List.of());
                 savedEntity.setRating(0.0);
                 savedEntity.setSpotlight(false);
-                savedEntity.setInventories(new ArrayList<>());
+                savedEntity.setInventories(new ArrayList<>(List.of(
+                                buildInventory(school, "Hoofdcampus", 1, 1))));
 
+                when(schoolCampusRepository.findBySchool_IdOrderByNameAsc(1L))
+                                .thenReturn(List.of(buildCampus(1L, 1L, "Hoofdcampus")));
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
                         BookEntity entity = invocation.getArgument(0);
@@ -2348,6 +2386,96 @@ class BookServiceTest {
         }
 
         @Test
+        void givenNoUser_whenGetAvailableLanguages_thenReturnsGlobalLanguages() {
+                when(bookRepository.findDistinctLanguages())
+                                .thenReturn(List.of("nl", " en ", "EN", "", "swe"));
+
+                List<String> result = bookService.getAvailableLanguages(null);
+
+                assertEquals(List.of("en", "nl", "swe"), result);
+
+                verify(bookRepository).findDistinctLanguages();
+                verify(bookRepository, never()).findDistinctLanguagesForSchool(anyLong());
+                verify(userRepository, never()).findDetailedBySmartschoolUid(anyString());
+        }
+
+        @Test
+        void givenStudentUser_whenGetAvailableCategories_thenReturnsCategoriesForOwnSchoolOnly() {
+                stubStudentSchoolLookup();
+
+                List<String> categories = new ArrayList<>();
+                categories.add("Fantasy");
+                categories.add(" avontuur ");
+                categories.add("FANTASY");
+                categories.add("Historisch");
+                categories.add("");
+                categories.add(null);
+
+                when(bookRepository.findDistinctCategoriesForSchool(1L))
+                                .thenReturn(categories);
+
+                List<String> result = bookService.getAvailableCategories(STUDENT_UID);
+
+                assertEquals(List.of("avontuur", "Fantasy", "Historisch"), result);
+
+                verify(userRepository).findDetailedBySmartschoolUid(STUDENT_UID);
+                verify(bookRepository).findDistinctCategoriesForSchool(1L);
+                verify(bookRepository, never()).findDistinctCategories();
+        }
+
+        @Test
+        void givenNoUser_whenGetAvailableCategories_thenReturnsGlobalCategories() {
+                when(bookRepository.findDistinctCategories())
+                                .thenReturn(List.of("Poëzie", " fantasy ", "FANTASY", "", "Sciencefiction"));
+
+                List<String> result = bookService.getAvailableCategories(null);
+
+                assertEquals(List.of("fantasy", "Poëzie", "Sciencefiction"), result);
+
+                verify(bookRepository).findDistinctCategories();
+                verify(bookRepository, never()).findDistinctCategoriesForSchool(anyLong());
+                verify(userRepository, never()).findDetailedBySmartschoolUid(anyString());
+        }
+
+        @Test
+        void givenStudentUser_whenGetAvailableLabels_thenReturnsLabelsForOwnSchoolOnly() {
+                stubStudentSchoolLookup();
+
+                List<String> labels = new ArrayList<>();
+                labels.add("Humor");
+                labels.add(" identiteit ");
+                labels.add("HUMOR");
+                labels.add("Vriendschap");
+                labels.add("");
+                labels.add(null);
+
+                when(bookRepository.findDistinctLabelsForSchool(1L))
+                                .thenReturn(labels);
+
+                List<String> result = bookService.getAvailableLabels(STUDENT_UID);
+
+                assertEquals(List.of("Humor", "identiteit", "Vriendschap"), result);
+
+                verify(userRepository).findDetailedBySmartschoolUid(STUDENT_UID);
+                verify(bookRepository).findDistinctLabelsForSchool(1L);
+                verify(bookRepository, never()).findDistinctLabels();
+        }
+
+        @Test
+        void givenBlankUser_whenGetAvailableLabels_thenReturnsGlobalLabels() {
+                when(bookRepository.findDistinctLabels())
+                                .thenReturn(List.of("Avontuur", " coming-of-age ", "AVONTUUR", "", "Familie"));
+
+                List<String> result = bookService.getAvailableLabels("   ");
+
+                assertEquals(List.of("Avontuur", "coming-of-age", "Familie"), result);
+
+                verify(bookRepository).findDistinctLabels();
+                verify(bookRepository, never()).findDistinctLabelsForSchool(anyLong());
+                verify(userRepository, never()).findDetailedBySmartschoolUid(anyString());
+        }
+
+        @Test
         void givenNoExplicitInventories_whenAddManualBook_thenCreatesInventoryForCurrentUsersSchool() {
                 CreateBookRequestDTO request = new CreateBookRequestDTO(
                                 "Manual Book",
@@ -2375,8 +2503,10 @@ class BookServiceTest {
                 reloaded.setTotalCopies(4);
                 reloaded.setAvailableCopies(2);
                 reloaded.setInventories(new ArrayList<>(List.of(
-                                buildInventory(school, null, 4, 2))));
+                                buildInventory(school, "Hoofdcampus", 4, 2))));
 
+                when(schoolCampusRepository.findBySchool_IdOrderByNameAsc(1L))
+                                .thenReturn(List.of(buildCampus(1L, 1L, "Hoofdcampus")));
                 when(userRepository.findBySmartschoolUid(STUDENT_UID)).thenReturn(Optional.of(user));
                 when(bookRepository.saveAndFlush(any(BookEntity.class))).thenAnswer(invocation -> {
                         BookEntity entity = invocation.getArgument(0);
@@ -2393,7 +2523,7 @@ class BookServiceTest {
                 BookEntity persisted = captor.getValue();
                 assertEquals(1, persisted.getInventories().size());
                 assertEquals(1L, persisted.getInventories().get(0).getSchool().getId());
-                assertEquals("", persisted.getInventories().get(0).getCampus());
+                assertEquals("Hoofdcampus", persisted.getInventories().get(0).getCampus());
                 assertEquals(4, persisted.getInventories().get(0).getTotalCopies());
                 assertEquals(2, persisted.getInventories().get(0).getAvailableCopies());
 
@@ -2445,8 +2575,10 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0, 0),
-                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0, 0)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0,
+                                                                0),
+                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0,
+                                                                0)));
 
                 BookDTO result = bookService.updateBook(10L, update);
 
@@ -2497,7 +2629,8 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 2, 3, 0, 0, 0)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 2, 3, 0, 0,
+                                                                0)));
 
                 IllegalArgumentException ex = assertThrows(
                                 IllegalArgumentException.class,
@@ -2745,8 +2878,10 @@ class BookServiceTest {
                                 null,
                                 null,
                                 List.of(
-                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0, 0),
-                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0, 0)));
+                                                new BookInventoryDTO(null, 1L, "AP Hogeschool", "Campus A", 4, 3, 0, 0,
+                                                                0),
+                                                new BookInventoryDTO(null, 2L, "GO! School", "Campus B", 6, 4, 0, 0,
+                                                                0)));
 
                 BookDTO result = bookService.updateBook(10L, update);
 
@@ -3002,7 +3137,7 @@ class BookServiceTest {
                                         "Categorieën",
                                         "Leefwereldlabels",
                                         "Leesniveau",
-                                        "Campus",
+                                        "Didactisch boek",
                                         "Totaal aantal boeken",
                                         "Beschikbaar aantal boeken"
                         };
@@ -3045,6 +3180,18 @@ class BookServiceTest {
                 return inventory;
         }
 
+        private SchoolCampusEntity buildCampus(Long id, Long schoolId, String name) {
+                SchoolEntity campusSchool = new SchoolEntity();
+                campusSchool.setId(schoolId);
+
+                SchoolCampusEntity campus = new SchoolCampusEntity();
+                campus.setId(id);
+                campus.setSchool(campusSchool);
+                campus.setName(name);
+
+                return campus;
+        }
+
         private BookEntity buildBookEntityForSnowball(Long id, String title, List<String> authors,
                         List<String> categories) {
                 BookEntity b = new BookEntity();
@@ -3068,7 +3215,7 @@ class BookServiceTest {
                                         "Titel",
                                         "Auteurs",
                                         "Uitgever",
-                                        "Campus",
+                                        "Didactisch boek",
                                         "Totaal aantal boeken",
                                         "Beschikbaar aantal boeken"
                         };

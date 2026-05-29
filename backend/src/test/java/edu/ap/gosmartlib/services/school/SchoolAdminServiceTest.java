@@ -13,6 +13,7 @@ import edu.ap.gosmartlib.repositories.book.BookInventoryRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolClassRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolIntegrationRepository;
 import edu.ap.gosmartlib.repositories.school.SchoolRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolCampusRepository;
 import edu.ap.gosmartlib.services.users.UserDeletionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +40,9 @@ class SchoolAdminServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private SchoolCampusRepository schoolCampusRepository;
+
+    @Mock
     private UserDeletionService userDeletionService;
 
     @Mock
@@ -58,7 +62,8 @@ class SchoolAdminServiceTest {
     @Test
     void givenSchoolsExist_whenListAllSchools_thenReturnsMappedDTOs() {
         SchoolEntity approved = buildSchool(1L, "GO! Atheneum", "https://go.smartschool.be", true);
-        SchoolEntity pending = buildSchool(2L, "https://pending.smartschool.be", "https://pending.smartschool.be", false);
+        SchoolEntity pending = buildSchool(2L, "https://pending.smartschool.be", "https://pending.smartschool.be",
+                false);
 
         when(schoolRepository.findAllByOrderByAdminApprovedAscNameAsc()).thenReturn(List.of(pending, approved));
 
@@ -156,7 +161,8 @@ class SchoolAdminServiceTest {
 
     @Test
     void givenPendingSchool_whenApproveSchool_thenSetsApprovedAndUpdatesName() {
-        SchoolEntity pending = buildSchool(3L, "https://pending.smartschool.be", "https://pending.smartschool.be", false);
+        SchoolEntity pending = buildSchool(3L, "https://pending.smartschool.be", "https://pending.smartschool.be",
+                false);
         SchoolEntity approved = buildSchool(3L, "Echte Schoolnaam", "https://pending.smartschool.be", true);
 
         when(schoolRepository.findById(3L)).thenReturn(Optional.of(pending));
@@ -217,6 +223,7 @@ class SchoolAdminServiceTest {
         verify(schoolClassRepository).deleteAll(List.of(cls));
         verify(schoolIntegrationRepository).delete(integration);
         verify(bookInventoryRepository).deleteAllBySchool_Id(10L);
+        verify(schoolCampusRepository).deleteAllBySchool_Id(10L);
         verify(schoolRepository).delete(school);
     }
 
@@ -235,6 +242,7 @@ class SchoolAdminServiceTest {
         verify(schoolClassRepository).deleteAll(List.of());
         verify(schoolIntegrationRepository, never()).delete(any());
         verify(bookInventoryRepository).deleteAllBySchool_Id(11L);
+        verify(schoolCampusRepository).deleteAllBySchool_Id(11L);
         verify(schoolRepository).delete(school);
     }
 
@@ -246,7 +254,12 @@ class SchoolAdminServiceTest {
                 () -> schoolAdminService.deleteSchool(99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        verifyNoInteractions(userDeletionService, schoolClassRepository, schoolIntegrationRepository, bookInventoryRepository);
+        verifyNoInteractions(
+                userDeletionService,
+                schoolClassRepository,
+                schoolIntegrationRepository,
+                bookInventoryRepository,
+                schoolCampusRepository);
         verify(schoolRepository, never()).delete(any());
     }
 

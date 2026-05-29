@@ -27,7 +27,7 @@ public class SchoolIntegrationAdminService {
 
     @Transactional
     public SchoolIntegrationTestResponse testIntegration(String actorUid, Long schoolId) {
-        return performTest(schoolIntegrationService.getIntegrationEntityForBibbeheerder(actorUid, schoolId));
+        return performTest(schoolIntegrationService.getIntegrationEntityForLibrarian(actorUid, schoolId));
     }
 
     @Transactional
@@ -39,7 +39,7 @@ public class SchoolIntegrationAdminService {
 
     @Transactional(readOnly = true)
     public SchoolIntegrationLiveSchoolsResponse getLiveSchools(String actorUid, Long schoolId) {
-        return performGetLiveSchools(schoolIntegrationService.getIntegrationEntityForBibbeheerder(actorUid, schoolId));
+        return performGetLiveSchools(schoolIntegrationService.getIntegrationEntityForLibrarian(actorUid, schoolId));
     }
 
     public SchoolIntegrationLiveSchoolsResponse getLiveSchoolsForPlatformAdmin(Long schoolId) {
@@ -49,7 +49,7 @@ public class SchoolIntegrationAdminService {
 
 
     public SchoolIntegrationLiveUsersResponse getLiveUsers(String actorUid, Long schoolId) {
-        return performGetLiveUsers(schoolIntegrationService.getIntegrationEntityForBibbeheerder(actorUid, schoolId));
+        return performGetLiveUsers(schoolIntegrationService.getIntegrationEntityForLibrarian(actorUid, schoolId));
     }
 
     public SchoolIntegrationLiveUsersResponse getLiveUsersForPlatformAdmin(Long schoolId) {
@@ -59,7 +59,7 @@ public class SchoolIntegrationAdminService {
 
 
     public SchoolIntegrationLiveClassesResponse getLiveClasses(String actorUid, Long schoolId) {
-        return performGetLiveClasses(schoolIntegrationService.getIntegrationEntityForBibbeheerder(actorUid, schoolId));
+        return performGetLiveClasses(schoolIntegrationService.getIntegrationEntityForLibrarian(actorUid, schoolId));
     }
 
     public SchoolIntegrationLiveClassesResponse getLiveClassesForPlatformAdmin(Long schoolId) {

@@ -1,5 +1,6 @@
 package edu.ap.gosmartlib.controllers;
 
+import edu.ap.gosmartlib.controllers.admin.SyncController;
 import edu.ap.gosmartlib.dto.sync.SyncSummaryDTO;
 import edu.ap.gosmartlib.repositories.UserRepository;
 import edu.ap.gosmartlib.services.oneroster.OneRosterSyncService;

@@ -17,7 +17,7 @@ function formatRoleLabel(role?: string | null): string {
       return "Leerling";
     case "TEACHER":
       return "Leerkracht";
-    case "BIBLIOTHEEKBEHEERDER":
+    case "LIBRARIAN":
       return "Bibliothecaris";
     case "ADMIN":
       return "Admin";

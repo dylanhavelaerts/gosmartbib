@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Book } from "../../../interfaces/Book";
 import { SmartschoolUser } from "../../../interfaces/SmartschoolUser";
 import "./returns.css";
@@ -33,8 +32,7 @@ const conditionLabels: Record<CopyCondition, string> = {
 };
 
 export default function ReturnsPage() {
-  const router = useRouter();
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
   // --- Auth/School ---
   const [barcodesEnabled, setBarcodesEnabled] = useState(false);
@@ -102,7 +100,6 @@ export default function ReturnsPage() {
     loadSettings();
   }, []);
 
-  // Melding states
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -197,6 +194,33 @@ export default function ReturnsPage() {
       ),
   );
 
+  const handleBorrowedBooksBarcodeInput = async (value: string) => {
+    setBookQuery(value);
+    if (!/^\d{13}$/.test(value.trim())) return;
+    if (!selectedUser) return;
+
+    try {
+      const res = await fetch(
+        `${apiUrl}/books/by-barcode?barcode=${encodeURIComponent(value.trim())}`,
+        { credentials: "include" },
+      );
+      if (!res.ok) {
+        showToast("error", "Barcode niet gevonden.");
+        return;
+      }
+      const book: Book = await res.json();
+      const borrowed = borrowedBooks.find((b) => b.book.id === book.id);
+      if (!borrowed) {
+        showToast("error", "Dit boek heeft de lener niet in bezit.");
+        return;
+      }
+      handleAddToReturnCart(borrowed);
+      setBookQuery("");
+    } catch {
+      showToast("error", "Fout bij het opzoeken van de barcode.");
+    }
+  };
+
   // --- 3. Return Cart Handlers ---
   const handleAddToReturnCart = (borrowedItem: BorrowedItem) => {
     setReturnCart((prev) => {
@@ -277,7 +301,6 @@ export default function ReturnsPage() {
     const val = barcodeInputs[bookId]?.trim();
     if (!val) return;
 
-    // Duplicate check
     if ((copyConditions[bookId] ?? []).find((c) => c.barcode === val)) {
       setScanErrors((prev) => ({ ...prev, [bookId]: "Barcode al gescand." }));
       return;
@@ -440,12 +463,9 @@ export default function ReturnsPage() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="returnsPageLayout">
         <div className="pageHeader">
-          <button className="backButton" onClick={() => router.back()}>
-            ←
-          </button>
           <h1>Boeken Inleveren</h1>
         </div>
 
@@ -547,9 +567,11 @@ export default function ReturnsPage() {
             <div className="searchbar">
               <input
                 type="text"
-                placeholder="Filter uitgeleende boeken..."
+                placeholder="Filter of scan barcode..."
                 value={bookQuery}
-                onChange={(e) => setBookQuery(e.target.value)}
+                onChange={(e) =>
+                  handleBorrowedBooksBarcodeInput(e.target.value)
+                }
                 disabled={!selectedUser}
               />
             </div>

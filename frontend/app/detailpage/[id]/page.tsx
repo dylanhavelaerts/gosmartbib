@@ -8,9 +8,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { Book, SnowballSection } from "../../interfaces/Book";
+import { Book, BookCopy, SnowballSection } from "../../interfaces/Book";
 import { MeResponse } from "../../interfaces/user";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import "./detailpage.css";
 import ReviewSection from "@/app/components/reviewsection/reviewsection";
 import NotificationBell from "@/app/components/Notifications/Notification";
@@ -54,15 +55,20 @@ export default function DetailPage({
     [],
   );
   const [activeTab, setActiveTab] = useState<"info" | "lestips">("info");
+  const [showAllLocations, setShowAllLocations] = useState(false);
+  const [expandedInventories, setExpandedInventories] = useState<Set<number>>(new Set());
+  const [copiesCache, setCopiesCache] = useState<Record<number, BookCopy[]>>({});
+  const [copiesLoading, setCopiesLoading] = useState<Set<number>>(new Set());
+  const router = useRouter();
 
   const isStaff =
     currentUser?.role === "TEACHER" ||
-    currentUser?.role === "BIBLIOTHEEKBEHEERDER" ||
+    currentUser?.role === "LIBRARIAN" ||
     currentUser?.role === "ADMIN";
 
   const canSeeLestips =
     currentUser?.role === "TEACHER" ||
-    currentUser?.role === "BIBLIOTHEEKBEHEERDER";
+    currentUser?.role === "LIBRARIAN";
 
   const normalizedRating =
     typeof averageReviewRating === "number"
@@ -250,10 +256,6 @@ export default function DetailPage({
 
   return (
     <main className="detailPage">
-      <Link href="/catalog" className="backLink">
-        ← Terug naar catalogus
-      </Link>
-
       <div className="detailContainer">
         {/* LEFT PANEL */}
         <div className="detailLeft">
@@ -367,10 +369,10 @@ export default function DetailPage({
             <div className="campusBreakdown">
               <p className="campusBreakdownTitle">Locaties:</p>
               <ul className="campusList">
-                {userInventories.map((inv, idx) => {
+                {(() => {
                   const formatSchoolName = (name: string | undefined) => {
                     if (!name) return "";
-                    let cleanName = name
+                    const cleanName = name
                       .replace("https://", "")
                       .replace(".smartschool.be", "")
                       .replace("/", "");
@@ -381,23 +383,123 @@ export default function DetailPage({
                       )
                       .join(" ");
                   };
-                  const displayName =
-                    isStaff && inv.schoolName
-                      ? `${formatSchoolName(inv.schoolName)} (${inv.campus || "Hoofdcampus"})`
-                      : inv.campus || "Hoofdcampus";
+
+                  const ownSchoolInventories = isStaff
+                    ? userInventories.filter(
+                        (i) => i.schoolId === currentUser?.school?.id,
+                      )
+                    : userInventories;
+                  const otherInventories = isStaff
+                    ? userInventories.filter(
+                        (i) => i.schoolId !== currentUser?.school?.id,
+                      )
+                    : [];
+                  const visibleInventories =
+                    isStaff && !showAllLocations
+                      ? ownSchoolInventories
+                      : userInventories;
+
+                  const conditionLabel: Record<string, string> = {
+                    GOOD: "Goed",
+                    DAMAGED: "Beschadigd",
+                    BROKEN: "Kapot",
+                    LOST: "Verloren",
+                  };
+
+                  const handleToggleCampus = async (invId: number) => {
+                    if (expandedInventories.has(invId)) {
+                      setExpandedInventories((prev) => {
+                        const next = new Set(prev);
+                        next.delete(invId);
+                        return next;
+                      });
+                      return;
+                    }
+                    setExpandedInventories((prev) => new Set(prev).add(invId));
+                    if (copiesCache[invId]) return;
+                    setCopiesLoading((prev) => new Set(prev).add(invId));
+                    try {
+                      const res = await fetch(
+                        `${process.env.NEXT_PUBLIC_API_URL}/books/${book.id}/copies/labels?inventoryId=${invId}`,
+                        { credentials: "include" },
+                      );
+                      if (res.ok) {
+                        const data: BookCopy[] = await res.json();
+                        setCopiesCache((prev) => ({ ...prev, [invId]: data }));
+                      }
+                    } finally {
+                      setCopiesLoading((prev) => {
+                        const next = new Set(prev);
+                        next.delete(invId);
+                        return next;
+                      });
+                    }
+                  };
+
                   return (
-                    <li key={idx} className="campusItem">
-                      <span className="campusName" title={displayName}>
-                        {displayName}
-                      </span>
-                      <span
-                        className={`campusCount ${inv.availableCopies > 0 ? "text-success" : "text-error"}`}
-                      >
-                        {inv.availableCopies}/{inv.totalCopies}
-                      </span>
-                    </li>
+                    <>
+                      {visibleInventories.map((inv, idx) => {
+                        const invId = inv.id as number;
+                        const displayName =
+                          isStaff && inv.schoolName
+                            ? `${formatSchoolName(inv.schoolName)} (${inv.campus || "Hoofdcampus"})`
+                            : inv.campus || "Hoofdcampus";
+                        const isExpanded = expandedInventories.has(invId);
+                        const copies = copiesCache[invId];
+                        const loading = copiesLoading.has(invId);
+                        return (
+                          <li key={idx} className="campusItem campusItemExpandable">
+                            <button
+                              className="campusItemRow"
+                              onClick={() => invId && handleToggleCampus(invId)}
+                              aria-expanded={isExpanded}
+                            >
+                              <span className="campusName" title={displayName}>
+                                <span className="campusChevron">{isExpanded ? "▾" : "▸"}</span>
+                                {displayName}
+                              </span>
+                              <span
+                                className={`campusCount ${inv.availableCopies > 0 ? "text-success" : "text-error"}`}
+                              >
+                                {inv.availableCopies}/{inv.totalCopies}
+                              </span>
+                            </button>
+                            {isExpanded && (
+                              <ul className="copyList">
+                                {loading && (
+                                  <li className="copyItem copyItem--loading">Laden…</li>
+                                )}
+                                {!loading && copies?.map((copy) => (
+                                  <li key={copy.copyId} className="copyItem">
+                                    <span className="copyNumber">#{copy.copyNumber}</span>
+                                    <span className="copyBarcode">{copy.barcode ?? "—"}</span>
+                                    <span className={`copyCondition copyCondition--${copy.condition.toLowerCase()}`}>
+                                      {conditionLabel[copy.condition]}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
+                      {isStaff && otherInventories.length > 0 && (
+                        <li className="campusToggleItem">
+                          <button
+                            className="campusToggleBtn"
+                            onClick={() =>
+                              setShowAllLocations((prev) => !prev)
+                            }
+                          >
+                            {showAllLocations
+                              ? "Minder tonen"
+                              : `Toon alle (${otherInventories.length} andere ${otherInventories.length === 1 ? "locatie" : "locaties"})`}
+                          </button>
+                        </li>
+                      )}
+                    </>
                   );
-                })}
+                })()}
               </ul>
             </div>
           )}

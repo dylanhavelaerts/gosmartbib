@@ -23,6 +23,15 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Success handler voor een succesvolle Smartschool OAuth2-login.
+ *
+ * Na authenticatie synchroniseert deze handler de Smartschoolgebruiker met de
+ * lokale database, maakt of hergebruikt hij de HTTP-sessie, plaatst hij een
+ * HttpOnly marker-cookie en verrijkt hij de Spring Security authorities met de
+ * actuele rol uit de database.
+ */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -34,11 +43,24 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private final UserService userService;
 
     /**
-     * Deze methode wordt aangeroepen na een succesvolle OAuth2-authenticatie.
-     * Het doel van deze methode is om de details van de geauthenticeerde gebruiker
-     * te loggen (voor debuggingdoeleinden)
-     * en vervolgens de gebruiker door te sturen naar de frontend van de applicatie.
+     * Verwerkt een succesvolle OAuth2-login.
+     *
+     * De OAuth2User wordt gesynchroniseerd naar een lokale gebruiker. Daarna wordt
+     * de sessie gemarkeerd als authenticated, wordt een HttpOnly
+     * AUTHENTICATED-cookie
+     * geplaatst en wordt de authenticatie verrijkt met de actuele applicatierol.
+     * Tot slot wordt de gebruiker teruggestuurd naar de frontend.
+     *
+     * Wanneer de school nog niet goedgekeurd is, wordt de gebruiker naar de
+     * loginpagina gestuurd met error=school_not_approved.
+     *
+     * @param request        huidig HTTP request
+     * @param response       huidig HTTP response
+     * @param authentication succesvolle OAuth2-authenticatie van Spring Security
+     * @throws IOException      wanneer de redirect niet verzonden kan worden
+     * @throws ServletException wanneer de security handler faalt
      */
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
@@ -56,14 +78,12 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             response.addCookie(authenticatedCookie);
 
             List<GrantedAuthority> authorities = List.of(
-                    new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
-            );
+                    new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 
             OAuth2AuthenticationToken enriched = new OAuth2AuthenticationToken(
                     oauth2User,
                     authorities,
-                    ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId()
-            );
+                    ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId());
 
             SecurityContextHolder.getContext().setAuthentication(enriched);
             String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl : "/";

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import "./schools.css";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -165,6 +166,7 @@ export default function SchoolsAdminPage() {
   if (loading) return <div>Scholen laden...</div>;
 
   return (
+    <ProtectedRoute allowedRoles="ADMIN">
     <main>
       <div id="schoolsMain">
         {error && <p className="adminMessage adminMessageError">{error}</p>}
@@ -366,5 +368,6 @@ export default function SchoolsAdminPage() {
         </div>
       )}
     </main>
+    </ProtectedRoute>
   );
 }

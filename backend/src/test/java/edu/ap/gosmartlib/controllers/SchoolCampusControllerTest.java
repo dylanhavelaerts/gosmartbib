@@ -44,14 +44,14 @@ class SchoolCampusControllerTest {
 
         when(authentication.getPrincipal()).thenReturn(oAuth2User);
         when(oAuth2User.getAttribute("userID")).thenReturn("bibbeheerder-uid");
-        when(schoolCampusService.getCampusesForBibbeheerder("bibbeheerder-uid", 100L)).thenReturn(expected);
+        when(schoolCampusService.getCampusesForLibrarian("bibbeheerder-uid", 100L)).thenReturn(expected);
 
         List<SchoolCampusDTO> result = schoolCampusController.getCampuses(100L, authentication);
 
         assertEquals(expected, result);
         verify(authentication, times(2)).getPrincipal();
         verify(oAuth2User).getAttribute("userID");
-        verify(schoolCampusService).getCampusesForBibbeheerder("bibbeheerder-uid", 100L);
+        verify(schoolCampusService).getCampusesForLibrarian("bibbeheerder-uid", 100L);
         verifyNoMoreInteractions(authentication, oAuth2User, schoolCampusService);
     }
 
@@ -62,14 +62,14 @@ class SchoolCampusControllerTest {
 
         when(authentication.getPrincipal()).thenReturn(oAuth2User);
         when(oAuth2User.getAttribute("userID")).thenReturn("bibbeheerder-uid");
-        when(schoolCampusService.createCampusForBibbeheerder("bibbeheerder-uid", 100L, request)).thenReturn(expected);
+        when(schoolCampusService.createCampusForLibrarian("bibbeheerder-uid", 100L, request)).thenReturn(expected);
 
         SchoolCampusDTO result = schoolCampusController.createCampus(100L, request, authentication);
 
         assertEquals(expected, result);
         verify(authentication, times(2)).getPrincipal();
         verify(oAuth2User).getAttribute("userID");
-        verify(schoolCampusService).createCampusForBibbeheerder("bibbeheerder-uid", 100L, request);
+        verify(schoolCampusService).createCampusForLibrarian("bibbeheerder-uid", 100L, request);
         verifyNoMoreInteractions(authentication, oAuth2User, schoolCampusService);
     }
 
@@ -82,7 +82,7 @@ class SchoolCampusControllerTest {
 
         verify(authentication, times(2)).getPrincipal();
         verify(oAuth2User).getAttribute("userID");
-        verify(schoolCampusService).deleteCampusForBibbeheerder("bibbeheerder-uid", 100L, 5L);
+        verify(schoolCampusService).deleteCampusForLibrarian("bibbeheerder-uid", 100L, 5L);
         verifyNoMoreInteractions(authentication, oAuth2User, schoolCampusService);
     }
 

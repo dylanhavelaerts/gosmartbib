@@ -25,7 +25,7 @@ public class AdminLoanController {
 
 
     @GetMapping("/school/active")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Page<LibrarianActiveLoanDTO>> getActiveLoansForSchool(
             @AuthenticationPrincipal OAuth2User principal,
             @RequestParam(required = false) Long classId,
@@ -38,7 +38,7 @@ public class AdminLoanController {
     }
 
     @GetMapping("/school/history")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Page<LibrarianLoanHistoryDTO>> getLoanHistoryForSchool(
             @AuthenticationPrincipal OAuth2User principal,
             @RequestParam(required = false) Long classId,
@@ -50,7 +50,7 @@ public class AdminLoanController {
         return ResponseEntity.ok(adminLoanService.getLoanHistoryForSchool(smartschoolUid, classId, page, size));
     }
     @GetMapping("/school/classes")
-    @PreAuthorize("@roleGuard.isBibbeheerder(authentication)")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<List<ReadingListAssignmentTargetsDTO.ClassTarget>> getSchoolClasses(
             @AuthenticationPrincipal OAuth2User principal) {
         String smartschoolUid = authHelper.extractUid(principal);

@@ -2,12 +2,27 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
+/**
+ * Rollen die de frontend gebruikt om navigatie en client-side routes te sturen.
+ *
+ * De backend blijft de beslissende beveiligingslaag. Deze rollen worden alleen
+ * gebruikt voor UI-keuzes en gebruiksgemak.
+ */
+
 type UserRole =
   | "STUDENT"
   | "TEACHER"
-  | "BIBLIOTHEEKBEHEERDER"
+  | "LIBRARIAN"
   | "ADMIN"
   | "OTHER";
+
+/**
+ * Frontendrepresentatie van de huidige gebruiker.
+ *
+ * Deze structuur komt overeen met de UserDTO die de backend via /auth/me
+ * teruggeeft. De frontend leest geen sessiecookies rechtstreeks, omdat die
+ * HttpOnly zijn.
+ */
 
 interface AuthUser {
   id: number;
@@ -31,6 +46,16 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
 });
+
+/**
+ * AuthProvider controleert bij het laden van de applicatie of er een actieve
+ * backendsessie bestaat.
+ *
+ * De call naar /auth/me gebruikt credentials: "include", zodat de browser de
+ * HttpOnly sessiecookies meestuurt. De response bepaalt de frontend user state.
+ * Buiten localhost en publieke routes wordt een gebruiker zonder sessie naar
+ * /login gestuurd.
+ */
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -73,5 +98,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+/**
+ * Hook om de huidige authenticatiestatus op te vragen.
+ *
+ * Components gebruiken deze hook om de ingelogde gebruiker, rol en loading state
+ * uit AuthContext te lezen.
+ */
 
 export const useAuth = () => useContext(AuthContext);

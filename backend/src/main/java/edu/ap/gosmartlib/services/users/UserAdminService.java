@@ -23,15 +23,15 @@ public class UserAdminService {
     private final LoanRepository loanRepository;
 
     @Transactional(readOnly = true)
-    public Page<AdminUserDTO> listUsersForBibbeheerder(String actorUid, Long schoolId, String name, Pageable pageable) {
-        UserEntity actor = getCurrentBibbeheerder(actorUid);
+    public Page<AdminUserDTO> listUsersForLibrarian(String actorUid, Long schoolId, String name, Pageable pageable) {
+        UserEntity actor = getCurrentLibrarian(actorUid);
         Long effectiveSchoolId = resolveSchoolId(actor, schoolId);
         Page<UserEntity> users = userRepository.findBySchoolIdAndName(effectiveSchoolId, name, pageable);
         return users.map(AdminUserDTO::from);
     }
 
     @Transactional
-    public AdminUserDTO updateUserRoleForBibbeheerder(String actorUid, Long schoolId, Long targerUserId, UserRoles newRole) {
+    public AdminUserDTO updateUserRoleForLibrarian(String actorUid, Long schoolId, Long targerUserId, UserRoles newRole) {
         if (newRole == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nieuwe rol ontbreekt");
         }
@@ -41,7 +41,7 @@ public class UserAdminService {
                     "Gebruikers mogen niet naar ADMIN worden aangepast");
         }
 
-        UserEntity actor = getCurrentBibbeheerder(actorUid);
+        UserEntity actor = getCurrentLibrarian(actorUid);
         Long effectiveSchoolId = resolveSchoolId(actor, schoolId);
 
         UserEntity target = userRepository.findByIdAndSchool_Id(targerUserId, effectiveSchoolId)
@@ -74,8 +74,8 @@ public class UserAdminService {
     }
 
     @Transactional
-    public void deleteUserForBibbeheerder(String actorUid, Long targetUserId) {
-        UserEntity actor = getCurrentBibbeheerder(actorUid);
+    public void deleteUserForLibrarian(String actorUid, Long targetUserId) {
+        UserEntity actor = getCurrentLibrarian(actorUid);
 
         UserEntity target = userRepository.findByIdAndSchool_Id(targetUserId, actor.getSchool().getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gebruiker niet gevonden"));
@@ -107,10 +107,10 @@ public class UserAdminService {
         return actor.getSchool().getId();
     }
 
-    protected UserEntity getCurrentBibbeheerder(String actorUid) {
+    protected UserEntity getCurrentLibrarian(String actorUid) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
-        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER)
+        if (actor.getRole() != UserRoles.LIBRARIAN)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
         return actor;
     }

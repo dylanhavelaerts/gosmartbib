@@ -40,10 +40,9 @@ export default function LendingPage() {
   }
 
   const availableForSchool = (book: Book): number => {
-    const schoolId = selectedUser?.schoolId
-      ? parseInt(selectedUser.schoolId)
-      : null;
-    if (schoolId && book.inventories?.length) {
+    const rawId = selectedUser?.schoolId;
+    const schoolId = rawId != null ? parseInt(String(rawId), 10) : null;
+    if (schoolId != null && !isNaN(schoolId) && book.inventories?.length) {
       const inv = book.inventories.find((i) => i.schoolId === schoolId);
       if (inv !== undefined) return inv.availableCopies;
     }
@@ -58,7 +57,6 @@ export default function LendingPage() {
     }
 
     try {
-      // Call our backend proxy which communicates with the Smartschool API
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/smartschool/users?query=${encodeURIComponent(
           userQuery.trim(),
@@ -84,7 +82,6 @@ export default function LendingPage() {
   };
 
   const handleSelectUser = (user: SmartschoolUser) => {
-    // This replaces the currently selected user with the new one
     setSelectedUser(user);
     setUserSearchResults([]);
     setUserQuery("");
@@ -94,16 +91,41 @@ export default function LendingPage() {
 
   // --- Search Books ---
   useEffect(() => {
-    if (!bookQuery || bookQuery.trim() === "") {
+    const trimmed = bookQuery.trim();
+    if (!trimmed) {
       setSearchResults([]);
       return;
+    }
+
+    // EAN-13: exactly 13 digits
+    if (/^\d{13}$/.test(trimmed)) {
+      const timer = setTimeout(async () => {
+        try {
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/books/by-barcode?barcode=${encodeURIComponent(trimmed)}`,
+            { credentials: "include" },
+          );
+          if (!res.ok) {
+            showToast("error", "Barcode niet gevonden.");
+            setSearchResults([]);
+            return;
+          }
+          const book: Book = await res.json();
+          setSearchResults([]);
+          setBookQuery("");
+          handleAddToCart(book);
+        } catch {
+          showToast("error", "Fout bij het opzoeken van de barcode.");
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
 
     const timer = setTimeout(() => {
       const params = new URLSearchParams();
       params.append("page", "0");
       params.append("size", "10");
-      params.append("query", bookQuery.trim());
+      params.append("query", trimmed);
 
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/books/search?${params}`, {
         credentials: "include",
@@ -168,8 +190,6 @@ export default function LendingPage() {
   const handleRegisterLoan = async () => {
     if (cart.length === 0 || !selectedUser) return;
 
-    // The payload sends the required user info.
-    // The backend LoanService extracts ONLY the smartschoolUserId to save into the DB.
     const payload = cart.map((item) => ({
       bookId: item.book.id,
       quantity: item.quantity,
@@ -214,12 +234,9 @@ export default function LendingPage() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={["BIBLIOTHEEKBEHEERDER"]}>
+    <ProtectedRoute allowedRoles={["LIBRARIAN"]}>
       <main className="lendingPageLayout">
         <div className="pageHeader">
-          <button className="backButton" onClick={() => router.back()}>
-            ←
-          </button>
           <h1>Uitleen registreren</h1>
         </div>
 
@@ -330,7 +347,7 @@ export default function LendingPage() {
             <div className="searchbar">
               <input
                 type="text"
-                placeholder="Titel, auteur, ISBN..."
+                placeholder="Titel, auteur, ISBN of barcode..."
                 value={bookQuery}
                 onChange={(e) => setBookQuery(e.target.value)}
               />

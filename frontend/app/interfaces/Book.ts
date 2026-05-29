@@ -78,6 +78,13 @@ export interface BookInventory {
   lostCopies?: number;
 }
 
+export interface BookCopy {
+  copyId: number;
+  barcode: string | null;
+  copyNumber: number;
+  condition: "GOOD" | "DAMAGED" | "BROKEN" | "LOST";
+}
+
 export interface SnowballSection {
   type: "AUTHOR" | "CATEGORY";
   value: string;
@@ -91,6 +98,7 @@ export type ImportMismatch = {
   fetchedTitle?: string | null;
   reason: string;
   amount: number | null;
+  didacticBook?: boolean | null;
 };
 
 export type DuplicateWarning = {

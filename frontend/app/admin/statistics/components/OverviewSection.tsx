@@ -18,7 +18,7 @@ interface StatCard {
 
 export default function OverviewSection({ overview }: Props) {
   const { user } = useAuth();
-  const isBeheerder = user?.role === "BIBLIOTHEEKBEHEERDER";
+  const isBeheerder = user?.role === "LIBRARIAN";
 
   const cards: StatCard[] = [
     // Bibbeheerder kan hier op de actieve leningen drukken en wordt dan gestuurd naar de algmene leenpagina -> Leerkracht kan niet drukken.

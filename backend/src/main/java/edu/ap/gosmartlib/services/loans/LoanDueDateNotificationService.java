@@ -62,7 +62,7 @@ public class LoanDueDateNotificationService {
     public void sendOverdueWarning(String actorUid, Long loanId) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingelogde gebruiker niet gevonden"));
-        if (actor.getRole() != UserRoles.BIBLIOTHEEKBEHEERDER)
+        if (actor.getRole() != UserRoles.LIBRARIAN)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Geen toegang");
 
         LoanEntity loan = loanRepository.findById(loanId)

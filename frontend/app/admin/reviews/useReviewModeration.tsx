@@ -6,7 +6,7 @@ export type ReviewStatus = "AWAITING_MODERATION" | "APPROVED" | "REJECTED";
 export type ReportReason = "FOUT_TAALGEBRUIK" | "SPAM" | "ANDERE";
 
 export interface MeResponse {
-  role: "STUDENT" | "TEACHER" | "BIBLIOTHEEKBEHEERDER" | "ADMIN" | "OTHER";
+  role: "STUDENT" | "TEACHER" | "LIBRARIAN" | "ADMIN" | "OTHER";
   school: {
     id: number;
     name: string;

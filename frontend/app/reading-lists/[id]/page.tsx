@@ -11,7 +11,7 @@ import type {
 } from "@/app/interfaces/ReadingList";
 import { formatReadingListTargets } from "@/app/utils/readingListTargets";
 
-const STAFF_ROLES = ["TEACHER", "ADMIN", "BIBLIOTHEEKBEHEERDER"];
+const STAFF_ROLES = ["TEACHER", "ADMIN", "LIBRARIAN"];
 
 export default function ReadingListDetailPage() {
   const { user } = useAuth();
@@ -238,13 +238,7 @@ export default function ReadingListDetailPage() {
 
   return (
     <div className="rld-page">
-      {/* ── Back ── */}
-      <button
-        className="rld-back-btn"
-        onClick={() => router.push("/reading-lists")}
-      >
-        ← Terug naar overzicht
-      </button>
+
 
       {loading && (
         <div className="rld-state">

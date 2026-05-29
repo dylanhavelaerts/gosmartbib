@@ -73,7 +73,6 @@
   font: inherit;
 }
 
-
 .passwordFieldWrapper {
   position: relative;
 }
@@ -239,6 +238,23 @@
   border-radius: 10px;
   color: #6f4d5d;
   background: #fcf8fa;
+}
+
+.campusActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.campusEditInput {
+  flex: 1 1 220px;
+  min-width: 180px;
+  border: 1px solid #d7bfd0;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  color: #513741;
+  background: #fff;
 }
 
 @media (min-width: 800px) {
