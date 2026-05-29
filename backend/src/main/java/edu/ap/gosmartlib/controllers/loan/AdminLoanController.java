@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST-controller voor schoolbrede leeningoverzichten voor bibliotheekbeheerders.
+ * Alle endpoints zijn beperkt tot de eigen school van de ingelogde bibliotheekbeheerder.
+ */
 @RestController
 @RequestMapping("/loans")
 @RequiredArgsConstructor
@@ -23,7 +27,9 @@ public class AdminLoanController {
     private final AdminLoanService adminLoanService;
     private final AuthHelper authHelper;
 
-
+    /**
+     * Geeft gepagineerde actieve leningen voor de eigen school, optioneel gefilterd op klas.
+     */
     @GetMapping("/school/active")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Page<LibrarianActiveLoanDTO>> getActiveLoansForSchool(
@@ -37,6 +43,9 @@ public class AdminLoanController {
         return ResponseEntity.ok(adminLoanService.getActiveLoansForSchool(smartschoolUid, classId, page, size));
     }
 
+    /**
+     * Geeft gepagineerde leengeschiedenis voor de eigen school, optioneel gefilterd op klas.
+     */
     @GetMapping("/school/history")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Page<LibrarianLoanHistoryDTO>> getLoanHistoryForSchool(

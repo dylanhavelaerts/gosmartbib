@@ -13,6 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Zet lening-entiteiten om naar librarian-DTOs met behulp van vooraf opgehaalde maps.
+ * Bij ontbrekende weergavenaam wordt "Leerling" als fallback gebruikt.
+ */
 @Component
 public class AdminLoanMapper {
 

@@ -19,6 +19,11 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Verstuurt leenherinneringen via Smartschool.
+ * sendDueDateReminders wordt dagelijks automatisch uitgevoerd.
+ * sendOverdueWarning kan manueel getriggerd worden door een bibliotheekbeheerder.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -30,6 +35,9 @@ public class LoanDueDateNotificationService {
     private final MessageSender messageService;
     private final LoanPolicyRepository loanPolicyRepository;
 
+    /**
+     * Verstuurt dagelijks om 8:00 herinneringsberichten voor leningen die binnen het geconfigureerde aantal dagen vervallen, per school.
+     */
     @Scheduled(cron = "0 0 8 * * *")
     @Transactional(readOnly = true)
     public void sendDueDateReminders() {
@@ -58,6 +66,10 @@ public class LoanDueDateNotificationService {
         });
     }
 
+    /**
+     * Verstuurt een manuele vervaldatumwaarschuwing naar de lener.
+     * Controleert of de lening tot de school van de beheerder behoort.
+     */
     @Transactional(readOnly = true)
     public void sendOverdueWarning(String actorUid, Long loanId) {
         UserEntity actor = userRepository.findDetailedBySmartschoolUid(actorUid)

@@ -37,7 +37,7 @@ class LoginAttemptServiceTest {
         service.tryConsume("1.2.3.4");
         // Evict verwijdert niets want entry is vers
         service.evictExpiredEntries();
-        // Na evict is de entry er nog want window niet verlopen — count loopt door
+        // Na evict is de entry er nog want window niet verlopen - count loopt door
         assertTrue(service.tryConsume("1.2.3.4"));
     }
 }

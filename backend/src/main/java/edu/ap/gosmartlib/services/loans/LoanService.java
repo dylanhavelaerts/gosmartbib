@@ -43,6 +43,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Comparator;
 
+/**
+ * Beheert het volledige leenproces: uitlenen, terugbrengen, verlengingen en leengeschiedenis.
+ * Bibliotheekbeheerders kunnen alleen leningen van hun eigen school beheren.
+ * Bij terugbrengen wordt de voorraad bijgewerkt en worden wachtlijstmeldingen getriggerd indien van toepassing.
+ */
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -61,7 +66,14 @@ public class LoanService {
 
     private static final Logger logger = LoggerFactory.getLogger(LoanService.class);
 
-    // --- BOEKEN UITLENEN ---
+    /**
+     * Maakt één of meerdere leningen aan voor de opgegeven boeken en gebruikers.
+     * Controleert per boek de schoolgebonden voorraad en vermindert die bij aanmaak.
+     * De leenperiode wordt bepaald door LoanPolicyEntity van de school; standaard 14 dagen als er geen policy is.
+     * Didactische boeken kunnen niet uitgeleend worden aan leerlingen.
+     *
+     * @param loanRequests lijst van uitleenverzoeken
+     */
     public void createLoans(List<LoanRequestDTO> loanRequests) {
         for (LoanRequestDTO request : loanRequests) {
 
@@ -126,7 +138,12 @@ public class LoanService {
         }
     }
 
-    // --- BOEKEN TERUGBRENGEN ---
+    /**
+     * Verwerkt de terugbreng van een boek zonder schaderegistratie.
+     *
+     * @param loanId het ID van de actieve lening
+     * @param returnQuantity het aantal terug te brengen exemplaren
+     */
     @Caching(evict = {
             @CacheEvict(value = "achievements", allEntries = true),
             @CacheEvict(value = "profileDistribution", allEntries = true)
@@ -135,6 +152,17 @@ public class LoanService {
         returnBook(loanId, returnQuantity, 0, 0, 0);
     }
 
+    /**
+     * Verwerkt de terugbreng van een boek met optionele schaderegistratie.
+     * Maakt een LoanHistoryEntity aan, verhoogt de voorraad en verwijdert de LoanEntity als alles teruggebracht is.
+     * Als de schoolvoorraad voor terugbrengen op 0 stond, worden wachtlijstmeldingen getriggerd.
+     *
+     * @param loanId het ID van de actieve lening
+     * @param returnQuantity het aantal terug te brengen exemplaren
+     * @param damagedCount aantal beschadigde exemplaren
+     * @param brokenCount aantal gebroken exemplaren
+     * @param lostCount aantal verloren exemplaren
+     */
     public void returnBook(Long loanId, int returnQuantity, int damagedCount, int brokenCount, int lostCount) {
         LoanEntity loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Uitleen-record niet gevonden."));
@@ -190,6 +218,7 @@ public class LoanService {
                     returnQuantity, loan.getIsbn(), loan.getSmartschoolUserId(), loan.getQuantity());
         }
     }
+
     public List<ActiveLoanDTO> getActiveLoansAsAdmin(String actorUid, String targetUid) {
         requireLibrarian(actorUid); // gooit exception als de caller geen beheerder is
         return getActiveLoansByUser(targetUid);
@@ -201,15 +230,11 @@ public class LoanService {
         List<LoanEntity> loans = loanRepository.findBySmartschoolUserId(smartschoolUserId);
 
         return loans.stream().map(loan -> {
-            // Zoek het bijbehorende boek op via ISBN
             BookEntity book = bookRepository.findByIsbn(loan.getIsbn()).orElse(null);
 
-            // Zet de zware BookEntity om naar een lichte LoanBookDTO
             ActiveLoanDTO.LoanBookDTO safeBook = null;
             if (book != null) {
-                // FORCEER HIBERNATE OM DE DATA OP TE HALEN:
-                // We maken een nieuwe ArrayList. Hierdoor dwingen we Hibernate om de auteurs
-                // nu meteen uit de database te halen, vóórdat de transactie sluit.
+
                 List<String> safeAuthors = book.getAuthors() != null
                         ? new java.util.ArrayList<>(book.getAuthors())
                         : new java.util.ArrayList<>();
@@ -219,7 +244,7 @@ public class LoanService {
                         book.getTitle(),
                         book.getThumbnail(),
                         book.getIsbn(),
-                        safeAuthors // <-- Gebruik hier de veilige kopie!
+                        safeAuthors //
                 );
             }
 
@@ -238,7 +263,14 @@ public class LoanService {
         }).toList();
     }
 
-    // --- VERLENGING AANVRAGEN: student/leerkracht ---
+    /**
+     * Dient een verlengingsaanvraag in voor een lening.
+     * Alleen de eigenaar van de lening (student of leerkracht) kan een aanvraag indienen.
+     * Een lening kan maar één keer verlengd worden aanvragen zijn niet mogelijk als de status al PENDING, APPROVED of DENIED is.
+     *
+     * @param loanId het ID van de te verlengen lening
+     * @param actorUid de Smartschool UID van de aanvrager
+     */
     public void requestLoanExtension(Long loanId, String actorUid) {
         UserEntity actor = userRepository.findBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new IllegalArgumentException("Gebruiker niet gevonden."));
@@ -302,7 +334,14 @@ public class LoanService {
                 .toList();
     }
 
-    // --- VERLENGING GOEDKEUREN ---
+    /**
+     * Keurt een verlengingsaanvraag goed en schuift de dueDate op.
+     * De verlenging is gelijk aan de originele leenperiode (dueDate - loanDate).
+     * Alleen een bibliotheekbeheerder van de eigen school kan goedkeuren.
+     *
+     * @param loanId het ID van de lening
+     * @param actorUid de Smartschool UID van de bibliotheekbeheerder
+     */
     public void approveLoanExtension(Long loanId, String actorUid) {
         requireLibrarian(actorUid);
 
@@ -323,7 +362,13 @@ public class LoanService {
         loanRepository.save(loan);
     }
 
-    // --- VERLENGING WEIGEREN ---
+    /**
+     * Weigert een verlengingsaanvraag.
+     * Alleen een bibliotheekbeheerder van de eigen school kan weigeren.
+     *
+     * @param loanId het ID van de lening
+     * @param actorUid de Smartschool UID van de bibliotheekbeheerder
+     */
     public void denyLoanExtension(Long loanId, String actorUid) {
         requireLibrarian(actorUid);
 
@@ -342,7 +387,13 @@ public class LoanService {
 
         loanRepository.save(loan);
     }
-
+    /**
+     * Controleert of de gebruiker een bibliotheekbeheerder is met een gekoppelde school.
+     * Gooit een IllegalArgumentException als de gebruiker niet gevonden wordt, geen school heeft of geen bibliotheekbeheerder is.
+     *
+     * @param actorUid de Smartschool UID van de gebruiker
+     * @return de UserEntity van de bibliotheekbeheerder
+     */
     private UserEntity requireLibrarian(String actorUid) {
         UserEntity actor = userRepository.findBySmartschoolUid(actorUid)
                 .orElseThrow(() -> new IllegalArgumentException("Gebruiker niet gevonden."));
@@ -369,6 +420,14 @@ public class LoanService {
         }
     }
 
+    /**
+     * Berekent de nieuwe vervaldatum na verlenging.
+     * De verlenging is gelijk aan de originele leenperiode (dueDate - loanDate).
+     * defaultExtensionPeriodDays uit LoanPolicyEntity wordt niet gebruikt.
+     *
+     * @param loan de te verlengen lening
+     * @return de nieuwe vervaldatum
+     */
     private LocalDate calculateExtendedDueDate(LoanEntity loan) {
         long currentLoanPeriodDays = ChronoUnit.DAYS.between(loan.getLoanDate(), loan.getDueDate());
 
@@ -416,7 +475,13 @@ public class LoanService {
                 safeBook);
     }
 
-    // --- HELPER: VIND DE DEFAULT RETOUR PERIODE PER SCHOOL ---
+    /**
+     * Haalt de standaard leenperiode op voor de school van de lener.
+     * Valt terug op 14 dagen als er geen LoanPolicyEntity bestaat voor de school.
+     *
+     * @param borrower de lener
+     * @return het aantal dagen van de leenperiode
+     */
     private int findReturnPeriodPerSchool(UserEntity borrower) {
         if (borrower.getSchool() == null) {
             throw new IllegalArgumentException("De lener heeft geen school gekoppeld in de database.");
@@ -429,7 +494,13 @@ public class LoanService {
                 .orElse(14); // geen default? Standaard 14 dagen dat geselecteerd wordt
     }
 
-    // --- BULK BOEKEN TERUGBRENGEN (Vanuit Frontend Mandje) ---
+    /**
+     * Verwerkt meerdere terugbrengen tegelijk vanuit het frontend-mandje.
+     * Sorteert leningen op vervaldatum en past schadetellingen alleen toe op de eerst verwerkte lening.
+     * Ondersteunt zowel barcodegebaseerde als niet-barcodegebaseerde schaderegistratie.
+     *
+     * @param returnRequests lijst van terugbrengverzoeken
+     */
     @Caching(evict = {
             @CacheEvict(value = "achievements", allEntries = true),
             @CacheEvict(value = "profileDistribution", allEntries = true)
@@ -448,14 +519,14 @@ public class LoanService {
             boolean damageCountsApplied = false;
 
             int historyDamagedCount = request.damagedCount();
-            int historyBrokenCount  = request.brokenCount();
-            int historyLostCount    = request.lostCount();
+            int historyBrokenCount = request.brokenCount();
+            int historyLostCount = request.lostCount();
             if (request.copyConditions() != null && !request.copyConditions().isEmpty()) {
                 historyDamagedCount = (int) request.copyConditions().stream()
                         .filter(c -> c.condition() == BookCopyCondition.DAMAGED).count();
-                historyBrokenCount  = (int) request.copyConditions().stream()
+                historyBrokenCount = (int) request.copyConditions().stream()
                         .filter(c -> c.condition() == BookCopyCondition.BROKEN).count();
-                historyLostCount    = (int) request.copyConditions().stream()
+                historyLostCount = (int) request.copyConditions().stream()
                         .filter(c -> c.condition() == BookCopyCondition.LOST).count();
             }
 

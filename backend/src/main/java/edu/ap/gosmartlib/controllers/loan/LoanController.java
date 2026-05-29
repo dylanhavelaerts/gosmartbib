@@ -22,6 +22,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.List;
 
+/**
+ * REST-controller voor leningbeheer vanuit gebruikers- en bibliotheekbeheerderersperspectief.
+ * Bibliotheekbeheerder-endpoints zijn beveiligd via @PreAuthorize met roleGuard.isLibrarian.
+ */
 @RestController
 @RequestMapping("/loans")
 @RequiredArgsConstructor
@@ -40,6 +44,11 @@ public class LoanController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Geeft actieve leningen terug.
+     * Als een bibliotheekbeheerder een andere smartschoolUserId meegeeft, worden de leningen van die gebruiker teruggegeven.
+     * Zonder parameter geeft het de leningen van de ingelogde gebruiker terug.
+     */
     @GetMapping("/active")
     public ResponseEntity<List<ActiveLoanDTO>> getActiveLoans(
             @AuthenticationPrincipal OAuth2User principal,
@@ -112,7 +121,7 @@ public class LoanController {
         return ResponseEntity.ok().build();
     }
 
-    // testing)
+    /** Terugbreng-endpoint voor individuele leningen. Bedoeld voor testdoeleinden. */
     @PostMapping("/{loanId}/return")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> returnBook(@PathVariable Long loanId, @RequestParam int quantity) {
@@ -131,12 +140,20 @@ public class LoanController {
         return ResponseEntity.ok(loanService.getLoanHistoryByUser(smartschoolUid, pageable));
     }
 
+    /**
+     * Geeft het aantal dagen voor de vervaldatum waarop de frontend een herinnering toont,
+     * op basis van de LoanPolicy van de school van de ingelogde gebruiker.
+     */
     @GetMapping("/reminder-days")
     public ResponseEntity<Integer> getReminderDays(@AuthenticationPrincipal OAuth2User principal) {
         String smartschoolUid = authHelper.extractUid(principal);
 
         return ResponseEntity.ok(loanPolicyService.getReminderDaysForUser(smartschoolUid));
     }
+
+    /**
+     * Stuurt manueel een vervaldatumwaarschuwing naar de lener van een specifieke lening. Enkel beschikbaar voor bibliotheekbeheerders.
+     */
     @PostMapping("/{loanId}/overdue-warning")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     public ResponseEntity<Void> sendOverdueWarning(

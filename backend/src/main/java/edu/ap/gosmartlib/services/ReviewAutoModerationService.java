@@ -23,8 +23,8 @@ import java.util.regex.Pattern;
 /**
  * Scant reviewteksten automatisch op ongepaste inhoud bij indienen of bewerken.
  * Configureeerbaar via:
- * review.moderation.blocked-words-resource — pad naar het woordenlijstbestand
- * review.moderation.max-links-in-review — maximaal aantal toegestane links (standaard 3)
+ * review.moderation.blocked-words-resource: pad naar het woordenlijstbestand
+ * review.moderation.max-links-in-review: maximaal aantal toegestane links (standaard 3)
  */
 @Service
 public class ReviewAutoModerationService {

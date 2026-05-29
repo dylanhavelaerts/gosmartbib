@@ -85,9 +85,7 @@ export default function ReadingListDetailPage() {
       const next = { ...prev, [bookId]: !prev[bookId] };
       try {
         localStorage.setItem(storageKey, JSON.stringify(next));
-      } catch {
-        // localStorage unavailable — read state lives only in memory this session
-      }
+      } catch {}
       return next;
     });
   };
@@ -238,8 +236,6 @@ export default function ReadingListDetailPage() {
 
   return (
     <div className="rld-page">
-
-
       {loading && (
         <div className="rld-state">
           <div className="rld-spinner" />

@@ -28,6 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Levert schoolbrede leeningoverzichten voor bibliotheekbeheerders.
+ * Verrijkt resultaten met weergavenamen via UserDirectoryService en klasinformatie uit de lokale database.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminLoanService {
@@ -40,6 +44,10 @@ public class AdminLoanService {
     private final AdminLoanMapper mapper;
     private final SchoolClassRepository schoolClassRepository;
 
+    /**
+     * Geeft gepagineerde actieve leningen voor de school van de beheerder, optioneel gefilterd op klas.
+     * Verrijkt elke lening met weergavenaam en klasinfo via een batch-opzoeking na het ophalen.
+     */
     @Transactional(readOnly = true)
     public Page<LibrarianActiveLoanDTO> getActiveLoansForSchool(String actorUid, Long classId, int page, int size) {
         UserEntity actor = userRepository.findBySmartschoolUid(actorUid)
@@ -66,7 +74,10 @@ public class AdminLoanService {
                 .map(loan -> mapper.toActiveDTO(loan, displayNames, classMap, bookMap)).toList();
         return new PageImpl<>(content, pageable, result.getTotalElements());
     }
-
+    /**
+     * Geeft gepagineerde leengeschiedenis voor de school van de beheerder, optioneel gefilterd op klas.
+     * Verrijkt elke rij met weergavenaam en klasinfo via een batch-opzoeking na het ophalen.
+     */
     @Transactional(readOnly = true)
     public Page<LibrarianLoanHistoryDTO> getLoanHistoryForSchool(String actorUid, Long classId, int page, int size) {
         UserEntity actor = userRepository.findBySmartschoolUid(actorUid)
@@ -93,6 +104,11 @@ public class AdminLoanService {
                 .map(h -> mapper.toHistoryDTO(h, displayNames, classMap, bookMap)).toList();
         return new PageImpl<>(content, pageable, result.getTotalElements());
     }
+
+    /**
+     * Geeft de klassen van de school, gededupliceerd op naam.
+     * Bij twee klassen met dezelfde naam wordt de eerste behouden.
+     */
     @Transactional(readOnly = true)
     public List<ReadingListAssignmentTargetsDTO.ClassTarget> getSchoolClasses(String actorUid) {
         UserEntity actor = userRepository.findBySmartschoolUid(actorUid)
@@ -112,6 +128,9 @@ public class AdminLoanService {
                 .toList();
     }
 
+    /**
+     * Haalt weergavenamen op via UserDirectoryService. Geeft een lege map terug als de externe service faalt.
+     */
     private Map<String, String> resolveDisplayNamesMap(String actorUid, List<String> uids) {
         if (uids.isEmpty()) return Map.of();
         try {

@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Beheert de leenregels per school.
+ * savePolicy werkt als upsert: als er al een policy bestaat voor de school wordt die bijgewerkt, anders aangemaakt.
+ */
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -28,6 +32,9 @@ public class LoanPolicyService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Geen uitleen policy gevonden voor schoolId: " + schoolId));
     }
 
+    /**
+     * Geeft het aantal herinneringsdagen voor de gebruiker. Valt terug op 3 als er geen policy gevonden wordt.
+     */
     public int getReminderDaysForUser(String smartschoolUid) {
         return userRepository.findBySmartschoolUid(smartschoolUid)
                 .flatMap(user -> loanPolicyRepository.findBySchool_Id(user.getSchool().getId()))
@@ -35,6 +42,9 @@ public class LoanPolicyService {
                 .orElse(3);
     }
 
+    /**
+     * Maakt een nieuwe policy aan of werkt de bestaande bij. Valideert de velden voor opslaan.
+     */
     public LoanPolicyDTO savePolicy(Long schoolId, UpsertLoanPolicyRequest request) {
         if (request.defaultLoanPeriodDays() < 1)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "De uitleenperiode moet minimaal 1 dag zijn.");

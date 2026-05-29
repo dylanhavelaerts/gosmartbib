@@ -8,6 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Beheert de leenbeleid-instellingen per school.
+ * Het PUT-endpoint werkt als upsert: maakt een nieuwe policy aan als die nog niet bestaat.
+ */
 @RestController
 @RequestMapping("/admin/schools/{schoolId}/loan-policy")
 @RequiredArgsConstructor
