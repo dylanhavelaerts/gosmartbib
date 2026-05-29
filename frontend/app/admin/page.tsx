@@ -30,7 +30,7 @@ const beheerderWidgets = [
     iconAlt: "Reviewmoderatie",
     title: "Reviewmoderatie",
     description:
-      "Modereer gebruikersreviews en beheer de zichtbaarheid van inhoud.",
+      "Modereer gebruikersreviews en beheer de zichtbaarheid van inhoud",
     href: "/admin/reviews",
   },
   {
