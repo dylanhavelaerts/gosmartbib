@@ -36,6 +36,12 @@ interface LoanHistory {
   quantity: number;
 }
 
+/**
+ * Persoonlijke leningenpagina voor leerlingen en leerkrachten.
+ * Verlengingen kunnen alleen aangevraagd worden door STUDENT of TEACHER, niet door LIBRARIAN.
+ * Na een succesvolle aanvraag wordt de extensionStatus lokaal bijgewerkt naar PENDING zonder herlaad.
+ * De verlengknop verdwijnt zodra extensionStatus niet meer NONE is.
+ */
 export default function MijnBoekenPage() {
   const { user } = useAuth();
 

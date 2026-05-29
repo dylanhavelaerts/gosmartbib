@@ -12,6 +12,11 @@ interface CartItem {
   quantity: number;
 }
 
+/**
+ * Pagina voor bibliotheekbeheerders om nieuwe uitleningen te registreren.
+ * Boekenzoeken detecteert automatisch EAN-13 barcodes (13 cijfers) en voegt het boek
+ * direct toe aan het winkelmandje zonder zoekresultaten te tonen.
+ */
 export default function LendingPage() {
   const router = useRouter();
 
@@ -39,6 +44,10 @@ export default function LendingPage() {
     setTimeout(() => setToast(null), 4000);
   }
 
+  /**
+   * Geeft het beschikbare aantal voor de geselecteerde lener op basis van school-specifieke voorraad.
+   * Valt terug op het globale `availableCopies` als er geen schoolspecifieke inventaris gevonden wordt.
+   */
   const availableForSchool = (book: Book): number => {
     const rawId = selectedUser?.schoolId;
     const schoolId = rawId != null ? parseInt(String(rawId), 10) : null;
@@ -250,16 +259,6 @@ export default function LendingPage() {
             <div className="userProfileCard">
               {selectedUser ? (
                 <>
-                  {/* {selectedUser.photoUrl ? (
-                  <img
-                    src={selectedUser.photoUrl}
-                    alt="Profile"
-                    className="userPhotoPlaceholder cover"
-                  />
-                ) : (
-                  <div className="userPhotoPlaceholder">👤</div>
-                )}
-                */}
                   <div className="userInfo">
                     <p className="userName">{selectedUser.name}</p>
                     <p style={{ wordBreak: "break-all" }}>
@@ -307,17 +306,6 @@ export default function LendingPage() {
               ) : (
                 userSearchResults.map((user, idx) => (
                   <div key={idx} className="listItem">
-                    {/*
-                  {user.photoUrl ? (
-                    <img
-                      src={user.photoUrl}
-                      alt="Profile"
-                      className="userPhotoSmall cover"
-                    />
-                  ) : (
-                    <div className="userPhotoSmall">👤</div>
-                  )}
-                  */}
                     <div className="itemDetails">
                       <strong>{user.name}</strong>
                       <span>{user.classGroup}</span>

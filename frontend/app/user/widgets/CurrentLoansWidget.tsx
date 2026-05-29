@@ -23,6 +23,11 @@ function formatDue(dueDateString: string): { text: string; cls: string } {
   return { text: `Nog ${diffDays}d`, cls: "due-ok" };
 }
 
+/**
+ * Dashboard-widget die de actieve leningen van de ingelogde gebruiker toont.
+ * Toont maximaal 4 leningen; bij meer verschijnt een "+N meer" indicator.
+ * Pure display component data en laadstatus worden door de parent aangeleverd via props.
+ */
 export default function CurrentLoansWidget({
   loans,
   loading,

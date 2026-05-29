@@ -17,12 +17,7 @@ interface LoanExtensionRequestDTO {
   loanId: number;
   smartschoolUserId: string;
   borrowerDisplayName: string | null;
-  borrowerRole:
-    | "STUDENT"
-    | "TEACHER"
-    | "LIBRARIAN"
-    | "ADMIN"
-    | string;
+  borrowerRole: "STUDENT" | "TEACHER" | "LIBRARIAN" | "ADMIN" | string;
   quantity: number;
   loanDate: string;
   currentDueDate: string;
@@ -31,6 +26,10 @@ interface LoanExtensionRequestDTO {
   book: LoanBookDTO | null;
 }
 
+/**
+ * Pagina voor bibliotheekbeheerders om openstaande verlengingsaanvragen goed te keuren of te weigeren.
+ * Na een beslissing wordt de aanvraag lokaal uit de lijst verwijderd zonder herlaad.
+ */
 export default function LoanExtensionsPage() {
   const [requests, setRequests] = useState<LoanExtensionRequestDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,6 +88,11 @@ export default function LoanExtensionsPage() {
     }
   };
 
+  /**
+   * Verwerkt een verlengingsbeslissing voor de opgegeven lening.
+   * 1 functie behandelt zowel goedkeuren als weigeren via de `decision` parameter.
+   * `workingLoanId` voorkomt dat dezelfde aanvraag tweemaal tegelijk verwerkt wordt.
+   */
   const decideRequest = async (
     loanId: number,
     decision: "approve" | "deny",

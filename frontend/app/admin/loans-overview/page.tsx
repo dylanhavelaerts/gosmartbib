@@ -44,6 +44,11 @@ interface AdminLoanHistory {
   lostCount: number;
 }
 
+/**
+ * Schoolbreed leeningoverzicht voor bibliotheekbeheerders met actieve leningen en geschiedenis.
+ * `overdueTotal` wordt apart opgehaald via het statistieken-endpoint, niet uit de leningdata zelf.
+ * De 3-dagen drempel voor "bijna verlopen" is hardcoded in de frontend.
+ */
 export default function LoansOverviewPage() {
   const [activeTab, setActiveTab] = useState<"active" | "history">("active");
   const [classes, setClasses] = useState<ClassOption[]>([]);
@@ -172,6 +177,10 @@ export default function LoansOverviewPage() {
     setTimeout(() => setToast(null), 4000);
   }
 
+  /**
+   * Stuurt een manuele vervaldatumwaarschuwing via Smartschool.
+   * `sendingWarning` is een Set van lening-IDs om gelijktijdige dubbele verzendingen te voorkomen.
+   */
   async function sendOverdueWarning(loanId: number) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
     setSendingWarning((prev) => {

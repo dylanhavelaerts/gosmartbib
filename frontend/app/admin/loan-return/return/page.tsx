@@ -31,6 +31,14 @@ const conditionLabels: Record<CopyCondition, string> = {
   LOST: "Verloren",
 };
 
+/**
+ * Pagina voor bibliotheekbeheerders om teruggebrachte boeken te registreren.
+ * Ondersteunt drie conditionele terugbrengmodi op basis van schoolinstellingen en retourantaal:
+ * 1. barcodesEnabled: scan individuele barcodes en wijs per exemplaar een conditie toe.
+ * 2. barcodesEnabled=false, qty=1: één dropdown voor de conditie van het exemplaar.
+ * 3. barcodesEnabled=false, qty>1: aparte tellers voor beschadigd/kapot/verloren.
+ * De actieve modus wordt bepaald door `barcodesEnabled` uit de schoolinstellingen, opgehaald bij laden.
+ */
 export default function ReturnsPage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -159,6 +167,11 @@ export default function ReturnsPage() {
   };
 
   // --- 2. Ophalen van actieve leningen ---
+
+  /**
+   * Groepeert actieve leningen per boek voor de geselecteerde lener.
+   * Een lener kan meerdere lening-records hebben voor hetzelfde boek; deze worden samengevoegd.
+   */
   const fetchUserLoans = async (smartschoolUserId: string) => {
     try {
       const response = await fetch(
@@ -362,7 +375,10 @@ export default function ReturnsPage() {
     }));
   };
 
-  // --- Counter helpers for multi-copy mode ---
+  /**
+   * Verhoogt of verlaagt een conditieteller (beschadigd/kapot/verloren).
+   * Voorkomt dat de som van alle conditietellers het retourantaal overschrijdt.
+   */
   const updateCount = (
     setter: React.Dispatch<React.SetStateAction<Record<number, number>>>,
     bookId: number,
