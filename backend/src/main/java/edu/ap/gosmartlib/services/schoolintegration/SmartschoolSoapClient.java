@@ -5,6 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+/**
+ * Lage-niveau client voor de Smartschool SOAP V3 Web Service (sendMsg-operatie).
+ * Bouwt het SOAP-envelope manueel op en ontsnapt alle invoer om XML-injectie te voorkomen.
+ * Fouten worden gelogd maar niet doorgegooid zodat een mislukt bericht het normale verloop niet onderbreekt.
+ */
 @Service
 @Slf4j
 public class SmartschoolSoapClient {

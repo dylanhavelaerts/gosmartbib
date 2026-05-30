@@ -12,6 +12,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
+/**
+ * Verstuurt berichten via de Smartschool SOAP-API.
+ * Resolvet de Smartschool-gebruikersnaam door alle OneRoster-gebruikers op te halen
+ * en in Java te filteren op onerosterSourcedId.
+ * getUserBySourcedId wordt niet gebruikt omdat Smartschool die te laat beschikbaar stelt
+ * waardoor de gebruiker niet gevonden wordt.
+ * Als de gebruiker geen school, geen onerosterSourcedId of geen overeenkomende gebruikersnaam heeft, wordt het bericht stilletjes overgeslagen.
+ */
 @Primary
 @Service
 @Slf4j
@@ -25,6 +33,10 @@ public class SmartschoolMessageService implements MessageSender {
     private final HomepageSettingsRepository homepageSettingsRepository;
 
 
+    /**
+     * Haalt de Smartschool-gebruikersnaam op via een volledige OneRoster-gebruikerslijst en filtert op onerosterSourcedId.
+     * Slaat het bericht over als de gebruiker geen school, geen onerosterSourcedId heeft of als er geen overeenkomende gebruikersnaam gevonden wordt.
+     */
     public void sendMessage(UserEntity user, String title, String body) {
         if (user.getSchool() == null) {
             log.warn("Gebruiker {} heeft geen school gekoppeld, bericht niet verstuurd", user.getId());
@@ -65,6 +77,3 @@ public class SmartschoolMessageService implements MessageSender {
 
 
     }
-
-
-

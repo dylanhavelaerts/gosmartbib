@@ -4,6 +4,11 @@ import edu.ap.gosmartlib.entities.UserEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * Abonnementsrecord dat bijhoudt welke gebruiker een melding wil ontvangen als een boek beschikbaar wordt.
+ * De unieke constraint op (user_id, book_id) voorkomt dubbele abonnementen.
+ * Abonnementen zijn eenmalig: ze worden verwijderd na het versturen van de melding.
+ */
 @Entity
 @Table(name = "tbl_book_notifications",
         uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "book_id"}))

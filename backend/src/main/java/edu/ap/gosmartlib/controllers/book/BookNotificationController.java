@@ -8,6 +8,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Beheert beschikbaarheidsmeldingen per boek voor de ingelogde gebruiker.
+ * De gebruikers-UID wordt afgeleid van het OAuth-principal, nooit uit requestparameters.
+ */
 @RestController
 @RequestMapping("/books/{bookId}/notification")
 @RequiredArgsConstructor

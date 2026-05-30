@@ -15,6 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+
+/**
+ * Beheert beschikbaarheidsmeldingen voor boeken.
+ * Gebruikers kunnen zich abonneren op een enkel boek of een volledige leeslijst (bulk).
+ * Abonnementen zijn eenmalig: na verzending via triggerNotificationsForBook worden ze verwijderd,
+ * ook als het versturen mislukt. Gemiste meldingen worden niet herhaald.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,6 +32,10 @@ public class BookNotificationService {
     private final BookRepository bookRepository;
     private final MessageSender messageService;
 
+    /**
+     * Abonneert de gebruiker op een beschikbaarheidsmelding voor het opgegeven boek.
+     * Dubbele abonnementen worden genegeerd.
+     */
     @Transactional
     public void enable(String smartschoolUid, Long bookId) {
         UserEntity user = userRepository.findBySmartschoolUid(smartschoolUid)
@@ -40,6 +51,9 @@ public class BookNotificationService {
         }
     }
 
+    /**
+     * Verwijdert het abonnement van de gebruiker voor het opgegeven boek.
+     */
     @Transactional
     public void disable(String smartschoolUid, Long bookId) {
         UserEntity user = userRepository.findBySmartschoolUid(smartschoolUid)
@@ -47,12 +61,22 @@ public class BookNotificationService {
         bookNotificationRepository.deleteByUser_IdAndBook_Id(user.getId(), bookId);
     }
 
+    /**
+     * Geeft true terug als de gebruiker een actief abonnement heeft voor het opgegeven boek.
+     *
+     * @return true als abonnement bestaat, false als de gebruiker niet gevonden wordt of niet geabonneerd is
+     */
     @Transactional(readOnly = true)
     public boolean isEnabled(String smartschoolUid, Long bookId) {
         return userRepository.findBySmartschoolUid(smartschoolUid)
                 .map(user -> bookNotificationRepository.existsByUser_IdAndBook_Id(user.getId(), bookId))
                 .orElse(false);
     }
+
+    /**
+     * Abonneert de gebruiker op alle boeken in de opgegeven lijst.
+     * Al bestaande abonnementen worden overgeslagen.
+     */
     @Transactional
     public void enableBulk(String smartschoolUid, List<Long> bookIds) {
         UserEntity user = userRepository.findBySmartschoolUid(smartschoolUid)
@@ -68,6 +92,9 @@ public class BookNotificationService {
         }
     }
 
+    /**
+     * Verwijdert de abonnementen van de gebruiker voor alle opgegeven boeken.
+     */
     @Transactional
     public void disableBulk(String smartschoolUid, List<Long> bookIds) {
         UserEntity user = userRepository.findBySmartschoolUid(smartschoolUid)
@@ -77,6 +104,11 @@ public class BookNotificationService {
         }
     }
 
+    /**
+     * Geeft true terug als de gebruiker op alle opgegeven boeken een actief abonnement heeft.
+     *
+     * @return true als alle boeken geabonneerd zijn, false als de lijst leeg is of een boek ontbreekt
+     */
     @Transactional(readOnly = true)
     public boolean isAllEnabled(String smartschoolUid, List<Long> bookIds) {
         if (bookIds.isEmpty()) return false;
@@ -86,6 +118,11 @@ public class BookNotificationService {
                 .orElse(false);
     }
 
+    /**
+     * Verstuurt beschikbaarheidsberichten naar alle geabonneerde gebruikers van de opgegeven school en verwijdert daarna de abonnementen.
+     * Loopt asynchroon zodat de retourregistratie niet geblokkeerd wordt.
+     * Bekende beperking: abonnementen worden ook verwijderd als het bericht niet verstuurd kon worden.
+     */
     @Async
     @Transactional
     public void triggerNotificationsForBook(BookEntity book, Long schoolId) {

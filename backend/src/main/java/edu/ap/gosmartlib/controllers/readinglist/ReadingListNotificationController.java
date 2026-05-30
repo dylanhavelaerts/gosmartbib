@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Beheert beschikbaarheidsmeldingen voor alle boeken in een leeslijst tegelijk.
+ * GET geeft true terug als de gebruiker op elk boek in de lijst geabonneerd is.
+ */
 @RestController
 @RequestMapping("/reading-lists/{readingListId}/notification")
 @RequiredArgsConstructor
