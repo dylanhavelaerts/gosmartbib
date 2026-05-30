@@ -15,6 +15,13 @@ import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.List;
 
+/**
+ * Spring Security configuratie voor het /admin/login-endpoint.
+ * Registreert een aparte filter chain (@Order 1) die alleen overeenkomt met
+ * /admin/login. Stelt BCrypt-verificatie, AdminLoginFilter en de bijhorende
+ * CORS-regels in. Door @Order 1 wordt dit endpoint beoordeeld voor de algemene
+ * OAuth2-filter chain.
+ */
 @Configuration
 @RequiredArgsConstructor
 public class AdminSecurityConfig {
@@ -25,6 +32,12 @@ public class AdminSecurityConfig {
     @Value("${app.frontend.base-url}")
     private String frontendUrl;
 
+    /**
+     * Bouwt de security filter chain voor /admin/login.
+     *
+     * @param http de Spring Security HttpSecurity builder
+     * @return de geconfigureerde SecurityFilterChain
+     */
     @Bean
     @Order(1)
     public SecurityFilterChain adminFilterChain(HttpSecurity http) {

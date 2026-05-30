@@ -6,6 +6,12 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Bijhoudt en beperkt het aantal inlogpogingen per IP-adres.
+ * Maximaal 5 pogingen per IP binnen een tijdvenster van 15 minuten.
+ * Na een geslaagde login wordt de teller gereset. Verlopen records worden
+ * elke 10 minuten automatisch verwijderd.
+ */
 @Component
 public class LoginAttemptService {
 
@@ -14,6 +20,11 @@ public class LoginAttemptService {
 
     private final ConcurrentHashMap<String, AttemptRecord> attempts = new ConcurrentHashMap<>();
 
+    /**
+     * Registreert een inlogpoging en controleert of het limiet bereikt is.
+     * @param ip het IP-adres van de aanvraag
+     * @return true als de poging toegelaten is, false als de limiet overschreden is
+     */
     public boolean tryConsume(String ip) {
         long now = System.currentTimeMillis();
         AttemptRecord record = attempts.compute(ip, (key, existing) -> {
@@ -24,12 +35,20 @@ public class LoginAttemptService {
         });
         return record.count() <= MAX_ATTEMPTS;
     }
+
+    /**
+     * Verwijdert verlopen IP-records. Wordt elke 10 minuten automatisch uitgevoerd.
+     */
     @Scheduled(fixedRate = 600_000)
     public void evictExpiredEntries() {
         long now = System.currentTimeMillis();
         attempts.entrySet().removeIf(e -> now - e.getValue().windowStart() > BLOCK_DURATION.toMillis());
     }
 
+    /**
+     * Verwijdert de teller van een IP na een geslaagde login.
+     * @param ip het IP-adres waarvoor de teller gereset wordt
+     */
     public void reset(String ip) {
         attempts.remove(ip);
     }

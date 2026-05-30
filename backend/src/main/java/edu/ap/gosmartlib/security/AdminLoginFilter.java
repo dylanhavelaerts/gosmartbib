@@ -22,6 +22,14 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
+/**
+ * Verwerkt POST /admin/login en authenticeert platformadministrator.
+ * Leest een JSON-body met username en password, controleert de IP-rate limiet
+ * en delegeert de authenticatie naar de AuthenticationManager.
+ * Bij succes wordt de sessie vernieuwd (session fixation protection), de
+ * SecurityContext opgeslagen in de HTTP-sessie en een AUTHENTICATED-cookie
+ * geplaatst zodat de frontend de inlogstatus kan detecteren.
+ */
 public class AdminLoginFilter extends AbstractAuthenticationProcessingFilter {
 
     private final HttpSessionSecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
@@ -34,6 +42,17 @@ public class AdminLoginFilter extends AbstractAuthenticationProcessingFilter {
         this.loginAttemptService = loginAttemptService;
     }
 
+    /**
+     * Valideert de rate limiet en authenticeert het verzoek.
+     *
+     * Geeft null terug en zet de status op 429 als de limiet overschreden is.
+     * Gooit AuthenticationServiceException als de Content-Type geen
+     * application/json is of als de request body niet gelezen kan worden.
+     *
+     * @param request  het inkomende HTTP-verzoek
+     * @param response het HTTP-antwoord
+     * @return het Authentication-object bij succes, of null bij rate limiting
+     */
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
@@ -57,6 +76,12 @@ public class AdminLoginFilter extends AbstractAuthenticationProcessingFilter {
         }
     }
 
+    /**
+     * Slaat de sessie op na een geslaagde authenticatie.
+     * Reset de rate limiet, slaat de SecurityContext op in de HTTP-sessie en
+     * voegt een AUTHENTICATED-cookie toe. De cookie is HttpOnly en Secure
+     * wanneer het verzoek via HTTPS binnenkomt.
+     */
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
                                             FilterChain chain, Authentication authResult) throws IOException, ServletException {
@@ -75,6 +100,11 @@ public class AdminLoginFilter extends AbstractAuthenticationProcessingFilter {
         response.setStatus(HttpServletResponse.SC_OK);
     }
 
+    /**
+     * Stuurt een 401-respons bij een mislukte authenticatie.
+     * Er wordt bewust geen detail teruggegeven aan de client om
+     * gebruikersenumeratie te voorkomen.
+     */
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
                                               AuthenticationException failed) throws IOException {

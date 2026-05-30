@@ -9,6 +9,13 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
+/**
+ * Maakt een lokaal adminaccount aan bij opstart voor ontwikkeling.
+ *
+ * Het wachtwoord wordt ingelezen als plaintext uit de omgevingsvariabele
+ * LOCAL_ADMIN_PASSWORD en bij aanmaak gehasht via BCrypt. Alleen actief in
+ * het local-profiel.
+ */
 @Profile("local")
 @Component
 @RequiredArgsConstructor
@@ -20,6 +27,10 @@ public class LocalAdminSeeder {
     @Value("${LOCAL_ADMIN_PASSWORD}")
     private String localAdminPassword;
 
+    /**
+     * Voert de seed uit na het opstarten van de applicatiecontext.
+     * Slaat het account over als de gebruikersnaam "admin" al aanwezig is.
+     */
     @PostConstruct
     public void seed() {
         if (adminRepository.findByUsername("admin").isEmpty()) {
