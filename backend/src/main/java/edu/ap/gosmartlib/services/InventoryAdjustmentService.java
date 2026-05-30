@@ -7,12 +7,21 @@ import edu.ap.gosmartlib.util.BookCopyCondition;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service voor het aanpassen van inventarisaties op basis van wijzigingen in de conditie van boekexemplaren.
+ */
 @Service
 @RequiredArgsConstructor
 public class InventoryAdjustmentService {
 
     private final BookRepository bookRepository;
 
+    /**
+     * Past de voorraad aan op basis van een wijziging in de conditie van een boekexemplaar
+     * @param inventory De inventarisatiegegevens van het boek
+     * @param from De oorspronkelijke conditie
+     * @param to De nieuwe conditie
+     */
     public void adjustForConditionChange(BookInventoryEntity inventory,
                                          BookCopyCondition from, BookCopyCondition to) {
 

@@ -60,6 +60,21 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Service voor het beheren van boeken, inventarissen en exemplaren binnen GoSmartLib.
+ *
+ * <p>Verantwoordelijkheden:</p>
+ * <ul>
+ *   <li>Boeken ophalen, zoeken en filteren — met zichtbaarheidsregels op basis van gebruikersrol en school</li>
+ *   <li>Boeken toevoegen via ISBN (Google Books API), handmatig, of via bulk Excel-import</li>
+ *   <li>Inventarissen en campusvoorraden beheren per school</li>
+ *   <li>Exemplaren bijhouden, barcodes (EAN-13) genereren en conditie registreren</li>
+ *   <li>Spotlight- en aanbevelingslogica aanbieden voor de startpagina</li>
+ * </ul>
+ * <p>
+ * Toegangscontrole wordt intern afgedwongen: studenten zien enkel boeken van hun eigen school,
+ * didactische boeken zijn enkel zichtbaar voor leerkrachten, bibliothecarissen en beheerders. </p>
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -84,6 +99,17 @@ public class BookService {
     @Value("${google.books.api.key}")
     private String googleBooksApiKey;
 
+
+    //region Boeken ophalen
+
+    /**
+     * Haal alle boeken op met pagination, gefilterd op zichtbaarheid van didactische boeken en al dan niet beperken tot eigen school
+     * @param page - pagina nummer
+     * @param size - anantal boeken per pagina
+     * @param callerRole - rol van de aanroeper (om epalen of didactische boeken zichtbaar te bmoeten zijn)
+     * @param currentUserUid - uid van de aanroeper (om te bepalen of we moeten beperken tot eigen school en om bij te beperken boeken te bepalen welke zichtbaar zijn)
+     * @return een pagina van BookDTO's die voldoen aan de criteria
+     */
     public Page<BookDTO> getAllBooks(int page, int size, UserRoles callerRole, String currentUserUid) {
         if (page < 0 || size <= 0)
             throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
@@ -101,6 +127,12 @@ public class BookService {
                 .map(this::toDTO);
     }
 
+    /**
+     * Haal alle boeken op zonder pagination, gefilterd op zichtbaarheid van didactische boeken en al dan niet beperken tot eigen school
+     * @param callerRole - rol van de aanroeper (om epalen of didactische boeken zichtbaar te bmoeten zijn)
+     * @param currentUserUid - uid van de aanroeper (om te bepalen of we moeten beperken tot eigen school en om bij te beperken boeken te bepalen welke zichtbaar zijn)
+     * @return een lijst van BookDTO's die voldoen aan de criteria
+     */
     public List<BookDTO> getAllBooksUnpaged(UserRoles callerRole, String currentUserUid) {
         boolean includeDidactic = canSeeDidactic(callerRole);
         return bookRepository.findAll()
@@ -111,44 +143,14 @@ public class BookService {
                 .toList();
     }
 
-    public BookDTO searchBookByIsbn(String isbn) {
-        BookEntity previewBook = buildBookEntityFromGoogle(isbn);
-        previewBook.setInventories(new ArrayList<>());
-        previewBook.setTotalCopies(0);
-        previewBook.setAvailableCopies(0);
-        return toDTO(previewBook);
-    }
-
-    public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer copies) {
-        return addBookByIsbn(isbn, smartschoolUid, campus, copies, false);
-    }
-
-    public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer copies,
-            boolean didacticBook) {
-        BookEntity newBook = buildBookEntityFromGoogle(isbn);
-        newBook.setDidacticTag(didacticBook);
-
-        // Zorg dat er altijd minimaal 1 copy is als er null wordt meegegeven
-        int totalCopies = (copies != null && copies > 0) ? copies : 1;
-
-        applySingleInventoryForCurrentUser(newBook, smartschoolUid, campus, totalCopies, totalCopies);
-        recomputeBookCopyTotals(newBook);
-        BookEntity savedBook = bookRepository.save(newBook);
-        savedBook.getInventories().forEach(this::reconcileCopiesForInventory);
-        return toDTO(savedBook);
-    }
-
-    private Integer extractYear(String publishedDate) {
-        if (publishedDate != null && publishedDate.length() >= 4) {
-            try {
-                return Integer.parseInt(publishedDate.substring(0, 4));
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        return null;
-    }
-
+    /**
+     * Haal een boek op via ID
+     * @param id - het ID van het boek dat opgevraagd wordt
+     * @param callerRole - de rol van de gebruiker die het boek opvraagt
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een BookDTO met de gegevens van het gevonden boek
+     * @throws BookNotFoundException - als het boek niet gevonden wordt
+     */
     public BookDTO getBookById(Long id, UserRoles callerRole, String currentUserUid) throws BookNotFoundException {
 
         BookEntity book = bookRepository.findDetailedById(id)
@@ -165,14 +167,29 @@ public class BookService {
         return visible;
     }
 
-    public void updateSpotlight(Long id, boolean spotlight) {
-        BookEntity book = bookRepository.findById(id)
-                .orElseThrow(() -> new BookNotFoundException(id));
-
-        book.setSpotlight(spotlight);
-        bookRepository.save(book);
+    /**
+     * Zoek een boek op via ISBN
+     * Deze methode haalt de gegevens op uit de Google Books API en geeft een preview terug
+     * @param isbn - het ISBN nummer van het boek dat gezocht wordt
+     * @return een BookDTO met de gegevens van het boek zoals opgehaald uit Google Books
+     */
+    public BookDTO searchBookByIsbn(String isbn) {
+        BookEntity previewBook = buildBookEntityFromGoogle(isbn);
+        previewBook.setInventories(new ArrayList<>());
+        previewBook.setTotalCopies(0);
+        previewBook.setAvailableCopies(0);
+        return toDTO(previewBook);
     }
 
+    /**
+     * Zoek boeken op titel, auteur of categorie
+     * @param query - de zoekterm
+     * @param page - het paginanummer
+     * @param size - de grootte van de pagina
+     * @param callerRole - de rol van de gebruiker die zoekt
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een pagina met BookDTOs die voldoen aan de zoekcriteria
+     */
     public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size, UserRoles callerRole,
             String currentUserUid) {
         if (page < 0 || size <= 0)
@@ -203,133 +220,13 @@ public class BookService {
         return prioritizeTitleMatches(raw, query.trim(), pageable, this::toDTO);
     }
 
-    private Page<BookDTO> prioritizeTitleMatches(Page<BookEntity> raw, String query, Pageable pageable,
-            Function<BookEntity, BookDTO> mapper) {
-        String lowerQuery = query.toLowerCase();
-        List<BookDTO> sorted = raw.getContent().stream()
-                .sorted(Comparator.comparingInt(b -> b.getTitle().toLowerCase().contains(lowerQuery) ? 0 : 1))
-                .map(mapper)
-                .filter(Objects::nonNull)
-                .toList();
-        return new PageImpl<>(sorted, pageable, raw.getTotalElements());
-    }
-
-    public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole, String currentUserUid) {
-        boolean includeDidactic = canSeeDidactic(callerRole);
-        return bookRepository.findTop4BySpotlightTrueOrderByIdDesc()
-                .stream()
-                .filter(b -> includeDidactic || !b.isDidacticTag())
-                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole, String currentUserUid, String readingLevel) {
-        boolean includeDidactic = canSeeDidactic(callerRole);
-        Long schoolId = restrictToOwnSchool(callerRole) ? requireRequesterSchoolId(currentUserUid) : null;
-        String normalizedReadingLevel = safeTrim(readingLevel);
-
-        if (normalizedReadingLevel != null && normalizedReadingLevel.isBlank()) {
-            normalizedReadingLevel = null;
-        }
-
-        return bookRepository.findSpotlightBooksByReadingLevel(
-                normalizedReadingLevel,
-                includeDidactic,
-                schoolId,
-                PageRequest.of(0, 4))
-                .stream()
-                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    public List<BookDTO> getAllBooksInSpotlight(UserRoles callerRole, String currentUserUid) {
-        boolean includeDidactic = canSeeDidactic(callerRole);
-        return bookRepository.findBySpotlightTrueOrderByIdDesc()
-                .stream()
-                .filter(b -> includeDidactic || !b.isDidacticTag())
-                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    public List<BookDTO> getLatestBooks(UserRoles callerRole, String currentUserUid) {
-        boolean includeDidactic = canSeeDidactic(callerRole);
-        return bookRepository.findTop4ByOrderByIdDesc()
-                .stream()
-                .filter(b -> includeDidactic || !b.isDidacticTag())
-                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    public List<BookDTO> getLatestBooks(UserRoles callerRole, String currentUserUid, String readingLevel) {
-        boolean includeDidactic = canSeeDidactic(callerRole);
-        Long schoolId = restrictToOwnSchool(callerRole) ? requireRequesterSchoolId(currentUserUid) : null;
-        String normalizedReadingLevel = safeTrim(readingLevel);
-
-        if (normalizedReadingLevel != null && normalizedReadingLevel.isBlank()) {
-            normalizedReadingLevel = null;
-        }
-
-        return bookRepository.findLatestBooksByReadingLevel(
-                normalizedReadingLevel,
-                includeDidactic,
-                schoolId,
-                PageRequest.of(0, 4))
-                .stream()
-                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<BookDTO> getRecommendedBooksForUser(String smartschoolUid) {
-        UserEntity user = userRepository.findDetailedBySmartschoolUid(smartschoolUid)
-                .orElseThrow(() -> new IllegalArgumentException("Gebruiker niet gevonden"));
-
-        List<BookEntity> books;
-
-        if (user.getRole() == UserRoles.TEACHER) {
-            books = bookRepository.findTop4ByDidacticTagTrueOrderByRatingDesc();
-        } else if (user.getRole() == UserRoles.STUDENT) {
-            String ageRange = determineAgeRangeFromStudentClass(user);
-            books = bookRepository.findTop4ByAgeRangeIgnoreCaseAndDidacticTagFalseOrderByRatingDesc(ageRange);
-        } else {
-            books = bookRepository.findTop4ByOrderByRatingDesc();
-        }
-
-        return books.stream()
-                .map(book -> toVisibleBookDTO(book, user.getRole(), smartschoolUid))
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<BookDTO> getTopRatedBooksByReadingLevel(
-            UserRoles callerRole,
-            String currentUserUid,
-            String readingLevel) {
-        boolean includeDidactic = canSeeDidactic(callerRole);
-        Long schoolId = restrictToOwnSchool(callerRole) ? requireRequesterSchoolId(currentUserUid) : null;
-        String normalizedReadingLevel = safeTrim(readingLevel);
-
-        if (normalizedReadingLevel != null && normalizedReadingLevel.isBlank()) {
-            normalizedReadingLevel = null;
-        }
-
-        return bookRepository.findTopRatedBooksByReadingLevel(
-                normalizedReadingLevel,
-                includeDidactic,
-                schoolId,
-                PageRequest.of(0, 4))
-                .stream()
-                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
+    /**
+     * Filter de boeken op basis van de opgegeven criteria
+     * @param request - het filterverzoek
+     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een pagina met BookDTOs van de gefilterde boeken
+     */
     public Page<BookDTO> filterBooks(BookFilterRequest request, UserRoles callerRole, String currentUserUid) {
         bookFilterValidator.validate(request);
 
@@ -384,6 +281,11 @@ public class BookService {
         return raw.map(this::toDTO);
     }
 
+    /**
+     * Haal de beschikbare talen op
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een lijst met beschikbare talen
+     */
     @Transactional(readOnly = true)
     public List<String> getAvailableLanguages(String currentUserUid) {
         Long schoolId = currentUserUid == null || currentUserUid.isBlank()
@@ -397,6 +299,11 @@ public class BookService {
         return cleanDistinctOptions(rawLanguages);
     }
 
+    /**
+     * Haal de beschikbare categorieën op
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een lijst met beschikbare categorieën
+     */
     @Transactional(readOnly = true)
     public List<String> getAvailableCategories(String currentUserUid) {
         Long schoolId = currentUserUid == null || currentUserUid.isBlank()
@@ -410,6 +317,11 @@ public class BookService {
         return cleanDistinctOptions(rawCategories);
     }
 
+    /**
+     * Haal de beschikbare labels op
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een lijst met beschikbare labels
+     */
     @Transactional(readOnly = true)
     public List<String> getAvailableLabels(String currentUserUid) {
         Long schoolId = currentUserUid == null || currentUserUid.isBlank()
@@ -423,10 +335,670 @@ public class BookService {
         return cleanDistinctOptions(rawLabels);
     }
 
+    //endregion
+
+
+    //region Spotlight & aanbevelingen
+
+    /**
+     * Haal de top 4 boeken in de spotlight op
+     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een lijst met BookDTOs van de top 4 boeken in de spotlight
+     */
+    public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole, String currentUserUid) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        return bookRepository.findTop4BySpotlightTrueOrderByIdDesc()
+                .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * Haal de top 4 boeken in de spotlight op op basis van het leesniveau
+     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @param readingLevel - het leesniveau
+     * @return een lijst met BookDTOs van de top 4 boeken in de spotlight
+     */
+    public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole, String currentUserUid, String readingLevel) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        Long schoolId = restrictToOwnSchool(callerRole) ? requireRequesterSchoolId(currentUserUid) : null;
+        String normalizedReadingLevel = safeTrim(readingLevel);
+
+        if (normalizedReadingLevel != null && normalizedReadingLevel.isBlank()) {
+            normalizedReadingLevel = null;
+        }
+
+        return bookRepository.findSpotlightBooksByReadingLevel(
+                normalizedReadingLevel,
+                includeDidactic,
+                schoolId,
+                PageRequest.of(0, 4))
+                .stream()
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * Haal alle boeken in de spotlight op
+     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een lijst met BookDTOs van alle boeken in de spotlight
+     */
+    public List<BookDTO> getAllBooksInSpotlight(UserRoles callerRole, String currentUserUid) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        return bookRepository.findBySpotlightTrueOrderByIdDesc()
+                .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * Haal de nieuwste boeken op
+     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een lijst met BookDTOs van de nieuwste boeken
+     */
+    public List<BookDTO> getLatestBooks(UserRoles callerRole, String currentUserUid) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        return bookRepository.findTop4ByOrderByIdDesc()
+                .stream()
+                .filter(b -> includeDidactic || !b.isDidacticTag())
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * Haal de nieuwste boeken op op basis van het leesniveau
+     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @param readingLevel - het leesniveau
+     * @return een lijst met BookDTOs van de nieuwste boeken
+     */
+    public List<BookDTO> getLatestBooks(UserRoles callerRole, String currentUserUid, String readingLevel) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        Long schoolId = restrictToOwnSchool(callerRole) ? requireRequesterSchoolId(currentUserUid) : null;
+        String normalizedReadingLevel = safeTrim(readingLevel);
+
+        if (normalizedReadingLevel != null && normalizedReadingLevel.isBlank()) {
+            normalizedReadingLevel = null;
+        }
+
+        return bookRepository.findLatestBooksByReadingLevel(
+                normalizedReadingLevel,
+                includeDidactic,
+                schoolId,
+                PageRequest.of(0, 4))
+                .stream()
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * Haal de aanbevolen boeken voor een gebruiker op
+     * @param smartschoolUid - de uid van de smartschool gebruiker
+     * @return een lijst met BookDTOs van de aanbevolen boeken
+     */
+    @Transactional(readOnly = true)
+    public List<BookDTO> getRecommendedBooksForUser(String smartschoolUid) {
+        UserEntity user = userRepository.findDetailedBySmartschoolUid(smartschoolUid)
+                .orElseThrow(() -> new IllegalArgumentException("Gebruiker niet gevonden"));
+
+        List<BookEntity> books;
+
+        if (user.getRole() == UserRoles.TEACHER) {
+            books = bookRepository.findTop4ByDidacticTagTrueOrderByRatingDesc();
+        } else if (user.getRole() == UserRoles.STUDENT) {
+            String ageRange = determineAgeRangeFromStudentClass(user);
+            books = bookRepository.findTop4ByAgeRangeIgnoreCaseAndDidacticTagFalseOrderByRatingDesc(ageRange);
+        } else {
+            books = bookRepository.findTop4ByOrderByRatingDesc();
+        }
+
+        return books.stream()
+                .map(book -> toVisibleBookDTO(book, user.getRole(), smartschoolUid))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * Haal de top 4 boeken op op basis van het leesniveau
+     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @param readingLevel - het leesniveau
+     * @return een lijst met BookDTOs van de top 4 boeken
+     */
+    @Transactional(readOnly = true)
+    public List<BookDTO> getTopRatedBooksByReadingLevel(
+            UserRoles callerRole,
+            String currentUserUid,
+            String readingLevel) {
+        boolean includeDidactic = canSeeDidactic(callerRole);
+        Long schoolId = restrictToOwnSchool(callerRole) ? requireRequesterSchoolId(currentUserUid) : null;
+        String normalizedReadingLevel = safeTrim(readingLevel);
+
+        if (normalizedReadingLevel != null && normalizedReadingLevel.isBlank()) {
+            normalizedReadingLevel = null;
+        }
+
+        return bookRepository.findTopRatedBooksByReadingLevel(
+                normalizedReadingLevel,
+                includeDidactic,
+                schoolId,
+                PageRequest.of(0, 4))
+                .stream()
+                .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * Haal de snowball secties op voor een bepaald boek
+     * @param bookId - het id van het boek
+     * @param callerRole - de rol van de aanroeper
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een lijst met snowball secties
+     */
+    @Transactional(readOnly = true)
+    public List<SnowballSectionDTO> getSnowballSections(Long bookId, UserRoles callerRole, String currentUserUid) {
+        Pageable top12 = PageRequest.of(0, 12, Sort.by(Sort.Direction.DESC, "rating"));
+        BookEntity book = bookRepository.findDetailedById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(bookId));
+
+        List<SnowballSectionDTO> sections = new ArrayList<>();
+
+        if (!book.getAuthors().isEmpty()) {
+            String mainAuthor = book.getAuthors().get(0);
+            List<BookDTO> authorBooks = bookRepository
+                    .findByAuthorsInAndIdNot(book.getAuthors(), bookId, top12)
+                    .stream()
+                    .filter(b -> canSeeDidactic(callerRole) || !b.isDidacticTag())
+                    .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            if (!authorBooks.isEmpty()) {
+                sections.add(new SnowballSectionDTO(
+                        "AUTHOR", mainAuthor, authorBooks));
+            }
+        }
+
+        // categorieeen
+        if (!book.getCategories().isEmpty()) {
+            for (String category : book.getCategories()) {
+                List<BookDTO> categoryBooks = bookRepository
+                        .findByCategoriesInAndIdNot(List.of(category), bookId, top12)
+                        .stream()
+                        .filter(b -> canSeeDidactic(callerRole) || !b.isDidacticTag())
+                        .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
+                        .filter(Objects::nonNull)
+                        .toList();
+
+                if (!categoryBooks.isEmpty()) {
+                    sections.add(new SnowballSectionDTO("CATEGORY", category, categoryBooks));
+                }
+            }
+        }
+        return sections;
+    }
+
+    //endregion
+
+
+    //region Boeken beheren
+
+    /**
+     * Voeg een boek toe via ISBN
+     * Deze methode haalt de gegevens op uit de Google Books API en voegt het boek toe aan de database
+     * @param isbn - het ISBN nummer van het boek dat toegevoegd wordt
+     * @param smartschoolUid - de uid van de smartschool waar het boek aan toegevoegd wordt
+     * @param campus - de campus waar het boek aan toegevoegd wordt
+     * @param copies - het aantal exemplaren dat toegevoegd wordt
+     * @return een BookDTO met de gegevens van het toegevoegde boek
+     */
+    public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer copies) {
+        return addBookByIsbn(isbn, smartschoolUid, campus, copies, false);
+    }
+
+    /**
+     * Voeg een boek toe via ISBN
+     * Deze methode haalt de gegevens op uit de Google Books API en voegt het boek toe aan de database
+     * @param isbn - het ISBN nummer van het boek dat toegevoegd wordt
+     * @param smartschoolUid - de uid van de smartschool waar het boek aan toegevoegd wordt
+     * @param campus - de campus waar het boek aan toegevoegd wordt
+     * @param copies - het aantal exemplaren dat toegevoegd wordt
+     * @param didacticBook - of het boek een didactisch boek is
+     * @return een BookDTO met de gegevens van het toegevoegde boek
+     */
+    public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer copies,
+            boolean didacticBook) {
+        BookEntity newBook = buildBookEntityFromGoogle(isbn);
+        newBook.setDidacticTag(didacticBook);
+
+        // Zorg dat er altijd minimaal 1 copy is als er null wordt meegegeven
+        int totalCopies = (copies != null && copies > 0) ? copies : 1;
+
+        applySingleInventoryForCurrentUser(newBook, smartschoolUid, campus, totalCopies, totalCopies);
+        recomputeBookCopyTotals(newBook);
+        BookEntity savedBook = bookRepository.save(newBook);
+        savedBook.getInventories().forEach(this::reconcileCopiesForInventory);
+        return toDTO(savedBook);
+    }
+
+    /**
+     * Voeg een handmatig boek toe
+     * @param request - het verzoek om een boek toe te voegen
+     * @param smartschoolUid - de uid van de smartschool gebruiker
+     * @return het toegevoegde boek
+     */
+    public BookDTO addManualBook(CreateBookRequestDTO request, String smartschoolUid) {
+        if (request.title() == null || request.title().isBlank()) {
+            throw new IllegalArgumentException("Titel is verplicht");
+        }
+
+        BookEntity book = new BookEntity();
+        book.setTitle(request.title().trim());
+        book.setAuthors(cleanStringList(request.authors()));
+        book.setPublisher(safeTrim(request.publisher()));
+        book.setDescription(safeTrim(request.description()));
+        book.setPageCount(request.pageCount() != null ? request.pageCount() : 0);
+        book.setCategories(cleanStringList(request.categories()));
+        book.setThumbnail(safeTrim(request.thumbnail()));
+        book.setLanguage(safeTrim(request.language()));
+        book.setRating(request.rating() != null ? request.rating() : 0.0);
+        book.setPublishedYear(request.publishedYear());
+        book.setSpotlight(Boolean.TRUE.equals(request.spotlight()));
+        book.setDidacticTag(request.didacticTag());
+        book.setLabels(cleanStringList(request.labels()));
+        book.setReadingLevel(safeTrim(request.readingLevel()));
+        book.setAgeRange(safeTrim(request.ageRange()));
+        book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
+
+        if (request.inventories() != null && !request.inventories().isEmpty()) {
+            replaceInventoriesFromRequest(book, request.inventories(), smartschoolUid);
+        } else {
+            int totalCopies = request.totalCopies() != null ? request.totalCopies() : 1;
+            int availableCopies = request.availableCopies() != null ? request.availableCopies() : totalCopies;
+            applySingleInventoryForCurrentUser(book, smartschoolUid, null, totalCopies, availableCopies);
+        }
+
+        recomputeBookCopyTotals(book);
+
+        BookEntity saved = bookRepository.saveAndFlush(book);
+        saved.getInventories().forEach(this::reconcileCopiesForInventory);
+
+        BookEntity reloaded = bookRepository.findDetailedById(saved.getId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Boek werd opgeslagen maar kon niet opnieuw geladen worden"));
+
+        return toDTO(reloaded);
+    }
+
+    /**
+     * Werk een boek bij
+     * @param id - het id van het boek
+     * @param updatedBook - het bijgewerkte boek
+     * @return het bijgewerkte boek
+     */
+    public BookDTO updateBook(Long id, BookDTO updatedBook) {
+        BookEntity book = bookRepository.findDetailedById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
+        if (updatedBook.title() != null && updatedBook.title().isBlank())
+            throw new IllegalArgumentException("Titel mag niet leeg zijn");
+
+        if (updatedBook.pageCount() != null && updatedBook.pageCount() < 0)
+            throw new IllegalArgumentException("Paginacount mag niet negatief zijn");
+        if (updatedBook.publishedYear() != null && updatedBook.publishedYear() <= 0)
+            throw new IllegalArgumentException("Publicatiejaar moet groter zijn dan 0");
+
+        if (updatedBook.publishedYear() != null && updatedBook.publishedYear() > Year.now().getValue())
+            throw new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen");
+
+        if (updatedBook.isbn() != null && !updatedBook.isbn().equals(book.getIsbn())
+                && bookRepository.existsByIsbn(updatedBook.isbn())) {
+            throw new IllegalArgumentException("ISBN bestaat al in de database");
+        }
+
+        if (updatedBook.isbn() != null && updatedBook.isbn().isBlank())
+            throw new IllegalArgumentException("ISBN mag niet leeg zijn");
+
+        if (updatedBook.title() != null)
+            book.setTitle(updatedBook.title().trim());
+        if (updatedBook.authors() != null)
+            book.setAuthors(cleanStringList(updatedBook.authors()));
+        if (updatedBook.publisher() != null)
+            book.setPublisher(safeTrim(updatedBook.publisher()));
+        if (updatedBook.description() != null)
+            book.setDescription(safeTrim(updatedBook.description()));
+        if (updatedBook.pageCount() != null)
+            book.setPageCount(updatedBook.pageCount());
+        if (updatedBook.categories() != null)
+            book.setCategories(cleanStringList(updatedBook.categories()));
+        if (updatedBook.labels() != null)
+            book.setLabels(cleanStringList(updatedBook.labels()));
+        if (updatedBook.thumbnail() != null)
+            book.setThumbnail(safeTrim(updatedBook.thumbnail()));
+        if (updatedBook.language() != null)
+            book.setLanguage(safeTrim(updatedBook.language()));
+        if (updatedBook.isbn() != null)
+            book.setIsbn(updatedBook.isbn().trim());
+        if (updatedBook.rating() != null)
+            book.setRating(updatedBook.rating());
+        if (updatedBook.publishedYear() != null)
+            book.setPublishedYear(updatedBook.publishedYear());
+        if (updatedBook.didacticTag() != null)
+            book.setDidacticTag(updatedBook.didacticTag());
+        if (updatedBook.readingLevel() != null)
+            book.setReadingLevel(safeTrim(updatedBook.readingLevel()));
+        if (updatedBook.ageRange() != null)
+            book.setAgeRange(safeTrim(updatedBook.ageRange()));
+
+        if (updatedBook.inventories() != null) {
+            book.getInventories().clear();
+            bookRepository.saveAndFlush(book);
+            replaceInventoriesFromDto(book, updatedBook.inventories());
+        }
+
+        recomputeBookCopyTotals(book);
+
+        BookEntity savedBook = bookRepository.save(book);
+        savedBook.getInventories().forEach(this::reconcileCopiesForInventory);
+        return toDTO(savedBook);
+    }
+
+    /**
+     * Update de spotlight status van een boek
+     * @param id - het ID van het boek dat geüpdatet wordt
+     * @param spotlight - de nieuwe spotlight status
+     */
+    public void updateSpotlight(Long id, boolean spotlight) {
+        BookEntity book = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
+
+        book.setSpotlight(spotlight);
+        bookRepository.save(book);
+    }
+
+    //endregion
+
+
+    //region Exemplaren & barcodes
+
+    /**
+     * Haal een boek op op basis van de barcode
+     * @param barcode - de barcode van het boek
+     * @param callerRole - de rol van de aanroeper
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return het boek
+     */
+    public BookDTO getBookByBarcode(String barcode, UserRoles callerRole, String currentUserUid) {
+        Optional<BookCopyEntity> copy = bookCopyRepository.findByBarcode(barcode);
+        if (copy.isPresent()) {
+            BookEntity book = bookRepository.findDetailedById(copy.get().getInventory().getBook().getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden"));
+            BookDTO dto = toVisibleBookDTO(book, callerRole, currentUserUid);
+            if (dto == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden");
+            }
+            return dto;
+        }
+
+        // Fall back naar ISBN als het barcode niet is gevonden
+        BookEntity bookByIsbn = bookRepository.findByIsbn(barcode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode niet gevonden"));
+        BookDTO dto = toVisibleBookDTO(bookByIsbn, callerRole, currentUserUid);
+        if (dto == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden");
+        }
+        return dto;
+    }
+
+    /**
+     * Haal een boekkopie op op basis van de barcode
+     * @param bookId - het id van het boek
+     * @param barcode - de barcode van de boekkopie
+     * @return de boekkopie
+     */
+    public BookCopyLabelDTO getCopyByBarcode(Long bookId, String barcode) {
+        BookCopyEntity copy = bookCopyRepository.findByBarcode(barcode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode niet gevonden"));
+
+        if (!Objects.equals(copy.getInventory().getBook().getId(), bookId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode hoort niet bij dit boek");
+        }
+
+        return new BookCopyLabelDTO(
+                copy.getId(),
+                copy.getBarcode(),
+                copy.getCopyNumber(),
+                copy.getInventory().getBook().getTitle(),
+                copy.getInventory().getBook().getIsbn(),
+                normalizeCampus(copy.getInventory().getCampus()),
+                copy.getCopyCondition() != null ? copy.getCopyCondition().name() : "GOOD");
+    }
+
+    /**
+     * Haal de kopie labels op voor een bepaald boek
+     * @param bookId - het id van het boek
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een lijst met kopie labels
+     */
+    public List<BookCopyLabelDTO> getCopyLabelsForBook(Long bookId, String currentUserUid) {
+        Long schoolId = requireRequesterSchoolId(currentUserUid);
+        BookEntity book = bookRepository.findDetailedById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(bookId));
+
+        List<BookInventoryEntity> inventories = book.getInventories().stream()
+                .filter(inv -> Objects.equals(inv.getSchool().getId(), schoolId))
+                .toList();
+
+        List<BookCopyEntity> allCopies = inventories.stream()
+                .flatMap(inv -> bookCopyRepository.findByInventory(inv).stream())
+                .toList();
+
+        List<BookCopyEntity> needsBarcode = allCopies.stream()
+                .filter(c -> c.getBarcode() == null)
+                .toList();
+
+        if (!needsBarcode.isEmpty()) {
+            needsBarcode.forEach(c -> c.setBarcode(generateEan13(c.getId())));
+            bookCopyRepository.saveAll(needsBarcode);
+        }
+
+        return inventories.stream()
+                .flatMap(inv -> {
+                    String campus = normalizeCampus(inv.getCampus());
+                    return bookCopyRepository.findByInventory(inv).stream()
+                            .map(c -> new BookCopyLabelDTO(
+                                    c.getId(),
+                                    c.getBarcode(),
+                                    c.getCopyNumber(),
+                                    book.getTitle(),
+                                    book.getIsbn(),
+                                    campus,
+                                    c.getCopyCondition() != null ? c.getCopyCondition().name() : "GOOD"));
+                })
+                .toList();
+    }
+
+    /**
+     * Haal de kopie labels op voor een bepaalde inventaris
+     * @param bookId - het id van het boek
+     * @param inventoryId - het id van de inventaris
+     * @return een lijst met kopie labels
+     */
+    public List<BookCopyLabelDTO> getCopyLabelsForInventory(Long bookId, Long inventoryId) {
+        BookEntity book = bookRepository.findDetailedById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(bookId));
+
+        BookInventoryEntity inventory = book.getInventories().stream()
+                .filter(inv -> Objects.equals(inv.getId(), inventoryId))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventaris niet gevonden"));
+
+        List<BookCopyEntity> copies = bookCopyRepository.findByInventory(inventory);
+
+        List<BookCopyEntity> needsBarcode = copies.stream()
+                .filter(c -> c.getBarcode() == null)
+                .toList();
+
+        if (!needsBarcode.isEmpty()) {
+            needsBarcode.forEach(c -> c.setBarcode(generateEan13(c.getId())));
+            bookCopyRepository.saveAll(needsBarcode);
+        }
+
+        String campus = normalizeCampus(inventory.getCampus());
+
+        return copies.stream()
+                .map(c -> new BookCopyLabelDTO(
+                        c.getId(),
+                        c.getBarcode(),
+                        c.getCopyNumber(),
+                        book.getTitle(),
+                        book.getIsbn(),
+                        campus,
+                        c.getCopyCondition() != null ? c.getCopyCondition().name() : "GOOD"))
+                .toList();
+    }
+
+    /**
+     * Haal de kopie labels op voor een bepaalde school
+     * @param currentUserUid - de uid van de huidige gebruiker
+     * @return een lijst met kopie labels
+     */
+    public List<BookCopyLabelDTO> getCopyLabelsForSchool(String currentUserUid) {
+        Long schoolId = requireRequesterSchoolId(currentUserUid);
+        List<BookInventoryEntity> inventories = bookInventoryRepository.findBySchool_Id(schoolId);
+
+        List<BookCopyEntity> needsBarcode = inventories.stream()
+                .flatMap(inv -> bookCopyRepository.findByInventory(inv).stream())
+                .filter(c -> c.getBarcode() == null)
+                .toList();
+
+        if (!needsBarcode.isEmpty()) {
+            needsBarcode.forEach(c -> c.setBarcode(generateEan13(c.getId())));
+            bookCopyRepository.saveAll(needsBarcode);
+        }
+
+        return inventories.stream()
+                .flatMap(inv -> {
+                    String campus = normalizeCampus(inv.getCampus());
+                    String bookTitle = inv.getBook().getTitle();
+                    String isbn = inv.getBook().getIsbn();
+                    return bookCopyRepository.findByInventory(inv).stream()
+                            .map(c -> new BookCopyLabelDTO(
+                                    c.getId(),
+                                    c.getBarcode(),
+                                    c.getCopyNumber(),
+                                    bookTitle,
+                                    isbn,
+                                    campus,
+                                    c.getCopyCondition() != null ? c.getCopyCondition().name() : "GOOD"));
+                })
+                .toList();
+    }
+
+    /**
+     * Werk de conditie van een boekkopie bij
+     * @param copyId - het id van de boekkopie
+     * @param newCondition - de nieuwe conditie
+     * @param notes - opmerkingen
+     */
+    public void updateCopyCondition(Long copyId, BookCopyCondition newCondition, String notes) {
+        BookCopyEntity copy = bookCopyRepository.findById(copyId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exemplaar niet gevonden."));
+
+        BookCopyCondition previousCondition = copy.getCopyCondition();
+        copy.setCopyCondition(newCondition);
+        if (notes != null)
+            copy.setNotes(notes);
+        bookCopyRepository.save(copy);
+
+        if (previousCondition != newCondition) {
+            inventoryAdjustmentService.adjustForConditionChange(copy.getInventory(), previousCondition, newCondition);
+        }
+    }
+
+    /**
+     * Zorgt dat het aantal exemplaren in de database overeenkomt met het aantal dat
+     * in de inventaris staat.
+     * Als er te weinig exemplaren zijn, worden er nieuwe exemplaren aangemaakt.
+     * Als er te veel exemplaren zijn, worden er exemplaren verwijderd, waarbij
+     * eerst exemplaren in slechte staat worden verwijderd.
+     *
+     * @param inventory
+     */
+    public void reconcileCopiesForInventory(BookInventoryEntity inventory) {
+        List<BookCopyEntity> allCopies = bookCopyRepository.findByInventory(inventory);
+        List<BookCopyEntity> nonLostCopies = allCopies.stream()
+                .filter(c -> c.getCopyCondition() != BookCopyCondition.LOST)
+                .toList();
+
+        int target = inventory.getTotalCopies() == null ? 0 : inventory.getTotalCopies();
+        int current = nonLostCopies.size();
+
+        if (current < target) {
+            int maxCopyNumber = allCopies.stream()
+                    .mapToInt(BookCopyEntity::getCopyNumber)
+                    .max().orElse(0);
+            List<BookCopyEntity> toCreate = new ArrayList<>();
+            for (int i = 1; i <= (target - current); i++) {
+                BookCopyEntity copy = new BookCopyEntity();
+                copy.setInventory(inventory);
+                copy.setCopyCondition(BookCopyCondition.GOOD);
+                copy.setCopyNumber(maxCopyNumber + i);
+                toCreate.add(copy);
+            }
+            bookCopyRepository.saveAll(toCreate);
+        } else if (current > target) {
+            List<BookCopyEntity> candidates = new ArrayList<>();
+            nonLostCopies.stream()
+                    .filter(c -> c.getCopyCondition() == BookCopyCondition.BROKEN)
+                    .forEach(candidates::add);
+            nonLostCopies.stream()
+                    .filter(c -> c.getCopyCondition() == BookCopyCondition.DAMAGED)
+                    .forEach(candidates::add);
+            nonLostCopies.stream()
+                    .filter(c -> c.getCopyCondition() == BookCopyCondition.GOOD)
+                    .forEach(candidates::add);
+            int toRemove = current - target;
+            bookCopyRepository.deleteAll(candidates.subList(0, Math.min(toRemove, candidates.size())));
+        }
+    }
+
+    //endregion
+
+
+    //region Importeren
+
+    /**
+     * Importeer boeken uit een Excel-bestand
+     * @param file - het Excel-bestand
+     * @param smartschoolUid - de uid van de smartschool gebruiker
+     * @param campus - de campus waar de boeken worden geïmporteerd
+     * @return een response met informatie over de import
+     */
     public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid, String campus) {
         return importBooksFromExcel(file, smartschoolUid, campus, false, List.of());
     }
 
+    /**
+     * Importeer boeken uit een Excel-bestand
+     * @param file - het Excel-bestand
+     * @param smartschoolUid - de uid van de smartschool gebruiker
+     * @param fallbackCampus - de campus waar de boeken worden geïmporteerd
+     * @param confirmDuplicates - of dubbele boeken moeten worden bevestigd
+     * @param confirmedDuplicateRows - de rijen van dubbele boeken die zijn bevestigd
+     * @return een response met informatie over de import
+     */
     public BulkImportResponseDTO importBooksFromExcel(
             MultipartFile file,
             String smartschoolUid,
@@ -635,6 +1207,15 @@ public class BookService {
                 duplicateWarnings);
     }
 
+    /**
+     * Importeer boeken zonder ISBN uit een Excel-bestand
+     * @param file - het Excel-bestand
+     * @param smartschoolUid - de uid van de smartschool gebruiker
+     * @param fallbackCampus - de campus waar de boeken worden geïmporteerd
+     * @param confirmDuplicates - of dubbele boeken moeten worden bevestigd
+     * @param confirmedDuplicateRows - de rijen van dubbele boeken die zijn bevestigd
+     * @return een response met informatie over de import
+     */
     public BulkImportResponseDTO importBooksWithoutIsbnFromExcel(
             MultipartFile file,
             String smartschoolUid,
@@ -849,333 +1430,16 @@ public class BookService {
                 duplicateWarnings);
     }
 
-    public BookDTO updateBook(Long id, BookDTO updatedBook) {
-        BookEntity book = bookRepository.findDetailedById(id)
-                .orElseThrow(() -> new BookNotFoundException(id));
-        if (updatedBook.title() != null && updatedBook.title().isBlank())
-            throw new IllegalArgumentException("Titel mag niet leeg zijn");
+    //endregion
 
-        if (updatedBook.pageCount() != null && updatedBook.pageCount() < 0)
-            throw new IllegalArgumentException("Paginacount mag niet negatief zijn");
-        if (updatedBook.publishedYear() != null && updatedBook.publishedYear() <= 0)
-            throw new IllegalArgumentException("Publicatiejaar moet groter zijn dan 0");
 
-        if (updatedBook.publishedYear() != null && updatedBook.publishedYear() > Year.now().getValue())
-            throw new IllegalArgumentException("Publicatiejaar mag niet in de toekomst liggen");
+    //region Mapping
 
-        if (updatedBook.isbn() != null && !updatedBook.isbn().equals(book.getIsbn())
-                && bookRepository.existsByIsbn(updatedBook.isbn())) {
-            throw new IllegalArgumentException("ISBN bestaat al in de database");
-        }
-
-        if (updatedBook.isbn() != null && updatedBook.isbn().isBlank())
-            throw new IllegalArgumentException("ISBN mag niet leeg zijn");
-
-        if (updatedBook.title() != null)
-            book.setTitle(updatedBook.title().trim());
-        if (updatedBook.authors() != null)
-            book.setAuthors(cleanStringList(updatedBook.authors()));
-        if (updatedBook.publisher() != null)
-            book.setPublisher(safeTrim(updatedBook.publisher()));
-        if (updatedBook.description() != null)
-            book.setDescription(safeTrim(updatedBook.description()));
-        if (updatedBook.pageCount() != null)
-            book.setPageCount(updatedBook.pageCount());
-        if (updatedBook.categories() != null)
-            book.setCategories(cleanStringList(updatedBook.categories()));
-        if (updatedBook.labels() != null)
-            book.setLabels(cleanStringList(updatedBook.labels()));
-        if (updatedBook.thumbnail() != null)
-            book.setThumbnail(safeTrim(updatedBook.thumbnail()));
-        if (updatedBook.language() != null)
-            book.setLanguage(safeTrim(updatedBook.language()));
-        if (updatedBook.isbn() != null)
-            book.setIsbn(updatedBook.isbn().trim());
-        if (updatedBook.rating() != null)
-            book.setRating(updatedBook.rating());
-        if (updatedBook.publishedYear() != null)
-            book.setPublishedYear(updatedBook.publishedYear());
-        if (updatedBook.didacticTag() != null)
-            book.setDidacticTag(updatedBook.didacticTag());
-        if (updatedBook.readingLevel() != null)
-            book.setReadingLevel(safeTrim(updatedBook.readingLevel()));
-        if (updatedBook.ageRange() != null)
-            book.setAgeRange(safeTrim(updatedBook.ageRange()));
-
-        if (updatedBook.inventories() != null) {
-            book.getInventories().clear();
-            bookRepository.saveAndFlush(book);
-            replaceInventoriesFromDto(book, updatedBook.inventories());
-        }
-
-        recomputeBookCopyTotals(book);
-
-        BookEntity savedBook = bookRepository.save(book);
-        savedBook.getInventories().forEach(this::reconcileCopiesForInventory);
-        return toDTO(savedBook);
-    }
-
-    public BookDTO addManualBook(CreateBookRequestDTO request, String smartschoolUid) {
-        if (request.title() == null || request.title().isBlank()) {
-            throw new IllegalArgumentException("Titel is verplicht");
-        }
-
-        BookEntity book = new BookEntity();
-        book.setTitle(request.title().trim());
-        book.setAuthors(cleanStringList(request.authors()));
-        book.setPublisher(safeTrim(request.publisher()));
-        book.setDescription(safeTrim(request.description()));
-        book.setPageCount(request.pageCount() != null ? request.pageCount() : 0);
-        book.setCategories(cleanStringList(request.categories()));
-        book.setThumbnail(safeTrim(request.thumbnail()));
-        book.setLanguage(safeTrim(request.language()));
-        book.setRating(request.rating() != null ? request.rating() : 0.0);
-        book.setPublishedYear(request.publishedYear());
-        book.setSpotlight(Boolean.TRUE.equals(request.spotlight()));
-        book.setDidacticTag(request.didacticTag());
-        book.setLabels(cleanStringList(request.labels()));
-        book.setReadingLevel(safeTrim(request.readingLevel()));
-        book.setAgeRange(safeTrim(request.ageRange()));
-        book.setIsbn("NOISBN-" + java.util.UUID.randomUUID());
-
-        if (request.inventories() != null && !request.inventories().isEmpty()) {
-            replaceInventoriesFromRequest(book, request.inventories(), smartschoolUid);
-        } else {
-            int totalCopies = request.totalCopies() != null ? request.totalCopies() : 1;
-            int availableCopies = request.availableCopies() != null ? request.availableCopies() : totalCopies;
-            applySingleInventoryForCurrentUser(book, smartschoolUid, null, totalCopies, availableCopies);
-        }
-
-        recomputeBookCopyTotals(book);
-
-        BookEntity saved = bookRepository.saveAndFlush(book);
-        saved.getInventories().forEach(this::reconcileCopiesForInventory);
-
-        BookEntity reloaded = bookRepository.findDetailedById(saved.getId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Boek werd opgeslagen maar kon niet opnieuw geladen worden"));
-
-        return toDTO(reloaded);
-    }
-
-    @Transactional(readOnly = true)
-    public List<SnowballSectionDTO> getSnowballSections(Long bookId, UserRoles callerRole, String currentUserUid) {
-        Pageable top12 = PageRequest.of(0, 12, Sort.by(Sort.Direction.DESC, "rating"));
-        BookEntity book = bookRepository.findDetailedById(bookId)
-                .orElseThrow(() -> new BookNotFoundException(bookId));
-
-        List<SnowballSectionDTO> sections = new ArrayList<>();
-
-        if (!book.getAuthors().isEmpty()) {
-            String mainAuthor = book.getAuthors().get(0);
-            List<BookDTO> authorBooks = bookRepository
-                    .findByAuthorsInAndIdNot(book.getAuthors(), bookId, top12)
-                    .stream()
-                    .filter(b -> canSeeDidactic(callerRole) || !b.isDidacticTag())
-                    .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
-                    .filter(Objects::nonNull)
-                    .toList();
-
-            if (!authorBooks.isEmpty()) {
-                sections.add(new SnowballSectionDTO(
-                        "AUTHOR", mainAuthor, authorBooks));
-            }
-        }
-
-        // categorieeen
-        if (!book.getCategories().isEmpty()) {
-            for (String category : book.getCategories()) {
-                List<BookDTO> categoryBooks = bookRepository
-                        .findByCategoriesInAndIdNot(List.of(category), bookId, top12)
-                        .stream()
-                        .filter(b -> canSeeDidactic(callerRole) || !b.isDidacticTag())
-                        .map(b -> toVisibleBookDTO(b, callerRole, currentUserUid))
-                        .filter(Objects::nonNull)
-                        .toList();
-
-                if (!categoryBooks.isEmpty()) {
-                    sections.add(new SnowballSectionDTO("CATEGORY", category, categoryBooks));
-                }
-            }
-        }
-        return sections;
-    }
-
-    public BookDTO getBookByBarcode(String barcode, UserRoles callerRole, String currentUserUid) {
-        Optional<BookCopyEntity> copy = bookCopyRepository.findByBarcode(barcode);
-        if (copy.isPresent()) {
-            BookEntity book = bookRepository.findDetailedById(copy.get().getInventory().getBook().getId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden"));
-            BookDTO dto = toVisibleBookDTO(book, callerRole, currentUserUid);
-            if (dto == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden");
-            }
-            return dto;
-        }
-
-        // Fall back naar ISBN als het barcode niet is gevonden
-        BookEntity bookByIsbn = bookRepository.findByIsbn(barcode)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode niet gevonden"));
-        BookDTO dto = toVisibleBookDTO(bookByIsbn, callerRole, currentUserUid);
-        if (dto == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Boek niet gevonden");
-        }
-        return dto;
-    }
-
-    public BookCopyLabelDTO getCopyByBarcode(Long bookId, String barcode) {
-        BookCopyEntity copy = bookCopyRepository.findByBarcode(barcode)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode niet gevonden"));
-
-        if (!Objects.equals(copy.getInventory().getBook().getId(), bookId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Barcode hoort niet bij dit boek");
-        }
-
-        return new BookCopyLabelDTO(
-                copy.getId(),
-                copy.getBarcode(),
-                copy.getCopyNumber(),
-                copy.getInventory().getBook().getTitle(),
-                copy.getInventory().getBook().getIsbn(),
-                normalizeCampus(copy.getInventory().getCampus()),
-                copy.getCopyCondition() != null ? copy.getCopyCondition().name() : "GOOD");
-    }
-
-    public List<BookCopyLabelDTO> getCopyLabelsForBook(Long bookId, String currentUserUid) {
-        Long schoolId = requireRequesterSchoolId(currentUserUid);
-        BookEntity book = bookRepository.findDetailedById(bookId)
-                .orElseThrow(() -> new BookNotFoundException(bookId));
-
-        List<BookInventoryEntity> inventories = book.getInventories().stream()
-                .filter(inv -> Objects.equals(inv.getSchool().getId(), schoolId))
-                .toList();
-
-        List<BookCopyEntity> allCopies = inventories.stream()
-                .flatMap(inv -> bookCopyRepository.findByInventory(inv).stream())
-                .toList();
-
-        List<BookCopyEntity> needsBarcode = allCopies.stream()
-                .filter(c -> c.getBarcode() == null)
-                .toList();
-
-        if (!needsBarcode.isEmpty()) {
-            needsBarcode.forEach(c -> c.setBarcode(generateEan13(c.getId())));
-            bookCopyRepository.saveAll(needsBarcode);
-        }
-
-        return inventories.stream()
-                .flatMap(inv -> {
-                    String campus = normalizeCampus(inv.getCampus());
-                    return bookCopyRepository.findByInventory(inv).stream()
-                            .map(c -> new BookCopyLabelDTO(
-                                    c.getId(),
-                                    c.getBarcode(),
-                                    c.getCopyNumber(),
-                                    book.getTitle(),
-                                    book.getIsbn(),
-                                    campus,
-                                    c.getCopyCondition() != null ? c.getCopyCondition().name() : "GOOD"));
-                })
-                .toList();
-    }
-
-    public List<BookCopyLabelDTO> getCopyLabelsForInventory(Long bookId, Long inventoryId) {
-        BookEntity book = bookRepository.findDetailedById(bookId)
-                .orElseThrow(() -> new BookNotFoundException(bookId));
-
-        BookInventoryEntity inventory = book.getInventories().stream()
-                .filter(inv -> Objects.equals(inv.getId(), inventoryId))
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventaris niet gevonden"));
-
-        List<BookCopyEntity> copies = bookCopyRepository.findByInventory(inventory);
-
-        List<BookCopyEntity> needsBarcode = copies.stream()
-                .filter(c -> c.getBarcode() == null)
-                .toList();
-
-        if (!needsBarcode.isEmpty()) {
-            needsBarcode.forEach(c -> c.setBarcode(generateEan13(c.getId())));
-            bookCopyRepository.saveAll(needsBarcode);
-        }
-
-        String campus = normalizeCampus(inventory.getCampus());
-
-        return copies.stream()
-                .map(c -> new BookCopyLabelDTO(
-                        c.getId(),
-                        c.getBarcode(),
-                        c.getCopyNumber(),
-                        book.getTitle(),
-                        book.getIsbn(),
-                        campus,
-                        c.getCopyCondition() != null ? c.getCopyCondition().name() : "GOOD"))
-                .toList();
-    }
-
-    public List<BookCopyLabelDTO> getCopyLabelsForSchool(String currentUserUid) {
-        Long schoolId = requireRequesterSchoolId(currentUserUid);
-        List<BookInventoryEntity> inventories = bookInventoryRepository.findBySchool_Id(schoolId);
-
-        List<BookCopyEntity> needsBarcode = inventories.stream()
-                .flatMap(inv -> bookCopyRepository.findByInventory(inv).stream())
-                .filter(c -> c.getBarcode() == null)
-                .toList();
-
-        if (!needsBarcode.isEmpty()) {
-            needsBarcode.forEach(c -> c.setBarcode(generateEan13(c.getId())));
-            bookCopyRepository.saveAll(needsBarcode);
-        }
-
-        return inventories.stream()
-                .flatMap(inv -> {
-                    String campus = normalizeCampus(inv.getCampus());
-                    String bookTitle = inv.getBook().getTitle();
-                    String isbn = inv.getBook().getIsbn();
-                    return bookCopyRepository.findByInventory(inv).stream()
-                            .map(c -> new BookCopyLabelDTO(
-                                    c.getId(),
-                                    c.getBarcode(),
-                                    c.getCopyNumber(),
-                                    bookTitle,
-                                    isbn,
-                                    campus,
-                                    c.getCopyCondition() != null ? c.getCopyCondition().name() : "GOOD"));
-                })
-                .toList();
-    }
-
-    public void updateCopyCondition(Long copyId, BookCopyCondition newCondition, String notes) {
-        BookCopyEntity copy = bookCopyRepository.findById(copyId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exemplaar niet gevonden."));
-
-        BookCopyCondition previousCondition = copy.getCopyCondition();
-        copy.setCopyCondition(newCondition);
-        if (notes != null)
-            copy.setNotes(notes);
-        bookCopyRepository.save(copy);
-
-        if (previousCondition != newCondition) {
-            inventoryAdjustmentService.adjustForConditionChange(copy.getInventory(), previousCondition, newCondition);
-        }
-    }
-
-    // region Helper functies
-    private static String generateEan13(long copyId) {
-        // prefix 200-299 is gereserveerd voor intern gebruik (we moeten niet aan
-        // registratie aanmaken bij GS1 als we hiertussen blijven)
-        String raw = String.format("200%09d", copyId);
-
-        int sum = 0;
-        for (int i = 0; i < 12; i++) {
-            int digit = raw.charAt(i) - '0';
-            sum += (i % 2 == 0) ? digit : digit * 3;
-        }
-        int checkDigit = (10 - (sum % 10)) % 10;
-
-        return raw + checkDigit;
-    }
-
+    /**
+     * Converteer een BookEntity naar een BookDTO
+     * @param book - de book entity
+     * @return het book dto
+     */
     private BookDTO toDTO(BookEntity book) {
         List<String> authors = book.getAuthors() == null
                 ? new ArrayList<>()
@@ -1226,52 +1490,10 @@ public class BookService {
     }
 
     /**
-     * Zorgt dat het aantal exemplaren in de database overeenkomt met het aantal dat
-     * in de inventaris staat.
-     * Als er te weinig exemplaren zijn, worden er nieuwe exemplaren aangemaakt.
-     * Als er te veel exemplaren zijn, worden er exemplaren verwijderd, waarbij
-     * eerst exemplaren in slechte staat worden verwijderd.
-     * 
-     * @param inventory
+     * Converteer een BookInventoryEntity naar een BookInventoryDTO
+     * @param inventory - de inventaris entity
+     * @return het inventaris dto
      */
-    public void reconcileCopiesForInventory(BookInventoryEntity inventory) {
-        List<BookCopyEntity> allCopies = bookCopyRepository.findByInventory(inventory);
-        List<BookCopyEntity> nonLostCopies = allCopies.stream()
-                .filter(c -> c.getCopyCondition() != BookCopyCondition.LOST)
-                .toList();
-
-        int target = inventory.getTotalCopies() == null ? 0 : inventory.getTotalCopies();
-        int current = nonLostCopies.size();
-
-        if (current < target) {
-            int maxCopyNumber = allCopies.stream()
-                    .mapToInt(BookCopyEntity::getCopyNumber)
-                    .max().orElse(0);
-            List<BookCopyEntity> toCreate = new ArrayList<>();
-            for (int i = 1; i <= (target - current); i++) {
-                BookCopyEntity copy = new BookCopyEntity();
-                copy.setInventory(inventory);
-                copy.setCopyCondition(BookCopyCondition.GOOD);
-                copy.setCopyNumber(maxCopyNumber + i);
-                toCreate.add(copy);
-            }
-            bookCopyRepository.saveAll(toCreate);
-        } else if (current > target) {
-            List<BookCopyEntity> candidates = new ArrayList<>();
-            nonLostCopies.stream()
-                    .filter(c -> c.getCopyCondition() == BookCopyCondition.BROKEN)
-                    .forEach(candidates::add);
-            nonLostCopies.stream()
-                    .filter(c -> c.getCopyCondition() == BookCopyCondition.DAMAGED)
-                    .forEach(candidates::add);
-            nonLostCopies.stream()
-                    .filter(c -> c.getCopyCondition() == BookCopyCondition.GOOD)
-                    .forEach(candidates::add);
-            int toRemove = current - target;
-            bookCopyRepository.deleteAll(candidates.subList(0, Math.min(toRemove, candidates.size())));
-        }
-    }
-
     private BookInventoryDTO toInventoryDTO(BookInventoryEntity inventory) {
         int damaged = (int) bookCopyRepository.countByInventoryAndCopyCondition(inventory, BookCopyCondition.DAMAGED);
         int broken = (int) bookCopyRepository.countByInventoryAndCopyCondition(inventory, BookCopyCondition.BROKEN);
@@ -1289,6 +1511,112 @@ public class BookService {
                 lost);
     }
 
+    private BookDTO toVisibleBookDTO(
+            BookEntity book,
+            UserRoles role,
+            String currentUserUid) {
+
+        List<BookInventoryEntity> visibleInventories = getVisibleInventories(book, role, currentUserUid);
+
+        if (restrictToOwnSchool(role) && visibleInventories.isEmpty()) {
+            return null;
+        }
+
+        int totalCopies = visibleInventories.stream()
+                .map(BookInventoryEntity::getTotalCopies)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        int availableCopies = visibleInventories.stream()
+                .map(BookInventoryEntity::getAvailableCopies)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        List<BookInventoryDTO> inventoryDTOs = visibleInventories.stream()
+                .sorted(Comparator
+                        .comparing(
+                                (BookInventoryEntity inventory) -> inventory.getSchool().getName(),
+                                Comparator.nullsLast(String::compareToIgnoreCase))
+                        .thenComparing(
+                                BookInventoryEntity::getCampus,
+                                Comparator.nullsLast(String::compareToIgnoreCase)))
+                .map(this::toInventoryDTO)
+                .toList();
+
+        return new BookDTO(
+                book.getId(),
+                book.getTitle(),
+                book.getAuthors() == null ? new ArrayList<>() : new ArrayList<>(book.getAuthors()),
+                book.getPublisher(),
+                book.getDescription(),
+                book.getPageCount(),
+                book.getCategories() == null ? new ArrayList<>() : new ArrayList<>(book.getCategories()),
+                book.getThumbnail(),
+                book.getLanguage(),
+                book.getRating(),
+                book.getIsbn(),
+                book.getPublishedYear(),
+                book.isDidacticTag(),
+                book.getLabels() == null ? new ArrayList<>() : new ArrayList<>(book.getLabels()),
+                book.getReadingLevel(),
+                totalCopies,
+                availableCopies,
+                book.getAgeRange(),
+                book.getPreviewLink(),
+                inventoryDTOs);
+    }
+
+    private List<BookInventoryEntity> getVisibleInventories(
+            BookEntity book,
+            UserRoles role,
+            String currentUserUid) {
+        if (!restrictToOwnSchool(role)) {
+            return book.getInventories() == null ? List.of() : book.getInventories();
+        }
+
+        Long requesterSchoolId = getRequesterSchoolId(currentUserUid);
+        if (requesterSchoolId == null || book.getInventories() == null) {
+            return List.of();
+        }
+
+        return book.getInventories().stream()
+                .filter(inventory -> inventory.getSchool() != null &&
+                        Objects.equals(inventory.getSchool().getId(), requesterSchoolId))
+                .toList();
+    }
+
+    /**
+     * Prioritiseer de zoekresultaten op basis van de titel
+     * @param raw - de onbewerkte zoekresultaten
+     * @param query - de zoekterm
+     * @param pageable - de pageable configuratie
+     * @param mapper - de mapper om BookEntity naar BookDTO te converteren
+     * @return een pagina met geordende BookDTOs
+     */
+    private Page<BookDTO> prioritizeTitleMatches(Page<BookEntity> raw, String query, Pageable pageable,
+            Function<BookEntity, BookDTO> mapper) {
+        String lowerQuery = query.toLowerCase();
+        List<BookDTO> sorted = raw.getContent().stream()
+                .sorted(Comparator.comparingInt(b -> b.getTitle().toLowerCase().contains(lowerQuery) ? 0 : 1))
+                .map(mapper)
+                .filter(Objects::nonNull)
+                .toList();
+        return new PageImpl<>(sorted, pageable, raw.getTotalElements());
+    }
+
+    //endregion
+
+
+    //region Inventarisbeheer
+
+    /**
+     * Vervang de inventarisregels voor een boek op basis van een lijst van request DTO's
+     * @param book - de book entity
+     * @param requestInventories - de lijst met request DTO's
+     * @param smartschoolUid - de uid van de smartschool
+     */
     private void replaceInventoriesFromRequest(BookEntity book,
             List<CreateBookInventoryRequestDTO> requestInventories,
             String smartschoolUid) {
@@ -1319,6 +1647,11 @@ public class BookService {
         }
     }
 
+    /**
+     * Vervang de inventarisregels voor een boek op basis van een lijst van DTO's
+     * @param book - de book entity
+     * @param inventoryDTOs - de lijst met inventaris DTO's
+     */
     private void replaceInventoriesFromDto(BookEntity book, List<BookInventoryDTO> inventoryDTOs) {
 
         Set<String> seenInventoryKeys = new HashSet<>();
@@ -1354,6 +1687,14 @@ public class BookService {
         }
     }
 
+    /**
+     * Pas de inventaris aan voor de huidige gebruiker
+     * @param book - de book entity
+     * @param smartschoolUid - de uid van de smartschool
+     * @param campus - de campus
+     * @param totalCopies - het totaal aantal exemplaren
+     * @param availableCopies - het aantal beschikbare exemplaren
+     */
     private void applySingleInventoryForCurrentUser(BookEntity book,
             String smartschoolUid,
             String campus,
@@ -1372,6 +1713,14 @@ public class BookService {
                 availableCopies);
     }
 
+    /**
+     * Voeg een inventarisregel toe aan een boek
+     * @param book - de book entity
+     * @param school - de school entity
+     * @param campus - de campus
+     * @param totalCopies - het totaal aantal exemplaren
+     * @param availableCopies - het aantal beschikbare exemplaren
+     */
     private void addInventory(BookEntity book,
             SchoolEntity school,
             String campus,
@@ -1386,6 +1735,14 @@ public class BookService {
         book.getInventories().add(inventory);
     }
 
+    /**
+     * Voeg een inventarisregel toe of verhoog de bestaande regel voor een boek
+     * @param book - de book entity
+     * @param school - de school entity
+     * @param campus - de campus
+     * @param totalCopiesToAdd - het aantal toe te voegen exemplaren
+     * @param availableCopiesToAdd - het aantal beschikbare exemplaren om toe te voegen
+     */
     private void addOrIncreaseInventory(
             BookEntity book,
             SchoolEntity school,
@@ -1426,69 +1783,6 @@ public class BookService {
                 .orElse(null);
     }
 
-    private int safeCopyCount(Integer value) {
-        return value == null ? 0 : value;
-    }
-
-    private void markBookDidacticWhenRequested(BookEntity book, boolean didacticBook) {
-        if (didacticBook && book != null && !book.isDidacticTag()) {
-            book.setDidacticTag(true);
-        }
-    }
-
-    private BookEntity findDuplicateBookForNoIsbnImport(
-            String title,
-            List<String> authors,
-            String publisher,
-            SchoolEntity school) {
-
-        List<String> normalizedAuthors = normalizeDuplicateList(authors);
-
-        if (normalizedAuthors.isEmpty()) {
-            return null;
-        }
-
-        String normalizedTitle = normalizeDuplicateText(title);
-        String normalizedPublisher = normalizeDuplicateText(publisher);
-
-        return bookRepository.findPossibleDuplicateBooksWithoutIsbn(
-                title,
-                publisher,
-                school.getId())
-                .stream()
-                .filter(book -> Objects.equals(normalizeDuplicateText(book.getTitle()), normalizedTitle))
-                .filter(book -> Objects.equals(normalizeDuplicateText(book.getPublisher()), normalizedPublisher))
-                .filter(book -> Objects.equals(normalizeDuplicateList(book.getAuthors()), normalizedAuthors))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private List<String> normalizeDuplicateList(List<String> values) {
-        if (values == null) {
-            return List.of();
-        }
-
-        return values.stream()
-                .map(this::normalizeDuplicateText)
-                .filter(value -> !value.isBlank())
-                .sorted()
-                .toList();
-    }
-
-    private String normalizeDuplicateText(String value) {
-        if (value == null) {
-            return "";
-        }
-
-        String withoutAccents = Normalizer.normalize(value, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "");
-
-        return withoutAccents
-                .trim()
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("\\s+", " ");
-    }
-
     private void recomputeBookCopyTotals(BookEntity book) {
         int totalCopies = book.getInventories() == null
                 ? 0
@@ -1510,6 +1804,29 @@ public class BookService {
         book.setAvailableCopies(availableCopies);
     }
 
+    private void validateInventoryCounts(int totalCopies, int availableCopies) {
+        if (totalCopies < 0) {
+            throw new IllegalArgumentException("Totaal aantal exemplaren mag niet negatief zijn");
+        }
+        if (availableCopies < 0) {
+            throw new IllegalArgumentException("Beschikbare exemplaren mogen niet negatief zijn");
+        }
+        if (availableCopies > totalCopies) {
+            throw new IllegalArgumentException(
+                    "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren");
+        }
+    }
+
+    private int safeCopyCount(Integer value) {
+        return value == null ? 0 : value;
+    }
+
+    private void markBookDidacticWhenRequested(BookEntity book, boolean didacticBook) {
+        if (didacticBook && book != null && !book.isDidacticTag()) {
+            book.setDidacticTag(true);
+        }
+    }
+
     private void applyBulkIsbnImportFields(
             BookEntity book,
             String categories,
@@ -1528,19 +1845,16 @@ public class BookService {
         book.setDidacticTag(didacticBook);
     }
 
-    private void validateInventoryCounts(int totalCopies, int availableCopies) {
-        if (totalCopies < 0) {
-            throw new IllegalArgumentException("Totaal aantal exemplaren mag niet negatief zijn");
-        }
-        if (availableCopies < 0) {
-            throw new IllegalArgumentException("Beschikbare exemplaren mogen niet negatief zijn");
-        }
-        if (availableCopies > totalCopies) {
-            throw new IllegalArgumentException(
-                    "Beschikbare exemplaren mogen niet groter zijn dan totaal aantal exemplaren");
-        }
-    }
+    //endregion
 
+
+    //region Google Books
+
+    /**
+     * Bouw een BookEntity vanaf de Google Books API
+     * @param isbn - het ISBN van het boek
+     * @return het BookEntity
+     */
     private BookEntity buildBookEntityFromGoogle(String isbn) {
         String url = UriComponentsBuilder
                 .fromUriString(googleBooksApiUrl)
@@ -1676,63 +1990,40 @@ public class BookService {
         return book;
     }
 
-    private boolean titlesMatch(String excelTitle, String fetchedTitle) {
-        return normalizeTitle(excelTitle).equals(normalizeTitle(fetchedTitle));
-    }
-
-    private String normalizeTitle(String value) {
-        if (value == null) {
-            return "";
-        }
-
-        return value
-                .trim()
-                .toLowerCase()
-                .replaceAll("\\s+", " ");
-    }
-
-    private List<String> cleanStringList(List<String> values) {
-        if (values == null) {
-            return new ArrayList<>();
-        }
-
-        return new ArrayList<>(
-                values.stream()
-                        .filter(value -> value != null && !value.isBlank())
-                        .map(String::trim)
-                        .toList());
-    }
-
-    private List<String> cleanDistinctOptions(List<String> values) {
-        if (values == null) {
-            return new ArrayList<>();
-        }
-
-        List<String> cleanedValues = values.stream()
-                .map(this::safeTrim)
-                .filter(value -> value != null && !value.isBlank())
-                .sorted(String.CASE_INSENSITIVE_ORDER)
-                .toList();
-
-        List<String> distinctValues = new ArrayList<>();
-        Set<String> seenValues = new HashSet<>();
-
-        for (String value : cleanedValues) {
-            if (seenValues.add(value.toLowerCase(Locale.ROOT))) {
-                distinctValues.add(value);
+    private Integer extractYear(String publishedDate) {
+        if (publishedDate != null && publishedDate.length() >= 4) {
+            try {
+                return Integer.parseInt(publishedDate.substring(0, 4));
+            } catch (NumberFormatException e) {
+                return null;
             }
         }
-
-        return distinctValues;
+        return null;
     }
 
-    private String safeTrim(String value) {
-        return value == null ? null : value.trim();
+    //endregion
+
+
+    //region School & campus
+
+    private SchoolEntity resolveSchoolForUser(String smartschoolUid) {
+        if (smartschoolUid == null || smartschoolUid.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "Je moet ingelogd zijn om een boek toe te voegen");
+        }
+
+        return userRepository.findBySmartschoolUid(smartschoolUid)
+                .map(UserEntity::getSchool)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Geen school gevonden voor de ingelogde gebruiker"));
     }
 
-    private String normalizeCampus(String campus) {
-        String trimmed = safeTrim(campus);
-        return trimmed == null ? "" : trimmed;
+    private SchoolEntity resolveSchoolById(Long schoolId) {
+        return schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "School niet gevonden voor id: " + schoolId));
     }
 
     private String resolveCampusForSchool(SchoolEntity school, String campus) {
@@ -1779,24 +2070,31 @@ public class BookService {
                 .orElse(normalizedCampus);
     }
 
-    private SchoolEntity resolveSchoolForUser(String smartschoolUid) {
-        if (smartschoolUid == null || smartschoolUid.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "Je moet ingelogd zijn om een boek toe te voegen");
+    private Long requireRequesterSchoolId(String currentUserUid) {
+        Long schoolId = getRequesterSchoolId(currentUserUid);
+        if (schoolId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Geen school gevonden voor de ingelogde gebruiker");
         }
-
-        return userRepository.findBySmartschoolUid(smartschoolUid)
-                .map(UserEntity::getSchool)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Geen school gevonden voor de ingelogde gebruiker"));
+        return schoolId;
     }
 
-    private SchoolEntity resolveSchoolById(Long schoolId) {
-        return schoolRepository.findById(schoolId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "School niet gevonden voor id: " + schoolId));
+    private Long getRequesterSchoolId(String currentUserUid) {
+        return userRepository.findDetailedBySmartschoolUid(currentUserUid)
+                .map(UserEntity::getSchool)
+                .map(SchoolEntity::getId)
+                .orElse(null);
+    }
+
+    private boolean restrictToOwnSchool(UserRoles role) {
+        return role == UserRoles.STUDENT;
+    }
+
+    private boolean canSeeDidactic(UserRoles role) {
+        return role == UserRoles.TEACHER
+                || role == UserRoles.LIBRARIAN
+                || role == UserRoles.ADMIN;
     }
 
     private String determineAgeRangeFromStudentClass(UserEntity user) {
@@ -1820,109 +2118,6 @@ public class BookService {
         };
     }
 
-    private boolean canSeeDidactic(UserRoles role) {
-        return role == UserRoles.TEACHER
-                || role == UserRoles.LIBRARIAN
-                || role == UserRoles.ADMIN;
-    }
-
-    private boolean restrictToOwnSchool(UserRoles role) {
-        return role == UserRoles.STUDENT;
-    }
-
-    private Long getRequesterSchoolId(String currentUserUid) {
-        return userRepository.findDetailedBySmartschoolUid(currentUserUid)
-                .map(UserEntity::getSchool)
-                .map(SchoolEntity::getId)
-                .orElse(null);
-    }
-
-    private List<BookInventoryEntity> getVisibleInventories(
-            BookEntity book,
-            UserRoles role,
-            String currentUserUid) {
-        if (!restrictToOwnSchool(role)) {
-            return book.getInventories() == null ? List.of() : book.getInventories();
-        }
-
-        Long requesterSchoolId = getRequesterSchoolId(currentUserUid);
-        if (requesterSchoolId == null || book.getInventories() == null) {
-            return List.of();
-        }
-
-        return book.getInventories().stream()
-                .filter(inventory -> inventory.getSchool() != null &&
-                        Objects.equals(inventory.getSchool().getId(), requesterSchoolId))
-                .toList();
-    }
-
-    private BookDTO toVisibleBookDTO(
-            BookEntity book,
-            UserRoles role,
-            String currentUserUid) {
-
-        List<BookInventoryEntity> visibleInventories = getVisibleInventories(book, role, currentUserUid);
-
-        if (restrictToOwnSchool(role) && visibleInventories.isEmpty()) {
-            return null;
-        }
-
-        int totalCopies = visibleInventories.stream()
-                .map(BookInventoryEntity::getTotalCopies)
-                .filter(Objects::nonNull)
-                .mapToInt(Integer::intValue)
-                .sum();
-
-        int availableCopies = visibleInventories.stream()
-                .map(BookInventoryEntity::getAvailableCopies)
-                .filter(Objects::nonNull)
-                .mapToInt(Integer::intValue)
-                .sum();
-
-        List<BookInventoryDTO> inventoryDTOs = visibleInventories.stream()
-                .sorted(Comparator
-                        .comparing(
-                                (BookInventoryEntity inventory) -> inventory.getSchool().getName(),
-                                Comparator.nullsLast(String::compareToIgnoreCase))
-                        .thenComparing(
-                                BookInventoryEntity::getCampus,
-                                Comparator.nullsLast(String::compareToIgnoreCase)))
-                .map(this::toInventoryDTO)
-                .toList();
-
-        return new BookDTO(
-                book.getId(),
-                book.getTitle(),
-                book.getAuthors() == null ? new ArrayList<>() : new ArrayList<>(book.getAuthors()),
-                book.getPublisher(),
-                book.getDescription(),
-                book.getPageCount(),
-                book.getCategories() == null ? new ArrayList<>() : new ArrayList<>(book.getCategories()),
-                book.getThumbnail(),
-                book.getLanguage(),
-                book.getRating(),
-                book.getIsbn(),
-                book.getPublishedYear(),
-                book.isDidacticTag(),
-                book.getLabels() == null ? new ArrayList<>() : new ArrayList<>(book.getLabels()),
-                book.getReadingLevel(),
-                totalCopies,
-                availableCopies,
-                book.getAgeRange(),
-                book.getPreviewLink(),
-                inventoryDTOs);
-    }
-
-    private Long requireRequesterSchoolId(String currentUserUid) {
-        Long schoolId = getRequesterSchoolId(currentUserUid);
-        if (schoolId == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Geen school gevonden voor de ingelogde gebruiker");
-        }
-        return schoolId;
-    }
-
     private Sort resolveSort(String sortBy) {
         if ("title_asc".equals(sortBy))
             return Sort.by("title").ascending();
@@ -1930,6 +2125,11 @@ public class BookService {
             return Sort.by("id").descending();
         return Sort.unsorted();
     }
+
+    //endregion
+
+
+    //region Excel hulpfuncties
 
     private Map<String, Integer> getImportColumnIndexes(Row headerRow, DataFormatter formatter) {
         if (headerRow == null) {
@@ -2015,34 +2215,6 @@ public class BookService {
         return value.trim();
     }
 
-    private String normalizeLanguage(String language) {
-        if (language == null || language.isBlank()) {
-            return "Geen taal ingegeven";
-        }
-
-        String trimmedLanguage = language.trim().toLowerCase(Locale.ROOT);
-
-        return switch (trimmedLanguage) {
-            case "nl", "ne", "nederlands", "dutch" -> "nl";
-            case "en", "engels", "english" -> "en";
-            case "fr", "frans", "french" -> "fr";
-            default -> trimmedLanguage;
-        };
-    }
-
-    private String normalizeReadingLevel(String readingLevel) {
-        if (readingLevel == null || readingLevel.isBlank()) {
-            return "A";
-        }
-
-        String normalized = readingLevel.trim().toUpperCase(Locale.ROOT);
-
-        return switch (normalized) {
-            case "A", "B", "C", "D" -> normalized;
-            default -> "A";
-        };
-    }
-
     private boolean parseDidacticBoolean(String value) {
         if (value == null || value.isBlank()) {
             return false;
@@ -2111,5 +2283,165 @@ public class BookService {
         }
     }
 
-    // endregion
+    private BookEntity findDuplicateBookForNoIsbnImport(
+            String title,
+            List<String> authors,
+            String publisher,
+            SchoolEntity school) {
+
+        List<String> normalizedAuthors = normalizeDuplicateList(authors);
+
+        if (normalizedAuthors.isEmpty()) {
+            return null;
+        }
+
+        String normalizedTitle = normalizeDuplicateText(title);
+        String normalizedPublisher = normalizeDuplicateText(publisher);
+
+        return bookRepository.findPossibleDuplicateBooksWithoutIsbn(
+                title,
+                publisher,
+                school.getId())
+                .stream()
+                .filter(book -> Objects.equals(normalizeDuplicateText(book.getTitle()), normalizedTitle))
+                .filter(book -> Objects.equals(normalizeDuplicateText(book.getPublisher()), normalizedPublisher))
+                .filter(book -> Objects.equals(normalizeDuplicateList(book.getAuthors()), normalizedAuthors))
+                .findFirst()
+                .orElse(null);
+    }
+
+    //endregion
+
+
+    //region Tekst normalisatie
+
+    private String safeTrim(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    private String normalizeCampus(String campus) {
+        String trimmed = safeTrim(campus);
+        return trimmed == null ? "" : trimmed;
+    }
+
+    private boolean titlesMatch(String excelTitle, String fetchedTitle) {
+        return normalizeTitle(excelTitle).equals(normalizeTitle(fetchedTitle));
+    }
+
+    private String normalizeTitle(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .trim()
+                .toLowerCase()
+                .replaceAll("\\s+", " ");
+    }
+
+    private String normalizeLanguage(String language) {
+        if (language == null || language.isBlank()) {
+            return "Geen taal ingegeven";
+        }
+
+        String trimmedLanguage = language.trim().toLowerCase(Locale.ROOT);
+
+        return switch (trimmedLanguage) {
+            case "nl", "ne", "nederlands", "dutch" -> "nl";
+            case "en", "engels", "english" -> "en";
+            case "fr", "frans", "french" -> "fr";
+            default -> trimmedLanguage;
+        };
+    }
+
+    private String normalizeReadingLevel(String readingLevel) {
+        if (readingLevel == null || readingLevel.isBlank()) {
+            return "A";
+        }
+
+        String normalized = readingLevel.trim().toUpperCase(Locale.ROOT);
+
+        return switch (normalized) {
+            case "A", "B", "C", "D" -> normalized;
+            default -> "A";
+        };
+    }
+
+    private List<String> cleanStringList(List<String> values) {
+        if (values == null) {
+            return new ArrayList<>();
+        }
+
+        return new ArrayList<>(
+                values.stream()
+                        .filter(value -> value != null && !value.isBlank())
+                        .map(String::trim)
+                        .toList());
+    }
+
+    private List<String> cleanDistinctOptions(List<String> values) {
+        if (values == null) {
+            return new ArrayList<>();
+        }
+
+        List<String> cleanedValues = values.stream()
+                .map(this::safeTrim)
+                .filter(value -> value != null && !value.isBlank())
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+
+        List<String> distinctValues = new ArrayList<>();
+        Set<String> seenValues = new HashSet<>();
+
+        for (String value : cleanedValues) {
+            if (seenValues.add(value.toLowerCase(Locale.ROOT))) {
+                distinctValues.add(value);
+            }
+        }
+
+        return distinctValues;
+    }
+
+    private String normalizeDuplicateText(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        String withoutAccents = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+
+        return withoutAccents
+                .trim()
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", " ");
+    }
+
+    private List<String> normalizeDuplicateList(List<String> values) {
+        if (values == null) {
+            return List.of();
+        }
+
+        return values.stream()
+                .map(this::normalizeDuplicateText)
+                .filter(value -> !value.isBlank())
+                .sorted()
+                .toList();
+    }
+
+    private static String generateEan13(long copyId) {
+        // prefix 200-299 is gereserveerd voor intern gebruik (we moeten niet aan
+        // registratie aanmaken bij GS1 als we hiertussen blijven)
+        String raw = String.format("200%09d", copyId);
+
+        int sum = 0;
+        for (int i = 0; i < 12; i++) {
+            int digit = raw.charAt(i) - '0';
+            sum += (i % 2 == 0) ? digit : digit * 3;
+        }
+        int checkDigit = (10 - (sum % 10)) % 10;
+
+        return raw + checkDigit;
+    }
+
+    //endregion
 }
