@@ -12,12 +12,29 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
+/**
+ * Service die een OAuth access token ophaalt voor Smartschool OneRoster.
+ *
+ * <p>
+ * De OneRoster API gebruikt de client credentials flow. Het token wordt
+ * daarna gebruikt om de OneRoster endpoints uit te lezen.
+ * </p>
+ */
 @Service
 @RequiredArgsConstructor
 public class SmartschoolOneRosterAuthService {
 
     private final RestClient restClient = RestClient.create();
 
+    /**
+     * Vraagt een access token aan bij Smartschool OneRoster.
+     *
+     * @param integration de schoolintegratie met base URL, client ID en client
+     *                    secret
+     * @return access token voor de OneRoster API
+     * @throws ResponseStatusException wanneer Smartschool geen access token
+     *                                 teruggeeft
+     */
     public String getAccessToken(SchoolIntegrationEntity integration) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "client_credentials");

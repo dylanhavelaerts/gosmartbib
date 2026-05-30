@@ -26,6 +26,12 @@ type Props = {
   onClose: () => void;
 };
 
+/**
+ * Modal voor het starten en opvolgen van een handmatige OneRoster-synchronisatie.
+ *
+ * De modal toont eerst een bevestiging, daarna een laadstatus en uiteindelijk
+ * een samenvatting van het synchronisatieresultaat.
+ */
 export default function SyncModal({
   syncStatus,
   syncStep,

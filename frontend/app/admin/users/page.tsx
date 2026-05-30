@@ -276,6 +276,12 @@ export default function AdminUserPage() {
     }
   };
 
+  /**
+   * Start een handmatige OneRoster-synchronisatie.
+   *
+   * De frontend start de backend-sync via `/api/sync`, toont ondertussen een
+   * visuele voortgang in de modal en vernieuwt daarna de gebruikerslijst.
+   */
   const handleSync = async () => {
     setSyncStatus("loading");
     setSyncStep(0);

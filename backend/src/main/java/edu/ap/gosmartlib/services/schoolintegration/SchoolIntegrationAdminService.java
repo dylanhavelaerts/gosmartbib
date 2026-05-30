@@ -15,6 +15,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Service voor het testen en previewen van schoolintegraties.
+ *
+ * <p>
+ * Deze service haalt live OneRoster-data op uit Smartschool zonder die
+ * rechtstreeks in de databank op te slaan. De effectieve synchronisatie gebeurt
+ * via {@link OneRosterSyncService}.
+ * </p>
+ */
 @Service
 @RequiredArgsConstructor
 public class SchoolIntegrationAdminService {
@@ -35,8 +44,6 @@ public class SchoolIntegrationAdminService {
         return performTest(schoolIntegrationService.getIntegrationEntityForPlatformAdmin(schoolId));
     }
 
-
-
     @Transactional(readOnly = true)
     public SchoolIntegrationLiveSchoolsResponse getLiveSchools(String actorUid, Long schoolId) {
         return performGetLiveSchools(schoolIntegrationService.getIntegrationEntityForLibrarian(actorUid, schoolId));
@@ -46,8 +53,6 @@ public class SchoolIntegrationAdminService {
         return performGetLiveSchools(schoolIntegrationService.getIntegrationEntityForPlatformAdmin(schoolId));
     }
 
-
-
     public SchoolIntegrationLiveUsersResponse getLiveUsers(String actorUid, Long schoolId) {
         return performGetLiveUsers(schoolIntegrationService.getIntegrationEntityForLibrarian(actorUid, schoolId));
     }
@@ -55,8 +60,6 @@ public class SchoolIntegrationAdminService {
     public SchoolIntegrationLiveUsersResponse getLiveUsersForPlatformAdmin(Long schoolId) {
         return performGetLiveUsers(schoolIntegrationService.getIntegrationEntityForPlatformAdmin(schoolId));
     }
-
-
 
     public SchoolIntegrationLiveClassesResponse getLiveClasses(String actorUid, Long schoolId) {
         return performGetLiveClasses(schoolIntegrationService.getIntegrationEntityForLibrarian(actorUid, schoolId));
@@ -66,17 +69,43 @@ public class SchoolIntegrationAdminService {
         return performGetLiveClasses(schoolIntegrationService.getIntegrationEntityForPlatformAdmin(schoolId));
     }
 
+    /**
+     * Haalt live klassen op uit OneRoster voor een bestaande integratie.
+     *
+     * <p>
+     * Deze methode wordt gebruikt als preview/testfunctie en slaat de opgehaalde
+     * klassen niet op in de lokale databank.
+     * </p>
+     *
+     * @param integration de schoolintegratie waarvoor klassen opgehaald worden
+     * @return response met live klassen of een foutmelding
+     */
     private SchoolIntegrationLiveClassesResponse performGetLiveClasses(SchoolIntegrationEntity integration) {
         if (!integration.isOnerosterEnabled())
             return new SchoolIntegrationLiveClassesResponse(false, 0, List.of(), "Integratie is niet ingeschakeld");
         try {
             String token = authService.getAccessToken(integration);
             List<Map<String, Object>> classes = oneRosterClient.getClasses(integration, token);
-            return new SchoolIntegrationLiveClassesResponse(true, classes.size(), classes, "Live OneRoster klassen opgehaald");
+            return new SchoolIntegrationLiveClassesResponse(true, classes.size(), classes,
+                    "Live OneRoster klassen opgehaald");
         } catch (Exception ex) {
-            return new SchoolIntegrationLiveClassesResponse(false, 0, List.of(), "Ophalen van klassen mislukt: " + ex.getMessage());
+            return new SchoolIntegrationLiveClassesResponse(false, 0, List.of(),
+                    "Ophalen van klassen mislukt: " + ex.getMessage());
         }
     }
+
+    /**
+     * Test de OneRoster-verbinding voor een schoolintegratie.
+     *
+     * <p>
+     * De methode vraagt eerst een access token aan en controleert daarna of
+     * het schools-endpoint bereikbaar is. Bij succes wordt de teststatus opgeslagen
+     * en wordt de OneRoster-synchronisatie gestart wanneer de integratie actief is.
+     * </p>
+     *
+     * @param integration de integratie die getest wordt
+     * @return resultaat van de verbindingstest
+     */
     private SchoolIntegrationTestResponse performTest(SchoolIntegrationEntity integration) {
         SchoolIntegrationTestResponse response;
         try {
@@ -110,22 +139,49 @@ public class SchoolIntegrationAdminService {
 
         return response;
     }
+
+    /**
+     * Haalt live gebruikers op uit OneRoster voor een bestaande integratie.
+     *
+     * <p>
+     * Deze methode wordt gebruikt als preview/testfunctie en slaat de opgehaalde
+     * gebruikers niet op in de lokale databank.
+     * </p>
+     *
+     * @param integration de schoolintegratie waarvoor gebruikers opgehaald worden
+     * @return response met live gebruikers of een foutmelding
+     */
     private SchoolIntegrationLiveUsersResponse performGetLiveUsers(SchoolIntegrationEntity integration) {
         if (!integration.isOnerosterEnabled())
             return new SchoolIntegrationLiveUsersResponse(false, 0, List.of(), "Integratie is niet ingeschakeld");
         try {
             String token = authService.getAccessToken(integration);
             List<Map<String, Object>> users = oneRosterClient.getUsers(integration, token);
-            return new SchoolIntegrationLiveUsersResponse(true, users.size(), users, "Live OneRoster gebruikers opgehaald");
+            return new SchoolIntegrationLiveUsersResponse(true, users.size(), users,
+                    "Live OneRoster gebruikers opgehaald");
         } catch (Exception ex) {
-            return new SchoolIntegrationLiveUsersResponse(false, 0, List.of(), "Ophalen van gebruikers mislukt: " + ex.getMessage());
+            return new SchoolIntegrationLiveUsersResponse(false, 0, List.of(),
+                    "Ophalen van gebruikers mislukt: " + ex.getMessage());
         }
     }
+
+    /**
+     * Haalt live scholen of organisaties op uit OneRoster.
+     *
+     * <p>
+     * Deze methode wordt gebruikt om te controleren of de OneRoster-configuratie
+     * naar de juiste Smartschoolomgeving verwijst.
+     * </p>
+     *
+     * @param integration de schoolintegratie waarvoor scholen opgehaald worden
+     * @return response met live scholen/organisaties
+     */
     private SchoolIntegrationLiveSchoolsResponse performGetLiveSchools(SchoolIntegrationEntity integration) {
         if (!integration.isOnerosterEnabled())
             return new SchoolIntegrationLiveSchoolsResponse(false, 0, List.of(), "Integratie is niet ingeschakeld");
         String token = authService.getAccessToken(integration);
         List<Map<String, Object>> schools = oneRosterClient.getSchools(integration, token);
-        return new SchoolIntegrationLiveSchoolsResponse(true, schools.size(), schools, "Live OneRoster scholen opgehaald");
+        return new SchoolIntegrationLiveSchoolsResponse(true, schools.size(), schools,
+                "Live OneRoster scholen opgehaald");
     }
 }

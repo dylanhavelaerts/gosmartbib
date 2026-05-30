@@ -31,6 +31,13 @@ function formatDate(value?: string | null) {
   });
 }
 
+/**
+ * Beheerpagina voor de OneRoster-integratie van een school.
+ *
+ * Op deze pagina kan een platformbeheerder de Smartschool base URL,
+ * OneRoster clientgegevens en activatiestatus beheren. De pagina bevat ook
+ * test- en previewknoppen om live gebruikers en klassen uit OneRoster op te halen.
+ */
 export default function SchoolIntegrationPage() {
   const [schoolId, setSchoolId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -343,6 +350,12 @@ export default function SchoolIntegrationPage() {
     }
   };
 
+  /**
+   * Slaat de OneRoster-integratie op voor de geselecteerde school.
+   *
+   * Gevoelige velden zoals client secret en Smartschool accesscode worden na
+   * succesvol opslaan opnieuw leeggemaakt in de frontend.
+   */
   const handleSave = async () => {
     if (!API_URL || !schoolId) return;
 
@@ -394,6 +407,12 @@ export default function SchoolIntegrationPage() {
     }
   };
 
+  /**
+   * Test de OneRoster-integratie via de backend.
+   *
+   * De backend controleert of een access token opgehaald kan worden en of de
+   * OneRoster API bereikbaar is. Daarna wordt de integratiestatus opnieuw geladen.
+   */
   const handleTest = async () => {
     if (!API_URL || !schoolId) return;
 
@@ -436,6 +455,12 @@ export default function SchoolIntegrationPage() {
     }
   };
 
+  /**
+   * Haalt live gebruikers op uit OneRoster.
+   *
+   * Deze actie is bedoeld als controlefunctie voor beheerders. De opgehaalde
+   * gebruikers worden alleen getoond en niet via deze handler opgeslagen.
+   */
   const handleLoadLiveUsers = async () => {
     if (!API_URL || !schoolId) return;
 
@@ -471,6 +496,12 @@ export default function SchoolIntegrationPage() {
     }
   };
 
+  /**
+   * Haalt live klassen op uit OneRoster.
+   *
+   * Hiermee kan een beheerder controleren of de ingestelde Smartschoolomgeving
+   * de verwachte klassen teruggeeft.
+   */
   const handleLoadLiveClasses = async () => {
     if (!API_URL || !schoolId) return;
 
