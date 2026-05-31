@@ -67,6 +67,10 @@ export default function AddBookWithoutIsbn() {
     setAuthors(authors.slice(0, authors.length - 1));
   };
 
+  /**
+   * Voorbeeld van een boek genereren via de huidige invoer van de gebruiker
+   * Doet dit door een boekobject samen te stellen met de huidige staat van de invoervelden, en dit in te stellen als het previewBook
+   */
   const handlePreviewBook = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -200,6 +204,15 @@ export default function AddBookWithoutIsbn() {
     );
   }
 
+  /**
+   * Voegt een aangepaste optie toe aan de lijst van beschikbare opties
+   * Doet dit door de waarde te trimmen, te controleren of deze al bestaat (case-insensitive),
+   * en indien niet, toe te voegen aan de beschikbare opties en te selecteren
+   * @param value - De waarde van de nieuwe optie
+   * @param setValue - Functie om de waarde van de input te updaten
+   * @param setSelectedValues - Functie om de geselecteerde waarden te updaten
+   * @param setAvailableOptions - Functie om de beschikbare opties te updaten
+   */
   function addCustomOption(
     value: string,
     setValue: React.Dispatch<React.SetStateAction<string>>,
@@ -225,6 +238,15 @@ export default function AddBookWithoutIsbn() {
     setValue("");
   }
 
+  /**
+   * Verwerkt het bevestigen van het toevoegen van een nieuw boek
+   * Doet dit via een API-aanroep en geeft feedback aan de gebruiker over het resultaat
+   * <ul>
+   *   <li>Bij een succesvolle toevoeging wordt de gebruiker doorgestuurd naar de bewerkingspagina van het nieuwe boek</li>
+   *   <li>Bij een fout wordt er een foutmelding weergegeven</li>
+   * </ul>
+   * @returns {Promise<void>}
+   */
   const handleConfirmAdd = async () => {
     if (!previewBook) return;
 
@@ -233,18 +255,18 @@ export default function AddBookWithoutIsbn() {
       return;
     }
 
-  for (const inventory of inventories) {
-    if (!inventory.schoolId) {
-      setMessage("Elke inventarisregel moet een school hebben");
-      return;
-    }
+    for (const inventory of inventories) {
+      if (!inventory.schoolId) {
+        setMessage("Elke inventarisregel moet een school hebben");
+        return;
+      }
 
-    if (campuses.length > 1 && !inventory.campus.trim()) {
-      setMessage("Kies voor elke inventarisregel een campus.");
-      return;
-    }
+      if (campuses.length > 1 && !inventory.campus.trim()) {
+        setMessage("Kies voor elke inventarisregel een campus.");
+        return;
+      }
 
-    if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
+      if (inventory.totalCopies < 0 || inventory.availableCopies < 0) {
         setMessage("Aantallen mogen niet negatief zijn");
         return;
       }
@@ -327,7 +349,7 @@ export default function AddBookWithoutIsbn() {
           me?.school ?? null,
           campuses.length === 1 ? campuses[0].name : "",
         ),
-      ]); 
+      ]);
     } catch (error) {
       console.error(error);
       setMessage("Kan de server niet bereiken");
@@ -356,7 +378,8 @@ export default function AddBookWithoutIsbn() {
   }`.trim();
 
   const createEmptyInventory = (
-    school: MeResponse["school"] | null, campusName = "",
+    school: MeResponse["school"] | null,
+    campusName = "",
   ): BookInventory => ({
     id: null,
     schoolId: school?.id ?? null,
@@ -428,7 +451,10 @@ export default function AddBookWithoutIsbn() {
           const campusData = await fetchSchoolCampuses(API_URL, data.school.id);
           setCampuses(campusData);
           setInventories([
-            createEmptyInventory(data.school, campusData.length === 1 ? campusData[0].name : ""),
+            createEmptyInventory(
+              data.school,
+              campusData.length === 1 ? campusData[0].name : "",
+            ),
           ]);
         }
       } catch (error) {
@@ -481,6 +507,10 @@ export default function AddBookWithoutIsbn() {
       .filter((campusName) => campusName !== "");
   }
 
+  /**
+   * Bepaalt de volgende beschikbare campusnaam
+   * @returns {string} de volgende beschikbare campusnaam
+   */
   function getNextAvailableCampusName() {
     const usedCampusNames = getUsedCampusNames();
 
@@ -492,6 +522,10 @@ export default function AddBookWithoutIsbn() {
     );
   }
 
+  /**
+   * Controleert of er dubbele campussen zijn geselecteerd in de inventaris
+   * @returns {boolean} true als er dubbele campussen zijn, anders false
+   */
   const hasDuplicateInventoryCampuses = () => {
     const selectedCampuses = inventories
       .map((inventory) => inventory.campus.trim().toLowerCase())
@@ -811,7 +845,9 @@ export default function AddBookWithoutIsbn() {
         </div>
         <div className="fieldGroup">
           <label className="label">
-            {shouldShowCampusSelect ? "Inventaris per school/campus" : "Inventaris"}
+            {shouldShowCampusSelect
+              ? "Inventaris per school/campus"
+              : "Inventaris"}
           </label>
 
           {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
@@ -841,7 +877,9 @@ export default function AddBookWithoutIsbn() {
                       disabled={previewBook !== null || loadingCampuses}
                     >
                       <option value="">
-                        {loadingCampuses ? "Campussen laden..." : "Kies een campus"}
+                        {loadingCampuses
+                          ? "Campussen laden..."
+                          : "Kies een campus"}
                       </option>
 
                       {getCampusSelectOptions(campuses, inventory.campus).map(

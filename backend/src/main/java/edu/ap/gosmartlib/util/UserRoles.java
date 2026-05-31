@@ -25,6 +25,11 @@ public enum UserRoles {
         };
     }
 
+    /**
+     * Converteert een OneRoster rol naar een UserRoles enum
+     * @param role de rol van OneRoster (bijv. "student", "teacher")
+     * @return de bijbehorende UserRoles enum, of OTHER als de rol onbekend is
+     */
     public static UserRoles fromOneRoster(String role) {
         if (role == null) return OTHER;
         return switch (role.toLowerCase()) {

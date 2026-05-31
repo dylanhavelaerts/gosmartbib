@@ -80,6 +80,11 @@ function renderStars(rating: number): string {
   return `${"★".repeat(full)}${"☆".repeat(5 - full)}`;
 }
 
+/**
+ * Formatteert de schoolnaam voor weergave.
+ * @param value - de schoolnaam
+ * @return de geformatteerde schoolnaam
+ */
 export function formatSchoolLabel(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) {

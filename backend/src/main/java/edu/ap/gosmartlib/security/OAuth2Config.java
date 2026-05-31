@@ -36,11 +36,13 @@ public class OAuth2Config {
      *
      * Omdat PKCE normaal extra bescherming biedt tegen authorization-code
      * interception, moet de rest van de flow extra strikt blijven:
-     * - HTTPS in productie;
-     * - exacte redirect URI's;
-     * - bescherming van de client secret;
-     * - Spring Security state/session-validatie;
-     * - token exchange alleen server-side in de backend.
+     * <ul>
+     *   <li>HTTPS in productie;</li>
+     *   <li>exacte redirect URI's;</li>
+     *   <li>bescherming van de client secret;</li>
+     *   <li>Spring Security state/session-validatie;</li>
+     *   <li>token exchange alleen server-side in de backend.</li>
+     * </ul>
      *
      * @param repo repository met de geconfigureerde OAuth2 clientregistraties
      * @return resolver die Smartschool-compatible authorization requests maakt

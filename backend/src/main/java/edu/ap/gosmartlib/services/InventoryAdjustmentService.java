@@ -18,6 +18,8 @@ public class InventoryAdjustmentService {
 
     /**
      * Past de voorraad aan op basis van een wijziging in de conditie van een boekexemplaar
+     * Doet dit door de oorspronkelijke en nieuwe conditie te vergelijken en de beschikbare en totale kopieën in zowel de 
+     * inventarisatie als het boek bij te werken
      * @param inventory De inventarisatiegegevens van het boek
      * @param from De oorspronkelijke conditie
      * @param to De nieuwe conditie

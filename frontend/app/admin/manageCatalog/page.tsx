@@ -188,6 +188,14 @@ export default function ManageCatalogPage() {
     setError(null);
   }
 
+  /**
+   * Voegt opties samen en verwijdert dubbelen
+   * Doet dit door de basisopties en de database-opties te combineren, ze te normaliseren (trimmen en case-insensitive vergelijken)
+   * om duplicaten te identificeren, en vervolgens de unieke opties terug te geven in gesorteerde volgorde
+   * @param baseOptions - De basisopties
+   * @param databaseOptions - De opties uit de database
+   * @returns Een array met de samengevoegde opties
+   */
   function mergeOptions(baseOptions: string[], databaseOptions: string[]) {
     const mergedOptions: string[] = [];
     const seenOptions = new Set<string>();
@@ -278,6 +286,15 @@ export default function ManageCatalogPage() {
     setCurrentPage(1);
   }, [query]);
 
+  /**
+   * Slaat de gewijzigde boekinformatie op
+   * Doet dit via een API-aanroep en valideert eerst de invoer voordat het opslaan wordt geprobeerd
+   * <ul>
+   *   <li>Bij validatiefouten worden er foutmeldingen weergegeven en wordt de API-aanroep niet gedaan</li>
+   *   <li>Bij een succesvolle update wordt de boeklijst bijgewerkt en wordt de modal gesloten</li>
+   *   <li>Bij een fout tijdens het opslaan wordt er een foutmelding weergegeven</li>
+   * </ul>
+   */
   async function handleSave() {
     if (!selectedBook) return;
     setError(null);
@@ -324,7 +341,9 @@ export default function ManageCatalogPage() {
     const duplicateCampusNames = ownSchoolInventories
       .map((inventory) => inventory.campus?.trim().toLowerCase() ?? "")
       .filter((campus) => campus !== "")
-      .filter((campus, index, allCampuses) => allCampuses.indexOf(campus) !== index);
+      .filter(
+        (campus, index, allCampuses) => allCampuses.indexOf(campus) !== index,
+      );
 
     if (duplicateCampusNames.length > 0) {
       setError("Elke campus mag maar één keer voorkomen in de inventaris.");
@@ -429,7 +448,7 @@ export default function ManageCatalogPage() {
     }));
   }
 
-    function getUsedCampusNames(inventories: BookInventory[]) {
+  function getUsedCampusNames(inventories: BookInventory[]) {
     return inventories
       .filter((inventory) => inventory.schoolId === me?.school?.id)
       .map((inventory) => inventory.campus?.trim().toLowerCase() ?? "")
@@ -441,8 +460,7 @@ export default function ManageCatalogPage() {
 
     return (
       campuses.find(
-        (campus) =>
-          !usedCampusNames.includes(campus.name.trim().toLowerCase()),
+        (campus) => !usedCampusNames.includes(campus.name.trim().toLowerCase()),
       )?.name ?? ""
     );
   }
@@ -537,11 +555,9 @@ export default function ManageCatalogPage() {
     .filter(({ inventory }) => inventory.schoolId === me?.school?.id);
 
   const canAddInventoryRow =
-    campuses.length > 0 &&
-    editableInventoryRows.length < campuses.length;
+    campuses.length > 0 && editableInventoryRows.length < campuses.length;
 
-  const shouldShowAddCampusButton =
-  campuses.length > 1 && canAddInventoryRow;
+  const shouldShowAddCampusButton = campuses.length > 1 && canAddInventoryRow;
 
   return (
     <ProtectedRoute allowedRoles="LIBRARIAN">
@@ -1327,30 +1343,37 @@ export default function ManageCatalogPage() {
                                 : "Geen campus"}
                             </option>
 
-                          {getCampusSelectOptions(campuses, inventory.campus)
-                            .filter((campusOption) => {
-                              const campusName = campusOption.name.trim().toLowerCase();
-                              const currentCampusName =
-                                inventory.campus?.trim().toLowerCase() ?? "";
+                            {getCampusSelectOptions(campuses, inventory.campus)
+                              .filter((campusOption) => {
+                                const campusName = campusOption.name
+                                  .trim()
+                                  .toLowerCase();
+                                const currentCampusName =
+                                  inventory.campus?.trim().toLowerCase() ?? "";
 
-                              if (campusName === currentCampusName) {
-                                return true;
-                              }
+                                if (campusName === currentCampusName) {
+                                  return true;
+                                }
 
-                              return !editableInventoryRows.some(
-                                ({ inventory: otherInventory, index: otherIndex }) =>
-                                  otherIndex !== index &&
-                                  otherInventory.campus?.trim().toLowerCase() === campusName,
-                              );
-                            })
-                            .map((campusOption) => (
-                              <option
-                                key={`${campusOption.id}-${campusOption.name}`}
-                                value={campusOption.name}
-                              >
-                                {campusOption.name}
-                              </option>
-                            ))}
+                                return !editableInventoryRows.some(
+                                  ({
+                                    inventory: otherInventory,
+                                    index: otherIndex,
+                                  }) =>
+                                    otherIndex !== index &&
+                                    otherInventory.campus
+                                      ?.trim()
+                                      .toLowerCase() === campusName,
+                                );
+                              })
+                              .map((campusOption) => (
+                                <option
+                                  key={`${campusOption.id}-${campusOption.name}`}
+                                  value={campusOption.name}
+                                >
+                                  {campusOption.name}
+                                </option>
+                              ))}
                           </select>
                         </div>
 

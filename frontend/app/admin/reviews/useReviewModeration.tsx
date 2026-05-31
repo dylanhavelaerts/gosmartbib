@@ -38,6 +38,14 @@ export interface ModerationReview {
   adminDeleteNote: string | null;
 }
 
+/**
+ * Extraheert de foutmelding van een serverresponse
+ * Probeert eerst de JSON-body te lezen voor een gestructureerde foutmelding,
+ * en valt terug op de platte tekst van de response als dat mislukt
+ * @param response - de serverresponse
+ * @param fallback - de fallback-foutmelding
+ * @return de geëxtraheerde foutmelding
+ */
 function extractServerErrorMessage(response: Response, fallback: string) {
   return response
     .clone()

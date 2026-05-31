@@ -263,6 +263,12 @@ public class UserAdminService {
                 || normalizedDisplayName.contains(normalizedQuery);
     }
 
+    /**
+     * Converteert een lijst van gebruikers naar een pagina
+     * @param users - de lijst van gebruikers
+     * @param pageable - de paginaconfiguratie
+     * @return de pagina met gebruikers
+     */
     private Page<UserEntity> toPage(List<UserEntity> users, Pageable pageable) {
         if (pageable.isUnpaged()) {
             return new PageImpl<>(users);
@@ -277,6 +283,11 @@ public class UserAdminService {
         return new PageImpl<>(users.subList(start, end), pageable, users.size());
     }
 
+    /**
+     * Extraheert de mogelijke UID's van een OneRoster-gebruiker
+     * @param liveUser - de OneRoster-gebruiker
+     * @return een lijst van mogelijke UID's
+     */
     private List<String> extractCandidateUids(Map<String, Object> liveUser) {
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
 
@@ -288,6 +299,11 @@ public class UserAdminService {
         return new ArrayList<>(candidates);
     }
 
+    /**
+     * Bouwt de weergavenaam voor een OneRoster-gebruiker
+     * @param liveUser - de OneRoster-gebruiker
+     * @return de weergavenaam
+     */
     private String buildDisplayName(Map<String, Object> liveUser) {
         String givenName = readString(liveUser.get("givenName"));
         String familyName = readString(liveUser.get("familyName"));

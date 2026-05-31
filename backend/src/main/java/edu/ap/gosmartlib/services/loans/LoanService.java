@@ -638,6 +638,12 @@ public class LoanService {
         return "Gebruiker";
     }
 
+    /**
+     * Verwerkt terugbrengcondities op basis van barcodes
+     * Voor elk exemplaar wordt de conditieverandering doorgevoerd en de voorraad aangepast
+     * @param conditions lijst van conditieveranderingen per exemplaar, geïdentificeerd via copyId of barcode
+     * @param book het boek waarvoor de exemplaren teruggebracht worden, gebruikt voor validatie en voorraadupdates
+     */
     private void processBarcodeConditions(List<BookCopyReturnConditionDTO> conditions, BookEntity book) {
         for (BookCopyReturnConditionDTO c : conditions) {
             BookCopyEntity copy;
@@ -665,6 +671,16 @@ public class LoanService {
         }
     }
 
+    /**
+     * Verwerkt terugbrengcondities zonder barcode-informatie, op basis van opgegeven aantallen per conditietype
+     * De conditieveranderingen worden toegepast op beschikbare exemplaren in de schoolvoorraad van het boek, 
+     * waarbij eerst goede exemplaren worden aangepast, daarna beschadigde (indien er niet genoeg goede zijn)
+     * @param book het boek waarvoor de exemplaren teruggebracht worden, gebruikt voor validatie en voorraadupdates
+     * @param smartschoolUserId de lener die de exemplaren terugbrengt, gebruikt om de juiste schoolvoorraad te vinden
+     * @param damagedCount aantal exemplaren dat als beschadigd teruggebracht wordt
+     * @param brokenCount aantal exemplaren dat als gebroken teruggebracht wordt
+     * @param lostCount aantal exemplaren dat als verloren teruggebracht wordt
+     */
     private void processNoBarcodeConditions(BookEntity book, String smartschoolUserId, int damagedCount, int brokenCount, int lostCount) {
         UserEntity borrower = userRepository.findBySmartschoolUid(smartschoolUserId).orElse(null);
         if (borrower == null || borrower.getSchool() == null) return;
@@ -685,6 +701,15 @@ public class LoanService {
         lostCopies.forEach(c -> inventoryAdjustmentService.adjustForConditionChange(inventory, BookCopyCondition.GOOD, BookCopyCondition.LOST));
     }
 
+    /**
+     * Zoekt exemplaren in de voorraad van het boek en markeert ze met de nieuwe conditie
+     * Eerst worden goede exemplaren gemarkeerd, 
+     * daarna beschadigde als er niet genoeg goede zijn en de nieuwe conditie geen beschadigd is
+     * @param inventory de schoolvoorraad van het boek waarin gezocht moet worden
+     * @param count het aantal exemplaren dat gemarkeerd moet worden
+     * @param newCondition de nieuwe conditie voor de exemplaren
+     * @return de gemarkeerde exemplaren
+     */
     private List<BookCopyEntity> markCopies(BookInventoryEntity inventory, int count, BookCopyCondition newCondition) {
         if (count <= 0) return List.of();
 

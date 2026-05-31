@@ -2283,6 +2283,14 @@ public class BookService {
         }
     }
 
+    /**
+     * Zoek naar een mogelijk duplicaat boek zonder ISBN op basis van titel, auteurs en uitgever
+     * @param title - de titel van het boek
+     * @param authors - de lijst van auteurs
+     * @param publisher - de uitgever
+     * @param school - de school
+     * @return het gevonden duplicaat boek of null als geen gevonden
+     */
     private BookEntity findDuplicateBookForNoIsbnImport(
             String title,
             List<String> authors,
@@ -2379,6 +2387,12 @@ public class BookService {
                         .toList());
     }
 
+    /**
+     * Normaliseert een lijst van strings door te trimmen, lege waarden te verwijderen, 
+     * case-insensitief te sorteren en dubbele waarden te verwijderen (ook case-insensitief)
+     * @param values - de lijst van strings om te normaliseren
+     * @return een nieuwe lijst van strings die getrimd, gefilterd, gesorteerd en gededupliceerd is
+     */
     private List<String> cleanDistinctOptions(List<String> values) {
         if (values == null) {
             return new ArrayList<>();

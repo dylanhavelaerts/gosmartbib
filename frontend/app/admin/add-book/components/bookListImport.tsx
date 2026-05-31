@@ -7,7 +7,7 @@ import type { MeResponse } from "@/app/interfaces/user";
 import type {
   BulkImportResult,
   DuplicateWarning,
-  ImportMismatch
+  ImportMismatch,
 } from "@/app/interfaces/Book";
 import { fetchSchoolCampuses } from "@/app/utils/schoolCampuses";
 
@@ -15,17 +15,22 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function BookListImport() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
+  const [importResult, setImportResult] = useState<BulkImportResult | null>(
+    null,
+  );
   const [message, setMessage] = useState("");
   const [campusLoadError, setCampusLoadError] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingCampuses, setLoadingCampuses] = useState(false);
   const [campus, setCampus] = useState("");
   const [campuses, setCampuses] = useState<SchoolCampusDTO[]>([]);
-  const [duplicateWarnings, setDuplicateWarnings] = useState<DuplicateWarning[]>([]);
-  const [selectedDuplicateRows, setSelectedDuplicateRows] = useState<number[]>([]);
+  const [duplicateWarnings, setDuplicateWarnings] = useState<
+    DuplicateWarning[]
+  >([]);
+  const [selectedDuplicateRows, setSelectedDuplicateRows] = useState<number[]>(
+    [],
+  );
   const [confirmingDuplicates, setConfirmingDuplicates] = useState(false);
-
 
   useEffect(() => {
     const loadCampusesForCurrentSchool = async () => {
@@ -81,7 +86,16 @@ export default function BookListImport() {
     setSelectedDuplicateRows([]);
   };
 
-    const handleUploadExcel = async (confirmDuplicates = false) => {
+  /**
+   * Verwerkt de Excel-bestand voor import
+   * Doet dit via een API-aanroep en behandelt zowel de initiële upload als de bevestiging van dubbele rijen
+   * Bij de initiële upload worden eventuele dubbele ISBN's gerapporteerd als waarschuwingen,
+   * en kan de gebruiker per rij kiezen of ze de aantallen willen toevoegen aan het bestaande boek
+   * Bij de bevestiging van dubbele rijen worden alleen de geselecteerde rijen toegevoegd aan de bestaande boeken,
+   * en wordt het resultaat van de import weergegeven
+   * @param confirmDuplicates - of dubbele rijen bevestigd zijn
+   */
+  const handleUploadExcel = async (confirmDuplicates = false) => {
     if (!selectedFile) return;
 
     if (!API_URL) {
@@ -89,7 +103,8 @@ export default function BookListImport() {
       return;
     }
 
-    const selectedCampus = campuses.length === 1 ? campuses[0].name : campus.trim();
+    const selectedCampus =
+      campuses.length === 1 ? campuses[0].name : campus.trim();
     if (campuses.length > 1 && !selectedCampus) {
       setMessage("Kies eerst een campus voor deze import.");
       return;
@@ -130,7 +145,9 @@ export default function BookListImport() {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setMessage(data?.message || data || "Er ging iets mis bij het importeren");
+        setMessage(
+          data?.message || data || "Er ging iets mis bij het importeren",
+        );
         return;
       }
 
@@ -139,7 +156,9 @@ export default function BookListImport() {
       if (!confirmDuplicates && data?.duplicateWarnings?.length > 0) {
         setDuplicateWarnings(data.duplicateWarnings);
         setSelectedDuplicateRows(
-          data.duplicateWarnings.map((warning: DuplicateWarning) => warning.rowNumber),
+          data.duplicateWarnings.map(
+            (warning: DuplicateWarning) => warning.rowNumber,
+          ),
         );
         setMessage(
           `Er zijn ${data.duplicateWarnings.length} bestaande ISBN's gevonden. Kies per boek welke aantallen je wilt toevoegen.`,
@@ -157,84 +176,95 @@ export default function BookListImport() {
     }
   };
 
-   const addSingleBook = async (mismatch: ImportMismatch) => {
-      if (!API_URL) {
-        setMessage("NEXT_PUBLIC_API_URL ontbreekt.");
+  /**
+   * Voegt een enkel boek toe aan de database
+   * Doet dit via een API-aanroep en werkt het importresultaat bij om deze toevoeging te reflecteren
+   * Deze functie wordt gebruikt voor het handmatig toevoegen van boeken waarbij er een mismatch is in de titel,
+   * maar de gebruiker toch wil dat het boek wordt opgeslagen (bijvoorbeeld omdat de titel in het Excel-bestand afwijkt van de titel in de database, maar het wel degelijk hetzelfde boek betreft)
+   * @param mismatch - de mismatch-informatie voor het boek
+   * @param mismatch - de mismatch-informatie voor het boek
+   */
+  const addSingleBook = async (mismatch: ImportMismatch) => {
+    if (!API_URL) {
+      setMessage("NEXT_PUBLIC_API_URL ontbreekt.");
+      return;
+    }
+
+    const selectedCampus =
+      campuses.length === 1 ? campuses[0].name : campus.trim();
+    if (campuses.length > 1 && !selectedCampus) {
+      setMessage("Kies eerst een campus voor deze import.");
+      return;
+    }
+
+    if (!mismatch.isbn) {
+      setMessage("Geen ISBN gevonden voor deze rij.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const params = new URLSearchParams();
+
+      if (selectedCampus) {
+        params.set("campus", selectedCampus);
+      }
+
+      if (mismatch.didacticBook === true) {
+        params.set("didacticBook", "true");
+      }
+
+      if (mismatch.amount !== null && mismatch.amount !== undefined) {
+        params.set("amount", String(mismatch.amount));
+      }
+
+      const queryString = params.toString();
+
+      const response = await fetch(
+        `${API_URL}/books/add/${mismatch.isbn}${
+          queryString ? `?${queryString}` : ""
+        }`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+
+      if (response.ok) {
+        setImportResult((prev) => {
+          if (!prev) return prev;
+
+          setMessage(
+            `Import klaar. ${prev.savedCount + 1} boek(en) opgeslagen.`,
+          );
+
+          return {
+            ...prev,
+            savedCount: prev.savedCount + 1,
+            mismatchCount: prev.mismatchCount - 1,
+            mismatches: prev.mismatches.filter(
+              (item) =>
+                !(
+                  item.rowNumber === mismatch.rowNumber &&
+                  item.isbn === mismatch.isbn
+                ),
+            ),
+          };
+        });
+
         return;
       }
 
-      const selectedCampus = campuses.length === 1 ? campuses[0].name : campus.trim();
-      if (campuses.length > 1 && !selectedCampus) {
-        setMessage("Kies eerst een campus voor deze import.");
-        return;
-      }
-
-      if (!mismatch.isbn) {
-        setMessage("Geen ISBN gevonden voor deze rij.");
-        return;
-      }
-
-      setLoading(true);
-
-      try {
-        const params = new URLSearchParams();
-
-        if (selectedCampus) {
-          params.set("campus", selectedCampus);
-        }
-
-        if (mismatch.didacticBook === true) {
-          params.set("didacticBook", "true");
-        }
-
-        if (mismatch.amount !== null && mismatch.amount !== undefined) {
-          params.set("amount", String(mismatch.amount));
-        }
-
-        const queryString = params.toString();
-
-        const response = await fetch(
-          `${API_URL}/books/add/${mismatch.isbn}${
-            queryString ? `?${queryString}` : ""
-          }`,
-          {
-            method: "POST",
-            credentials: "include",
-          },
-        );
-
-        if (response.ok) {
-          setImportResult((prev) => {
-            if (!prev) return prev;
-
-            setMessage(`Import klaar. ${prev.savedCount + 1} boek(en) opgeslagen.`);
-
-            return {
-              ...prev,
-              savedCount: prev.savedCount + 1,
-              mismatchCount: prev.mismatchCount - 1,
-              mismatches: prev.mismatches.filter(
-                (item) =>
-                  !(
-                    item.rowNumber === mismatch.rowNumber &&
-                    item.isbn === mismatch.isbn
-                  ),
-              ),
-            };
-          });
-
-          return;
-        }
-
-        const errorText = await response.text();
-        setMessage(errorText || "Er ging iets mis bij het opslaan van het boek");
-      } catch (error) {
-        console.error(error);
-        setMessage("Kan de server niet bereiken");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const errorText = await response.text();
+      setMessage(errorText || "Er ging iets mis bij het opslaan van het boek");
+    } catch (error) {
+      console.error(error);
+      setMessage("Kan de server niet bereiken");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const shouldShowCampusSelect = campuses.length > 1;
   const importButtonDisabled =
@@ -284,37 +314,36 @@ export default function BookListImport() {
               ))}
             </select>
           </label>
-          
+
           <p className="helperText">
-              Deze campus wordt toegepast op alle boeken in dit Excelbestand. Nieuwe campussen maak je enkel aan op de schoolbeheerpagina.
+            Deze campus wordt toegepast op alle boeken in dit Excelbestand.
+            Nieuwe campussen maak je enkel aan op de schoolbeheerpagina.
           </p>
         </>
       )}
       {campusLoadError && <p className="fieldError">{campusLoadError}</p>}
-        <p className="spacedText">
-          Voeg hieronder de aangevulde excel file toe
-        </p>
+      <p className="spacedText">Voeg hieronder de aangevulde excel file toe</p>
 
-        <div className="fileInputBox">
-          <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} />
-        </div>
+      <div className="fileInputBox">
+        <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} />
+      </div>
 
-        {selectedFile && (
-          <div className="selectedFile">
-            <div className="selectedFileRow">
-              <p>Geselecteerd bestand: {selectedFile.name}</p>
+      {selectedFile && (
+        <div className="selectedFile">
+          <div className="selectedFileRow">
+            <p>Geselecteerd bestand: {selectedFile.name}</p>
 
-              <button
-                type="button"
-                onClick={() => handleUploadExcel(false)}
-                disabled={importButtonDisabled}
-                className={uploadButtonClass}
-              >
-                {loading ? "Bezig met importeren..." : "Importeer Excelbestand"}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => handleUploadExcel(false)}
+              disabled={importButtonDisabled}
+              className={uploadButtonClass}
+            >
+              {loading ? "Bezig met importeren..." : "Importeer Excelbestand"}
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
       {importResult && (
         <div className="resultCard">
@@ -328,9 +357,15 @@ export default function BookListImport() {
               <p>Problemen gevonden in deze rijen:</p>
               <ul>
                 {importResult.mismatches.map((mismatch, index) => (
-                  <li className="mismatchElement" key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}>
-                    <p className="mismatchTitle">Rij {mismatch.rowNumber}: {mismatch.isbn} | {mismatch.excelTitle} |
-                    {" "}Reden: {mismatch.reason}</p>{mismatch.reason.includes("De titel komt niet overeen") && (
+                  <li
+                    className="mismatchElement"
+                    key={`${mismatch.rowNumber}-${mismatch.isbn}-${index}`}
+                  >
+                    <p className="mismatchTitle">
+                      Rij {mismatch.rowNumber}: {mismatch.isbn} |{" "}
+                      {mismatch.excelTitle} | Reden: {mismatch.reason}
+                    </p>
+                    {mismatch.reason.includes("De titel komt niet overeen") && (
                       <button
                         className="mismatchButton"
                         onClick={() => addSingleBook(mismatch)}
@@ -347,20 +382,21 @@ export default function BookListImport() {
         </div>
       )}
 
-            {duplicateWarnings.length > 0 && (
+      {duplicateWarnings.length > 0 && (
         <div className="resultCard duplicateWarningCard">
           <div className="duplicateWarningHeader">
             <div>
               <p className="duplicateEyebrow">Controle vereist</p>
               <h2>Bestaande ISBN&apos;s gevonden</h2>
               <p>
-                Deze ISBN&apos;s bestaan al in de database. Kies per boek of je de
-                aantallen wilt toevoegen aan het bestaande boek.
+                Deze ISBN&apos;s bestaan al in de database. Kies per boek of je
+                de aantallen wilt toevoegen aan het bestaande boek.
               </p>
             </div>
 
             <span className="duplicateCountBadge">
-              {selectedDuplicateRows.length} van {duplicateWarnings.length} geselecteerd
+              {selectedDuplicateRows.length} van {duplicateWarnings.length}{" "}
+              geselecteerd
             </span>
           </div>
 
@@ -388,7 +424,9 @@ export default function BookListImport() {
 
           <div className="duplicateList">
             {duplicateWarnings.map((warning) => {
-              const isSelected = selectedDuplicateRows.includes(warning.rowNumber);
+              const isSelected = selectedDuplicateRows.includes(
+                warning.rowNumber,
+              );
 
               return (
                 <label
@@ -406,7 +444,9 @@ export default function BookListImport() {
                         ]);
                       } else {
                         setSelectedDuplicateRows((prev) =>
-                          prev.filter((rowNumber) => rowNumber !== warning.rowNumber),
+                          prev.filter(
+                            (rowNumber) => rowNumber !== warning.rowNumber,
+                          ),
                         );
                       }
                     }}
@@ -415,7 +455,9 @@ export default function BookListImport() {
                   <div className="duplicateItemContent">
                     <div className="duplicateItemTop">
                       <div>
-                        <p className="duplicateRowLabel">Rij {warning.rowNumber}</p>
+                        <p className="duplicateRowLabel">
+                          Rij {warning.rowNumber}
+                        </p>
                         <h3>{warning.title}</h3>
                       </div>
 
@@ -427,7 +469,9 @@ export default function BookListImport() {
                     <div className="duplicateMetaGrid">
                       <div>
                         <span>Auteur(s)</span>
-                        <strong>{warning.authors?.join(", ") || "Onbekend"}</strong>
+                        <strong>
+                          {warning.authors?.join(", ") || "Onbekend"}
+                        </strong>
                       </div>
 
                       <div>
@@ -451,8 +495,8 @@ export default function BookListImport() {
                       <div>
                         <span>Toe te voegen</span>
                         <strong>
-                          +{warning.totalCopiesToAdd} totaal / +{warning.availableCopiesToAdd}{" "}
-                          beschikbaar
+                          +{warning.totalCopiesToAdd} totaal / +
+                          {warning.availableCopiesToAdd} beschikbaar
                         </strong>
                       </div>
                     </div>

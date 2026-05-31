@@ -48,6 +48,11 @@ export const yearLabel = (year: number) => `${year}de jaar`;
 export const scopeLabel = (allSchools?: boolean | null) =>
   allSchools ? "alle scholen" : "eigen school";
 
+/**
+ * Bepaalt of er doelgroepen zijn ingesteld voor de leeslijst.
+ * @param targets - de doelgroepvelden
+ * @return true als er doelgroepen zijn ingesteld, anders false
+ */
 export const hasReadingListTargets = (targets: ReadingListTargetFields) => {
   switch (targets.targetType) {
     case "STUDENTS":
@@ -79,6 +84,12 @@ export const hasReadingListTargets = (targets: ReadingListTargetFields) => {
   }
 };
 
+/**
+ * Formatteert de doelgroepen voor de leeslijst
+ * Doet dit via een leesbare tekst die de ingestelde doelgroepen beschrijft, afhankelijk van het type doelgroep dat is ingesteld
+ * @param targets - de doelgroepvelden
+ * @return de geformatteerde doelgroepen
+ */
 export const formatReadingListTargets = (targets: ReadingListTargetFields) => {
   switch (targets.targetType) {
     case "STUDENTS": {
@@ -130,12 +141,24 @@ export const formatReadingListTargets = (targets: ReadingListTargetFields) => {
   }
 };
 
+/**
+ * Wisselt een nummer in een lijst in of uit
+ * @param value het nummer dat moet worden gewijzigd
+ * @param current de huidige lijst van nummers
+ * @returns de bijgewerkte lijst van nummers
+ */
 export const toggleNumberInList = (value: number, current: number[]) => {
   return current.includes(value)
     ? current.filter((item) => item !== value)
     : [...current, value].sort((a, b) => a - b);
 };
 
+/**
+ * Verwijdert alle waarden uit het doelgroep-payload, behalve het type doelgroep zelf
+ * Dit is handig bij het wisselen van type doelgroep,
+ * zodat er geen verouderde waarden in het payload blijven staan die mogelijk voor verwarring kunnen zorgen
+ * @return het lege doelgroep-payload
+ */
 export const clearTargetPayload = () => ({
   targetType: null,
   targetStudentIds: [],

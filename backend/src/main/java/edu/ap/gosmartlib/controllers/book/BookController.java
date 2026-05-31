@@ -38,8 +38,10 @@ public class BookController {
 
     /**
      * Deze enpoint haal alle boeken op met server-side paginatie. De resultaten worden gefilterd op basis van de rol van de gebruiker:
-     * - Studenten zien alleen boeken die beschikbaar zijn voor studenten
-     * - Leerkrachten/Bilbiotheekbeheerder zien alle boeken
+     * <ul>
+     *   <li>Studenten zien alleen boeken die beschikbaar zijn voor studenten</li>
+     *   <li>Leerkrachten/Bilbiotheekbeheerder zien alle boeken</li>
+     * </ul>
      * @param page - de beginpagina
      * @param size - het aantal boeken per pagina
      * @param principal - de ingelogde gebruiker
@@ -454,6 +456,15 @@ public class BookController {
 
     //region Helper methodes
 
+    /**
+     * Bepaalt het rol van de aanroeper op basis van de OAuth2User.
+     * <ul>
+     * <li> Als er geen gebruiker is, wordt aangenomen dat het een student is
+     * <li> Als er wel een gebruiker is, wordt de rol opgehaald uit de database op basis van de smartschool UID
+     * </ul>
+     * @param principal - de OAuth2User van de aanroeper
+     * @return - de rol van de gebruiker
+     */
     private UserRoles callerRole(OAuth2User principal) {
         if (principal == null)
             return UserRoles.STUDENT;

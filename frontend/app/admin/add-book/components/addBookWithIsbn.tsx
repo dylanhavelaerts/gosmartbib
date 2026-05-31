@@ -82,9 +82,9 @@ export default function AddBookWithIsbn() {
     setPreviewBook(null);
 
     try {
-      const response = await fetch(
-        `${API_URL}/books/search/${isbn}`,{credentials: "include"}
-      );
+      const response = await fetch(`${API_URL}/books/search/${isbn}`, {
+        credentials: "include",
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -97,16 +97,27 @@ export default function AddBookWithIsbn() {
       }
     } catch (error) {
       console.error(error);
-      setMessage("Kan de server niet bereiken. Controleer of de backend draait.");
+      setMessage(
+        "Kan de server niet bereiken. Controleer of de backend draait.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * Verwerkt het bevestigen van het toevoegen van een boek
+   * Doet dit via een API-aanroep en geeft feedback aan de gebruiker over het resultaat
+   * <ul>
+   *   <li>Bij een succesvolle toevoeging wordt de gebruiker doorgestuurd naar de bewerkingspagina van het nieuwe boek</li>
+   *   <li>Bij een fout wordt er een foutmelding weergegeven</li>
+   * </ul>
+   */
   const handleConfirmAdd = async () => {
     if (!isbn.trim()) return;
 
-    const selectedCampus = campuses.length === 1 ? campuses[0].name : campus.trim();
+    const selectedCampus =
+      campuses.length === 1 ? campuses[0].name : campus.trim();
 
     if (campuses.length > 1 && !selectedCampus) {
       setMessage("Kies eerst een campus.");
@@ -123,13 +134,13 @@ export default function AddBookWithIsbn() {
         params.set("campus", selectedCampus);
       }
 
-        const response = await fetch(
-          `${API_URL}/books/add/${isbn}${params.toString() ? `?${params.toString()}` : ""}`,
-          {
-            method: "POST",
-            credentials: "include",
-          },
-        );
+      const response = await fetch(
+        `${API_URL}/books/add/${isbn}${params.toString() ? `?${params.toString()}` : ""}`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -138,8 +149,10 @@ export default function AddBookWithIsbn() {
           router.push(`/admin/manageCatalog?selectedId=${data.id}&edit=true`);
           return;
         }
-        
-        setMessage(`Boek succesvol aan de database toegevoegd: "${data.title}"`);
+
+        setMessage(
+          `Boek succesvol aan de database toegevoegd: "${data.title}"`,
+        );
         setIsbn("");
         setCampus("");
         setPreviewBook(null);
@@ -166,7 +179,8 @@ export default function AddBookWithIsbn() {
 
   const shouldShowCampusSelect = campuses.length > 1;
   const selectedCampusLabel = campuses.length === 1 ? campuses[0].name : campus;
-  const searchButtonClass = `submitButton ${loading ? "submitButtonLoading" : ""}`.trim();
+  const searchButtonClass =
+    `submitButton ${loading ? "submitButtonLoading" : ""}`.trim();
   const messageClass = `message ${
     message.includes("succesvol")
       ? "messageSuccess"

@@ -56,8 +56,12 @@ export default function DetailPage({
   );
   const [activeTab, setActiveTab] = useState<"info" | "lestips">("info");
   const [showAllLocations, setShowAllLocations] = useState(false);
-  const [expandedInventories, setExpandedInventories] = useState<Set<number>>(new Set());
-  const [copiesCache, setCopiesCache] = useState<Record<number, BookCopy[]>>({});
+  const [expandedInventories, setExpandedInventories] = useState<Set<number>>(
+    new Set(),
+  );
+  const [copiesCache, setCopiesCache] = useState<Record<number, BookCopy[]>>(
+    {},
+  );
   const [copiesLoading, setCopiesLoading] = useState<Set<number>>(new Set());
   const router = useRouter();
 
@@ -67,8 +71,7 @@ export default function DetailPage({
     currentUser?.role === "ADMIN";
 
   const canSeeLestips =
-    currentUser?.role === "TEACHER" ||
-    currentUser?.role === "LIBRARIAN";
+    currentUser?.role === "TEACHER" || currentUser?.role === "LIBRARIAN";
 
   const normalizedRating =
     typeof averageReviewRating === "number"
@@ -177,6 +180,11 @@ export default function DetailPage({
       .catch(() => {});
   }, [book]);
 
+  /**
+   * Voegt het huidige boek toe aan de geselecteerde leeslijst
+   * Doet dit via een API-aanroep en geeft feedback aan de gebruiker over het resultaat
+   * @param list - de leeslijst
+   */
   const handleAddToList = async (list: PersonalList) => {
     if (!book) return;
     if (list.bookIds.includes(book.id)) {
@@ -448,14 +456,19 @@ export default function DetailPage({
                         const copies = copiesCache[invId];
                         const loading = copiesLoading.has(invId);
                         return (
-                          <li key={idx} className="campusItem campusItemExpandable">
+                          <li
+                            key={idx}
+                            className="campusItem campusItemExpandable"
+                          >
                             <button
                               className="campusItemRow"
                               onClick={() => invId && handleToggleCampus(invId)}
                               aria-expanded={isExpanded}
                             >
                               <span className="campusName" title={displayName}>
-                                <span className="campusChevron">{isExpanded ? "▾" : "▸"}</span>
+                                <span className="campusChevron">
+                                  {isExpanded ? "▾" : "▸"}
+                                </span>
                                 {displayName}
                               </span>
                               <span
@@ -467,17 +480,26 @@ export default function DetailPage({
                             {isExpanded && (
                               <ul className="copyList">
                                 {loading && (
-                                  <li className="copyItem copyItem--loading">Laden…</li>
-                                )}
-                                {!loading && copies?.map((copy) => (
-                                  <li key={copy.copyId} className="copyItem">
-                                    <span className="copyNumber">#{copy.copyNumber}</span>
-                                    <span className="copyBarcode">{copy.barcode ?? "—"}</span>
-                                    <span className={`copyCondition copyCondition--${copy.condition.toLowerCase()}`}>
-                                      {conditionLabel[copy.condition]}
-                                    </span>
+                                  <li className="copyItem copyItem--loading">
+                                    Laden…
                                   </li>
-                                ))}
+                                )}
+                                {!loading &&
+                                  copies?.map((copy) => (
+                                    <li key={copy.copyId} className="copyItem">
+                                      <span className="copyNumber">
+                                        #{copy.copyNumber}
+                                      </span>
+                                      <span className="copyBarcode">
+                                        {copy.barcode ?? "—"}
+                                      </span>
+                                      <span
+                                        className={`copyCondition copyCondition--${copy.condition.toLowerCase()}`}
+                                      >
+                                        {conditionLabel[copy.condition]}
+                                      </span>
+                                    </li>
+                                  ))}
                               </ul>
                             )}
                           </li>
@@ -487,9 +509,7 @@ export default function DetailPage({
                         <li className="campusToggleItem">
                           <button
                             className="campusToggleBtn"
-                            onClick={() =>
-                              setShowAllLocations((prev) => !prev)
-                            }
+                            onClick={() => setShowAllLocations((prev) => !prev)}
                           >
                             {showAllLocations
                               ? "Minder tonen"
