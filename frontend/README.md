@@ -20,6 +20,13 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Libraries
+
+This project uses the following libraries:
+
+- [jsbarcode](https://github.com/lindell/JsBarcode) for generating barcodes.
+- [recharts](https://recharts.org/) for creating charts.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
