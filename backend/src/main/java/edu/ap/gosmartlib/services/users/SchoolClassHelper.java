@@ -74,7 +74,15 @@ public class SchoolClassHelper {
                     new SchoolClassEntity(school, groupId, name, schoolYear, grade));
         } catch (DataIntegrityViolationException e) {
             if (groupId != null && !groupId.isBlank()) {
-                return schoolClassRepository.findBySmartschoolGroupId(groupId)
+                Optional<SchoolClassEntity> existingByGroupId = schoolClassRepository.findBySmartschoolGroupId(groupId);
+
+                if (existingByGroupId.isPresent()) {
+                    return existingByGroupId.get();
+                }
+            }
+
+            if (school != null && school.getId() != null && name != null && !name.isBlank()) {
+                return schoolClassRepository.findFirstBySchool_IdAndNameIgnoreCase(school.getId(), name.trim())
                         .orElseThrow(() -> e);
             }
 

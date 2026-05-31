@@ -2,6 +2,7 @@ package edu.ap.gosmartlib.services.oneroster;
 
 import edu.ap.gosmartlib.dto.sync.SyncResultDTO;
 import edu.ap.gosmartlib.dto.sync.SyncSummaryDTO;
+import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
 import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
@@ -21,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,12 +31,18 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OneRosterSyncServiceTest {
 
-    @Mock private SmartschoolOneRosterAuthService authService;
-    @Mock private SmartschoolOneRosterClient client;
-    @Mock private UserRepository userRepository;
-    @Mock private UserDeletionService userDeletionService;
-    @Mock private SchoolIntegrationRepository schoolIntegrationRepository;
-    @Mock private SchoolClassRepository schoolClassRepository;
+    @Mock
+    private SmartschoolOneRosterAuthService authService;
+    @Mock
+    private SmartschoolOneRosterClient client;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private UserDeletionService userDeletionService;
+    @Mock
+    private SchoolIntegrationRepository schoolIntegrationRepository;
+    @Mock
+    private SchoolClassRepository schoolClassRepository;
 
     @InjectMocks
     private OneRosterSyncService syncService;
@@ -150,6 +158,47 @@ class OneRosterSyncServiceTest {
         assertEquals(0, result.added());
         assertEquals(1, result.removed());
         verify(userDeletionService).deleteUser(stale);
+    }
+
+    @Test
+    void givenClassExistsByName_whenSyncSchool_thenReusesClassInsteadOfCreatingDuplicate() {
+        SchoolEntity school = school(1L, "school.be");
+        SchoolIntegrationEntity integration = integration(school);
+
+        SchoolClassEntity existingClass = new SchoolClassEntity();
+        existingClass.setId(10L);
+        existingClass.setSchool(school);
+        existingClass.setSmartschoolGroupId("smartschool-old-id");
+        existingClass.setName("2ITSOF2");
+
+        Map<String, Object> onerosterClass = Map.of(
+                "sourcedId", "oneroster-class-id",
+                "title", "2ITSOF2",
+                "grades", List.of("1"));
+
+        when(authService.getAccessToken(integration)).thenReturn("token");
+        when(client.getUsers(integration, "token")).thenReturn(List.of());
+        when(client.getClasses(integration, "token")).thenReturn(List.of(onerosterClass));
+        when(client.getEnrollments(integration, "token")).thenReturn(List.of());
+        when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(1L)).thenReturn(List.of());
+
+        when(schoolClassRepository.findBySmartschoolGroupId("oneroster-class-id"))
+                .thenReturn(Optional.empty());
+        when(schoolClassRepository.findFirstBySchool_IdAndNameIgnoreCase(1L, "2ITSOF2"))
+                .thenReturn(Optional.of(existingClass));
+        when(schoolClassRepository.save(any(SchoolClassEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        SyncResultDTO result = syncService.syncSchool(integration);
+
+        assertEquals(1, result.classesSynced());
+        assertTrue(result.errors().isEmpty());
+
+        assertEquals("oneroster-class-id", existingClass.getSmartschoolGroupId());
+        assertEquals("2ITSOF2", existingClass.getName());
+        assertEquals("1", existingClass.getGrade());
+
+        verify(schoolClassRepository).save(existingClass);
     }
 
     // endregion
