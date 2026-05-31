@@ -3,9 +3,15 @@ package edu.ap.gosmartlib.services;
 import edu.ap.gosmartlib.dto.AdminUserDTO;
 import edu.ap.gosmartlib.entities.school.SchoolClassEntity;
 import edu.ap.gosmartlib.entities.school.SchoolEntity;
+import edu.ap.gosmartlib.entities.school.SchoolIntegrationEntity;
 import edu.ap.gosmartlib.entities.UserEntity;
 import edu.ap.gosmartlib.repositories.UserRepository;
+import edu.ap.gosmartlib.repositories.loan.LoanRepository;
+import edu.ap.gosmartlib.repositories.school.SchoolIntegrationRepository;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolOneRosterAuthService;
+import edu.ap.gosmartlib.services.schoolintegration.SmartschoolOneRosterClient;
 import edu.ap.gosmartlib.services.users.UserAdminService;
+import edu.ap.gosmartlib.services.users.UserDeletionService;
 import edu.ap.gosmartlib.util.UserRoles;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,6 +38,21 @@ class UserAdminServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private SchoolIntegrationRepository schoolIntegrationRepository;
+
+    @Mock
+    private SmartschoolOneRosterAuthService authService;
+
+    @Mock
+    private SmartschoolOneRosterClient oneRosterClient;
+
+    @Mock
+    private UserDeletionService userDeletionService;
+
+    @Mock
+    private LoanRepository loanRepository;
 
     @InjectMocks
     private UserAdminService userAdminService;
@@ -147,7 +169,8 @@ class UserAdminServiceTest {
         when(userRepository.findByIdAndSchool_Id(2L, 100L)).thenReturn(Optional.of(target));
         when(userRepository.save(target)).thenReturn(target);
 
-        AdminUserDTO result = userAdminService.updateUserRoleForLibrarian("bibbeheerder-uid", null, 2L, UserRoles.TEACHER);
+        AdminUserDTO result = userAdminService.updateUserRoleForLibrarian("bibbeheerder-uid", null, 2L,
+                UserRoles.TEACHER);
 
         assertNotNull(result);
         assertEquals(2L, result.id());
@@ -192,6 +215,9 @@ class UserAdminServiceTest {
 
         verify(userRepository).findBySchoolIdAndName(100L, null, pageable);
         verifyNoMoreInteractions(userRepository);
+        verifyNoInteractions(schoolIntegrationRepository);
+        verifyNoInteractions(authService);
+        verifyNoInteractions(oneRosterClient);
     }
 
     @Test
@@ -257,6 +283,100 @@ class UserAdminServiceTest {
         verifyNoMoreInteractions(userRepository);
     }
 
+    @Test
+    void givenOneRosterEnabled_whenLibrarianSearchesByOneRosterName_thenReturnsMatchingUser() {
+        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School", true);
+        UserEntity student = buildUser(2L, "student-uid", UserRoles.STUDENT, 100L, "GO! School", true);
+        UserEntity teacher = buildUser(3L, "teacher-uid", UserRoles.TEACHER, 100L, "GO! School", true);
+
+        SchoolIntegrationEntity integration = new SchoolIntegrationEntity();
+        integration.setOnerosterEnabled(true);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(actor));
+        when(schoolIntegrationRepository.findBySchool_Id(100L)).thenReturn(Optional.of(integration));
+        when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(100L)).thenReturn(List.of(student, teacher));
+        when(authService.getAccessToken(integration)).thenReturn("token");
+        when(oneRosterClient.getUsers(integration, "token")).thenReturn(List.of(
+                Map.of(
+                        "givenName", "Dylan",
+                        "familyName", "Havelaerts",
+                        "metadata", Map.of("smsc.legacyIdentifier", "student-uid")),
+                Map.of(
+                        "givenName", "Other",
+                        "familyName", "Teacher",
+                        "metadata", Map.of("smsc.legacyIdentifier", "teacher-uid"))));
+
+        Page<AdminUserDTO> result = userAdminService.listUsersForLibrarian("bibbeheerder-uid", null, "dylan", pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertEquals("student-uid", result.getContent().get(0).smartschoolUid());
+
+        verify(userRepository).findDetailedBySmartschoolUid("bibbeheerder-uid");
+        verify(schoolIntegrationRepository).findBySchool_Id(100L);
+        verify(userRepository).findAllBySchool_IdOrderBySmartschoolUidAsc(100L);
+        verify(authService).getAccessToken(integration);
+        verify(oneRosterClient).getUsers(integration, "token");
+    }
+
+    @Test
+    void givenOneRosterDisabled_whenLibrarianSearches_thenFallsBackToUidSearch() {
+        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School", true);
+        UserEntity student = buildUser(2L, "student-uid", UserRoles.STUDENT, 100L, "GO! School", true);
+
+        SchoolIntegrationEntity integration = new SchoolIntegrationEntity();
+        integration.setOnerosterEnabled(false);
+
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<UserEntity> userPage = new PageImpl<>(List.of(student));
+
+        when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(actor));
+        when(schoolIntegrationRepository.findBySchool_Id(100L)).thenReturn(Optional.of(integration));
+        when(userRepository.findBySchoolIdAndName(100L, "student", pageable)).thenReturn(userPage);
+
+        Page<AdminUserDTO> result = userAdminService.listUsersForLibrarian("bibbeheerder-uid", null, "student",
+                pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertEquals("student-uid", result.getContent().get(0).smartschoolUid());
+
+        verify(oneRosterClient, never()).getUsers(any(), any());
+        verify(authService, never()).getAccessToken(any());
+    }
+
+    @Test
+    void givenOneRosterEnabled_whenLibrarianSearchesByUid_thenReturnsMatchingUser() {
+        UserEntity actor = buildUser(1L, "bibbeheerder-uid", UserRoles.LIBRARIAN, 100L, "GO! School", true);
+        UserEntity student = buildUser(2L, "student-uid", UserRoles.STUDENT, 100L, "GO! School", true);
+        UserEntity teacher = buildUser(3L, "teacher-uid", UserRoles.TEACHER, 100L, "GO! School", true);
+
+        SchoolIntegrationEntity integration = new SchoolIntegrationEntity();
+        integration.setOnerosterEnabled(true);
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(userRepository.findDetailedBySmartschoolUid("bibbeheerder-uid")).thenReturn(Optional.of(actor));
+        when(schoolIntegrationRepository.findBySchool_Id(100L)).thenReturn(Optional.of(integration));
+        when(userRepository.findAllBySchool_IdOrderBySmartschoolUidAsc(100L)).thenReturn(List.of(student, teacher));
+        when(authService.getAccessToken(integration)).thenReturn("token");
+        when(oneRosterClient.getUsers(integration, "token")).thenReturn(List.of());
+
+        Page<AdminUserDTO> result = userAdminService.listUsersForLibrarian(
+                "bibbeheerder-uid",
+                null,
+                "student",
+                pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertEquals("student-uid", result.getContent().get(0).smartschoolUid());
+
+        verify(userRepository).findDetailedBySmartschoolUid("bibbeheerder-uid");
+        verify(schoolIntegrationRepository).findBySchool_Id(100L);
+        verify(userRepository).findAllBySchool_IdOrderBySmartschoolUidAsc(100L);
+        verify(authService).getAccessToken(integration);
+        verify(oneRosterClient).getUsers(integration, "token");
+    }
 
     // Hulpmethodes
     private UserEntity buildUser(Long id, String uid, UserRoles role, Long schoolId, String schoolName,

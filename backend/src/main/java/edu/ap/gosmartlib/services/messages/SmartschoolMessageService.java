@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
  * en in Java te filteren op onerosterSourcedId.
  * getUserBySourcedId wordt niet gebruikt omdat Smartschool die te laat beschikbaar stelt
  * waardoor de gebruiker niet gevonden wordt.
- * Als de gebruiker geen school, geen onerosterSourcedId of geen overeenkomende gebruikersnaam heeft, wordt het bericht stilletjes overgeslagen.
+ * Als de gebruiker geen school, geen onerosterSourcedId of geen overeenkomende gebruikersnaam heeft, wordt het bericht overgeslagen.
  */
 @Primary
 @Service

@@ -4,9 +4,18 @@ import edu.ap.gosmartlib.dto.book.BookFilterRequest;
 import edu.ap.gosmartlib.exceptions.NegativeValueException;
 import org.springframework.stereotype.Component;
 
+/**
+ * Validator voor BookFilterRequest
+ * Valideert de pagina- en grootteparameters, evenals de minimum- en maximumwaarden voor pagina's, publicatiejaar en beoordeling.
+ * Werpt een IllegalArgumentException of NegativeValueException als de validatie mislukt.
+ */
 @Component
 public class BookFilterValidator {
 
+    /**
+     * Valideert de gegeven BookFilterRequest.
+     * @param request De BookFilterRequest die gevalideerd moet worden.
+     */ 
     public void validate(BookFilterRequest request) {
         if (request.page() < 0 || request.size() <= 0)
             throw new NegativeValueException("Paginanummer mag niet negatief zijn en de grootte moet groter zijn dan 0");

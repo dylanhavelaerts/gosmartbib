@@ -16,6 +16,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+/**
+ * Service voor het beheren van aankoopverzoeken. Biedt functionaliteit voor het aanmaken, goedkeuren, afwijzen en verwijderen van aankoopverzoeken.
+ * Ook kunnen alle aankoopverzoeken voor een specifieke school worden opgehaald.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -24,6 +28,13 @@ public class PurchaseRequestService {
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Maakt een nieuw aankoopverzoek aan voor de gebruiker met het opgegeven Smartschool UID
+     * De titel van het verzoek is verplicht, auteurs en ISBN zijn optioneel
+     * @param dto - De gegevens voor het aanmaken van het aankoopverzoek
+     * @param smartschoolUid - De Smartschool UID van de gebruiker
+     * @return - Het aangemaakte aankoopverzoek
+     */
     public PurchaseRequestDTO createRequest(CreatePurchaseRequestDTO dto, String smartschoolUid) {
         if (dto.title() == null || dto.title().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Titel is verplicht");
@@ -44,6 +55,11 @@ public class PurchaseRequestService {
         return toDTO(purchaseRequestRepository.save(entity));
     }
 
+    /**
+     * Haalt alle aankoopverzoeken op voor de school van de gebruiker met het opgegeven Smartschool UID
+     * @param smartschoolUid - De Smartschool UID van de gebruiker wiens school de aankoopverzoeken moet worden opgehaald
+     * @return - Een lijst van aankoopverzoeken voor de school van de gebruiker
+     */
     public List<PurchaseRequestDTO> findAllForSchool(String smartschoolUid) {
         UserEntity user = userRepository.findBySmartschoolUid(smartschoolUid).orElseThrow(() -> new EntityNotFoundException("Gebruiker niet gevonden"));
 
@@ -53,6 +69,12 @@ public class PurchaseRequestService {
                 .toList();
     }
 
+    /**
+     * Keurt een aankoopverzoek goed
+     * @param id - Het ID van het aankoopverzoek
+     * @param note - De opmerking bij de goedkeuring
+     * @return - Het aangemaakte aankoopverzoek
+     */
     public PurchaseRequestDTO approveRequest(Long id, String note) {
         PurchaseRequestEntity entity = purchaseRequestRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Aankoopverzoek niet gevonden"));
 
@@ -62,6 +84,12 @@ public class PurchaseRequestService {
         return toDTO(purchaseRequestRepository.save(entity));
     }
 
+    /**
+     * Keurt een aankoopverzoek af
+     * @param id - Het ID van het aankoopverzoek
+     * @param note - De opmerking bij de afkeuring
+     * @return - Het aangemaakte aankoopverzoek
+     */
     public PurchaseRequestDTO rejectRequest(Long id, String note) {
         PurchaseRequestEntity entity = purchaseRequestRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Aankoopverzoek niet gevonden"));
 

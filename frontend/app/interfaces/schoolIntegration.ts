@@ -1,3 +1,6 @@
+/**
+ * Configuratie en status van de OneRoster-integratie van een school.
+ */
 export interface SchoolIntegrationDTO {
   schoolId: number;
   schoolName: string;
@@ -12,6 +15,12 @@ export interface SchoolIntegrationDTO {
   lastError: string | null;
 }
 
+/**
+ * Payload waarmee een platformbeheerder de OneRoster-integratie opslaat.
+ *
+ * De client secret en Smartschool accesscode worden naar de backend gestuurd,
+ * maar worden om veiligheidsredenen niet opnieuw zichtbaar teruggegeven.
+ */
 export interface UpsertSchoolIntegrationRequest {
   schoolBaseUrl: string;
   onerosterClientId: string;
@@ -20,6 +29,9 @@ export interface UpsertSchoolIntegrationRequest {
   smartschoolAccesscode?: string;
 }
 
+/**
+ * Resultaat van het testen van de OneRoster-integratie.
+ */
 export interface SchoolIntegrationTestResponse {
   success: boolean;
   tokenReceived: boolean;
@@ -28,6 +40,9 @@ export interface SchoolIntegrationTestResponse {
   message: string;
 }
 
+/**
+ * Response met live gebruikers uit OneRoster.
+ */
 export interface SchoolIntegrationLiveUsersResponse {
   success: boolean;
   userCount: number;
@@ -35,6 +50,9 @@ export interface SchoolIntegrationLiveUsersResponse {
   message: string;
 }
 
+/**
+ * Response met live klassen uit OneRoster.
+ */
 export interface SchoolIntegrationLiveClassesResponse {
   success: boolean;
   classCount: number;

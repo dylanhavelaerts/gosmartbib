@@ -34,11 +34,16 @@ public class BookController {
     private final UserService userService;
     private final AuthHelper authHelper;
 
+    //region GET methodes
+
     /**
-     * Geeft alle boeken terug met server-side paginatie.
-     *
-     * @param page de pagina (0-based)
-     * @param size aantal boeken per pagina
+     * Deze enpoint haal alle boeken op met server-side paginatie. De resultaten worden gefilterd op basis van de rol van de gebruiker:
+     * - Studenten zien alleen boeken die beschikbaar zijn voor studenten
+     * - Leerkrachten/Bilbiotheekbeheerder zien alle boeken
+     * @param page - de beginpagina
+     * @param size - het aantal boeken per pagina
+     * @param principal - de ingelogde gebruiker
+     * @return - een pagina met boeken die de gebruiker mag zien
      */
     @GetMapping("/all")
     public Page<BookDTO> getBooks(
@@ -54,12 +59,13 @@ public class BookController {
     }
 
     /**
-     * Zoekt boeken op titel of auteur met server-side paginatie.
-     * Als de zoekterm leeg is, worden alle boeken teruggegeven.
-     *
-     * @param query de zoekterm
-     * @param page  de pagina (0-based)
-     * @param size  aantal boeken per pagina
+     * Zoekt boeken op basis van titel, auteur of categorie met server-side paginatie, zoals bovenstaande method wordt dit ook
+     * gefilterd op basis van de rol
+     * @param query - de zoekterm die vergeleken wordt met titel, auteur en categorie
+     * @param page - de beginpagina
+     * @param size - het aantal boeken per pagina
+     * @param principal - de ingelogde gebruiker
+     * @return - een pagina met boeken die overeenkomen met de zoekterm en die de gebruiker mag zien
      */
     @GetMapping("/search")
     public ResponseEntity<Page<BookDTO>> searchByTitleOrAuthorOrCategory(
@@ -72,13 +78,11 @@ public class BookController {
     }
 
     /**
-     * Filtert boeken op basis van verschillende criteria met server-side paginatie.
-     * Alle filterparameters zijn optioneel.
-     * Ongeldige combinaties (bv. minRating > maxRating) geven een 400 terug.
-     *
-     * @param filter    de filtercriteria (taal, categorieën, labels, pagina's,
-     *                  publicatiejaar, beoordeling)
-     * @param principal de ingelogde gebruiker
+     * Zoekt boeken op basis van verschillende filters zoals titel, auteur, categorie, taal, leesniveau en labels
+     * De resultaten worden gefilterd op basis van de rol van de gebruiker, zoals bij bovenstaande methoden
+     * @param filter - een object dat alle mogelijke filtercriteria bevat
+     * @param principal - de ingelogde gebruiker
+     * @return - een pagina met boeken die overeenkomen met de filtercriteria en die de gebruiker mag zien
      */
     @GetMapping("/filter")
     public ResponseEntity<?> filterBooks(
@@ -89,16 +93,31 @@ public class BookController {
         return ResponseEntity.ok(filteredBooks);
     }
 
+    /**
+     * Geeft een lijst van beschikbare talen terug
+     * @param principal - de ingelogde gebruiker
+     * @return - een lijst van beschikbare talen
+     */
     @GetMapping("/languages")
     public List<String> getAvailableLanguages(@AuthenticationPrincipal OAuth2User principal) {
         return bookService.getAvailableLanguages(authHelper.extractUidOrNull(principal));
     }
 
+    /**
+     * Geeft een lijst van beschikbare categorieën terug
+     * @param principal - de ingelogde gebruiker
+     * @return - een lijst van beschikbare categorieën
+     */
     @GetMapping("/categories")
     public List<String> getAvailableCategories(@AuthenticationPrincipal OAuth2User principal) {
         return bookService.getAvailableCategories(authHelper.extractUidOrNull(principal));
     }
 
+    /**
+     * Geeft een lijst van beschikbare leesniveaus terug
+     * @param principal - de ingelogde gebruiker
+     * @return - een lijst van beschikbare leesniveaus
+     */
     @GetMapping("/labels")
     public List<String> getAvailableLabels(@AuthenticationPrincipal OAuth2User principal) {
         return bookService.getAvailableLabels(authHelper.extractUidOrNull(principal));
@@ -106,6 +125,9 @@ public class BookController {
 
     /**
      * Geeft het boek terug met het opgegeven id.
+     * @param id - het id van het boek
+     * @param principal - de ingelogde gebruiker
+     * @return - het boek met het opgegeven id
      */
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookById(@PathVariable Long id, @AuthenticationPrincipal OAuth2User principal) {
@@ -113,6 +135,12 @@ public class BookController {
                 .ok(bookService.getBookById(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
     }
 
+    /**
+     * Geeft de 4 boeken terug die in de spotlight staan, gesorteerd op rating. Optioneel kunnen deze ook gefilterd worden op leesniveau
+     * @param readingLevel - het leesniveau waarop gefilterd moet worden
+     * @param principal - de ingelogde gebruiker
+     * @return - een lijst van maximaal 4 boeken die in de spotlight staan en overeenkomen met het leesniveau (indien opgegeven) en die de gebruiker mag zien
+     */
     @GetMapping("/spotlight")
     public List<BookDTO> getBooksInSpotlight(
             @RequestParam(required = false) String readingLevel,
@@ -127,21 +155,11 @@ public class BookController {
         return bookService.getTop4BooksInSpotlight(role, uid, readingLevel);
     }
 
-    public List<BookDTO> getBooksInSpotlight(OAuth2User principal) {
-        return getBooksInSpotlight(null, principal);
-    }
-
     /**
-     * Geeft alle boeken terug met spotlight = true
-     */
-    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
-    @GetMapping("/spotlight/all")
-    public List<BookDTO> getAllBooksInSpotlight(@AuthenticationPrincipal OAuth2User principal) {
-        return bookService.getAllBooksInSpotlight(callerRole(principal), authHelper.extractUidOrNull(principal));
-    }
-
-    /**
-     * Geeft de 4 boeken terug met de hoogste ID per leesniveau
+     * Geeft de 4 nieuwste boeken terug, gesorteerd op toevoegdatum. Optioneel kunnen deze ook gefilterd worden op leesniveau
+     * @param readingLevel - het leesniveau waarop gefilterd moet worden
+     * @param principal - de ingelogde gebruiker
+     * @return - een lijst van de 4 nieuwste boeken
      */
     @GetMapping("/latest")
     public List<BookDTO> getLatestBooks(
@@ -157,6 +175,12 @@ public class BookController {
         return bookService.getLatestBooks(role, uid, readingLevel);
     }
 
+    /**
+     * Geeft de 4 best beoordeelde boeken terug, gesorteerd op gemiddelde rating. Optioneel kunnen deze ook gefilterd worden op leesniveau
+     * @param readingLevel - het leesniveau waarop gefilterd moet worden
+     * @param principal - de ingelogde gebruiker
+     * @return - een lijst van de 4 best beoordeelde boeken die overeenkomen met het leesniveau (indien opgegeven) en die de gebruiker mag zien
+     */
     @GetMapping("/top-rated")
     public ResponseEntity<List<BookDTO>> getRecommendedBooks(
             @RequestParam(required = false) String readingLevel,
@@ -172,7 +196,120 @@ public class BookController {
     }
 
     /**
-     * Voegt een boek toe aan de database via ISBN (opgehaald van Google Books).
+     * Zoekt een boek op via ISBN zonder het op te slaan (preview).
+     * @param isbn - het ISBN van het boek dat gezocht moet worden
+     * @return - het gevonden boek
+     */
+    @GetMapping("/search/{isbn}")
+    public ResponseEntity<?> searchBookByIsbn(@PathVariable String isbn) {
+        return ResponseEntity.ok(bookService.searchBookByIsbn(isbn));
+    }
+
+    /**
+     * Haalt de snowball-secties voor een specifiek boek op
+     * @param id - het ID van het boek
+     * @param principal - de ingelogde gebruiker
+     * @return - de snowball-secties
+     */
+    @GetMapping("/{id}/snowball")
+    public ResponseEntity<List<SnowballSectionDTO>> getSnowball(
+            @PathVariable Long id,
+            @AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.ok(
+                bookService.getSnowballSections(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
+    }
+
+    /**
+     * Geeft alle boeken terug met spotlight = true
+     * @param principal - de ingelogde gebruiker
+     * @return - een lijst van boeken die in de spotlight staan
+     */
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
+    @GetMapping("/spotlight/all")
+    public List<BookDTO> getAllBooksInSpotlight(@AuthenticationPrincipal OAuth2User principal) {
+        return bookService.getAllBooksInSpotlight(callerRole(principal), authHelper.extractUidOrNull(principal));
+    }
+
+    /**
+     * Haalt een boek op basis van de barcode
+     * @param barcode - de barcode van het boek
+     * @param principal - de ingelogde gebruiker
+     * @return - het gevonden boek
+     */
+    @GetMapping("/by-barcode")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
+    public ResponseEntity<BookDTO> getBookByBarcode(
+            @RequestParam String barcode,
+            @AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.ok(
+                bookService.getBookByBarcode(barcode, callerRole(principal), authHelper.extractUidOrNull(principal)));
+    }
+
+    /**
+     * Haalt een kopie op basis van de barcode
+     * @param bookId - het ID van het boek
+     * @param barcode - de barcode van de kopie
+     * @return - de gevonden kopie
+     */
+    @GetMapping("/{bookId}/copies/by-barcode")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
+    public ResponseEntity<BookCopyLabelDTO> getCopyByBarcode(@PathVariable Long bookId, @RequestParam String barcode) {
+        return ResponseEntity.ok(bookService.getCopyByBarcode(bookId, barcode));
+    }
+
+    /**
+     * Haalt de labels voor kopieën van een specifiek boek op
+     * @param bookId - het ID van het boek
+     * @param inventoryId - het ID van het inventaris
+     * @return - de labels voor de kopieën
+     */
+    @GetMapping("/{bookId}/copies/labels")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
+    public ResponseEntity<List<BookCopyLabelDTO>> getCopyLabels(@PathVariable Long bookId,
+            @RequestParam Long inventoryId) {
+        return ResponseEntity.ok(bookService.getCopyLabelsForInventory(bookId, inventoryId));
+    }
+
+    /**
+     * Haalt de labels voor kopieën van een specifiek boek op
+     * @param bookId - het ID van het boek
+     * @param principal - de ingelogde gebruiker
+     * @return - de labels voor de kopieën
+     */
+    @GetMapping("/{bookId}/copies/labels/school")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
+    public ResponseEntity<List<BookCopyLabelDTO>> getCopyLabelsForBook(
+            @PathVariable Long bookId,
+            @AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.ok(bookService.getCopyLabelsForBook(bookId, authHelper.extractUid(principal)));
+    }
+
+    /**
+     * Haalt alle labels voor kopieën voor een specifieke school op
+     * @param principal - de ingelogde gebruiker
+     * @return - de labels voor de kopieën
+     */
+    @GetMapping("/copies/labels/school")
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
+    public ResponseEntity<List<BookCopyLabelDTO>> getAllCopyLabelsForSchool(
+            @AuthenticationPrincipal OAuth2User principal) {
+        return ResponseEntity.ok(bookService.getCopyLabelsForSchool(authHelper.extractUid(principal)));
+    }
+
+    //endregion
+
+    //region POST methodes
+
+    /**
+     * Voegt een boek toe aan de database op basis van het opgegeven ISBN.
+     * De boekgegevens worden opgehaald uit een externe API
+     *  - Optioneel kunnen er ook campus, aantal exemplaren, en of het een didactisch boek is meegegeven worden
+     * @param isbn - het ISBN van het boek dat toegevoegd moet worden
+     * @param campus - de campus waaraan het boek toegevoegd moet worden (optioneel)
+     * @param amount - het aantal exemplaren dat toegevoegd moet worden (optioneel, standaard 1)
+     * @param didacticBook - of het boek een didactisch boek is (optioneel, standaard false)
+     * @param principal - de ingelogde gebruiker
+     * @return - het toegevoegde boek
      */
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     @PostMapping("/add/{isbn}")
@@ -187,27 +324,27 @@ public class BookController {
     }
 
     /**
-     * Zoekt een boek op via ISBN zonder het op te slaan (preview).
+     * Voegt een boek toe aan de database op basis van de opgegeven gegevens
+     * @param request - het verzoek met de gegevens van het boek
+     * @param principal - de ingelogde gebruiker
+     * @return - het toegevoegde boek
      */
-    @GetMapping("/search/{isbn}")
-    public ResponseEntity<?> searchBookByIsbn(@PathVariable String isbn) {
-        return ResponseEntity.ok(bookService.searchBookByIsbn(isbn));
-    }
-
-    /**
-     * Past de spotlight status aan van een boek.
-     */
+    @PostMapping("/add")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
-    @PatchMapping("/{id}/spotlight")
-    public ResponseEntity<Void> updateSpotlight(
-            @PathVariable Long id,
-            @RequestParam boolean value) {
-        bookService.updateSpotlight(id, value);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request,
+            @AuthenticationPrincipal OAuth2User principal) {
+        BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
+        return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
     }
 
     /**
      * Importeert boeken vanuit een Excel-bestand.
+     * @param file - het Excel-bestand met de boekgegevens
+     * @param campus - de campus waaraan de boeken toegevoegd moeten worden (optioneel)
+     * @param confirmDuplicates - of dubbele boeken bevestigd moeten worden (optioneel, standaard false)
+     * @param confirmedDuplicateRows - de rijen met dubbele boeken die bevestigd zijn (optioneel)
+     * @param principal - de ingelogde gebruiker
+     * @return - het resultaat van de import
      */
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -235,6 +372,15 @@ public class BookController {
         }
     }
 
+    /**
+     * Importeert boeken zonder ISBN vanuit een Excel-bestand
+     * @param file - het Excel-bestand met de boekgegevens
+     * @param campus - de campus waaraan de boeken toegevoegd moeten worden (optioneel)
+     * @param confirmDuplicates - of dubbele boeken bevestigd moeten worden (optioneel, standaard false)
+     * @param confirmedDuplicateRows - de rijen met dubbele boeken die bevestigd zijn (optioneel)
+     * @param principal - de ingelogde gebruiker
+     * @return - het resultaat van de import
+     */
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     @PostMapping(value = "/import/no-isbn", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importBooksWithoutIsbn(
@@ -261,6 +407,31 @@ public class BookController {
         }
     }
 
+    //endregion
+
+    //region PATCH methodes
+
+    /**
+     * Past de spotlight status aan van een boek.
+     * @param id - het ID van het boek waarvan de spotlight status moet worden aangepast
+     * @param value - de nieuwe spotlight status
+     * @return - een lege response met HTTP 204 No Content
+     */
+    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
+    @PatchMapping("/{id}/spotlight")
+    public ResponseEntity<Void> updateSpotlight(
+            @PathVariable Long id,
+            @RequestParam boolean value) {
+        bookService.updateSpotlight(id, value);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Werkt een boek bij in de database
+     * @param id - het ID van het boek
+     * @param bookDTO - de gegevens van het boek
+     * @return - het bijgewerkte boek
+     */
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
@@ -268,67 +439,20 @@ public class BookController {
     }
 
     /**
-     * Voegt boek toe aan database
+     * Werkt de conditie van een kopie bij
+     * @param copyId - het ID van de kopie
+     * @param request - de aanvraag met de nieuwe conditie en opmerkingen
      */
-    @PostMapping("/add")
-    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
-    public ResponseEntity<?> addManualBook(@RequestBody CreateBookRequestDTO request,
-            @AuthenticationPrincipal OAuth2User principal) {
-        BookDTO addedBook = bookService.addManualBook(request, authHelper.extractUidOrNull(principal));
-        return new ResponseEntity<>(addedBook, HttpStatus.CREATED);
-    }
-
-    @GetMapping("/{id}/snowball")
-    public ResponseEntity<List<SnowballSectionDTO>> getSnowball(
-            @PathVariable Long id,
-            @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(
-                bookService.getSnowballSections(id, callerRole(principal), authHelper.extractUidOrNull(principal)));
-    }
-
-    @GetMapping("/{bookId}/copies/labels")
-    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
-    public ResponseEntity<List<BookCopyLabelDTO>> getCopyLabels(@PathVariable Long bookId,
-            @RequestParam Long inventoryId) {
-        return ResponseEntity.ok(bookService.getCopyLabelsForInventory(bookId, inventoryId));
-    }
-
-    @GetMapping("/{bookId}/copies/labels/school")
-    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
-    public ResponseEntity<List<BookCopyLabelDTO>> getCopyLabelsForBook(
-            @PathVariable Long bookId,
-            @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(bookService.getCopyLabelsForBook(bookId, authHelper.extractUid(principal)));
-    }
-
-    @GetMapping("/copies/labels/school")
-    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
-    public ResponseEntity<List<BookCopyLabelDTO>> getAllCopyLabelsForSchool(
-            @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(bookService.getCopyLabelsForSchool(authHelper.extractUid(principal)));
-    }
-
-    @GetMapping("/by-barcode")
-    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
-    public ResponseEntity<BookDTO> getBookByBarcode(
-            @RequestParam String barcode,
-            @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(
-                bookService.getBookByBarcode(barcode, callerRole(principal), authHelper.extractUidOrNull(principal)));
-    }
-
-    @GetMapping("/{bookId}/copies/by-barcode")
-    @PreAuthorize("@roleGuard.isLibrarian(authentication)")
-    public ResponseEntity<BookCopyLabelDTO> getCopyByBarcode(@PathVariable Long bookId, @RequestParam String barcode) {
-        return ResponseEntity.ok(bookService.getCopyByBarcode(bookId, barcode));
-    }
-
     @PatchMapping("/copies/{copyId}/condition")
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateCopyCondition(@PathVariable Long copyId, @RequestBody UpdateCopyConditionRequestDTO request) {
         bookService.updateCopyCondition(copyId, request.condition(), request.notes());
     }
+
+    //endregion
+
+    //region Helper methodes
 
     private UserRoles callerRole(OAuth2User principal) {
         if (principal == null)
@@ -338,5 +462,7 @@ public class BookController {
             return UserRoles.STUDENT;
         return userService.getRoleBySmartschoolUid(uid);
     }
+
+    //endregion
 
 }
