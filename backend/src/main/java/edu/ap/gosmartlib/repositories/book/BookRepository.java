@@ -184,8 +184,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
          * gedeeltelijke
          * overeenkomsten. Negeert streepjes bij het zoeken op ISBN.
          *
-         * @param query
-         * @return
+         * @param query de zoekterm voor titel, auteur of ISBN
+         * @return een pagina met boeken die overeenkomen met de zoekterm in titel, auteur of ISBN
          */
         @Query("SELECT DISTINCT b FROM BookEntity b LEFT JOIN b.authors a WHERE " +
                         "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
@@ -197,8 +197,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
          * Zoek boeken op titel of auteur, case-insensitive en ondersteunt gedeeltelijke
          * overeenkomsten.
          *
-         * @param query
-         * @return
+         * @param query de zoekterm voor titel, auteur of ISBN
+         * @return een pagina met boeken die overeenkomen met de zoekterm in titel, auteur of ISBN
          */
         @Query("""
                         SELECT DISTINCT b FROM BookEntity b LEFT JOIN b.authors a LEFT JOIN b.categories c
