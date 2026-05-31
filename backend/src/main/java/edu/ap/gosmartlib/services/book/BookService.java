@@ -61,19 +61,28 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Service voor het beheren van boeken, inventarissen en exemplaren binnen GoSmartLib.
+ * Service voor het beheren van boeken, inventarissen en exemplaren binnen
+ * GoSmartLib.
  *
- * <p>Verantwoordelijkheden:</p>
+ * <p>
+ * Verantwoordelijkheden:
+ * </p>
  * <ul>
- *   <li>Boeken ophalen, zoeken en filteren — met zichtbaarheidsregels op basis van gebruikersrol en school</li>
- *   <li>Boeken toevoegen via ISBN (Google Books API), handmatig, of via bulk Excel-import</li>
- *   <li>Inventarissen en campusvoorraden beheren per school</li>
- *   <li>Exemplaren bijhouden, barcodes (EAN-13) genereren en conditie registreren</li>
- *   <li>Spotlight- en aanbevelingslogica aanbieden voor de startpagina</li>
+ * <li>Boeken ophalen, zoeken en filteren — met zichtbaarheidsregels op basis
+ * van gebruikersrol en school</li>
+ * <li>Boeken toevoegen via ISBN (Google Books API), handmatig, of via bulk
+ * Excel-import</li>
+ * <li>Inventarissen en campusvoorraden beheren per school</li>
+ * <li>Exemplaren bijhouden, barcodes (EAN-13) genereren en conditie
+ * registreren</li>
+ * <li>Spotlight- en aanbevelingslogica aanbieden voor de startpagina</li>
  * </ul>
  * <p>
- * Toegangscontrole wordt intern afgedwongen: studenten zien enkel boeken van hun eigen school,
- * didactische boeken zijn enkel zichtbaar voor leerkrachten, bibliothecarissen en beheerders. </p>
+ * Toegangscontrole wordt intern afgedwongen: studenten zien enkel boeken van
+ * hun eigen school,
+ * didactische boeken zijn enkel zichtbaar voor leerkrachten, bibliothecarissen
+ * en beheerders.
+ * </p>
  */
 @Slf4j
 @Service
@@ -99,38 +108,63 @@ public class BookService {
     @Value("${google.books.api.key}")
     private String googleBooksApiKey;
 
-
-    //region Boeken ophalen
+    // region Boeken ophalen
 
     /**
-     * Haal alle boeken op met pagination, gefilterd op zichtbaarheid van didactische boeken en al dan niet beperken tot eigen school
-     * @param page - pagina nummer
-     * @param size - anantal boeken per pagina
-     * @param callerRole - rol van de aanroeper (om epalen of didactische boeken zichtbaar te bmoeten zijn)
-     * @param currentUserUid - uid van de aanroeper (om te bepalen of we moeten beperken tot eigen school en om bij te beperken boeken te bepalen welke zichtbaar zijn)
-     * @return een pagina van BookDTO's die voldoen aan de criteria
+     * Haalt alle boeken op die zichtbaar zijn voor de huidige gebruiker.
+     *
+     * <p>
+     * Hierbij wordt de standaard zichtbaarheidsregel gebruikt: gebruikersrollen die
+     * didactische boeken mogen zien, krijgen die ook terug. Leerlingen krijgen geen
+     * didactische boeken terug.
+     * </p>
+     *
+     * @param page           het paginanummer, startend vanaf 0
+     * @param size           het aantal boeken per pagina
+     * @param callerRole     de rol van de aangemelde gebruiker
+     * @param currentUserUid de Smartschool UID van de aangemelde gebruiker
+     * @return een pagina met boeken die zichtbaar zijn voor de gebruiker
+     * @throws NegativeValueException wanneer {@code page} negatief is of
+     *                                {@code size}
+     *                                kleiner dan of gelijk aan 0 is
      */
     public Page<BookDTO> getAllBooks(int page, int size, UserRoles callerRole, String currentUserUid) {
-        if (page < 0 || size <= 0)
-            throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
-
-        Pageable pageable = PageRequest.of(page, size);
-        boolean includeDidactic = canSeeDidactic(callerRole);
-        if (restrictToOwnSchool(callerRole)) {
-            Long schoolId = requireRequesterSchoolId(currentUserUid);
-
-            return bookRepository.findAllFilteredForSchool(includeDidactic, schoolId, pageable)
-                    .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid));
-        }
-
-        return bookRepository.findAllFiltered(includeDidactic, pageable)
-                .map(this::toDTO);
+        return getAllBooks(page, size, callerRole, currentUserUid, canSeeDidactic(callerRole));
     }
 
     /**
-     * Haal alle boeken op zonder pagination, gefilterd op zichtbaarheid van didactische boeken en al dan niet beperken tot eigen school
-     * @param callerRole - rol van de aanroeper (om epalen of didactische boeken zichtbaar te bmoeten zijn)
-     * @param currentUserUid - uid van de aanroeper (om te bepalen of we moeten beperken tot eigen school en om bij te beperken boeken te bepalen welke zichtbaar zijn)
+     * Haalt alle boeken op die toegevoegd mogen worden aan leeslijsten voor
+     * leerlingen.
+     *
+     * <p>
+     * Didactische boeken worden hier altijd uitgesloten, ook wanneer de gebruiker
+     * zelf
+     * normaal didactische boeken mag zien. Dit wordt gebruikt voor onder andere
+     * klasleeslijsten.
+     * </p>
+     *
+     * @param page           het paginanummer, startend vanaf 0
+     * @param size           het aantal boeken per pagina
+     * @param callerRole     de rol van de aangemelde gebruiker
+     * @param currentUserUid de Smartschool UID van de aangemelde gebruiker
+     * @return een pagina met boeken zonder didactische boeken
+     * @throws NegativeValueException wanneer {@code page} negatief is of
+     *                                {@code size}
+     *                                kleiner dan of gelijk aan 0 is
+     */
+    public Page<BookDTO> getAllStudentReadableBooks(int page, int size, UserRoles callerRole, String currentUserUid) {
+        return getAllBooks(page, size, callerRole, currentUserUid, false);
+    }
+
+    /**
+     * Haal alle boeken op zonder pagination, gefilterd op zichtbaarheid van
+     * didactische boeken en al dan niet beperken tot eigen school
+     * 
+     * @param callerRole     - rol van de aanroeper (om epalen of didactische boeken
+     *                       zichtbaar te bmoeten zijn)
+     * @param currentUserUid - uid van de aanroeper (om te bepalen of we moeten
+     *                       beperken tot eigen school en om bij te beperken boeken
+     *                       te bepalen welke zichtbaar zijn)
      * @return een lijst van BookDTO's die voldoen aan de criteria
      */
     public List<BookDTO> getAllBooksUnpaged(UserRoles callerRole, String currentUserUid) {
@@ -145,8 +179,9 @@ public class BookService {
 
     /**
      * Haal een boek op via ID
-     * @param id - het ID van het boek dat opgevraagd wordt
-     * @param callerRole - de rol van de gebruiker die het boek opvraagt
+     * 
+     * @param id             - het ID van het boek dat opgevraagd wordt
+     * @param callerRole     - de rol van de gebruiker die het boek opvraagt
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een BookDTO met de gegevens van het gevonden boek
      * @throws BookNotFoundException - als het boek niet gevonden wordt
@@ -169,9 +204,12 @@ public class BookService {
 
     /**
      * Zoek een boek op via ISBN
-     * Deze methode haalt de gegevens op uit de Google Books API en geeft een preview terug
+     * Deze methode haalt de gegevens op uit de Google Books API en geeft een
+     * preview terug
+     * 
      * @param isbn - het ISBN nummer van het boek dat gezocht wordt
-     * @return een BookDTO met de gegevens van het boek zoals opgehaald uit Google Books
+     * @return een BookDTO met de gegevens van het boek zoals opgehaald uit Google
+     *         Books
      */
     public BookDTO searchBookByIsbn(String isbn) {
         BookEntity previewBook = buildBookEntityFromGoogle(isbn);
@@ -182,48 +220,66 @@ public class BookService {
     }
 
     /**
-     * Zoek boeken op titel, auteur of categorie
-     * @param query - de zoekterm
-     * @param page - het paginanummer
-     * @param size - de grootte van de pagina
-     * @param callerRole - de rol van de gebruiker die zoekt
-     * @param currentUserUid - de uid van de huidige gebruiker
-     * @return een pagina met BookDTOs die voldoen aan de zoekcriteria
+     * Zoekt boeken op titel, auteur of categorie volgens de standaard
+     * zichtbaarheidsregels van de gebruiker.
+     *
+     * <p>
+     * Rollen die didactische boeken mogen zien, krijgen die ook terug. Leerlingen
+     * krijgen geen didactische boeken terug.
+     * </p>
+     *
+     * @param query          de zoekterm voor titel, auteur of categorie
+     * @param page           het paginanummer, startend vanaf 0
+     * @param size           het aantal boeken per pagina
+     * @param callerRole     de rol van de aangemelde gebruiker
+     * @param currentUserUid de Smartschool UID van de aangemelde gebruiker
+     * @return een pagina met boeken die overeenkomen met de zoekterm
+     * @throws NegativeValueException wanneer {@code page} negatief is of
+     *                                {@code size}
+     *                                kleiner dan of gelijk aan 0 is
      */
     public Page<BookDTO> searchByTitleOrAuthorOrCategory(String query, int page, int size, UserRoles callerRole,
             String currentUserUid) {
-        if (page < 0 || size <= 0)
-            throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
+        return searchByTitleOrAuthorOrCategory(
+                query,
+                page,
+                size,
+                callerRole,
+                currentUserUid,
+                canSeeDidactic(callerRole));
+    }
 
-        Pageable pageable = PageRequest.of(page, size);
-        boolean includeDidactic = canSeeDidactic(callerRole);
-
-        if (restrictToOwnSchool(callerRole)) {
-            Long schoolId = requireRequesterSchoolId(currentUserUid);
-
-            if (query == null || query.isBlank()) {
-                return bookRepository.findAllFilteredForSchool(includeDidactic, schoolId, pageable)
-                        .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid));
-            }
-
-            Page<BookEntity> raw = bookRepository.searchByTitleOrAuthorOrCategoryForSchool(
-                    query.trim(), includeDidactic, schoolId, pageable);
-            return prioritizeTitleMatches(raw, query.trim(), pageable,
-                    book -> toVisibleBookDTO(book, callerRole, currentUserUid));
-        }
-
-        if (query == null || query.isBlank()) {
-            return bookRepository.findAllFiltered(canSeeDidactic(callerRole), pageable).map(this::toDTO);
-        }
-
-        Page<BookEntity> raw = bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), includeDidactic, pageable);
-        return prioritizeTitleMatches(raw, query.trim(), pageable, this::toDTO);
+    /**
+     * Zoekt boeken op titel, auteur of categorie, maar sluit didactische boeken
+     * altijd uit.
+     *
+     * <p>
+     * Deze methode wordt gebruikt wanneer boeken geselecteerd worden voor een
+     * leerlingenleeslijst, zoals een klasleeslijst. Daardoor kan een leerkracht wel
+     * didactische boeken blijven beheren, maar ze niet toevoegen aan lijsten voor
+     * leerlingen.
+     * </p>
+     *
+     * @param query          de zoekterm voor titel, auteur of categorie
+     * @param page           het paginanummer, startend vanaf 0
+     * @param size           het aantal boeken per pagina
+     * @param callerRole     de rol van de aangemelde gebruiker
+     * @param currentUserUid de Smartschool UID van de aangemelde gebruiker
+     * @return een pagina met boeken zonder didactische boeken
+     * @throws NegativeValueException wanneer {@code page} negatief is of
+     *                                {@code size}
+     *                                kleiner dan of gelijk aan 0 is
+     */
+    public Page<BookDTO> searchStudentReadableBooks(String query, int page, int size, UserRoles callerRole,
+            String currentUserUid) {
+        return searchByTitleOrAuthorOrCategory(query, page, size, callerRole, currentUserUid, false);
     }
 
     /**
      * Filter de boeken op basis van de opgegeven criteria
-     * @param request - het filterverzoek
-     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * 
+     * @param request        - het filterverzoek
+     * @param callerRole     - de rol van de gebruiker die de boeken opvraagt
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een pagina met BookDTOs van de gefilterde boeken
      */
@@ -283,6 +339,7 @@ public class BookService {
 
     /**
      * Haal de beschikbare talen op
+     * 
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een lijst met beschikbare talen
      */
@@ -301,6 +358,7 @@ public class BookService {
 
     /**
      * Haal de beschikbare categorieën op
+     * 
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een lijst met beschikbare categorieën
      */
@@ -319,6 +377,7 @@ public class BookService {
 
     /**
      * Haal de beschikbare labels op
+     * 
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een lijst met beschikbare labels
      */
@@ -335,14 +394,14 @@ public class BookService {
         return cleanDistinctOptions(rawLabels);
     }
 
-    //endregion
+    // endregion
 
-
-    //region Spotlight & aanbevelingen
+    // region Spotlight & aanbevelingen
 
     /**
      * Haal de top 4 boeken in de spotlight op
-     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * 
+     * @param callerRole     - de rol van de gebruiker die de boeken opvraagt
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een lijst met BookDTOs van de top 4 boeken in de spotlight
      */
@@ -358,9 +417,10 @@ public class BookService {
 
     /**
      * Haal de top 4 boeken in de spotlight op op basis van het leesniveau
-     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * 
+     * @param callerRole     - de rol van de gebruiker die de boeken opvraagt
      * @param currentUserUid - de uid van de huidige gebruiker
-     * @param readingLevel - het leesniveau
+     * @param readingLevel   - het leesniveau
      * @return een lijst met BookDTOs van de top 4 boeken in de spotlight
      */
     public List<BookDTO> getTop4BooksInSpotlight(UserRoles callerRole, String currentUserUid, String readingLevel) {
@@ -385,7 +445,8 @@ public class BookService {
 
     /**
      * Haal alle boeken in de spotlight op
-     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * 
+     * @param callerRole     - de rol van de gebruiker die de boeken opvraagt
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een lijst met BookDTOs van alle boeken in de spotlight
      */
@@ -401,7 +462,8 @@ public class BookService {
 
     /**
      * Haal de nieuwste boeken op
-     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * 
+     * @param callerRole     - de rol van de gebruiker die de boeken opvraagt
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een lijst met BookDTOs van de nieuwste boeken
      */
@@ -417,9 +479,10 @@ public class BookService {
 
     /**
      * Haal de nieuwste boeken op op basis van het leesniveau
-     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * 
+     * @param callerRole     - de rol van de gebruiker die de boeken opvraagt
      * @param currentUserUid - de uid van de huidige gebruiker
-     * @param readingLevel - het leesniveau
+     * @param readingLevel   - het leesniveau
      * @return een lijst met BookDTOs van de nieuwste boeken
      */
     public List<BookDTO> getLatestBooks(UserRoles callerRole, String currentUserUid, String readingLevel) {
@@ -444,6 +507,7 @@ public class BookService {
 
     /**
      * Haal de aanbevolen boeken voor een gebruiker op
+     * 
      * @param smartschoolUid - de uid van de smartschool gebruiker
      * @return een lijst met BookDTOs van de aanbevolen boeken
      */
@@ -471,9 +535,10 @@ public class BookService {
 
     /**
      * Haal de top 4 boeken op op basis van het leesniveau
-     * @param callerRole - de rol van de gebruiker die de boeken opvraagt
+     * 
+     * @param callerRole     - de rol van de gebruiker die de boeken opvraagt
      * @param currentUserUid - de uid van de huidige gebruiker
-     * @param readingLevel - het leesniveau
+     * @param readingLevel   - het leesniveau
      * @return een lijst met BookDTOs van de top 4 boeken
      */
     @Transactional(readOnly = true)
@@ -502,8 +567,9 @@ public class BookService {
 
     /**
      * Haal de snowball secties op voor een bepaald boek
-     * @param bookId - het id van het boek
-     * @param callerRole - de rol van de aanroeper
+     * 
+     * @param bookId         - het id van het boek
+     * @param callerRole     - de rol van de aanroeper
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een lijst met snowball secties
      */
@@ -550,18 +616,20 @@ public class BookService {
         return sections;
     }
 
-    //endregion
+    // endregion
 
-
-    //region Boeken beheren
+    // region Boeken beheren
 
     /**
      * Voeg een boek toe via ISBN
-     * Deze methode haalt de gegevens op uit de Google Books API en voegt het boek toe aan de database
-     * @param isbn - het ISBN nummer van het boek dat toegevoegd wordt
-     * @param smartschoolUid - de uid van de smartschool waar het boek aan toegevoegd wordt
-     * @param campus - de campus waar het boek aan toegevoegd wordt
-     * @param copies - het aantal exemplaren dat toegevoegd wordt
+     * Deze methode haalt de gegevens op uit de Google Books API en voegt het boek
+     * toe aan de database
+     * 
+     * @param isbn           - het ISBN nummer van het boek dat toegevoegd wordt
+     * @param smartschoolUid - de uid van de smartschool waar het boek aan
+     *                       toegevoegd wordt
+     * @param campus         - de campus waar het boek aan toegevoegd wordt
+     * @param copies         - het aantal exemplaren dat toegevoegd wordt
      * @return een BookDTO met de gegevens van het toegevoegde boek
      */
     public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer copies) {
@@ -570,12 +638,15 @@ public class BookService {
 
     /**
      * Voeg een boek toe via ISBN
-     * Deze methode haalt de gegevens op uit de Google Books API en voegt het boek toe aan de database
-     * @param isbn - het ISBN nummer van het boek dat toegevoegd wordt
-     * @param smartschoolUid - de uid van de smartschool waar het boek aan toegevoegd wordt
-     * @param campus - de campus waar het boek aan toegevoegd wordt
-     * @param copies - het aantal exemplaren dat toegevoegd wordt
-     * @param didacticBook - of het boek een didactisch boek is
+     * Deze methode haalt de gegevens op uit de Google Books API en voegt het boek
+     * toe aan de database
+     * 
+     * @param isbn           - het ISBN nummer van het boek dat toegevoegd wordt
+     * @param smartschoolUid - de uid van de smartschool waar het boek aan
+     *                       toegevoegd wordt
+     * @param campus         - de campus waar het boek aan toegevoegd wordt
+     * @param copies         - het aantal exemplaren dat toegevoegd wordt
+     * @param didacticBook   - of het boek een didactisch boek is
      * @return een BookDTO met de gegevens van het toegevoegde boek
      */
     public BookDTO addBookByIsbn(String isbn, String smartschoolUid, String campus, Integer copies,
@@ -595,7 +666,8 @@ public class BookService {
 
     /**
      * Voeg een handmatig boek toe
-     * @param request - het verzoek om een boek toe te voegen
+     * 
+     * @param request        - het verzoek om een boek toe te voegen
      * @param smartschoolUid - de uid van de smartschool gebruiker
      * @return het toegevoegde boek
      */
@@ -644,7 +716,8 @@ public class BookService {
 
     /**
      * Werk een boek bij
-     * @param id - het id van het boek
+     * 
+     * @param id          - het id van het boek
      * @param updatedBook - het bijgewerkte boek
      * @return het bijgewerkte boek
      */
@@ -716,7 +789,8 @@ public class BookService {
 
     /**
      * Update de spotlight status van een boek
-     * @param id - het ID van het boek dat geüpdatet wordt
+     * 
+     * @param id        - het ID van het boek dat geüpdatet wordt
      * @param spotlight - de nieuwe spotlight status
      */
     public void updateSpotlight(Long id, boolean spotlight) {
@@ -727,15 +801,15 @@ public class BookService {
         bookRepository.save(book);
     }
 
-    //endregion
+    // endregion
 
-
-    //region Exemplaren & barcodes
+    // region Exemplaren & barcodes
 
     /**
      * Haal een boek op op basis van de barcode
-     * @param barcode - de barcode van het boek
-     * @param callerRole - de rol van de aanroeper
+     * 
+     * @param barcode        - de barcode van het boek
+     * @param callerRole     - de rol van de aanroeper
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return het boek
      */
@@ -763,7 +837,8 @@ public class BookService {
 
     /**
      * Haal een boekkopie op op basis van de barcode
-     * @param bookId - het id van het boek
+     * 
+     * @param bookId  - het id van het boek
      * @param barcode - de barcode van de boekkopie
      * @return de boekkopie
      */
@@ -787,7 +862,8 @@ public class BookService {
 
     /**
      * Haal de kopie labels op voor een bepaald boek
-     * @param bookId - het id van het boek
+     * 
+     * @param bookId         - het id van het boek
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een lijst met kopie labels
      */
@@ -831,7 +907,8 @@ public class BookService {
 
     /**
      * Haal de kopie labels op voor een bepaalde inventaris
-     * @param bookId - het id van het boek
+     * 
+     * @param bookId      - het id van het boek
      * @param inventoryId - het id van de inventaris
      * @return een lijst met kopie labels
      */
@@ -871,6 +948,7 @@ public class BookService {
 
     /**
      * Haal de kopie labels op voor een bepaalde school
+     * 
      * @param currentUserUid - de uid van de huidige gebruiker
      * @return een lijst met kopie labels
      */
@@ -908,9 +986,10 @@ public class BookService {
 
     /**
      * Werk de conditie van een boekkopie bij
-     * @param copyId - het id van de boekkopie
+     * 
+     * @param copyId       - het id van de boekkopie
      * @param newCondition - de nieuwe conditie
-     * @param notes - opmerkingen
+     * @param notes        - opmerkingen
      */
     public void updateCopyCondition(Long copyId, BookCopyCondition newCondition, String notes) {
         BookCopyEntity copy = bookCopyRepository.findById(copyId)
@@ -974,16 +1053,16 @@ public class BookService {
         }
     }
 
-    //endregion
+    // endregion
 
-
-    //region Importeren
+    // region Importeren
 
     /**
      * Importeer boeken uit een Excel-bestand
-     * @param file - het Excel-bestand
+     * 
+     * @param file           - het Excel-bestand
      * @param smartschoolUid - de uid van de smartschool gebruiker
-     * @param campus - de campus waar de boeken worden geïmporteerd
+     * @param campus         - de campus waar de boeken worden geïmporteerd
      * @return een response met informatie over de import
      */
     public BulkImportResponseDTO importBooksFromExcel(MultipartFile file, String smartschoolUid, String campus) {
@@ -992,11 +1071,13 @@ public class BookService {
 
     /**
      * Importeer boeken uit een Excel-bestand
-     * @param file - het Excel-bestand
-     * @param smartschoolUid - de uid van de smartschool gebruiker
-     * @param fallbackCampus - de campus waar de boeken worden geïmporteerd
-     * @param confirmDuplicates - of dubbele boeken moeten worden bevestigd
-     * @param confirmedDuplicateRows - de rijen van dubbele boeken die zijn bevestigd
+     * 
+     * @param file                   - het Excel-bestand
+     * @param smartschoolUid         - de uid van de smartschool gebruiker
+     * @param fallbackCampus         - de campus waar de boeken worden geïmporteerd
+     * @param confirmDuplicates      - of dubbele boeken moeten worden bevestigd
+     * @param confirmedDuplicateRows - de rijen van dubbele boeken die zijn
+     *                               bevestigd
      * @return een response met informatie over de import
      */
     public BulkImportResponseDTO importBooksFromExcel(
@@ -1209,11 +1290,13 @@ public class BookService {
 
     /**
      * Importeer boeken zonder ISBN uit een Excel-bestand
-     * @param file - het Excel-bestand
-     * @param smartschoolUid - de uid van de smartschool gebruiker
-     * @param fallbackCampus - de campus waar de boeken worden geïmporteerd
-     * @param confirmDuplicates - of dubbele boeken moeten worden bevestigd
-     * @param confirmedDuplicateRows - de rijen van dubbele boeken die zijn bevestigd
+     * 
+     * @param file                   - het Excel-bestand
+     * @param smartschoolUid         - de uid van de smartschool gebruiker
+     * @param fallbackCampus         - de campus waar de boeken worden geïmporteerd
+     * @param confirmDuplicates      - of dubbele boeken moeten worden bevestigd
+     * @param confirmedDuplicateRows - de rijen van dubbele boeken die zijn
+     *                               bevestigd
      * @return een response met informatie over de import
      */
     public BulkImportResponseDTO importBooksWithoutIsbnFromExcel(
@@ -1430,13 +1513,109 @@ public class BookService {
                 duplicateWarnings);
     }
 
-    //endregion
+    // endregion
 
+    // region Mapping
 
-    //region Mapping
+    /**
+     * Haalt boeken op met expliciete controle over het al dan niet tonen van
+     * didactische boeken.
+     *
+     * <p>
+     * Voor schoolgebonden rollen wordt de selectie beperkt tot de school van de
+     * aangemelde gebruiker. Voor platformrollen wordt over alle scholen heen
+     * gezocht.
+     * </p>
+     *
+     * @param page            het paginanummer, startend vanaf 0
+     * @param size            het aantal boeken per pagina
+     * @param callerRole      de rol van de aangemelde gebruiker
+     * @param currentUserUid  de Smartschool UID van de aangemelde gebruiker
+     * @param includeDidactic true wanneer didactische boeken opgenomen mogen worden
+     * @return een pagina met boeken volgens de gevraagde zichtbaarheidsregels
+     * @throws NegativeValueException wanneer {@code page} negatief is of
+     *                                {@code size}
+     *                                kleiner dan of gelijk aan 0 is
+     */
+    private Page<BookDTO> getAllBooks(
+            int page,
+            int size,
+            UserRoles callerRole,
+            String currentUserUid,
+            boolean includeDidactic) {
+        if (page < 0 || size <= 0)
+            throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
+
+        Pageable pageable = PageRequest.of(page, size);
+        if (restrictToOwnSchool(callerRole)) {
+            Long schoolId = requireRequesterSchoolId(currentUserUid);
+
+            return bookRepository.findAllFilteredForSchool(includeDidactic, schoolId, pageable)
+                    .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid));
+        }
+
+        return bookRepository.findAllFiltered(includeDidactic, pageable)
+                .map(this::toDTO);
+    }
+
+    /**
+     * Zoekt boeken met expliciete controle over het al dan niet opnemen van
+     * didactische boeken.
+     *
+     * <p>
+     * Wanneer de zoekterm leeg is, wordt teruggevallen op de gewone gefilterde
+     * boekenlijst. Voor schoolgebonden rollen wordt enkel binnen de eigen school
+     * gezocht.
+     * </p>
+     *
+     * @param query           de zoekterm voor titel, auteur of categorie
+     * @param page            het paginanummer, startend vanaf 0
+     * @param size            het aantal boeken per pagina
+     * @param callerRole      de rol van de aangemelde gebruiker
+     * @param currentUserUid  de Smartschool UID van de aangemelde gebruiker
+     * @param includeDidactic true wanneer didactische boeken opgenomen mogen worden
+     * @return een pagina met boeken die overeenkomen met de zoekterm en filters
+     * @throws NegativeValueException wanneer {@code page} negatief is of
+     *                                {@code size}
+     *                                kleiner dan of gelijk aan 0 is
+     */
+    private Page<BookDTO> searchByTitleOrAuthorOrCategory(
+            String query,
+            int page,
+            int size,
+            UserRoles callerRole,
+            String currentUserUid,
+            boolean includeDidactic) {
+        if (page < 0 || size <= 0)
+            throw new NegativeValueException("Page number cannot be negative and size must be greater than 0");
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        if (restrictToOwnSchool(callerRole)) {
+            Long schoolId = requireRequesterSchoolId(currentUserUid);
+
+            if (query == null || query.isBlank()) {
+                return bookRepository.findAllFilteredForSchool(includeDidactic, schoolId, pageable)
+                        .map(book -> toVisibleBookDTO(book, callerRole, currentUserUid));
+            }
+
+            Page<BookEntity> raw = bookRepository.searchByTitleOrAuthorOrCategoryForSchool(
+                    query.trim(), includeDidactic, schoolId, pageable);
+            return prioritizeTitleMatches(raw, query.trim(), pageable,
+                    book -> toVisibleBookDTO(book, callerRole, currentUserUid));
+        }
+
+        if (query == null || query.isBlank()) {
+            return bookRepository.findAllFiltered(includeDidactic, pageable).map(this::toDTO);
+        }
+
+        Page<BookEntity> raw = bookRepository.searchByTitleOrAuthorOrCategory(query.trim(), includeDidactic, pageable);
+        return prioritizeTitleMatches(raw, query.trim(), pageable, this::toDTO);
+    }
 
     /**
      * Converteer een BookEntity naar een BookDTO
+     * 
      * @param book - de book entity
      * @return het book dto
      */
@@ -1491,6 +1670,7 @@ public class BookService {
 
     /**
      * Converteer een BookInventoryEntity naar een BookInventoryDTO
+     * 
      * @param inventory - de inventaris entity
      * @return het inventaris dto
      */
@@ -1589,10 +1769,11 @@ public class BookService {
 
     /**
      * Prioritiseer de zoekresultaten op basis van de titel
-     * @param raw - de onbewerkte zoekresultaten
-     * @param query - de zoekterm
+     * 
+     * @param raw      - de onbewerkte zoekresultaten
+     * @param query    - de zoekterm
      * @param pageable - de pageable configuratie
-     * @param mapper - de mapper om BookEntity naar BookDTO te converteren
+     * @param mapper   - de mapper om BookEntity naar BookDTO te converteren
      * @return een pagina met geordende BookDTOs
      */
     private Page<BookDTO> prioritizeTitleMatches(Page<BookEntity> raw, String query, Pageable pageable,
@@ -1606,16 +1787,17 @@ public class BookService {
         return new PageImpl<>(sorted, pageable, raw.getTotalElements());
     }
 
-    //endregion
+    // endregion
 
-
-    //region Inventarisbeheer
+    // region Inventarisbeheer
 
     /**
-     * Vervang de inventarisregels voor een boek op basis van een lijst van request DTO's
-     * @param book - de book entity
+     * Vervang de inventarisregels voor een boek op basis van een lijst van request
+     * DTO's
+     * 
+     * @param book               - de book entity
      * @param requestInventories - de lijst met request DTO's
-     * @param smartschoolUid - de uid van de smartschool
+     * @param smartschoolUid     - de uid van de smartschool
      */
     private void replaceInventoriesFromRequest(BookEntity book,
             List<CreateBookInventoryRequestDTO> requestInventories,
@@ -1649,7 +1831,8 @@ public class BookService {
 
     /**
      * Vervang de inventarisregels voor een boek op basis van een lijst van DTO's
-     * @param book - de book entity
+     * 
+     * @param book          - de book entity
      * @param inventoryDTOs - de lijst met inventaris DTO's
      */
     private void replaceInventoriesFromDto(BookEntity book, List<BookInventoryDTO> inventoryDTOs) {
@@ -1689,10 +1872,11 @@ public class BookService {
 
     /**
      * Pas de inventaris aan voor de huidige gebruiker
-     * @param book - de book entity
-     * @param smartschoolUid - de uid van de smartschool
-     * @param campus - de campus
-     * @param totalCopies - het totaal aantal exemplaren
+     * 
+     * @param book            - de book entity
+     * @param smartschoolUid  - de uid van de smartschool
+     * @param campus          - de campus
+     * @param totalCopies     - het totaal aantal exemplaren
      * @param availableCopies - het aantal beschikbare exemplaren
      */
     private void applySingleInventoryForCurrentUser(BookEntity book,
@@ -1715,10 +1899,11 @@ public class BookService {
 
     /**
      * Voeg een inventarisregel toe aan een boek
-     * @param book - de book entity
-     * @param school - de school entity
-     * @param campus - de campus
-     * @param totalCopies - het totaal aantal exemplaren
+     * 
+     * @param book            - de book entity
+     * @param school          - de school entity
+     * @param campus          - de campus
+     * @param totalCopies     - het totaal aantal exemplaren
      * @param availableCopies - het aantal beschikbare exemplaren
      */
     private void addInventory(BookEntity book,
@@ -1737,11 +1922,13 @@ public class BookService {
 
     /**
      * Voeg een inventarisregel toe of verhoog de bestaande regel voor een boek
-     * @param book - de book entity
-     * @param school - de school entity
-     * @param campus - de campus
-     * @param totalCopiesToAdd - het aantal toe te voegen exemplaren
-     * @param availableCopiesToAdd - het aantal beschikbare exemplaren om toe te voegen
+     * 
+     * @param book                 - de book entity
+     * @param school               - de school entity
+     * @param campus               - de campus
+     * @param totalCopiesToAdd     - het aantal toe te voegen exemplaren
+     * @param availableCopiesToAdd - het aantal beschikbare exemplaren om toe te
+     *                             voegen
      */
     private void addOrIncreaseInventory(
             BookEntity book,
@@ -1845,13 +2032,13 @@ public class BookService {
         book.setDidacticTag(didacticBook);
     }
 
-    //endregion
+    // endregion
 
-
-    //region Google Books
+    // region Google Books
 
     /**
      * Bouw een BookEntity vanaf de Google Books API
+     * 
      * @param isbn - het ISBN van het boek
      * @return het BookEntity
      */
@@ -2001,10 +2188,9 @@ public class BookService {
         return null;
     }
 
-    //endregion
+    // endregion
 
-
-    //region School & campus
+    // region School & campus
 
     private SchoolEntity resolveSchoolForUser(String smartschoolUid) {
         if (smartschoolUid == null || smartschoolUid.isBlank()) {
@@ -2126,10 +2312,9 @@ public class BookService {
         return Sort.unsorted();
     }
 
-    //endregion
+    // endregion
 
-
-    //region Excel hulpfuncties
+    // region Excel hulpfuncties
 
     private Map<String, Integer> getImportColumnIndexes(Row headerRow, DataFormatter formatter) {
         if (headerRow == null) {
@@ -2310,10 +2495,9 @@ public class BookService {
                 .orElse(null);
     }
 
-    //endregion
+    // endregion
 
-
-    //region Tekst normalisatie
+    // region Tekst normalisatie
 
     private String safeTrim(String value) {
         return value == null ? null : value.trim();
@@ -2443,5 +2627,5 @@ public class BookService {
         return raw + checkDigit;
     }
 
-    //endregion
+    // endregion
 }

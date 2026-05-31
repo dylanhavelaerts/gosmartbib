@@ -7,18 +7,33 @@ import "../create/createReadingList.css";
 
 const PAGE_SIZE = 10;
 
+/**
+ * Props voor de BookPicker-component.
+ *
+ * Wanneer hideDidacticBooks true is, worden didactische boeken niet opgehaald
+ * en niet getoond. Dit wordt gebruikt bij leeslijsten die bedoeld zijn voor
+ * leerlingen, zoals klasleeslijsten.
+ */
 interface BookPickerProps {
   selectedBooks: Book[];
   onAdd: (book: Book) => void;
   onRemove: (bookId: number) => void;
   label?: string;
+  hideDidacticBooks?: boolean;
 }
 
+/**
+ * Zoek- en selectiecomponent voor boeken binnen leeslijstformulieren.
+ *
+ * De component ondersteunt optioneel het verbergen van didactische boeken voor
+ * leeslijsten die bedoeld zijn voor leerlingen.
+ */
 export default function BookPicker({
   selectedBooks,
   onAdd,
   onRemove,
   label = "Zoek boeken",
+  hideDidacticBooks = false,
 }: BookPickerProps) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const [query, setQuery] = useState("");
@@ -34,6 +49,11 @@ export default function BookPicker({
       page: String(currentPage - 1),
       size: String(PAGE_SIZE),
     });
+
+    if (hideDidacticBooks) {
+      params.set("studentReadableOnly", "true");
+    }
+
     const url = isSearching
       ? `${apiUrl}/books/search?query=${encodeURIComponent(query.trim())}&${params}`
       : `${apiUrl}/books/all?${params}`;
@@ -45,7 +65,12 @@ export default function BookPicker({
       fetch(url, { credentials: "include" })
         .then((res) => (res.ok ? res.json() : Promise.reject()))
         .then((data) => {
-          setResults(data.content || []);
+          const content: Book[] = data.content || [];
+          const visibleBooks = hideDidacticBooks
+            ? content.filter((book) => !book.didacticTag)
+            : content;
+
+          setResults(visibleBooks);
           setTotalPages(data.totalPages || 0);
         })
         .catch(() => setError("Fout bij het ophalen van boeken."))
@@ -53,7 +78,7 @@ export default function BookPicker({
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [query, currentPage, apiUrl]);
+  }, [query, currentPage, apiUrl, hideDidacticBooks]);
 
   return (
     <div>

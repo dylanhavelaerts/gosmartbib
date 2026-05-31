@@ -18,6 +18,15 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+/**
+ * JPA-entiteit voor persoonlijke leeslijsten en klasleeslijsten.
+ *
+ * <p>
+ * Persoonlijke leeslijsten horen bij één maker en kunnen publiek gedeeld worden
+ * via publicUid. Klasleeslijsten gebruiken targetvelden om te bepalen welke
+ * leerlingen de lijst mogen zien.
+ * </p>
+ */
 @Entity
 @Getter
 @Setter
@@ -85,6 +94,14 @@ public class ReadingListEntity {
     @JoinTable(name = "tbl_reading_list_books", joinColumns = @JoinColumn(name = "reading_list_id"), inverseJoinColumns = @JoinColumn(name = "book_id"))
     private Set<BookEntity> books = new HashSet<>();
 
+    /**
+     * Zorgt dat elke leeslijst een publieke UUID heeft voordat ze opgeslagen wordt.
+     *
+     * <p>
+     * De lijst is pas publiek zichtbaar wanneer publicVisible true is, maar de UUID
+     * wordt al vooraf voorzien zodat delen later geen extra migratie nodig heeft.
+     * </p>
+     */
     @PrePersist
     private void ensurePublicUidBeforePersist() {
         if (publicUid == null || publicUid.isBlank()) {
