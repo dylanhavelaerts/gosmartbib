@@ -28,7 +28,7 @@ export function formatReadingLevelTitle(readingLevel: string) {
  * Doet dit door de boeken te normaliseren op hun leesniveau, ze te groeperen in een object,
  * en vervolgens de groepen te sorteren op leesniveau en alfabetisch binnen elk niveau
  * @param books - de lijst van boeken
- * @return de gegroepeerde boeken per leesniveau
+ * @returns de gegroepeerde boeken per leesniveau
  */
 export function groupBooksByReadingLevel(books: Book[]): ReadingLevelSection[] {
   const groupedBooks = books.reduce<Record<string, Book[]>>((groups, book) => {

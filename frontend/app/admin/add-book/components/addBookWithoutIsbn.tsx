@@ -245,7 +245,6 @@ export default function AddBookWithoutIsbn() {
    *   <li>Bij een succesvolle toevoeging wordt de gebruiker doorgestuurd naar de bewerkingspagina van het nieuwe boek</li>
    *   <li>Bij een fout wordt er een foutmelding weergegeven</li>
    * </ul>
-   * @returns {Promise<void>}
    */
   const handleConfirmAdd = async () => {
     if (!previewBook) return;
@@ -509,7 +508,7 @@ export default function AddBookWithoutIsbn() {
 
   /**
    * Bepaalt de volgende beschikbare campusnaam
-   * @returns {string} de volgende beschikbare campusnaam
+   * @returns de volgende beschikbare campusnaam
    */
   function getNextAvailableCampusName() {
     const usedCampusNames = getUsedCampusNames();
@@ -524,7 +523,7 @@ export default function AddBookWithoutIsbn() {
 
   /**
    * Controleert of er dubbele campussen zijn geselecteerd in de inventaris
-   * @returns {boolean} true als er dubbele campussen zijn, anders false
+   * @returns true als er dubbele campussen zijn, anders false
    */
   const hasDuplicateInventoryCampuses = () => {
     const selectedCampuses = inventories

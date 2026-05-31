@@ -70,7 +70,7 @@ export function usePurchaseRequests(apiUrl?: string) {
    * Maakt een nieuw aankoopverzoek aan.
    * Doet dit via een POST request naar het /purchase-requests endpoint van de API, met de titel, auteurs en ISBN van het boek in de body
    * @param data de gegevens voor het aankoopverzoek
-   * @returns {Promise<boolean>} true als het aanmaken succesvol was, anders false
+   * @returns true als het aanmaken succesvol was, anders false
    */
   async function createRequest(
     data: CreatePurchaseRequestData,
@@ -115,7 +115,7 @@ export function usePurchaseRequests(apiUrl?: string) {
    * Doet dit via een PATCH request naar het /approve endpoint van het aankoopverzoek
    * @param id het ID van het aankoopverzoek
    * @param note de notitie voor het goedkeuren
-   * @returns {Promise<boolean>} true als het goedkeuren succesvol was, anders false
+   * @returns true als het goedkeuren succesvol was, anders false
    */
   async function approveRequest(id: number, note: string): Promise<boolean> {
     if (!apiUrl || approvingId !== null) return false;
@@ -154,7 +154,7 @@ export function usePurchaseRequests(apiUrl?: string) {
    * Doet dit via een soft-delete (roept het /reject endpoint aan, niet /admin-delete)
    * @param id het ID van het aankoopverzoek
    * @param note de notitie voor het afwijzen
-   * @returns {Promise<boolean>} true als het afwijzen succesvol was, anders false
+   * @returns true als het afwijzen succesvol was, anders false
    */
   async function rejectRequest(id: number, note: string): Promise<boolean> {
     if (!apiUrl || rejectingId !== null) return false;

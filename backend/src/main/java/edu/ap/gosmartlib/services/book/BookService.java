@@ -934,7 +934,7 @@ public class BookService {
      * Als er te veel exemplaren zijn, worden er exemplaren verwijderd, waarbij
      * eerst exemplaren in slechte staat worden verwijderd.
      *
-     * @param inventory
+     * @param inventory - de inventaris waarvoor de exemplaren gereconcilieerd moeten worden
      */
     public void reconcileCopiesForInventory(BookInventoryEntity inventory) {
         List<BookCopyEntity> allCopies = bookCopyRepository.findByInventory(inventory);
