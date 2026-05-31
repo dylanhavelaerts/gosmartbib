@@ -12,6 +12,15 @@ import org.springframework.web.client.RestClient;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Client voor het uitlezen van Smartschool OneRoster endpoints.
+ *
+ * <p>
+ * Deze client voert GET-requests uit naar de OneRoster v1.1 API en geeft
+ * de ontvangen payloads terug als maps, omdat de response per endpoint een
+ * andere structuur kan hebben.
+ * </p>
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -19,26 +28,75 @@ public class SmartschoolOneRosterClient {
 
     private final RestClient restClient = RestClient.create();
 
+    /**
+     * Haalt scholen/organisaties op uit OneRoster.
+     *
+     * <p>
+     * Deze call wordt gebruikt om te controleren of de Smartschool OneRoster-
+     * verbinding correct werkt.
+     * </p>
+     *
+     * @param integration de schoolintegratie met de Smartschool base URL
+     * @param accessToken bearer token voor de OneRoster API
+     * @return lijst met OneRoster-scholen of organisaties
+     */
     public List<Map<String, Object>> getSchools(SchoolIntegrationEntity integration, String accessToken) {
         return getCollection(integration, accessToken, "/ims/oneroster/v1p1/schools", "orgs", "schools");
     }
 
+    /**
+     * Haalt alle gebruikers op uit OneRoster.
+     *
+     * @param integration de schoolintegratie met de Smartschool base URL
+     * @param accessToken bearer token voor de OneRoster API
+     * @return lijst met OneRoster-gebruikers
+     */
     public List<Map<String, Object>> getUsers(SchoolIntegrationEntity integration, String accessToken) {
         return getCollection(integration, accessToken, "/ims/oneroster/v1p1/users", "users");
     }
 
+    /**
+     * Haalt alle klassen op uit OneRoster.
+     *
+     * @param integration de schoolintegratie met de Smartschool base URL
+     * @param accessToken bearer token voor de OneRoster API
+     * @return lijst met OneRoster-klassen
+     */
     public List<Map<String, Object>> getClasses(SchoolIntegrationEntity integration, String accessToken) {
         return getCollection(integration, accessToken, "/ims/oneroster/v1p1/classes", "classes");
     }
 
+    /**
+     * Haalt alle inschrijvingen op uit OneRoster.
+     *
+     * <p>
+     * Inschrijvingen bepalen welke gebruikers aan welke klassen gekoppeld zijn.
+     * </p>
+     *
+     * @param integration de schoolintegratie met de Smartschool base URL
+     * @param accessToken bearer token voor de OneRoster API
+     * @return lijst met OneRoster-inschrijvingen
+     */
     public List<Map<String, Object>> getEnrollments(SchoolIntegrationEntity integration, String accessToken) {
         return getCollection(integration, accessToken, "/ims/oneroster/v1p1/enrollments", "enrollments");
     }
 
-    public Map<String, Object> getUserBySourcedId(SchoolIntegrationEntity integration, String accessToken, String sourcedId) {
-        return getSingle(integration, accessToken, "/ims/oneroster/v1p1/users/" + sourcedId, "user");
-    }
-
+    /**
+     * Voert een GET-request uit naar een OneRoster collection endpoint.
+     *
+     * <p>
+     * Smartschool kan collections onder verschillende response keys teruggeven,
+     * bijvoorbeeld {@code orgs} of {@code schools}. Daarom krijgt deze methode
+     * meerdere mogelijke keys mee en gebruikt ze de eerste key die een lijst bevat.
+     * </p>
+     *
+     * @param integration  de schoolintegratie met de Smartschool base URL
+     * @param accessToken  bearer token voor de OneRoster API
+     * @param path         het OneRoster endpoint-pad
+     * @param responseKeys mogelijke response keys waarin de collectie kan zitten
+     * @return de gevonden collectie, of een lege lijst wanneer er niets gevonden
+     *         wordt
+     */
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> getCollection(
             SchoolIntegrationEntity integration,
@@ -50,8 +108,8 @@ public class SmartschoolOneRosterClient {
                 .uri(integration.getSchoolBaseUrl() + path)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .retrieve()
-            .toEntity(new ParameterizedTypeReference<Map<String, Object>>() {
-            });
+                .toEntity(new ParameterizedTypeReference<Map<String, Object>>() {
+                });
 
         Map<String, Object> body = response.getBody();
         if (body == null) {
@@ -67,33 +125,4 @@ public class SmartschoolOneRosterClient {
 
         return List.of();
     }
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> getSingle(
-            SchoolIntegrationEntity integration,
-            String accessToken,
-            String path,
-            String responseKey) {
-
-        try {
-                ResponseEntity<Map<String, Object>> response = restClient.get()
-                    .uri(integration.getSchoolBaseUrl() + path)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-                    .retrieve()
-                    .toEntity(new ParameterizedTypeReference<Map<String, Object>>() {
-                    });
-
-            Map<String, Object> body = response.getBody();
-            if (body == null) return Map.of();
-
-            Object value = body.get(responseKey);
-            if (value instanceof Map<?, ?>) {
-                return (Map<String, Object>) value;
-            }
-            return Map.of();
-        } catch (Exception e) {
-            log.error("OneRoster getSingle mislukt voor {}: {}", path, e.getMessage());
-            return Map.of();
-        }
-    }
-
 }

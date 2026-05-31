@@ -64,6 +64,7 @@ type ApprovedSchool = { id: number; name: string };
 
 export default function AdminUserPage() {
   const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [error, setError] = useState("");
   const [me, setMe] = useState<MeResponse | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -146,7 +147,7 @@ export default function AdminUserPage() {
     if (me.role === "ADMIN" && selectedSchoolId === null) return;
 
     const load = async () => {
-      setLoading(true);
+      setUsersLoading(true);
       try {
         const params = new URLSearchParams();
         params.append("page", String(currentPage - 1));
@@ -212,7 +213,7 @@ export default function AdminUserPage() {
       } catch {
         setError("Er ging iets mis met het laden");
       } finally {
-        setLoading(false);
+        setUsersLoading(false);
       }
     };
 
@@ -276,6 +277,12 @@ export default function AdminUserPage() {
     }
   };
 
+  /**
+   * Start een handmatige OneRoster-synchronisatie.
+   *
+   * De frontend start de backend-sync via `/api/sync`, toont ondertussen een
+   * visuele voortgang in de modal en vernieuwt daarna de gebruikerslijst.
+   */
   const handleSync = async () => {
     setSyncStatus("loading");
     setSyncStep(0);
@@ -385,7 +392,11 @@ export default function AdminUserPage() {
             <div className="adminSearchbar">
               <input
                 type="text"
-                placeholder="Zoek op naam"
+                placeholder={
+                  me?.role === "ADMIN"
+                    ? "Zoek op UID"
+                    : "Zoek op UID of naam"
+                }
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
