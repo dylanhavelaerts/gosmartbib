@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = "onerosterClientSecret")
+@ToString(exclude = {"onerosterClientSecret", "smartschoolAccesscode"})
 public class SchoolIntegrationEntity {
 
     @Id

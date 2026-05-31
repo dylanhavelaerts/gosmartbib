@@ -4,6 +4,18 @@ import edu.ap.gosmartlib.util.ReadingListTargetType;
 import lombok.Data;
 import java.util.List;
 
+/**
+ * Inkomende payload voor het aanmaken of aanpassen van een leeslijst.
+ *
+ * <p>
+ * Dezelfde DTO wordt gebruikt voor persoonlijke leeslijsten en klasleeslijsten.
+ * Bij persoonlijke leeslijsten worden de doelgroepvelden genegeerd. Bij
+ * klasleeslijsten
+ * bepalen targetType en de bijhorende targetvelden voor welke leerlingen de
+ * lijst
+ * zichtbaar wordt.
+ * </p>
+ */
 @Data
 public class CreateReadingListDTO {
     private String title;

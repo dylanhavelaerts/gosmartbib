@@ -536,6 +536,7 @@ export default function CreateReadingListPage() {
                 onAdd={addBookToList}
                 onRemove={removeBookFromList}
                 label="5. Zoek boeken"
+                hideDidacticBooks
               />
             </div>
 

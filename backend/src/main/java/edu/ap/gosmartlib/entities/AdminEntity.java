@@ -5,6 +5,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Databaseentiteit voor platformadministrator.
+ * Admins staan los van Smartschoolgebruikers en hebben hun eigen loginflow via
+ * /admin/login. Het wachtwoord wordt altijd opgeslagen als BCrypt-hash.
+ */
 @Entity
 @Table(name = "app_admin")
 @Getter

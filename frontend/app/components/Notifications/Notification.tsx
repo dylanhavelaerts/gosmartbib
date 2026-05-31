@@ -9,6 +9,11 @@ interface Props {
   label?: string;
 }
 
+/**
+ * Generieke belknop die een beschikbaarheidsmelding in- of uitschakelt via een opgegeven API-pad.
+ * Werkt zowel per boek (/books/{id}/notification) als per leeslijst (/reading-lists/{id}/notification).
+ * Laadt de huidige status bij mount via GET, togglet via POST (inschakelen) of DELETE (uitschakelen).
+ */
 export default function NotificationBell({
   apiPath,
   className = "",

@@ -427,7 +427,7 @@ export default function Home() {
         >
           <span className="readingTestText">
             Weet je nog niet op welk leesniveau je zit?
-            <strong> Doe hier de gratis niveautest →</strong>
+            <strong> Doe hier de gratis niveautest</strong>
           </span>
         </a>
 

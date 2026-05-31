@@ -168,6 +168,12 @@ export const clearTargetPayload = () => ({
   targetAllSchools: false,
 });
 
+/**
+ * Houdt alleen de doelgroepvelden over die bij het gekozen doelgroeptype horen.
+ *
+ * Dit voorkomt dat oude formulierselecties per ongeluk meegestuurd worden wanneer
+ * de gebruiker tussen doelgroepmodi wisselt.
+ */
 export const cleanTargetPayloadForType = (
   targetType: ReadingListTargetType,
   values: {

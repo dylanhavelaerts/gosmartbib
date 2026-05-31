@@ -8,6 +8,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Spring Security principal voor platformadministrators.
+ *
+ * Wraps een AdminEntity als UserDetails zodat DaoAuthenticationProvider de
+ * admin kan authenticeren. Het onderscheid met OAuth2User is bewust: de
+ * isAdmin-controle in RoleGuard werkt puur op instanceof AdminPrincipal,
+ * zonder extra databasequery.
+ */
 public class AdminPrincipal implements UserDetails {
 
     private final AdminEntity admin;

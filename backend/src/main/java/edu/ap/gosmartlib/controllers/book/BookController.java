@@ -34,25 +34,43 @@ public class BookController {
     private final UserService userService;
     private final AuthHelper authHelper;
 
-    //region GET methodes
+    // region GET methodes
 
     /**
-     * Deze enpoint haal alle boeken op met server-side paginatie. De resultaten worden gefilterd op basis van de rol van de gebruiker:
-     * <ul>
-     *   <li>Studenten zien alleen boeken die beschikbaar zijn voor studenten</li>
-     *   <li>Leerkrachten/Bilbiotheekbeheerder zien alle boeken</li>
-     * </ul>
-     * @param page - de beginpagina
-     * @param size - het aantal boeken per pagina
-     * @param principal - de ingelogde gebruiker
-     * @return - een pagina met boeken die de gebruiker mag zien
+     * Haalt een gepagineerde lijst met boeken op die zichtbaar zijn voor de huidige
+     * gebruiker.
+     *
+     * <p>
+     * Standaard wordt rekening gehouden met de rol van de gebruiker. Leerlingen
+     * zien
+     * bijvoorbeeld geen didactische boeken, terwijl personeel die normaal wel mag
+     * zien.
+     * Wanneer {@code studentReadableOnly} true is, worden didactische boeken altijd
+     * uitgesloten. Dit wordt gebruikt voor leeslijsten die bedoeld zijn voor
+     * leerlingen.
+     * </p>
+     *
+     * @param page                het paginanummer, startend vanaf 0
+     * @param size                het aantal boeken per pagina
+     * @param studentReadableOnly true wanneer enkel boeken getoond mogen worden die
+     *                            geschikt zijn voor leerlingenleeslijsten
+     * @param principal           de aangemelde gebruiker
+     * @return een pagina met zichtbare boeken
      */
     @GetMapping("/all")
     public Page<BookDTO> getBooks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "false") boolean studentReadableOnly,
             @AuthenticationPrincipal OAuth2User principal) {
-        return bookService.getAllBooks(page, size, callerRole(principal), authHelper.extractUidOrNull(principal));
+        UserRoles role = callerRole(principal);
+        String uid = authHelper.extractUidOrNull(principal);
+
+        if (studentReadableOnly) {
+            return bookService.getAllStudentReadableBooks(page, size, role, uid);
+        }
+
+        return bookService.getAllBooks(page, size, role, uid);
     }
 
     @GetMapping("/all/unpaged")
@@ -61,30 +79,53 @@ public class BookController {
     }
 
     /**
-     * Zoekt boeken op basis van titel, auteur of categorie met server-side paginatie, zoals bovenstaande method wordt dit ook
-     * gefilterd op basis van de rol
-     * @param query - de zoekterm die vergeleken wordt met titel, auteur en categorie
-     * @param page - de beginpagina
-     * @param size - het aantal boeken per pagina
-     * @param principal - de ingelogde gebruiker
-     * @return - een pagina met boeken die overeenkomen met de zoekterm en die de gebruiker mag zien
+     * Zoekt boeken op titel, auteur of categorie.
+     *
+     * <p>
+     * De gewone zoekopdracht gebruikt de standaard zichtbaarheidsregels per rol.
+     * Wanneer {@code studentReadableOnly} true is, worden didactische boeken altijd
+     * uitgesloten, ook wanneer de aangemelde gebruiker normaal didactische boeken
+     * mag zien.
+     * Dit voorkomt dat didactische boeken gekozen kunnen worden voor leeslijsten
+     * voor
+     * leerlingen.
+     * </p>
+     *
+     * @param query               de zoekterm voor titel, auteur of categorie
+     * @param page                het paginanummer, startend vanaf 0
+     * @param size                het aantal boeken per pagina
+     * @param studentReadableOnly true wanneer enkel boeken getoond mogen worden die
+     *                            geschikt zijn voor leerlingenleeslijsten
+     * @param principal           de aangemelde gebruiker
+     * @return een pagina met boeken die overeenkomen met de zoekterm
      */
     @GetMapping("/search")
     public ResponseEntity<Page<BookDTO>> searchByTitleOrAuthorOrCategory(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "false") boolean studentReadableOnly,
             @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(bookService.searchByTitleOrAuthorOrCategory(query, page, size, callerRole(principal),
-                authHelper.extractUidOrNull(principal)));
+        UserRoles role = callerRole(principal);
+        String uid = authHelper.extractUidOrNull(principal);
+
+        if (studentReadableOnly) {
+            return ResponseEntity.ok(bookService.searchStudentReadableBooks(query, page, size, role, uid));
+        }
+
+        return ResponseEntity.ok(bookService.searchByTitleOrAuthorOrCategory(query, page, size, role, uid));
     }
 
     /**
-     * Zoekt boeken op basis van verschillende filters zoals titel, auteur, categorie, taal, leesniveau en labels
-     * De resultaten worden gefilterd op basis van de rol van de gebruiker, zoals bij bovenstaande methoden
-     * @param filter - een object dat alle mogelijke filtercriteria bevat
+     * Zoekt boeken op basis van verschillende filters zoals titel, auteur,
+     * categorie, taal, leesniveau en labels
+     * De resultaten worden gefilterd op basis van de rol van de gebruiker, zoals
+     * bij bovenstaande methoden
+     * 
+     * @param filter    - een object dat alle mogelijke filtercriteria bevat
      * @param principal - de ingelogde gebruiker
-     * @return - een pagina met boeken die overeenkomen met de filtercriteria en die de gebruiker mag zien
+     * @return - een pagina met boeken die overeenkomen met de filtercriteria en die
+     *         de gebruiker mag zien
      */
     @GetMapping("/filter")
     public ResponseEntity<?> filterBooks(
@@ -97,6 +138,7 @@ public class BookController {
 
     /**
      * Geeft een lijst van beschikbare talen terug
+     * 
      * @param principal - de ingelogde gebruiker
      * @return - een lijst van beschikbare talen
      */
@@ -107,6 +149,7 @@ public class BookController {
 
     /**
      * Geeft een lijst van beschikbare categorieën terug
+     * 
      * @param principal - de ingelogde gebruiker
      * @return - een lijst van beschikbare categorieën
      */
@@ -117,6 +160,7 @@ public class BookController {
 
     /**
      * Geeft een lijst van beschikbare leesniveaus terug
+     * 
      * @param principal - de ingelogde gebruiker
      * @return - een lijst van beschikbare leesniveaus
      */
@@ -127,7 +171,8 @@ public class BookController {
 
     /**
      * Geeft het boek terug met het opgegeven id.
-     * @param id - het id van het boek
+     * 
+     * @param id        - het id van het boek
      * @param principal - de ingelogde gebruiker
      * @return - het boek met het opgegeven id
      */
@@ -138,10 +183,14 @@ public class BookController {
     }
 
     /**
-     * Geeft de 4 boeken terug die in de spotlight staan, gesorteerd op rating. Optioneel kunnen deze ook gefilterd worden op leesniveau
+     * Geeft de 4 boeken terug die in de spotlight staan, gesorteerd op rating.
+     * Optioneel kunnen deze ook gefilterd worden op leesniveau
+     * 
      * @param readingLevel - het leesniveau waarop gefilterd moet worden
-     * @param principal - de ingelogde gebruiker
-     * @return - een lijst van maximaal 4 boeken die in de spotlight staan en overeenkomen met het leesniveau (indien opgegeven) en die de gebruiker mag zien
+     * @param principal    - de ingelogde gebruiker
+     * @return - een lijst van maximaal 4 boeken die in de spotlight staan en
+     *         overeenkomen met het leesniveau (indien opgegeven) en die de
+     *         gebruiker mag zien
      */
     @GetMapping("/spotlight")
     public List<BookDTO> getBooksInSpotlight(
@@ -158,9 +207,11 @@ public class BookController {
     }
 
     /**
-     * Geeft de 4 nieuwste boeken terug, gesorteerd op toevoegdatum. Optioneel kunnen deze ook gefilterd worden op leesniveau
+     * Geeft de 4 nieuwste boeken terug, gesorteerd op toevoegdatum. Optioneel
+     * kunnen deze ook gefilterd worden op leesniveau
+     * 
      * @param readingLevel - het leesniveau waarop gefilterd moet worden
-     * @param principal - de ingelogde gebruiker
+     * @param principal    - de ingelogde gebruiker
      * @return - een lijst van de 4 nieuwste boeken
      */
     @GetMapping("/latest")
@@ -178,10 +229,13 @@ public class BookController {
     }
 
     /**
-     * Geeft de 4 best beoordeelde boeken terug, gesorteerd op gemiddelde rating. Optioneel kunnen deze ook gefilterd worden op leesniveau
+     * Geeft de 4 best beoordeelde boeken terug, gesorteerd op gemiddelde rating.
+     * Optioneel kunnen deze ook gefilterd worden op leesniveau
+     * 
      * @param readingLevel - het leesniveau waarop gefilterd moet worden
-     * @param principal - de ingelogde gebruiker
-     * @return - een lijst van de 4 best beoordeelde boeken die overeenkomen met het leesniveau (indien opgegeven) en die de gebruiker mag zien
+     * @param principal    - de ingelogde gebruiker
+     * @return - een lijst van de 4 best beoordeelde boeken die overeenkomen met het
+     *         leesniveau (indien opgegeven) en die de gebruiker mag zien
      */
     @GetMapping("/top-rated")
     public ResponseEntity<List<BookDTO>> getRecommendedBooks(
@@ -199,6 +253,7 @@ public class BookController {
 
     /**
      * Zoekt een boek op via ISBN zonder het op te slaan (preview).
+     * 
      * @param isbn - het ISBN van het boek dat gezocht moet worden
      * @return - het gevonden boek
      */
@@ -209,7 +264,8 @@ public class BookController {
 
     /**
      * Haalt de snowball-secties voor een specifiek boek op
-     * @param id - het ID van het boek
+     * 
+     * @param id        - het ID van het boek
      * @param principal - de ingelogde gebruiker
      * @return - de snowball-secties
      */
@@ -223,6 +279,7 @@ public class BookController {
 
     /**
      * Geeft alle boeken terug met spotlight = true
+     * 
      * @param principal - de ingelogde gebruiker
      * @return - een lijst van boeken die in de spotlight staan
      */
@@ -234,7 +291,8 @@ public class BookController {
 
     /**
      * Haalt een boek op basis van de barcode
-     * @param barcode - de barcode van het boek
+     * 
+     * @param barcode   - de barcode van het boek
      * @param principal - de ingelogde gebruiker
      * @return - het gevonden boek
      */
@@ -249,7 +307,8 @@ public class BookController {
 
     /**
      * Haalt een kopie op basis van de barcode
-     * @param bookId - het ID van het boek
+     * 
+     * @param bookId  - het ID van het boek
      * @param barcode - de barcode van de kopie
      * @return - de gevonden kopie
      */
@@ -261,7 +320,8 @@ public class BookController {
 
     /**
      * Haalt de labels voor kopieën van een specifiek boek op
-     * @param bookId - het ID van het boek
+     * 
+     * @param bookId      - het ID van het boek
      * @param inventoryId - het ID van het inventaris
      * @return - de labels voor de kopieën
      */
@@ -274,7 +334,8 @@ public class BookController {
 
     /**
      * Haalt de labels voor kopieën van een specifiek boek op
-     * @param bookId - het ID van het boek
+     * 
+     * @param bookId    - het ID van het boek
      * @param principal - de ingelogde gebruiker
      * @return - de labels voor de kopieën
      */
@@ -288,6 +349,7 @@ public class BookController {
 
     /**
      * Haalt alle labels voor kopieën voor een specifieke school op
+     * 
      * @param principal - de ingelogde gebruiker
      * @return - de labels voor de kopieën
      */
@@ -298,19 +360,24 @@ public class BookController {
         return ResponseEntity.ok(bookService.getCopyLabelsForSchool(authHelper.extractUid(principal)));
     }
 
-    //endregion
+    // endregion
 
-    //region POST methodes
+    // region POST methodes
 
     /**
      * Voegt een boek toe aan de database op basis van het opgegeven ISBN.
      * De boekgegevens worden opgehaald uit een externe API
-     *  - Optioneel kunnen er ook campus, aantal exemplaren, en of het een didactisch boek is meegegeven worden
-     * @param isbn - het ISBN van het boek dat toegevoegd moet worden
-     * @param campus - de campus waaraan het boek toegevoegd moet worden (optioneel)
-     * @param amount - het aantal exemplaren dat toegevoegd moet worden (optioneel, standaard 1)
-     * @param didacticBook - of het boek een didactisch boek is (optioneel, standaard false)
-     * @param principal - de ingelogde gebruiker
+     * - Optioneel kunnen er ook campus, aantal exemplaren, en of het een didactisch
+     * boek is meegegeven worden
+     * 
+     * @param isbn         - het ISBN van het boek dat toegevoegd moet worden
+     * @param campus       - de campus waaraan het boek toegevoegd moet worden
+     *                     (optioneel)
+     * @param amount       - het aantal exemplaren dat toegevoegd moet worden
+     *                     (optioneel, standaard 1)
+     * @param didacticBook - of het boek een didactisch boek is (optioneel,
+     *                     standaard false)
+     * @param principal    - de ingelogde gebruiker
      * @return - het toegevoegde boek
      */
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
@@ -327,7 +394,8 @@ public class BookController {
 
     /**
      * Voegt een boek toe aan de database op basis van de opgegeven gegevens
-     * @param request - het verzoek met de gegevens van het boek
+     * 
+     * @param request   - het verzoek met de gegevens van het boek
      * @param principal - de ingelogde gebruiker
      * @return - het toegevoegde boek
      */
@@ -341,11 +409,15 @@ public class BookController {
 
     /**
      * Importeert boeken vanuit een Excel-bestand.
-     * @param file - het Excel-bestand met de boekgegevens
-     * @param campus - de campus waaraan de boeken toegevoegd moeten worden (optioneel)
-     * @param confirmDuplicates - of dubbele boeken bevestigd moeten worden (optioneel, standaard false)
-     * @param confirmedDuplicateRows - de rijen met dubbele boeken die bevestigd zijn (optioneel)
-     * @param principal - de ingelogde gebruiker
+     * 
+     * @param file                   - het Excel-bestand met de boekgegevens
+     * @param campus                 - de campus waaraan de boeken toegevoegd moeten
+     *                               worden (optioneel)
+     * @param confirmDuplicates      - of dubbele boeken bevestigd moeten worden
+     *                               (optioneel, standaard false)
+     * @param confirmedDuplicateRows - de rijen met dubbele boeken die bevestigd
+     *                               zijn (optioneel)
+     * @param principal              - de ingelogde gebruiker
      * @return - het resultaat van de import
      */
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
@@ -376,11 +448,15 @@ public class BookController {
 
     /**
      * Importeert boeken zonder ISBN vanuit een Excel-bestand
-     * @param file - het Excel-bestand met de boekgegevens
-     * @param campus - de campus waaraan de boeken toegevoegd moeten worden (optioneel)
-     * @param confirmDuplicates - of dubbele boeken bevestigd moeten worden (optioneel, standaard false)
-     * @param confirmedDuplicateRows - de rijen met dubbele boeken die bevestigd zijn (optioneel)
-     * @param principal - de ingelogde gebruiker
+     * 
+     * @param file                   - het Excel-bestand met de boekgegevens
+     * @param campus                 - de campus waaraan de boeken toegevoegd moeten
+     *                               worden (optioneel)
+     * @param confirmDuplicates      - of dubbele boeken bevestigd moeten worden
+     *                               (optioneel, standaard false)
+     * @param confirmedDuplicateRows - de rijen met dubbele boeken die bevestigd
+     *                               zijn (optioneel)
+     * @param principal              - de ingelogde gebruiker
      * @return - het resultaat van de import
      */
     @PreAuthorize("@roleGuard.isLibrarian(authentication)")
@@ -409,13 +485,15 @@ public class BookController {
         }
     }
 
-    //endregion
+    // endregion
 
-    //region PATCH methodes
+    // region PATCH methodes
 
     /**
      * Past de spotlight status aan van een boek.
-     * @param id - het ID van het boek waarvan de spotlight status moet worden aangepast
+     * 
+     * @param id    - het ID van het boek waarvan de spotlight status moet worden
+     *              aangepast
      * @param value - de nieuwe spotlight status
      * @return - een lege response met HTTP 204 No Content
      */
@@ -430,7 +508,8 @@ public class BookController {
 
     /**
      * Werkt een boek bij in de database
-     * @param id - het ID van het boek
+     * 
+     * @param id      - het ID van het boek
      * @param bookDTO - de gegevens van het boek
      * @return - het bijgewerkte boek
      */
@@ -442,7 +521,8 @@ public class BookController {
 
     /**
      * Werkt de conditie van een kopie bij
-     * @param copyId - het ID van de kopie
+     * 
+     * @param copyId  - het ID van de kopie
      * @param request - de aanvraag met de nieuwe conditie en opmerkingen
      */
     @PatchMapping("/copies/{copyId}/condition")
@@ -452,9 +532,9 @@ public class BookController {
         bookService.updateCopyCondition(copyId, request.condition(), request.notes());
     }
 
-    //endregion
+    // endregion
 
-    //region Helper methodes
+    // region Helper methodes
 
     /**
      * Bepaalt het rol van de aanroeper op basis van de OAuth2User.
@@ -474,6 +554,6 @@ public class BookController {
         return userService.getRoleBySmartschoolUid(uid);
     }
 
-    //endregion
+    // endregion
 
 }

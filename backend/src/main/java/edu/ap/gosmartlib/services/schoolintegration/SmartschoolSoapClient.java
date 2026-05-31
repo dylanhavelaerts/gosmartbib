@@ -5,6 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+/**
+ * Lage-niveau client voor de Smartschool SOAP V3 Web Service (sendMsg-operatie).
+ * Bouwt het SOAP-envelope manueel op en ontsnapt alle invoer om XML-injectie te voorkomen.
+ * Fouten worden gelogd maar niet doorgegooid zodat een mislukt bericht het normale verloop niet onderbreekt.
+ */
 @Service
 @Slf4j
 public class SmartschoolSoapClient {
@@ -15,7 +20,9 @@ public class SmartschoolSoapClient {
     public void sendMessage(SchoolIntegrationEntity integration, String senderIdentifier,
                             String username, String title, String body) {
         String accesscode = escapeXml(integration.getSmartschoolAccesscode());
-        String sender = escapeXml(senderIdentifier != null ? senderIdentifier : "");
+        String senderPart = (senderIdentifier != null && !senderIdentifier.isBlank())
+                ? "<senderIdentifier>%s</senderIdentifier>".formatted(escapeXml(senderIdentifier))
+                : "";
         String endpoint = integration.getSchoolBaseUrl() + "/Webservices/V3";
         String safeUsername = escapeXml(username);
         String safeTitle = escapeXml(title);
@@ -30,11 +37,11 @@ public class SmartschoolSoapClient {
                       <userIdentifier>%s</userIdentifier>
                       <title>%s</title>
                       <body>%s</body>
-                      <senderIdentifier>%s</senderIdentifier>
+                      %s
                     </ss:sendMsg>
                   </soapenv:Body>
                 </soapenv:Envelope>
-                """.formatted(accesscode, safeUsername, safeTitle, safeBody, sender);
+                """.formatted(accesscode, safeUsername, safeTitle, safeBody, senderPart);
 
         try {
             String response = restClient.post()

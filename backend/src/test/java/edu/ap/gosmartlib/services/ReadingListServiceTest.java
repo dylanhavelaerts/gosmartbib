@@ -125,6 +125,56 @@ class ReadingListServiceTest {
     }
 
     @Test
+    void givenStudentAndDidacticBook_whenCreatePersonalList_thenThrowsIllegalArgumentException() {
+        UserEntity student = user(2L, "student-uid", UserRoles.STUDENT);
+        BookEntity didacticBook = didacticBook(11L, "Teacher Book");
+        CreateReadingListDTO dto = dto("Persoonlijk", "Mijn lijst", null, List.of(11L));
+
+        when(userRepository.findBySmartschoolUid("student-uid")).thenReturn(Optional.of(student));
+        when(bookRepository.findAllById(List.of(11L))).thenReturn(List.of(didacticBook));
+
+        assertThrows(IllegalArgumentException.class, () -> readingListService.createPersonalList(dto, "student-uid"));
+        verify(readingListRepository, never()).save(any());
+    }
+
+    @Test
+    void givenTeacherAndDidacticBook_whenCreatePersonalList_thenSavesPersonalList() {
+        UserEntity teacher = user(3L, "teacher-uid", UserRoles.TEACHER);
+        BookEntity didacticBook = didacticBook(12L, "Teacher Book");
+        CreateReadingListDTO dto = dto("Persoonlijk", "Mijn lijst", null, List.of(12L));
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(bookRepository.findAllById(List.of(12L))).thenReturn(List.of(didacticBook));
+        when(readingListRepository.save(any(ReadingListEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ReadingListEntity result = readingListService.createPersonalList(dto, "teacher-uid");
+
+        assertEquals(ReadingListType.PERSONAL, result.getListType());
+        assertTrue(result.getBooks().contains(didacticBook));
+        verify(readingListRepository).save(any(ReadingListEntity.class));
+    }
+
+    @Test
+    void givenDidacticBook_whenCreateClassList_thenThrowsIllegalArgumentException() {
+        UserEntity teacher = user(1L, "teacher-uid", UserRoles.TEACHER);
+        BookEntity didacticBook = didacticBook(10L, "Teacher Book");
+        CreateReadingListDTO dto = classYearDto("Klaslijst", "Beschrijving", "2026-05-20T12:00:00", List.of(10L));
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(bookRepository.findAllById(List.of(10L))).thenReturn(List.of(didacticBook));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> readingListService.createClassList(dto, "teacher-uid"));
+
+        assertEquals(
+                "Didactische boeken kunnen niet aan een leeslijst voor leerlingen worden toegevoegd",
+                exception.getMessage());
+        verify(readingListRepository, never()).save(any());
+    }
+
+    @Test
     void givenOwnerPersonalList_whenUpdatePersonalList_thenUpdatesFieldsAndBooks() {
         UserEntity owner = user(10L, "owner-uid", UserRoles.STUDENT);
         ReadingListEntity existing = readingList(100L, "Old", ReadingListType.PERSONAL, owner,
@@ -158,6 +208,25 @@ class ReadingListServiceTest {
 
         assertThrows(AccessDeniedException.class, () -> readingListService.updatePersonalList(100L, dto, "owner-uid"));
         verify(readingListRepository, never()).save(any(ReadingListEntity.class));
+    }
+
+    @Test
+    void givenStudentAndDidacticBook_whenUpdatePersonalList_thenThrowsIllegalArgumentException() {
+        UserEntity owner = user(10L, "owner-uid", UserRoles.STUDENT);
+        BookEntity oldBook = book(1L, "Old Book");
+        ReadingListEntity existing = readingList(100L, "Old", ReadingListType.PERSONAL, owner, Set.of(oldBook));
+        BookEntity didacticBook = didacticBook(2L, "Teacher Book");
+        CreateReadingListDTO dto = dto("New Title", "New Description", null, List.of(2L));
+
+        when(userRepository.findBySmartschoolUid("owner-uid")).thenReturn(Optional.of(owner));
+        when(readingListRepository.findByIdAndCreator_Id(100L, 10L)).thenReturn(Optional.of(existing));
+        when(bookRepository.findAllById(List.of(2L))).thenReturn(List.of(didacticBook));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> readingListService.updatePersonalList(100L, dto, "owner-uid"));
+
+        assertTrue(existing.getBooks().contains(oldBook));
+        verify(readingListRepository, never()).save(any());
     }
 
     @Test
@@ -246,6 +315,23 @@ class ReadingListServiceTest {
         assertEquals(ReadingListTargetType.YEARS, updated.getTargetType());
         assertEquals(Set.of(5), updated.getTargetYears());
         assertFalse(updated.isTargetAllSchools());
+    }
+
+    @Test
+    void givenDidacticBook_whenUpdateClassList_thenThrowsIllegalArgumentException() {
+        UserEntity teacher = user(20L, "teacher-uid", UserRoles.TEACHER);
+        ReadingListEntity classList = readingList(400L, "Old Class", ReadingListType.CLASS, teacher,
+                Set.of(book(5L, "Old")));
+        BookEntity didacticBook = didacticBook(6L, "Teacher Book");
+        CreateReadingListDTO dto = classYearDto("New Class", "New Desc", "2026-10-10T12:00:00", List.of(6L));
+
+        when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
+        when(readingListRepository.findById(400L)).thenReturn(Optional.of(classList));
+        when(bookRepository.findAllById(List.of(6L))).thenReturn(List.of(didacticBook));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> readingListService.updateClassList(400L, dto, "teacher-uid"));
+        verify(readingListRepository, never()).save(any());
     }
 
     @Test
@@ -813,8 +899,8 @@ class ReadingListServiceTest {
         teacher.setSchool(school);
         when(userRepository.findBySmartschoolUid("teacher-uid")).thenReturn(Optional.of(teacher));
 
-        List<edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO.StudentTarget> result =
-                readingListService.searchAssignmentStudents("teacher-uid", "a");
+        List<edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO.StudentTarget> result = readingListService
+                .searchAssignmentStudents("teacher-uid", "a");
 
         assertTrue(result.isEmpty());
         verify(userRepository, never()).findAllBySchool_IdOrderBySmartschoolUidAsc(any());
@@ -840,8 +926,8 @@ class ReadingListServiceTest {
                         Map.of("jan.peeters", "Jan Peeters", "ann.smeets", "Ann Smeets"),
                         List.of(), null));
 
-        List<edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO.StudentTarget> result =
-                readingListService.searchAssignmentStudents("teacher-uid", "peeters");
+        List<edu.ap.gosmartlib.dto.readinglist.ReadingListAssignmentTargetsDTO.StudentTarget> result = readingListService
+                .searchAssignmentStudents("teacher-uid", "peeters");
 
         assertEquals(1, result.size());
         assertEquals("Jan Peeters", result.get(0).displayName());
@@ -878,6 +964,12 @@ class ReadingListServiceTest {
         book.setTitle(title);
         book.setAuthors(List.of());
         book.setIsbn("isbn-" + id);
+        return book;
+    }
+
+    private BookEntity didacticBook(Long id, String title) {
+        BookEntity book = book(id, title);
+        book.setDidacticTag(true);
         return book;
     }
 
