@@ -256,6 +256,24 @@ public class ReadingListService {
 
     }
 
+    /**
+     * Maakt een nieuwe klasleeslijst aan voor leerlingen.
+     *
+     * <p>
+     * Omdat klasleeslijsten bedoeld zijn voor leerlingen, mogen didactische boeken
+     * hier niet aan toegevoegd worden. Deze controle gebeurt server-side zodat de
+     * beperking niet omzeild kan worden via een rechtstreekse API-aanroep.
+     * </p>
+     *
+     * @param dto            de gegevens voor de nieuwe klasleeslijst
+     * @param smartschoolUid de Smartschool UID van de aangemelde gebruiker
+     * @return de opgeslagen klasleeslijst
+     * @throws AccessDeniedException    wanneer de gebruiker geen personeelsrol
+     *                                  heeft
+     * @throws IllegalArgumentException wanneer de titel ongeldig is of wanneer de
+     *                                  lijst
+     *                                  didactische boeken bevat
+     */
     @Transactional
     public ReadingListEntity createClassList(CreateReadingListDTO dto, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -269,13 +287,29 @@ public class ReadingListService {
         list.setDeadline(parseOptionalDeadline(dto.getDeadline()));
         list.setCreator(currentUser);
         list.setListType(ReadingListType.CLASS);
-        list.getBooks().addAll(loadBooks(dto.getBookIds()));
+        list.getBooks().addAll(loadStudentReadingListBooks(dto.getBookIds()));
 
         replaceAssignmentTarget(list, dto, currentUser);
 
         return readingListRepository.save(list);
     }
 
+    /**
+     * Maakt een nieuwe persoonlijke leeslijst aan voor de aangemelde gebruiker.
+     *
+     * <p>
+     * Voor leerlingen worden didactische boeken geweigerd, omdat hun persoonlijke
+     * leeslijsten bedoeld zijn als gewone leeslijsten. Personeelsleden mogen wel
+     * didactische boeken in hun persoonlijke lijsten bewaren.
+     * </p>
+     *
+     * @param dto            de gegevens voor de nieuwe persoonlijke leeslijst
+     * @param smartschoolUid de Smartschool UID van de aangemelde gebruiker
+     * @return de opgeslagen persoonlijke leeslijst
+     * @throws IllegalArgumentException wanneer de titel ongeldig is of wanneer een
+     *                                  leerling didactische boeken probeert toe te
+     *                                  voegen
+     */
     @Transactional
     public ReadingListEntity createPersonalList(CreateReadingListDTO dto, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -288,7 +322,7 @@ public class ReadingListService {
         list.setDeadline(null);
         list.setCreator(currentUser);
         list.setListType(ReadingListType.PERSONAL);
-        list.getBooks().addAll(loadBooks(dto.getBookIds()));
+        list.getBooks().addAll(loadPersonalReadingListBooks(dto.getBookIds(), currentUser));
 
         clearAssignmentTarget(list);
 
@@ -304,7 +338,28 @@ public class ReadingListService {
                 .toList();
     }
 
-
+    /**
+     * Past een bestaande persoonlijke leeslijst van de aangemelde gebruiker aan.
+     *
+     * <p>
+     * De nieuwe boeken worden eerst gevalideerd voordat de bestaande boeken uit de
+     * lijst worden verwijderd. Daardoor blijft de oude lijst behouden wanneer de
+     * update geweigerd wordt, bijvoorbeeld omdat een leerling een didactisch boek
+     * probeert toe te voegen.
+     * </p>
+     *
+     * @param id             het ID van de persoonlijke leeslijst
+     * @param dto            de nieuwe gegevens voor de leeslijst
+     * @param smartschoolUid de Smartschool UID van de aangemelde gebruiker
+     * @return de aangepaste persoonlijke leeslijst
+     * @throws AccessDeniedException    wanneer de gevonden lijst geen persoonlijke
+     *                                  leeslijst is
+     * @throws IllegalArgumentException wanneer de lijst niet gevonden wordt, de
+     *                                  titel
+     *                                  ongeldig is of een leerling didactische
+     *                                  boeken
+     *                                  probeert toe te voegen
+     */
     @Transactional
     public ReadingListEntity updatePersonalList(Long id, CreateReadingListDTO dto, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -317,12 +372,13 @@ public class ReadingListService {
         }
 
         validateTitle(dto.getTitle());
+        List<BookEntity> books = loadPersonalReadingListBooks(dto.getBookIds(), currentUser);
 
         list.setTitle(dto.getTitle().trim());
         list.setTaskDescription(normalizeText(dto.getTaskDescription()));
         list.setDeadline(null);
         list.getBooks().clear();
-        list.getBooks().addAll(loadBooks(dto.getBookIds()));
+        list.getBooks().addAll(books);
 
         clearAssignmentTarget(list);
 
@@ -362,6 +418,31 @@ public class ReadingListService {
         readingListRepository.delete(list);
     }
 
+    /**
+     * Past een bestaande klasleeslijst aan.
+     *
+     * <p>
+     * Enkel de maker van de klasleeslijst mag deze aanpassen. Omdat klasleeslijsten
+     * bedoeld zijn voor leerlingen, worden didactische boeken server-side
+     * geweigerd.
+     * De nieuwe boeken worden gevalideerd voordat de bestaande boeken vervangen
+     * worden.
+     * </p>
+     *
+     * @param id             het ID van de klasleeslijst
+     * @param dto            de nieuwe gegevens voor de klasleeslijst
+     * @param smartschoolUid de Smartschool UID van de aangemelde gebruiker
+     * @return de aangepaste klasleeslijst
+     * @throws AccessDeniedException    wanneer de gebruiker geen personeelsrol
+     *                                  heeft,
+     *                                  de lijst geen klaslijst is of de gebruiker
+     *                                  niet
+     *                                  de maker van de lijst is
+     * @throws IllegalArgumentException wanneer de lijst niet gevonden wordt, de
+     *                                  titel
+     *                                  ongeldig is of de lijst didactische boeken
+     *                                  bevat
+     */
     @Transactional
     public ReadingListEntity updateClassList(Long id, CreateReadingListDTO dto, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -375,11 +456,13 @@ public class ReadingListService {
             throw new AccessDeniedException("Je kan alleen klaslijsten aanpassen die je zelf hebt aangemaakt");
         }
         validateTitle(dto.getTitle());
+        List<BookEntity> books = loadStudentReadingListBooks(dto.getBookIds());
+
         list.setTitle(dto.getTitle().trim());
         list.setTaskDescription(normalizeText(dto.getTaskDescription()));
         list.setDeadline(parseOptionalDeadline(dto.getDeadline()));
         list.getBooks().clear();
-        list.getBooks().addAll(loadBooks(dto.getBookIds()));
+        list.getBooks().addAll(books);
 
         replaceAssignmentTarget(list, dto, currentUser);
 
@@ -442,6 +525,65 @@ public class ReadingListService {
                 .toList();
 
         return bookRepository.findAllById(sanitizedIds);
+    }
+
+    /**
+     * Laadt boeken voor een leeslijst die bedoeld is voor leerlingen.
+     *
+     * <p>
+     * Didactische boeken worden altijd geweigerd, ongeacht de rol van de gebruiker
+     * die de lijst aanmaakt of aanpast.
+     * </p>
+     *
+     * @param bookIds de IDs van de boeken die geladen moeten worden
+     * @return de gevonden boeken zonder didactische boeken
+     * @throws IllegalArgumentException wanneer minstens één boek didactisch is
+     */
+    private List<BookEntity> loadStudentReadingListBooks(List<Long> bookIds) {
+        List<BookEntity> books = loadBooks(bookIds);
+        validateNoDidacticBooks(books);
+        return books;
+    }
+
+    /**
+     * Laadt boeken voor een persoonlijke leeslijst.
+     *
+     * <p>
+     * Voor leerlingen worden didactische boeken geweigerd. Voor personeelsleden
+     * blijven didactische boeken toegestaan in hun eigen persoonlijke leeslijsten.
+     * </p>
+     *
+     * @param bookIds     de IDs van de boeken die geladen moeten worden
+     * @param currentUser de aangemelde gebruiker die de persoonlijke lijst beheert
+     * @return de gevonden boeken volgens de regels voor persoonlijke leeslijsten
+     * @throws IllegalArgumentException wanneer een leerling minstens één didactisch
+     *                                  boek probeert toe te voegen
+     */
+    private List<BookEntity> loadPersonalReadingListBooks(List<Long> bookIds, UserEntity currentUser) {
+        List<BookEntity> books = loadBooks(bookIds);
+
+        if (currentUser.getRole() == UserRoles.STUDENT) {
+            validateNoDidacticBooks(books);
+        }
+
+        return books;
+    }
+
+    /**
+     * Controleert of een collectie boeken didactische boeken bevat.
+     *
+     * @param books de boeken die gecontroleerd moeten worden
+     * @throws IllegalArgumentException wanneer minstens één boek didactisch is
+     */
+    private void validateNoDidacticBooks(Collection<BookEntity> books) {
+        boolean hasDidacticBook = books != null && books.stream()
+                .filter(Objects::nonNull)
+                .anyMatch(BookEntity::isDidacticTag);
+
+        if (hasDidacticBook) {
+            throw new IllegalArgumentException(
+                    "Didactische boeken kunnen niet aan een leeslijst voor leerlingen worden toegevoegd");
+        }
     }
 
     private void clearAssignmentTarget(ReadingListEntity list) {

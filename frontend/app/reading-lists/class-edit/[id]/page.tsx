@@ -633,6 +633,7 @@ export default function EditClassReadingListPage() {
                   onAdd={addBookToList}
                   onRemove={removeBookFromList}
                   label="Zoek boeken"
+                  hideDidacticBooks
                 />
               </div>
 
