@@ -171,15 +171,19 @@ public class OneRosterSyncService {
                     if (sourcedId == null)
                         continue;
 
-                    SchoolClassEntity entity = schoolClassRepository
-                            .findBySmartschoolGroupId(sourcedId)
-                            .orElse(new SchoolClassEntity());
+                    String title = extractTitle(c);
+
+                    SchoolClassEntity entity = findOrCreateClassForSync(
+                            integration.getSchool(),
+                            sourcedId,
+                            title);
 
                     entity.setSchool(integration.getSchool());
                     entity.setSmartschoolGroupId(sourcedId);
-                    entity.setName(extractTitle(c));
+                    entity.setName(title);
                     entity.setGrade(extractGrade(c));
-                    schoolClassRepository.save(entity);
+
+                    entity = schoolClassRepository.save(entity);
                     classMap.put(sourcedId, entity);
                     classesSynced++;
                 }
@@ -261,6 +265,39 @@ public class OneRosterSyncService {
         userRepository.save(user);
         log.info("{} user {} from OneRoster", isNew ? "Created" : "Updated", uid);
         return user;
+    }
+
+    /**
+     * Zoekt of maakt een klas voor de OneRoster-synchronisatie.
+     *
+     * <p>
+     * OneRoster gebruikt sourcedId, terwijl Smartschool OAuth-groepen een groupID
+     * gebruiken. Beide IDs kunnen naar dezelfde zichtbare klas verwijzen. Daarom
+     * wordt eerst gezocht op externe ID en daarna op school en klasnaam, zodat een
+     * bestaande Smartschool-klas hergebruikt wordt in plaats van een dubbele klas
+     * aan te maken.
+     * </p>
+     *
+     * @param school    school waarvoor de synchronisatie loopt
+     * @param sourcedId OneRoster sourcedId van de klas
+     * @param title     zichtbare klasnaam uit OneRoster
+     * @return bestaande of nieuw aangemaakte klas
+     */
+    private SchoolClassEntity findOrCreateClassForSync(SchoolEntity school, String sourcedId, String title) {
+        Optional<SchoolClassEntity> existingBySourcedId = sourcedId == null || sourcedId.isBlank()
+                ? Optional.empty()
+                : schoolClassRepository.findBySmartschoolGroupId(sourcedId);
+
+        if (existingBySourcedId.isPresent()) {
+            return existingBySourcedId.get();
+        }
+
+        if (school != null && school.getId() != null && title != null && !title.isBlank()) {
+            return schoolClassRepository.findFirstBySchool_IdAndNameIgnoreCase(school.getId(), title.trim())
+                    .orElseGet(SchoolClassEntity::new);
+        }
+
+        return new SchoolClassEntity();
     }
 
     private String extractTitle(Map<String, Object> c) {

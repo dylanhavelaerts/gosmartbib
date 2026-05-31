@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface SchoolClassRepository extends JpaRepository<SchoolClassEntity, Long> {
     Optional<SchoolClassEntity> findBySmartschoolGroupId(String smartschoolGroupId);
 
+    Optional<SchoolClassEntity> findFirstBySchool_IdAndNameIgnoreCase(Long schoolId, String name);
+
     List<SchoolClassEntity> findAllBySchool_IdOrderByNameAsc(Long schoolId);
 
     List<SchoolClassEntity> findTop20BySchool_IdAndNameContainingIgnoreCaseOrderByNameAsc(
