@@ -6,22 +6,25 @@ import edu.ap.gosmartlib.util.ReadingListType;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Compacte leeslijstweergave voor overzichtspagina's.
+ */
 public record ReadingListOverviewDTO(
-        Long id,
-        String publicUid,
-        String title,
-        String taskDescription,
-        LocalDateTime deadline,
-        String creatorName,
-        int bookCount,
-        List<Long> bookIds,
-        ReadingListType listType,
-        boolean ownList,
-        boolean publicVisible,
-        ReadingListTargetType targetType,
-        List<String> targetStudentDisplayNames,
-        List<String> targetClassNames,
-        List<Integer> targetYears,
-        List<Integer> targetGrades,
-        Boolean targetAllSchools) {
+                Long id,
+                String publicUid,
+                String title,
+                String taskDescription,
+                LocalDateTime deadline,
+                String creatorName,
+                int bookCount,
+                List<Long> bookIds,
+                ReadingListType listType,
+                boolean ownList,
+                boolean publicVisible,
+                ReadingListTargetType targetType,
+                List<String> targetStudentDisplayNames,
+                List<String> targetClassNames,
+                List<Integer> targetYears,
+                List<Integer> targetGrades,
+                Boolean targetAllSchools) {
 }

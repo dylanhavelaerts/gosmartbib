@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST-controller voor bulknotificaties op alle boeken binnen één leeslijst.
+ */
 @RestController
 @RequestMapping("/reading-lists/{readingListId}/notification")
 @RequiredArgsConstructor
@@ -20,14 +23,30 @@ public class ReadingListNotificationController {
     private final ReadingListService readingListService;
     private final AuthHelper authHelper;
 
+    /**
+     * Controleert of notificaties voor alle boeken uit de leeslijst ingeschakeld
+     * zijn.
+     *
+     * @param readingListId interne leeslijst-ID
+     * @param principal     de aangemelde OAuth2-gebruiker
+     * @return true wanneer alle boeknotificaties actief zijn
+     */
     @GetMapping
     public ResponseEntity<Boolean> status(
             @PathVariable Long readingListId,
             @AuthenticationPrincipal OAuth2User principal) {
-        boolean enabled = bookNotificationService.isAllEnabled(authHelper.extractUid(principal), getBookIds(readingListId));
+        boolean enabled = bookNotificationService.isAllEnabled(authHelper.extractUid(principal),
+                getBookIds(readingListId));
         return ResponseEntity.ok(enabled);
     }
 
+    /**
+     * Schakelt notificaties in voor alle boeken uit de leeslijst.
+     *
+     * @param readingListId interne leeslijst-ID
+     * @param principal     de aangemelde OAuth2-gebruiker
+     * @return lege respons wanneer de notificaties ingeschakeld zijn
+     */
     @PostMapping
     public ResponseEntity<Void> enable(
             @PathVariable Long readingListId,
@@ -36,6 +55,13 @@ public class ReadingListNotificationController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Schakelt notificaties uit voor alle boeken uit de leeslijst.
+     *
+     * @param readingListId interne leeslijst-ID
+     * @param principal     de aangemelde OAuth2-gebruiker
+     * @return lege respons wanneer de notificaties uitgeschakeld zijn
+     */
     @DeleteMapping
     public ResponseEntity<Void> disable(
             @PathVariable Long readingListId,

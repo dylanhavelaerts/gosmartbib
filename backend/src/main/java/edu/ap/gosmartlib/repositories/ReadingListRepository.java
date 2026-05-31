@@ -11,6 +11,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository voor het opvragen en beheren van leeslijsten.
+ */
 public interface ReadingListRepository extends JpaRepository<ReadingListEntity, Long> {
     List<ReadingListEntity> findAllByCreator_IdOrderByIdDesc(Long creatorId);
 

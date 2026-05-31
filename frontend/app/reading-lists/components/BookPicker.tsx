@@ -22,6 +22,12 @@ interface BookPickerProps {
   hideDidacticBooks?: boolean;
 }
 
+/**
+ * Zoek- en selectiecomponent voor boeken binnen leeslijstformulieren.
+ *
+ * De component ondersteunt optioneel het verbergen van didactische boeken voor
+ * leeslijsten die bedoeld zijn voor leerlingen.
+ */
 export default function BookPicker({
   selectedBooks,
   onAdd,

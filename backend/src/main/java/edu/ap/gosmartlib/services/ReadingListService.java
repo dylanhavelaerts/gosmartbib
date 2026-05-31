@@ -30,6 +30,18 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Service voor het beheren van persoonlijke leeslijsten, klasleeslijsten en hun
+ * doelgroepen.
+ *
+ * <p>
+ * Deze service bevat de centrale autorisatie- en validatieregels voor
+ * leeslijsten:
+ * wie een lijst mag zien, wie ze mag aanpassen en welke doelgroep of boeken
+ * eraan
+ * gekoppeld mogen worden.
+ * </p>
+ */
 @Service
 @RequiredArgsConstructor
 public class ReadingListService {
@@ -42,6 +54,17 @@ public class ReadingListService {
     private final SchoolClassRepository schoolClassRepository;
     private final UserDirectoryService userDirectoryService;
 
+    /**
+     * Haalt alle leeslijsten op die zichtbaar zijn voor de aangemelde gebruiker.
+     *
+     * <p>
+     * Dit combineert de persoonlijke lijsten van de gebruiker met klasleeslijsten
+     * waarvoor de gebruiker maker of doelgroep is.
+     * </p>
+     *
+     * @param smartschoolUid Smartschool UID van de aangemelde gebruiker
+     * @return overzicht van zichtbare leeslijsten
+     */
     @Transactional(readOnly = true)
     public List<ReadingListOverviewDTO> getVisibleLists(String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -63,6 +86,19 @@ public class ReadingListService {
                 .toList();
     }
 
+    /**
+     * Haalt de detailweergave van één leeslijst op.
+     *
+     * <p>
+     * Persoonlijke lijsten zijn alleen zichtbaar voor de eigenaar. Klaslijsten zijn
+     * zichtbaar voor de maker en voor leerlingen die binnen de ingestelde doelgroep
+     * vallen.
+     * </p>
+     *
+     * @param id             interne leeslijst-ID
+     * @param smartschoolUid Smartschool UID van de aangemelde gebruiker
+     * @return detailweergave van de leeslijst
+     */
     @Transactional(readOnly = true)
     public ReadingListDetailDTO getListDetail(Long id, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -88,6 +124,12 @@ public class ReadingListService {
         return toDetail(list, currentUser, displayNames);
     }
 
+    /**
+     * Haalt een publiek gedeelde persoonlijke leeslijst op.
+     *
+     * @param publicUid publieke UUID van de leeslijst
+     * @return publieke detailweergave van de leeslijst
+     */
     @Transactional(readOnly = true)
     public PublicReadingListDetailDTO getPublicListDetail(String publicUid) {
         if (publicUid == null || publicUid.isBlank()) {
@@ -104,6 +146,21 @@ public class ReadingListService {
         return toPublicDetailDTO(list);
     }
 
+    /**
+     * Wijzigt de publieke zichtbaarheid van een persoonlijke leeslijst.
+     *
+     * <p>
+     * Alleen de eigenaar kan een persoonlijke lijst deelbaar maken. Wanneer de
+     * lijst
+     * nog geen publieke UUID heeft, wordt die aangemaakt voordat de zichtbaarheid
+     * wordt opgeslagen.
+     * </p>
+     *
+     * @param id             interne leeslijst-ID
+     * @param publicVisible  gewenste publieke zichtbaarheid
+     * @param smartschoolUid Smartschool UID van de aangemelde gebruiker
+     * @return nieuwe publieke zichtbaarheidsstatus
+     */
     @Transactional
     public ReadingListVisibilityDTO updatePersonalListVisibility(Long id, boolean publicVisible,
             String smartschoolUid) {
@@ -130,6 +187,12 @@ public class ReadingListService {
                 saved.isPublicVisible());
     }
 
+    /**
+     * Haalt de beschikbare doelgroepen op voor het aanmaken van klasleeslijsten.
+     *
+     * @param smartschoolUid Smartschool UID van de aangemelde gebruiker
+     * @return klassen van de eigen school en de toegestane jaren en graden
+     */
     @Transactional(readOnly = true)
     public ReadingListAssignmentTargetsDTO getAssignmentTargets(String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -154,6 +217,20 @@ public class ReadingListService {
         return new ReadingListAssignmentTargetsDTO(List.of(), classes, VALID_YEARS, VALID_GRADES);
     }
 
+    /**
+     * Zoekt leerlingen die als specifieke doelgroep voor een klasleeslijst gekozen
+     * kunnen worden.
+     *
+     * <p>
+     * De zoekopdracht wordt beperkt tot leerlingen van de eigen school. Er wordt
+     * gezocht
+     * op Smartschool UID, live-resolved naam en klasnaam.
+     * </p>
+     *
+     * @param smartschoolUid Smartschool UID van de aangemelde gebruiker
+     * @param query          zoekterm van minstens twee tekens
+     * @return maximaal twintig leerlingdoelgroepen die overeenkomen met de zoekterm
+     */
     @Transactional(readOnly = true)
     public List<ReadingListAssignmentTargetsDTO.StudentTarget> searchAssignmentStudents(
             String smartschoolUid,
@@ -212,6 +289,13 @@ public class ReadingListService {
                 .toList();
     }
 
+    /**
+     * Zoekt klassen die als doelgroep voor een klasleeslijst gekozen kunnen worden.
+     *
+     * @param smartschoolUid Smartschool UID van de aangemelde gebruiker
+     * @param query          optionele zoekterm voor de klasnaam
+     * @return klassen van de eigen school, eventueel gefilterd op naam
+     */
     @Transactional(readOnly = true)
     public List<ReadingListAssignmentTargetsDTO.ClassTarget> searchAssignmentClasses(
             String smartschoolUid,
@@ -329,6 +413,18 @@ public class ReadingListService {
         return readingListRepository.save(list);
     }
 
+    /**
+     * Haalt de boek-IDs uit een leeslijst op.
+     *
+     * <p>
+     * Deze methode wordt gebruikt door de notificatiecontroller om notificaties in
+     * bulk
+     * op alle boeken van een leeslijst toe te passen.
+     * </p>
+     *
+     * @param readingListId interne leeslijst-ID
+     * @return IDs van alle boeken in de leeslijst
+     */
     @Transactional(readOnly = true)
     public List<Long> getBookIds(Long readingListId) {
         return readingListRepository.findByIdWithBooks(readingListId)
@@ -385,6 +481,12 @@ public class ReadingListService {
         return readingListRepository.save(list);
     }
 
+    /**
+     * Verwijdert een persoonlijke leeslijst van de aangemelde gebruiker.
+     *
+     * @param id             interne leeslijst-ID
+     * @param smartschoolUid Smartschool UID van de aangemelde gebruiker
+     */
     @Transactional
     public void deletePersonalList(Long id, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -399,6 +501,12 @@ public class ReadingListService {
         readingListRepository.delete(list);
     }
 
+    /**
+     * Verwijdert een klasleeslijst waarvan de aangemelde gebruiker de maker is.
+     *
+     * @param id             interne leeslijst-ID
+     * @param smartschoolUid Smartschool UID van de aangemelde gebruiker
+     */
     @Transactional
     public void deleteClassList(Long id, String smartschoolUid) {
         UserEntity currentUser = requireCurrentUser(smartschoolUid);
@@ -595,6 +703,14 @@ public class ReadingListService {
         list.setTargetAllSchools(false);
     }
 
+    /**
+     * Vervangt de doelgroep van een klasleeslijst op basis van de gekozen
+     * targetmodus.
+     *
+     * @param list        de leeslijst waarvan de doelgroep vervangen wordt
+     * @param dto         payload met de nieuwe doelgroepgegevens
+     * @param currentUser gebruiker die de wijziging uitvoert
+     */
     private void replaceAssignmentTarget(ReadingListEntity list, CreateReadingListDTO dto, UserEntity currentUser) {
         ReadingListTargetType targetType = dto.getTargetType();
 
@@ -654,6 +770,13 @@ public class ReadingListService {
         }
     }
 
+    /**
+     * Controleert dat alleen de velden gebruikt worden die bij het gekozen
+     * doelgroeptype horen.
+     *
+     * @param dto        payload met alle mogelijke doelgroepvelden
+     * @param targetType gekozen doelgroeptype
+     */
     private void validateSingleTargetPayload(CreateReadingListDTO dto, ReadingListTargetType targetType) {
         boolean hasStudentTargets = hasValues(dto.getTargetStudentIds());
         boolean hasClassTargets = hasValues(dto.getTargetClassIds());
@@ -686,6 +809,13 @@ public class ReadingListService {
         return values != null && values.stream().anyMatch(Objects::nonNull);
     }
 
+    /**
+     * Laadt en valideert specifieke leerlingdoelgroepen voor een klasleeslijst.
+     *
+     * @param targetStudentIds IDs van de geselecteerde leerlingen
+     * @param currentUser      gebruiker die de klasleeslijst beheert
+     * @return gevalideerde leerlingen uit de eigen school
+     */
     private Set<UserEntity> loadTargetStudents(List<Long> targetStudentIds, UserEntity currentUser) {
         if (targetStudentIds == null || targetStudentIds.isEmpty()) {
             return new LinkedHashSet<>();
@@ -719,6 +849,13 @@ public class ReadingListService {
         return new LinkedHashSet<>(users);
     }
 
+    /**
+     * Laadt en valideert specifieke klasdoelgroepen voor een klasleeslijst.
+     *
+     * @param targetClassIds IDs van de geselecteerde klassen
+     * @param currentUser    gebruiker die de klasleeslijst beheert
+     * @return gevalideerde klassen uit de eigen school
+     */
     private Set<SchoolClassEntity> loadTargetClasses(List<Long> targetClassIds, UserEntity currentUser) {
         if (targetClassIds == null || targetClassIds.isEmpty()) {
             return new LinkedHashSet<>();
@@ -752,6 +889,12 @@ public class ReadingListService {
         return new LinkedHashSet<>(classes);
     }
 
+    /**
+     * Normaliseert en valideert schooljaren voor een jaardoelgroep.
+     *
+     * @param years aangeleverde schooljaren
+     * @return gesorteerde unieke schooljaren
+     */
     private Set<Integer> normalizeYears(List<Integer> years) {
         if (years == null || years.isEmpty()) {
             return new TreeSet<>();
@@ -774,6 +917,12 @@ public class ReadingListService {
         return normalized;
     }
 
+    /**
+     * Normaliseert en valideert graden voor een graaddoelgroep.
+     *
+     * @param grades aangeleverde graden
+     * @return gesorteerde unieke graden
+     */
     private Set<Integer> normalizeGrades(List<Integer> grades) {
         if (grades == null || grades.isEmpty()) {
             return new TreeSet<>();
@@ -796,6 +945,13 @@ public class ReadingListService {
         return normalized;
     }
 
+    /**
+     * Bepaalt of een gebruiker een klasleeslijst mag zien.
+     *
+     * @param list        klasleeslijst die gecontroleerd wordt
+     * @param currentUser aangemelde gebruiker
+     * @return true wanneer de gebruiker maker is of binnen de doelgroep valt
+     */
     private boolean canViewClassList(ReadingListEntity list, UserEntity currentUser) {
         if (list.getListType() != ReadingListType.CLASS) {
             return false;
@@ -808,6 +964,13 @@ public class ReadingListService {
         return matchesAssignmentTarget(list, currentUser);
     }
 
+    /**
+     * Bepaalt of een leerling overeenkomt met de doelgroep van een klasleeslijst.
+     *
+     * @param list klasleeslijst met doelgroepinstellingen
+     * @param user gebruiker die gecontroleerd wordt
+     * @return true wanneer de gebruiker leerling is en matcht met de doelgroep
+     */
     private boolean matchesAssignmentTarget(ReadingListEntity list, UserEntity user) {
         if (user.getRole() != UserRoles.STUDENT) {
             return false;
